@@ -24,7 +24,7 @@ from qm.QuantumMachinesManager import QuantumMachinesManager
 from qualang_tools.results import progress_counter, fetching_tool
 from configuration import *
 from qualang_tools.loops import from_array, qua_logspace
-from QM_macros_jacky import multiRO_declare, multiRO_measurement, multiRO_pre_save
+from QM_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -91,7 +91,7 @@ def mRO_power_dep_resonator( freq_IF_center:list, df_array, amp_ratio, cd_time, 
         ro_ch_name.append(f"{r_name}_I")
         ro_ch_name.append(f"{r_name}_Q")
 
-    data_list = ro_ch_name +["iteration"]   
+    data_list = ro_ch_name + ["iteration"]   
     results = fetching_tool(job, data_list=data_list, mode="wait_for_all")
     fetch_data = results.fetch_all()
     output_data = {}

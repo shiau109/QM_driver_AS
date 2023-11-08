@@ -30,7 +30,6 @@ def res_flux(q_id, job, flux, dfs, resonator_IF, p):
     min_index = [[] for _ in q_id]
     max_index = [[] for _ in q_id]
     resonator_flux_params, resonator_flux_covariance = [], []
-    threshold = 0
     res_LO = 5.95e9
 
     for i in q_id:
@@ -39,14 +38,10 @@ def res_flux(q_id, job, flux, dfs, resonator_IF, p):
         R = np.abs(S)
         phase = np.angle(S)
 
-        x_var = flux
-        y_var = (dfs + resonator_IF[i]) / u.MHz
         x_label = "Flux bias [V]"
         y_label = "Readout Freq [GHz]"
-        map_top = R
-        map_bottom = signal.detrend(np.unwrap(phase))
 
-        Flux[i] = x_var
+        Flux[i] = flux
         Frequency[i] = dfs + resonator_IF[i] + resonator_LO
         Amplitude[i] = R
         Phase[i] = signal.detrend(np.unwrap(phase))
@@ -62,12 +57,19 @@ def res_flux(q_id, job, flux, dfs, resonator_IF, p):
             )
         resonator_flux_params.append(temp_params)
         resonator_flux_covariance.append(temp_covariance)
-        filtered_indices = np.where(Flux[i] > threshold)[0]
-        sup_num = len(Flux[i]) - len(filtered_indices)
-        res_IF = resonator_flux(Flux[i][filtered_indices], *resonator_flux_params[i])
-        max_index[i] = np.argmax(res_IF) + sup_num
-        max_IF =  resonator_flux(Flux[i][max_index[i]], *resonator_flux_params[i])
-        print(f'Q{i+1}: maximum ROF: {max_IF:.2e}, maximum res_IF: {(res_LO-max_IF):.2e}, corresponding flux: {Flux[i][max_index[i]]:.3e}')
+        res_IF = resonator_flux(Flux[i], *resonator_flux_params[i])
+        max_index[i] = np.argmax(res_IF)
+        second_largest_value = np.partition(res_IF, -2)[-2] 
+        second_largest_index = np.where(res_IF == second_largest_value)[0][0]  
+        max_flux = Flux[i][max_index[i]]
+        sec_flux = Flux[i][second_largest_index]
+
+        if abs(max_flux) >= abs(sec_flux):
+            max_ROF =  resonator_flux(sec_flux, *resonator_flux_params[i])
+            print(f'Q{i+1}: maximum ROF: {max_ROF:.4e}, maximum res_IF: {(max_ROF-res_LO):.4e}, corresponding flux: {sec_flux:.3e}')
+        else:
+            max_ROF =  resonator_flux(max_flux, *resonator_flux_params[i])
+            print(f'Q{i+1}: maximum ROF: {max_ROF:.4e}, maximum res_IF: {(max_ROF-res_LO):.4e}, corresponding flux: {max_flux:.3e}')            
         
         # Plot Top
         plt.subplot(2, len(q_id), q_id.index(i)+1)
@@ -90,3 +92,4 @@ def res_flux(q_id, job, flux, dfs, resonator_IF, p):
         plt.gca().yaxis.set_major_formatter(FuncFormatter(format_y_axis))
 
     plt.show()
+
