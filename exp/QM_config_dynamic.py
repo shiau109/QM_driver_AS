@@ -65,9 +65,10 @@ class Circuit_info:
             elif name.lower() in ['waveform',"func",'wf']:
                 self.QsXyInfo["waveform_func_"+target_q] = kwargs[name]
             else:
+                print(name.lower())
                 raise KeyError("I don't know what you are talking about!")
     
-    def update_XyInfoS_for(self,target_q:str,InfoS:list | dict):
+    def update_XyInfoS_for(self,target_q:str,InfoS:list):
         ''' target_q : "q5"\n
             InfoS : \n
                 if type is list : [pi_amp, pi_len, qubit_LO, qubit_IF(MHz), drag_coef, anharmonicity(MHz), AC_stark_detuning]\n
@@ -77,9 +78,6 @@ class Circuit_info:
             vals = ["pi_amp_", "pi_len_", "qubit_LO_", "qubit_IF_", "drag_coef_", "anharmonicity_", "AC_stark_detuning_"]
             for idx in range(len(InfoS)):
                 self.QsXyInfo[vals[idx]+target_q] = InfoS[idx]
-        elif isinstance(InfoS,dict):
-            for keyname in InfoS:
-                self.update_aXyInfo_for(target_q,name=InfoS[keyname])
         else:
             raise TypeError("InfoS should be a list or dict! For a single value use `update_aPiInfo_for()`")
 
@@ -116,10 +114,10 @@ class Waveform:
         # search the waveform function
         if func.lower() in ['drag','dragg','gdrag']:
             def wf_func(amp, width, sigma, *args):
-                drag_gaussian_pulse_waveforms(amp, width, sigma, args[0], args[1], args[2])
+                return drag_gaussian_pulse_waveforms(amp, width, sigma, args[0], args[1], args[2])
         elif func.lower() in ['gauss','g','gaussian']:
             def wf_func(amp, width, sigma, *args):
-                drag_gaussian_pulse_waveforms(amp, width, sigma, 0, args[1], args[2])
+                return drag_gaussian_pulse_waveforms(amp, width, sigma, 0, args[1], args[2])
         else:
             raise ValueError("Only surpport Gaussian or DRAG-gaussian waveform!")
         
@@ -128,24 +126,25 @@ class Waveform:
         rotation_to = -1 if axis.split("/")[0][0]=="-" else 1
         scale = rotation_to*angle
         # check pulse sigma
-        if kwargs != [] and list(kwargs.keys())[0].lower() in ["sigma","s","sfactor","s-factor"]:
+        if kwargs != {} and list(kwargs.keys())[0].lower() in ["sigma","s","sfactor","s-factor"]:
             S_factor = kwargs[list(kwargs.keys())[0]]
         else:
             S_factor = 4
 
-        if axis[0].lower() == 'x':
+        if 'x' in axis[:2].lower():
             wf, der_wf = array(
                 wf_func(self.QsXyInfo["pi_amp_"+target_q]*scale, self.QsXyInfo["pi_len_"+target_q], self.QsXyInfo["pi_len_"+target_q]/S_factor, self.QsXyInfo["drag_coef_"+target_q], self.QsXyInfo["anharmonicity_"+target_q], self.QsXyInfo["AC_stark_detuning_"+target_q])
             )
             I_wf = wf
             Q_wf = der_wf
-        elif axis[0].lower() == 'y':
+        elif 'y' in axis[:2].lower():
             wf, der_wf = array(
                 wf_func(self.QsXyInfo["pi_amp_"+target_q]*scale, self.QsXyInfo["pi_len_"+target_q], self.QsXyInfo["pi_len_"+target_q]/S_factor, self.QsXyInfo["drag_coef_"+target_q], self.QsXyInfo["anharmonicity_"+target_q], self.QsXyInfo["AC_stark_detuning_"+target_q])
             )
             I_wf = (-1)*der_wf
             Q_wf = wf
         else:
+            print(axis[0].lower())
             raise ValueError("Check the given axis, It should start with 'x' or 'y'!")
     
         return {"I":I_wf, "Q":Q_wf}
@@ -203,8 +202,12 @@ class QM_config():
         }
         self.__config["controllers"].update(update_setting)
 
-    def get_config( self ):
+    def get_config(self,*args):
         return self.__config
+    
+    def update_element( self, name:str, setting:dict ):
+        update_setting = {name:setting}
+        self.__config["elements"].update(update_setting)
     
     def update_multiplex_readout_channel( self, common_wiring:dict, individual_setting:list):
         """
@@ -330,9 +333,38 @@ class QM_config():
             "intermediate_frequency":  int(freq_IF * u.MHz), 
         }
         self.update_element( resonator_name, setting )
-        
 
-    def update_xy_element(self, wiringANDmachine:list, XYinfo:dict):
+    # Control related shows below
+    
+    def update_control_channels(self,target_q:str,**kwargs):
+        """
+            modify the control wiring channel for target qubit \n
+            target_q : "q1"...\n
+            The keyname in kwargs must be "I" and "Q":\n
+            I=("con1", 3), Q=("con1", 4)
+        """
+
+        if kwargs != {}:
+            try:
+                for channel in kwargs:
+                    self.__config['elements'][f"{target_q}_xy"]["mixInputs"][channel] = kwargs[channel]
+            except:
+                raise KeyError("The keyname for a channel must be 'I' and 'Q'!")
+        else:
+            raise ValueError("New wiring channel should be given.")
+
+
+    def update_control_mixer_correction(self,target_q:str,correct:tuple):
+        """
+            modify the corrections for a given target qubit control mixer:\n
+            target_q : "q1"...\n
+            correct : (1,0,0,1)
+        """
+        mixer_name = self.__config['elements'][f"{target_q}_xy"]["mixInputs"]["mixer"]
+        self.__config["mixers"][mixer_name][0]["correction"] = correct
+        print(f"Correction for {mixer_name} had been modified!")
+
+    def init_xy_element(self, wiringANDmachine:list, XYinfo:dict):
         """
         target_q : "q2"..\n
         wiringANDmachine ex:\n
@@ -343,9 +375,8 @@ class QM_config():
             "mixer": "octave_octave1_2"\n
         },]\n
 
-        xyinfo is from Circuit_info().QsXyInfo
+        xyinfo is from Circuit_info().QsXyInfo\n
         """
-        
         for wiringInfo in wiringANDmachine:
             # create xy dict in element
             xy_element_template_dict = {
@@ -368,18 +399,19 @@ class QM_config():
                 }
             }
             self.update_element(name=f"{wiringInfo['name']}_xy", setting=xy_element_template_dict)
+            
             # Create the mixer info for control
-            '''To do'''
             mixer_template_list = [   
                 {
-                    "intermediate_frequency": qubit_IF_q4, 
-                    "lo_frequency": qubit_LO_q2,
+                    "intermediate_frequency": XYinfo["qubit_IF_"+wiringInfo['name']]*u.MHz, 
+                    "lo_frequency": XYinfo["qubit_LO_"+wiringInfo['name']]*u.GHz,
                     "correction": (1, 0, 0, 1),
                 }
             ]
+            self.__config["mixers"][wiringInfo["mixer"]] = mixer_template_list
             # create corresponding waveform name in pulses dict, create waveform list in waveforms dict
             wave_maker = Waveform(XYinfo)
-            for waveform in  self.__config["elements"][f"{wiringInfo['name']}_xy"]["operations"]:
+            for waveform in self.__config["elements"][f"{wiringInfo['name']}_xy"]["operations"]:
                 if waveform not in ["cw", "saturation"]:
                     rotate_to = "minus_" if waveform[0] == "-" else ""
                     new_wf_namae = rotate_to + waveform.split("-")[-1]
@@ -396,11 +428,11 @@ class QM_config():
                     for waveform_basis in self.__config["pulses"][f"{waveform}_pulse_{wiringInfo['name']}"]["waveforms"]:
                         ''' waveform_basis is "I" or "Q" '''
                         waveform_name = self.__config["pulses"][f"{waveform}_pulse_{wiringInfo['name']}"]["waveforms"][waveform_basis]
-                        posit_minus= waveform_name.split("_")[0] if waveform_name.split("_")[0]=='minus_' else ""
-                        axis = waveform_name.split("_")[1] if waveform_name.split("_")[0]=='minus_' else waveform_name.split("_")[0]
+                        posit_minus= "-" if waveform_name.split("_")[0]=='minus' else ""
+                        axis = waveform_name.split("_")[1] if waveform_name.split("_")[0]=='minus' else waveform_name.split("_")[0]
                         scale = "/2" if axis[1:] == "90" else ""
 
-                        wf = wave_maker.build_waveform(target_q=wiringInfo['name'],func="drag",axis=posit_minus+axis+scale)
+                        wf = wave_maker.build_waveform(target_q=wiringInfo['name'],func="drag",axis=posit_minus+axis[0]+scale)
                         
                         self.__config["waveforms"][waveform_name] = {"type": "arbitrary", "samples":wf[waveform_basis].tolist()}
 
@@ -418,12 +450,15 @@ class QM_config():
             self.__config["waveforms"][f"{wfna}_wf"] = {"type": "constant", "samples":XYinfo[f"{wfna}_amp"]}       
         self.__config["waveforms"]["zero_wf"] = {"type": "constant", "samples":0.0}
 
-        
+    ### TO DO ### 
+    def update_control_config(self,updatedInfo:dict):
+        """
+            {"pi_amp_q1":0.4, "pi_len_q2":32,...}
+        """
+        for info in updatedInfo:
+            # elements update
+            pass
 
-
-    def update_element( self, name:str, setting:dict ):
-        update_setting = {name:setting}
-        self.__config["elements"].update(update_setting)
 
     def export_config( self, path ):
         import pickle
