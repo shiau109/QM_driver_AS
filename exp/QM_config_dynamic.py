@@ -158,10 +158,6 @@ class Waveform:
         
 
 
-
-
-
-
 class QM_config():
     def __init__( self ):
 
@@ -458,7 +454,7 @@ class QM_config():
         self.__config["waveforms"]["zero_wf"] = {"type": "constant", "samples":0.0}
 
     ### directly update the frequency info into config ### 
-    def update_controlFreq_config(self,updatedInfo:dict):
+    def update_controlFreq(self,updatedInfo:dict):
         """
             Only update the info in config about control frequency\n
             updatedInfo:{"qubit_IF_q1":200, "qubit_LO_q2":4,...}
@@ -481,7 +477,7 @@ class QM_config():
                 raise KeyError("Only surpport update frequenct related info to config!")
     
     ### update amp, len,...etc need an updated spec to re-build the waveform ###
-    def update_controlWaveform_config(self,updatedSpec:dict={},target_q:str="all"):
+    def update_controlWaveform(self,updatedSpec:dict={},target_q:str="all"):
         '''
             If the spec about control had been updated need to re-build the waveforms in the config.\n
             A updated spec is given and call the Waveform class re-build the config.\n
@@ -506,6 +502,17 @@ class QM_config():
                         
                         self.__config["waveforms"][waveform_name] = {"type": "arbitrary", "samples":wf[waveform_basis].tolist()}
 
+    def update_z_offset(self,channelANDoffset:dict,control_mache:str="None"):
+        '''
+            update the z offset in config controllers\n
+            channelANDoffset : {1:0.23,2:-0.03,...}, key is the analog_outputs channel is int\n
+            control_mache for a specific controller name : "con2", defualt is "con1"
+        '''
+        ctrler_name = 'con1' if control_mache=="None" else control_mache
+        z_output = self.__config["controllers"][ctrler_name]['analog_outputs']
+        for channel in channelANDoffset:
+            z_output[channel] = {'offset':channelANDoffset[channel]}          
+    
     def export_config( self, path ):
         import pickle
 
