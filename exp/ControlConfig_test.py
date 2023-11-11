@@ -32,7 +32,7 @@ wiring = [
     }
 ]
 x = the_specs.QsXyInfo
-init_config.update_xy_element(wiring, x)
+init_config.init_xy_element_xy_element(wiring, x)
 # print("\nAfter updating control elements:\n")
 # print(init_config.get_config())
 init_config.update_control_channels("q1",I=("con2",5),Q=("con2",7))
