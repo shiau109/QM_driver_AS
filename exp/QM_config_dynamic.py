@@ -45,8 +45,10 @@ class Circuit_info:
         '''target_q : "q5"\n
         kwargs :\n
         amp(pi_amp)=0.2\nlen(pi_len)=20\nLO(qubit_LO)=4.3\nIF(qubit_IF)=80\ndraga(drag_coef)=0.5\ndelta or anh or d(anharmonicity)=-200\n
-        AC(AC_stark_detuning)=8,func='gauss' or 'drag'
+        AC(AC_stark_detuning)=8,func='gauss' or 'drag'\n
+        If update info is related to freq return the dict for updating the config.
         '''
+        new_freq = {}
         for name in list(kwargs.keys()):
             if name.lower() == 'amp':
                 self.QsXyInfo["pi_amp_"+target_q] = kwargs[name] 
@@ -54,8 +56,10 @@ class Circuit_info:
                 self.QsXyInfo["pi_len_"+target_q] = kwargs[name]
             elif name.lower() == 'lo':
                 self.QsXyInfo["qubit_LO_"+target_q] = kwargs[name]
+                new_freq["qubit_LO_"+target_q] = kwargs[name]
             elif name.lower() == 'if':
                 self.QsXyInfo["qubit_IF_"+target_q] = kwargs[name]
+                new_freq["qubit_IF_"+target_q] = kwargs[name]
             elif name.lower() in ['draga','drag_coef'] :
                 self.QsXyInfo["drag_coef_"+target_q] = kwargs[name]
             elif name.lower() in ["delta","d","anh","anharmonicity"]:
@@ -67,6 +71,8 @@ class Circuit_info:
             else:
                 print(name.lower())
                 raise KeyError("I don't know what you are talking about!")
+        
+        return new_freq
     
     def update_XyInfoS_for(self,target_q:str,InfoS:list):
         ''' target_q : "q5"\n
@@ -101,7 +107,7 @@ class Circuit_info:
 class Waveform:
     def __init__(self,xyInfo:dict):
         self.QsXyInfo = xyInfo
-    def build_waveform(self,target_q:str,func:str,axis:str,**kwargs)->dict:
+    def build_waveform(self,target_q:str,axis:str,**kwargs)->dict:
         ''' Create the pulse waveform for XY control for target qubit\n
             target_q : "q2"\n
             func : "drag" or "gauss"\n
@@ -112,6 +118,7 @@ class Waveform:
         if target_q not in self.QsXyInfo["register"]:
             raise KeyError(f"There are not any info in 'QsXyInfo' about target {target_q}")
         # search the waveform function
+        func = 'drag' if self.QsXyInfo[f"waveform_func_{target_q}"] == 0 else self.QsXyInfo[f"waveform_func_{target_q}"]
         if func.lower() in ['drag','dragg','gdrag']:
             def wf_func(amp, width, sigma, *args):
                 return drag_gaussian_pulse_waveforms(amp, width, sigma, args[0], args[1], args[2])
@@ -424,7 +431,7 @@ class QM_config():
                         }
                     }
 
-                    # Create waveform list
+                    # Create waveform list, if spec is updated it also need to be updated
                     for waveform_basis in self.__config["pulses"][f"{waveform}_pulse_{wiringInfo['name']}"]["waveforms"]:
                         ''' waveform_basis is "I" or "Q" '''
                         waveform_name = self.__config["pulses"][f"{waveform}_pulse_{wiringInfo['name']}"]["waveforms"][waveform_basis]
@@ -432,7 +439,7 @@ class QM_config():
                         axis = waveform_name.split("_")[1] if waveform_name.split("_")[0]=='minus' else waveform_name.split("_")[0]
                         scale = "/2" if axis[1:] == "90" else ""
 
-                        wf = wave_maker.build_waveform(target_q=wiringInfo['name'],func="drag",axis=posit_minus+axis[0]+scale)
+                        wf = wave_maker.build_waveform(target_q=wiringInfo['name'],axis=posit_minus+axis[0]+scale)
                         
                         self.__config["waveforms"][waveform_name] = {"type": "arbitrary", "samples":wf[waveform_basis].tolist()}
 
@@ -450,15 +457,54 @@ class QM_config():
             self.__config["waveforms"][f"{wfna}_wf"] = {"type": "constant", "samples":XYinfo[f"{wfna}_amp"]}       
         self.__config["waveforms"]["zero_wf"] = {"type": "constant", "samples":0.0}
 
-    ### TO DO ### 
-    def update_control_config(self,updatedInfo:dict):
+    ### directly update the frequency info into config ### 
+    def update_controlFreq_config(self,updatedInfo:dict):
         """
-            {"pi_amp_q1":0.4, "pi_len_q2":32,...}
+            Only update the info in config about control frequency\n
+            updatedInfo:{"qubit_IF_q1":200, "qubit_LO_q2":4,...}
         """
         for info in updatedInfo:
-            # elements update
-            pass
+            if info.split("_")[1].lower() in ["lo","if"]: # this should be update in both elements and mixers
+                target_q = info.split("_")[-1]
+                elements = self.__config['elements'][f"{target_q}_xy"]
+                mixers = self.__config['mixers']
+                mixer_name = elements["mixInputs"]["mixer"]
+                # update LO or IF in elements and mixers
+                if info.split("_")[1] == "LO":
+                    elements["mixInputs"]["lo_frequency"] = updatedInfo[info]*u.GHz
+                    mixers[mixer_name][0]["lo_frequency"] = updatedInfo[info]*u.GHz
+                else: 
+                    elements["intermediate_frequency"] = updatedInfo[info]*u.MHz
+                    mixers[mixer_name][0]["intermediate_frequency"] = updatedInfo[info]*u.MHz
+                
+            else: 
+                raise KeyError("Only surpport update frequenct related info to config!")
+    
+    ### update amp, len,...etc need an updated spec to re-build the waveform ###
+    def update_controlWaveform_config(self,updatedSpec:dict={},target_q:str="all"):
+        '''
+            If the spec about control had been updated need to re-build the waveforms in the config.\n
+            A updated spec is given and call the Waveform class re-build the config.\n
+            Give the specific target qubit "q1" to update if its necessary, default for all the qubits.
+        '''
+        if updatedSpec != {}:
+            waveform_remaker = Waveform(updatedSpec)
+        else:
+            raise ValueError("The updated spec should be given!")
+        qs = [target_q] if target_q != 'all' else updatedSpec["register"]
+        for q in qs:
+            for waveform in self.__config["elements"][f"{q}_xy"]["operations"]:
+                if waveform not in ["cw", "saturation"]:
+                    for waveform_basis in self.__config["pulses"][f"{waveform}_pulse_{q}"]["waveforms"]:
+                        ''' waveform_basis is "I" or "Q" '''
+                        waveform_name = self.__config["pulses"][f"{waveform}_pulse_{q}"]["waveforms"][waveform_basis]
+                        posit_minus= "-" if waveform_name.split("_")[0]=='minus' else ""
+                        axis = waveform_name.split("_")[1] if waveform_name.split("_")[0]=='minus' else waveform_name.split("_")[0]
+                        scale = "/2" if axis[1:] == "90" else ""
 
+                        wf = waveform_remaker.build_waveform(target_q=q,axis=posit_minus+axis[0]+scale)
+                        
+                        self.__config["waveforms"][waveform_name] = {"type": "arbitrary", "samples":wf[waveform_basis].tolist()}
 
     def export_config( self, path ):
         import pickle
