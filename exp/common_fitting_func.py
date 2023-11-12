@@ -1,8 +1,9 @@
 import numpy as np
+from scipy.stats import norm
 import matplotlib.pyplot as plt
 
-def gaussian(x, A, mu, sigma, offset):
-    return A * np.exp(-(x - mu)**2 / (2 * sigma**2)) + offset
+def gaussian(x, mu, sigma):
+    return norm.pdf(x, mu, sigma)
 
 def S21_notch(f,fr=1e9,Ql=900,Qc=1000.,phi=0.,a=1.):
     '''

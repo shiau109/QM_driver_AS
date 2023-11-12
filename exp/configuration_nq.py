@@ -61,19 +61,21 @@ octave_config = octave_declaration(octaves)
 #############################################
 #                  Qubits                   #
 #############################################
-qubit_LO_q1 = (3.955) * u.GHz
-qubit_LO_q2 = (4.215) * u.GHz
-qubit_LO_q3 = (4.200 -0.530) * u.GHz
-qubit_LO_q4 = (4.200 -0.530) * u.GHz
-qubit_LO_q5 = (4.200 -0.530) * u.GHz
+qubit_LO_q1 = (4.055) * u.GHz
+qubit_LO_q2 = (4.4) * u.GHz
+qubit_LO_q3 = (3.6) * u.GHz
+qubit_LO_q4 = (3.95) * u.GHz
+# qubit_LO_q4 = (4.75) * u.GHz
+qubit_LO_q5 = (4.75) * u.GHz
 
 # Qubits IF
 qubit_IF = np.zeros(5)
-qubit_IF[0] = (-99) * u.MHz #(4013-0.0088-0.0037 -4200) * u.MHz
-qubit_IF[1] = (-183.2) * u.MHz #(4156-0.119  -4200) * u.MHz
-qubit_IF[2] = (-355) * u.MHz
-qubit_IF[3] = (-44.4216-0.032) * u.MHz
-qubit_IF[4] = (-44.4216-0.032) * u.MHz
+qubit_IF[0] = (-116.8+0.245) * u.MHz #(4013-0.0088-0.0037 -4200) * u.MHz
+qubit_IF[1] = (-203.57-1.054) * u.MHz #(4156-0.119  -4200) * u.MHz
+qubit_IF[2] = (-100-0.55+0.209) * u.MHz
+qubit_IF[3] = (-104-0.49+0.041-0.104-0.091) * u.MHz
+# qubit_IF[3] = (-84.8-0.56) * u.MHz
+qubit_IF[4] = (-92) * u.MHz
 # For comparing 2q:
 # qubit_IF[1] = qubit_IF[0]
 
@@ -83,21 +85,22 @@ qubit2_T1 = int(12000 * u.ns)
 qubit3_T1 = int(12000 * u.ns)
 qubit4_T1 = int(12000 * u.ns)
 qubit5_T1 = int(12000 * u.ns)
-thermalization_time = 5 * max(qubit1_T1, qubit2_T1, qubit3_T1, qubit4_T1, qubit5_T1)
+thermalization_time = 10 * max(qubit1_T1, qubit2_T1, qubit3_T1, qubit4_T1, qubit5_T1)
 
 # CW pulse parameter
 const_len = 100
 const_amp = 270 * u.mV
 # Saturation_pulse
 saturation_len = 1 * u.us
-saturation_amp = 0.270
+saturation_amp = 0.1
 # Pi pulse parameters
-pi_len = 32
+pi_len = 20
 pi_sigma = pi_len / 4
-pi_amp_q1 = 0.1342
-pi_amp_q2 = 0.2542
-pi_amp_q3 = 0.5
-pi_amp_q4 = 0.5
+pi_amp_q1 = 0.15*0.872*0.975*0.97
+pi_amp_q2 = 0.15*0.57*0.99
+pi_amp_q3 = 0.1*0.86*0.995
+pi_amp_q4 = 0.1*1.135*1.005
+# pi_amp_q4 = 0.1*1.135*1.005*0.805
 pi_amp_q5 = 0.5
 
 # DRAG coefficients (# No DRAG when drag_coef_qi=0, it's just a gaussian.)
@@ -191,9 +194,10 @@ flux_settle_time = 100 * u.ns
 max_frequency_point = np.zeros(5)
 max_frequency_point[0] = 1.700e-01
 max_frequency_point[1] = 2.000e-01
-max_frequency_point[2] = -3.400e-01
+max_frequency_point[2] = 3.300e-01
 max_frequency_point[3] = -3.300e-01
-max_frequency_point[4] = 0
+# max_frequency_point[3] = -2.800e-01
+max_frequency_point[4] = -2.800e-01
 
 idle_q1 = max_frequency_point[0] - 0.26
 idle_q2 = max_frequency_point[1] + 0.0
@@ -229,6 +233,7 @@ resonator_IF[0] = int((-214.51) * u.MHz)
 resonator_IF[1] = int((74.7) * u.MHz)
 resonator_IF[2] = int((-103.51) * u.MHz) 
 resonator_IF[3] = int((162.77) * u.MHz)
+# resonator_IF[3] = int((-24.9) * u.MHz)
 resonator_IF[4] = int((-27.8) * u.MHz)
 # Above is for verifying wide-sweep results: -156, -38, 39, 137, 231
 
@@ -239,6 +244,7 @@ readout_amp[0] = 0.009
 readout_amp[1] = 0.014
 readout_amp[2] = 0.01
 readout_amp[3] = 0.012
+# readout_amp[3] = 0.02
 readout_amp[4] = 0.02
 
 # TOF and depletion time
@@ -474,63 +480,63 @@ config = {
                 "-y90": "-y90_pulse_q2",
             },
         },
-        # "q3_xy": {
-        #     "mixInputs": {
-        #         "I": ("con1", 7),
-        #         "Q": ("con1", 8),
-        #         "lo_frequency": qubit_LO_q3,
-        #         "mixer": "octave_octave1_4",
-        #     },
-        #     "intermediate_frequency": qubit_IF[2],
-        #     "operations": {
-        #         "cw": "const_pulse",
-        #         "saturation": "saturation_pulse",
-        #         "x180": "x180_pulse_q3",
-        #         "x90": "x90_pulse_q3",
-        #         "-x90": "-x90_pulse_q3",
-        #         "y90": "y90_pulse_q3",
-        #         "y180": "y180_pulse_q3",
-        #         "-y90": "-y90_pulse_q3",
-        #     },
-        # },
-        # "q4_xy": {
-        #     "mixInputs": {
-        #         "I": ("con1", 9),
-        #         "Q": ("con1", 10),
-        #         "lo_frequency": qubit_LO_q4,
-        #         "mixer": "octave_octave1_5",
-        #     },
-        #     "intermediate_frequency": qubit_IF[3],
-        #     "operations": {
-        #         "cw": "const_pulse",
-        #         "saturation": "saturation_pulse",
-        #         "x180": "x180_pulse_q4",
-        #         "x90": "x90_pulse_q4",
-        #         "-x90": "-x90_pulse_q4",
-        #         "y90": "y90_pulse_q4",
-        #         "y180": "y180_pulse_q4",
-        #         "-y90": "-y90_pulse_q4",
-        #     },
-        # },
-        # "q5_xy": {
-        #     "mixInputs": {
-        #         "I": ("con2", 1),
-        #         "Q": ("con2", 2),
-        #         "lo_frequency": qubit_LO_q5,
-        #         "mixer": "octave_octave2_1",
-        #     },
-        #     "intermediate_frequency": qubit_IF[4],
-        #     "operations": {
-        #         "cw": "const_pulse",
-        #         "saturation": "saturation_pulse",
-        #         "x180": "x180_pulse_q5",
-        #         "x90": "x90_pulse_q5",
-        #         "-x90": "-x90_pulse_q5",
-        #         "y90": "y90_pulse_q5",
-        #         "y180": "y180_pulse_q5",
-        #         "-y90": "-y90_pulse_q5",
-        #     },
-        # },
+        "q3_xy": {
+            "mixInputs": {
+                "I": ("con1", 3),
+                "Q": ("con1", 4),
+                "lo_frequency": qubit_LO_q3,
+                "mixer": "octave_octave1_3",
+            },
+            "intermediate_frequency": qubit_IF[2],
+            "operations": {
+                "cw": "const_pulse",
+                "saturation": "saturation_pulse",
+                "x180": "x180_pulse_q3",
+                "x90": "x90_pulse_q3",
+                "-x90": "-x90_pulse_q3",
+                "y90": "y90_pulse_q3",
+                "y180": "y180_pulse_q3",
+                "-y90": "-y90_pulse_q3",
+            },
+        },
+        "q4_xy": {
+            "mixInputs": {
+                "I": ("con1", 7),
+                "Q": ("con1", 8),
+                "lo_frequency": qubit_LO_q4,
+                "mixer": "octave_octave1_5",
+            },
+            "intermediate_frequency": qubit_IF[3],
+            "operations": {
+                "cw": "const_pulse",
+                "saturation": "saturation_pulse",
+                "x180": "x180_pulse_q4",
+                "x90": "x90_pulse_q4",
+                "-x90": "-x90_pulse_q4",
+                "y90": "y90_pulse_q4",
+                "y180": "y180_pulse_q4",
+                "-y90": "-y90_pulse_q4",
+            },
+        },
+        "q5_xy": {
+            "mixInputs": {
+                "I": ("con1", 7),
+                "Q": ("con1", 8),
+                "lo_frequency": qubit_LO_q5,
+                "mixer": "octave_octave2_1",
+            },
+            "intermediate_frequency": qubit_IF[4],
+            "operations": {
+                "cw": "const_pulse",
+                "saturation": "saturation_pulse",
+                "x180": "x180_pulse_q5",
+                "x90": "x90_pulse_q5",
+                "-x90": "-x90_pulse_q5",
+                "y90": "y90_pulse_q5",
+                "y180": "y180_pulse_q5",
+                "-y90": "-y90_pulse_q5",
+            },
+        },
         "q1_z": {
             "singleInput": {
                 "port": ("con1", 5),
@@ -568,15 +574,15 @@ config = {
 
             },
         },
-        # "q5_z": {
-        #     "singleInput": {
-        #         "port": ("con2", 9),
-        #     },
-        #     "operations": {
-        #         "const": "const_flux_pulse",
+        "q5_z": {
+            "singleInput": {
+                "port": ("con1", 10),
+            },
+            "operations": {
+                "const": "const_flux_pulse",
                 
-        #     },
-        # },
+            },
+        },
         
     },
     "pulses": {
