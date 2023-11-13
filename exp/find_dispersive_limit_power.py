@@ -24,7 +24,7 @@ from qm.QuantumMachinesManager import QuantumMachinesManager
 from qualang_tools.results import progress_counter, fetching_tool
 from configuration import *
 from qualang_tools.loops import from_array, qua_logspace
-from QM_macros_jacky import multiRO_declare, multiRO_measurement, multiRO_pre_save
+from QM_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -39,6 +39,7 @@ import sys
 ###################
 # The QUA program #
 ###################
+
 
 
 def mRO_power_dep_resonator( freq_IF_center:list, df_array, amp_ratio, cd_time, n_avg, config, ro_element, qmm:QuantumMachinesManager)->dict:
@@ -126,10 +127,11 @@ if __name__ == '__main__':
             "amp": 0.0125, # V
         }
     ]
+    myConfig.update_multiplex_readout_channel(mRO_common, mRO_individual )
+
     n_avg = 100  # The number of averages
     # The frequency sweep around the resonators' frequency "resonator_IF_q"
 
-    myConfig.update_multiplex_readout_channel(mRO_common, mRO_individual )
     span = 10 * u.MHz
     df = 0.1 * u.MHz
     dfs = np.arange(-span, +span + 0.1, df)

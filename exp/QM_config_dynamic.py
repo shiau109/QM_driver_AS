@@ -207,12 +207,115 @@ class QM_config():
 
     def get_config(self,*args):
         return self.__config
-    
+
+
+        
+        
+
     def update_element( self, name:str, setting:dict ):
         update_setting = {name:setting}
         self.__config["elements"].update(update_setting)
-    
-    def update_multiplex_readout_channel( self, common_wiring:dict, individual_setting:list):
+
+    def update_mixer( self, name:str, setting:dict ):
+        update_setting = {name:setting}
+        self.__config["mixers"].update(update_setting)
+
+    def add_element( self, name, setting:dict = None ):
+        """
+        Add a initial tempelate for a element
+        """
+        if setting == None:
+            setting = {
+                "mixInputs": {
+                    "I": None,
+                    "Q": None,
+                    "lo_frequency": None,
+                    "mixer": None,
+                },
+                "intermediate_frequency":  None, 
+                "operations": {
+                },
+                "outputs": {
+                },
+                "time_of_flight": None,
+                "smearing": None,
+            }
+
+        self.__config["elements"][name]=setting
+
+    def update_element_mixer( self, name, mixInputs:dict ):
+        """
+        Change the element mixer setting (mixInputs)
+        """
+        setting = {
+            "mixInputs":  mixInputs, 
+        }
+        self.update_element( name, setting ) 
+
+    def update_element_TOF( self, name, time_of_flight:float ):
+        """
+        Change the time of flight (time_of_flight)
+        """
+        self.__config["elements"][name]["time_of_flight"] = time_of_flight
+
+    def update_element_output( self, name, output:dict ):
+        """
+        Change the output channel (outputs)
+        """
+        self.__config["elements"][name]["outputs"] = output
+
+    def update_element_IF( self, name, freq_IF:float ):
+        """
+        Change the IF of the channel (intermediate_frequency)
+        """
+        setting = {
+            "intermediate_frequency":  int(freq_IF * u.MHz), 
+        }
+        self.update_element( name, setting ) 
+        
+    def create_ROChannel( name, wiring, pulse_info ):
+        """
+        wiring ex.
+        {
+            "up_I":("con1",1)
+            "up_Q":("con1",2)            
+            "down_I":("con1",1)
+            "down_Q":("con1",2)
+            "freq_LO": 6, # GHz
+            "mixer": "octave_1_ro_1",
+            "time_of_flight": 250, # ns
+            "integration_time": 2000 # ns
+        }
+        individual setting : list
+        {
+            "name":"r1",
+            "IF": 6.01, # GHz
+            "amp": 0.01 # V
+        }
+        register readout pulse by name rp f"readout_pulse_{name}"
+        """
+
+        resonator_element_template_dict = {
+            "mixInputs": {
+                "I": wiring["up_I"],
+                "Q": wiring["up_I"],
+                "lo_frequency": wiring["freq_LO"],
+                "mixer": wiring["mixer"],
+            },
+            "intermediate_frequency": pulse_info["IF"], 
+            "operations": {
+            },
+            "outputs": {
+                "out1": ("con1", 1),
+                "out2": ("con1", 2),
+            },
+            "time_of_flight": wiring["mixer"],
+            "smearing": 0,
+        }
+
+
+
+    def create_multiplex_readout_channel( self, common_wiring:dict, individual_setting:list):
         """
         common wiring ex.
         {
@@ -293,18 +396,17 @@ class QM_config():
         })
 
         for setting in individual_setting:
-            pulse_name = f"readout_pulse_{setting['name']}"
-            waveform_name = f"readout_wf_{setting['name']}"
+            ro_channel_name = setting['name']
+            pulse_name = f"readout_pulse_{ro_channel_name}"
+            waveform_name = f"readout_wf_{ro_channel_name}"
             freq_RO = int(setting["freq_RO"] * u.GHz) 
             freq_IF = freq_RO-freq_LO
 
             # Complete element config setting
             complete_element = resonator_element_template_dict
-            complete_element["intermediate_frequency"] = freq_IF
-            resonator_name = setting["name"]
-
+            self.add_element( ro_channel_name, resonator_element_template_dict )
+            self.update_element_IF( ro_channel_name, freq_IF)
             complete_element["operations"]["readout"] = pulse_name
-            self.update_element( resonator_name, complete_element )
 
             # Complete pulse config setting
             complete_pulse = readout_pulse_template_dict
@@ -322,20 +424,10 @@ class QM_config():
             # Complete mixers config setting
             complete_mixer = mixers_template_dict
             complete_mixer["intermediate_frequency"] = freq_IF
-            self.__config["mixers"][mixer_name].append(complete_mixer)
+            self.update_mixer(mixer_name,complete_mixer)
 
 
-    def update_readout_channel( self, name, wiring:dict, freq_LO, freq_IF ):
-        """
-        LO freq : GHz
-        IF freq : MHz
-        """
 
-        resonator_name = name
-        setting = {
-            "intermediate_frequency":  int(freq_IF * u.MHz), 
-        }
-        self.update_element( resonator_name, setting )
 
     # Control related shows below
     
@@ -367,7 +459,7 @@ class QM_config():
         self.__config["mixers"][mixer_name][0]["correction"] = correct
         print(f"Correction for {mixer_name} had been modified!")
 
-    def init_xy_element(self, wiringANDmachine:list, XYinfo:dict):
+    def create_element_xy(self, wiringANDmachine:list, XYinfo:dict):
         """
         target_q : "q2"..\n
         wiringANDmachine ex:\n
@@ -401,7 +493,7 @@ class QM_config():
                     "-y90": f"-y90_pulse_{wiringInfo['name']}",
                 }
             }
-            self.update_element(name=f"{wiringInfo['name']}_xy", setting=xy_element_template_dict)
+            self.add_element(name=f"{wiringInfo['name']}", setting=xy_element_template_dict)
             
             # Create the mixer info for control
             mixer_template_list = [   
