@@ -21,18 +21,17 @@ tau_max = 17_000  # in clock cycles
 d_tau = 140  # in clock cycles
 t_delay = np.arange(tau_min, tau_max + 0.1, d_tau)  # Linear sweep
 operation_flux_point = [-0.177, -0.132, -0.009, -3.300e-01] 
-nb_of_qubits = 4
+q_id = [0,1,2,3]
 Qi = 4
 # Qi = 1 stands for Q1
 
-def T1_exp(Qi,n_avg,t_delay,operation_flux_point,nb_of_qubits,qmm):
-    resonators = list(range(1, nb_of_qubits+1))
+def T1_exp(Qi,n_avg,t_delay,operation_flux_point,q_id,qmm):
+    resonators = [i+1 for i in q_id]
     res_num = len(resonators)
     # QUA program
     with program() as T1:
-        I, I_st, Q, Q_st, n, n_st = qua_declaration(nb_of_qubits)
-        t = declare(int)  # QUA variable for the wait time
-        # Adjust the flux line biases to check whether you are actually measuring the qubit
+        I, I_st, Q, Q_st, n, n_st = qua_declaration(res_num)
+        t = declare(int)  
         for i, flux_point in enumerate(operation_flux_point):
             set_dc_offset(f"q{i+1}_z", "single", flux_point)
 
@@ -145,6 +144,6 @@ def T1_hist(data,T1_max):
 
 m = 20
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-T1_I, T1_Q = multi_T1_exp(m, Qi, n_avg, t_delay, operation_flux_point, nb_of_qubits, qmm)
+T1_I, T1_Q = multi_T1_exp(m, Qi, n_avg, t_delay, operation_flux_point, q_id, qmm)
 print(T1_Q)
 T1_hist(T1_Q,40)

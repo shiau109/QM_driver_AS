@@ -1,24 +1,3 @@
-"""
-        RESONATOR SPECTROSCOPY VERSUS FLUX
-This sequence involves measuring the resonator by sending a readout pulse and demodulating the signals to
-extract the 'I' and 'Q' quadratures. This is done across various readout intermediate frequencies and flux biases.
-The resonator frequency as a function of flux bias is then extracted and fitted so that the parameters can be stored in the configuration.
-
-This information can then be used to adjust the readout frequency for the maximum frequency point.
-
-Prerequisites:
-    - Calibration of the time of flight, offsets, and gains (referenced as "time_of_flight").
-    - Calibration of the IQ mixer connected to the readout line (be it an external mixer or an Octave port).
-    - Identification of the resonator's resonance frequency (referred to as "resonator_spectroscopy_multiplexed").
-    - Configuration of the readout pulse amplitude and duration.
-    - Specification of the expected resonator depletion time in the configuration.
-
-Before proceeding to the next node:
-    - Update the readout frequency, labeled as "resonator_IF", in the configuration.
-    - Adjust the flux bias to the maximum frequency point, labeled as "max_frequency_point", in the configuration.
-    - Update the resonator frequency versus flux fit parameters (amplitude_fit, frequency_fit, phase_fit, offset_fit) in the configuration
-"""
-
 from qm.qua import *
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm import SimulationConfig
@@ -219,4 +198,3 @@ def res_flux_plot(Flux,Frequency,signal,fitting):
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
 Flux, Frequency, Amplitude, Phase, I, Q = mRO_flux_dep_resonator(q_id,n_avg,dfs,flux,depletion_time,simulate,'live',qmm) 
 fig = res_flux_plot(Flux,Frequency,Amplitude,True)
-    

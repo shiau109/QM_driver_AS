@@ -61,12 +61,13 @@ octave_config = octave_declaration(octaves)
 #############################################
 #                  Qubits                   #
 #############################################
-qubit_LO_q1 = (4.055) * u.GHz
-qubit_LO_q2 = (4.4) * u.GHz
-qubit_LO_q3 = (3.6) * u.GHz
-qubit_LO_q4 = (3.95) * u.GHz
-# qubit_LO_q4 = (4.75) * u.GHz
-qubit_LO_q5 = (4.75) * u.GHz
+qubit_LO = np.zeros(5)
+qubit_LO[0] = (4.055) * u.GHz
+qubit_LO[1] = (4.4) * u.GHz
+qubit_LO[2] = (3.6) * u.GHz
+qubit_LO[3] = (3.95) * u.GHz
+# qubit_LO[3] = (4.75) * u.GHz
+qubit_LO[4] = (4.75) * u.GHz
 
 # Qubits IF
 qubit_IF = np.zeros(5)
@@ -206,12 +207,14 @@ idle_q4 = max_frequency_point[3] + 0.0
 idle_q5 = max_frequency_point[4] + 0.0
 
 # Resonator frequency versus flux fit parameters according to resonator_spec_vs_flux
-# amplitude * np.cos(2 * np.pi * frequency * x + phase) + offset
-amplitude_fit1, frequency_fit1, phase_fit1, offset_fit1 = [0, 0, 0, 0]
-amplitude_fit2, frequency_fit2, phase_fit2, offset_fit2 = [0, 0, 0, 0]
-amplitude_fit3, frequency_fit3, phase_fit3, offset_fit3 = [0, 0, 0, 0]
-amplitude_fit4, frequency_fit4, phase_fit4, offset_fit4 = [0, 0, 0, 0]
-amplitude_fit5, frequency_fit5, phase_fit5, offset_fit5 = [0, 0, 0, 0]
+# Initial value
+p = [[],[],[],[],[]]
+p[0] = [2999999.9107172964,  4.717259048157249,  0.27608944530859275,  0.4999999999981507, 5732755699.221205]
+p[1] = [2999999.9107172964,  4.717259048157249,  0.27608944530859275,  0.4999999999981507, 6e9]
+p[2] = [2999999.9107172964,  4.717259048157249,  0.27608944530859275,  0.4999999999981507, 5.8e9]
+# p[3] = [2999999.9107172964,  4.717259048157249,  0.27608944530859275,  0.4999999999981507, 6.11e9]
+p[3] = [2999999.9107172964,  4.717259048157249,  0.27608944530859275,  0.4999999999981507, 5.9e9]
+p[4] = [2999999.9107172964,  4.717259048157249,  0.27608944530859275,  0.4999999999981507, 6.11e9]
 
 const_flux_len = 200
 const_flux_amp = 0.45
@@ -446,7 +449,7 @@ config = {
             "mixInputs": {
                 "I": ("con1", 3),
                 "Q": ("con1", 4),
-                "lo_frequency": qubit_LO_q1,
+                "lo_frequency": qubit_LO[0],
                 "mixer": "octave_octave1_2",
             },
             "intermediate_frequency": qubit_IF[0],  # frequency at offset ch7 (max freq)
@@ -465,7 +468,7 @@ config = {
             "mixInputs": {
                 "I": ("con1", 7),
                 "Q": ("con1", 8),
-                "lo_frequency": qubit_LO_q2,
+                "lo_frequency": qubit_LO[1],
                 "mixer": "octave_octave1_4",
             },
             "intermediate_frequency": qubit_IF[1],  # frequency at offset ch8 (max freq)
@@ -484,7 +487,7 @@ config = {
             "mixInputs": {
                 "I": ("con1", 3),
                 "Q": ("con1", 4),
-                "lo_frequency": qubit_LO_q3,
+                "lo_frequency": qubit_LO[2],
                 "mixer": "octave_octave1_3",
             },
             "intermediate_frequency": qubit_IF[2],
@@ -503,7 +506,7 @@ config = {
             "mixInputs": {
                 "I": ("con1", 7),
                 "Q": ("con1", 8),
-                "lo_frequency": qubit_LO_q4,
+                "lo_frequency": qubit_LO[3],
                 "mixer": "octave_octave1_5",
             },
             "intermediate_frequency": qubit_IF[3],
@@ -522,7 +525,7 @@ config = {
             "mixInputs": {
                 "I": ("con1", 7),
                 "Q": ("con1", 8),
-                "lo_frequency": qubit_LO_q5,
+                "lo_frequency": qubit_LO[4],
                 "mixer": "octave_octave2_1",
             },
             "intermediate_frequency": qubit_IF[4],
@@ -1214,35 +1217,35 @@ config = {
         "octave_octave1_2": [
             {
                 "intermediate_frequency": qubit_IF[0],
-                "lo_frequency": qubit_LO_q1,
+                "lo_frequency": qubit_LO[0],
                 "correction": (1, 0, 0, 1),
             },
         ],
         "octave_octave1_3": [
             {
                 "intermediate_frequency": qubit_IF[2],
-                "lo_frequency": qubit_LO_q3,
+                "lo_frequency": qubit_LO[2],
                 "correction": (1, 0, 0, 1),
             }
         ],
         "octave_octave1_4": [
             {
                 "intermediate_frequency": qubit_IF[1],
-                "lo_frequency": qubit_LO_q2,
+                "lo_frequency": qubit_LO[1],
                 "correction": (1, 0, 0, 1),
             }
         ],
         "octave_octave1_5": [
             {
                 "intermediate_frequency": qubit_IF[3],
-                "lo_frequency": qubit_LO_q4,
+                "lo_frequency": qubit_LO[3],
                 "correction": (1, 0, 0, 1),
             }
         ],
         "octave_octave2_1": [
             {
                 "intermediate_frequency": qubit_IF[4],
-                "lo_frequency": qubit_LO_q5,
+                "lo_frequency": qubit_LO[4],
                 "correction": (1, 0, 0, 1),
             }
         ],

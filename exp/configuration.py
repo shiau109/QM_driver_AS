@@ -17,7 +17,7 @@ for i in range(qubit_num):
 
 for i in range(qubit_num):
     QPU["q%s"%(i+1)]["readout"]["frequency"] = resonator_LO + resonator_IF[i]
-    QPU["q%s"%(i+1)]["control"]["frequency"] = eval("qubit_LO_q%s"%(i+1)) + qubit_IF[i]
+    QPU["q%s"%(i+1)]["control"]["frequency"] = eval("qubit_LO[%s]"%(i)) + qubit_IF[i]
 
     if i==0:
         print("QPU q%s readout frequency: %s GHz" %(i+1, int(QPU["q%s"%(i+1)]["readout"]["frequency"])*1e-9))
