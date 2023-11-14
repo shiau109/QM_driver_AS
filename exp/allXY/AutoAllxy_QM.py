@@ -17,6 +17,7 @@ Prerequisites:
 
 from qm.qua import *
 from qm.QuantumMachinesManager import QuantumMachinesManager
+from qualang_tools.units import unit
 import sys
 import pathlib
 QM_script_root = str(pathlib.Path(__file__).parent.parent.resolve())
@@ -31,7 +32,7 @@ from qualang_tools.results import progress_counter
 import warnings
 
 warnings.filterwarnings("ignore")
-
+u = unit(coerce_to_integer=True)
 
 ##############################
 # Program-specific variables #
@@ -67,7 +68,7 @@ sequence = [
 
 
 # All XY macro generating the pulse sequences from a python list.
-def allXY(pulses, qubit, resonator):
+def allXY(pulses, qubit, resonator, pi_len):
     """
     Generate a QUA sequence based on the two operations written in pulses. Used to generate the all XY program.
     **Example:** I, Q = allXY(['I', 'y90'])
@@ -109,8 +110,7 @@ def allXY(pulses, qubit, resonator):
 ###################
 # The QUA program #
 ###################
-def AllXY_real(qb,res,signal_target,configuration,qm_mache):
-    print(f"AllXY exp for {qb}, XYL={pi_amp_q1}, XYiF={qubit_IF_q1*1e-6}MHz")
+def AllXY_real(qb,res,pi_len,signal_target,configuration,qm_mache):
     with program() as ALL_XY:
         n = declare(int)
         n_st = declare_stream()
@@ -124,7 +124,7 @@ def AllXY_real(qb,res,signal_target,configuration,qm_mache):
             # Get a value from the pseudo-random number generator on the OPX FPGA
             assign(r_, r.rand_int(21))
             # # Wait for the qubit to decay to the ground state - Can be replaced by active reset
-            wait(thermalization_time * u.ns, qb)
+            wait(100 * u.ns, qb)
             # Plays a random XY sequence
             # The switch/case method allows to map a python index (here "i") to a QUA number (here "r_") in order to switch
             # between elements in a python list (here "sequence") that cannot be converted into a QUA array (here because it
@@ -133,7 +133,7 @@ def AllXY_real(qb,res,signal_target,configuration,qm_mache):
                 for i in range(21):
                     with case_(i):
                         # Play the all-XY sequence corresponding to the drawn random number
-                        I, Q = allXY(sequence[i], qb, res)
+                        I, Q = allXY(sequence[i], qb, res, pi_len)
                         # Save the 'I' & 'Q' quadratures to their respective streams
                         save(I, I_st[i])
                         save(Q, Q_st[i])

@@ -109,8 +109,11 @@ class Circuit_info:
         import pickle
         # Read dictionary pkl file
         with open(path, 'rb') as fp:
-            self.spec = pickle.load(fp)
+            spec = pickle.load(fp)
         print("XY information loaded successfully!")
+        self.QsXyInfo = spec["XyInfo"]
+        self.DecoInfo = spec["DecoInfo"]
+        self.ZInfo = spec["ZInfo"]
 
     ### Below about decoherence time T1 and T2
     def init_DecoInfo(self):

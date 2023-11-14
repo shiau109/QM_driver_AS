@@ -20,7 +20,7 @@ class Circuit_info:
         self.QsRoInfo = {}
         self.init_ZInfo()
         self.init_DecoInfo()
-        self.spec = {}
+        
     
     ### Below about RO information ###
     
@@ -109,8 +109,11 @@ class Circuit_info:
         import pickle
         # Read dictionary pkl file
         with open(path, 'rb') as fp:
-            self.spec = pickle.load(fp)
+            spec = pickle.load(fp)
         print("XY information loaded successfully!")
+        self.QsXyInfo = spec["XyInfo"]
+        self.DecoInfo = spec["DecoInfo"]
+        self.ZInfo = spec["ZInfo"]
 
     ### Below about decoherence time T1 and T2
     def init_DecoInfo(self):
@@ -264,6 +267,23 @@ class QM_config():
 
     def get_config(self,*args):
         return self.__config
+
+    def update_downconverter(self, channel:int ,ctrl_name:str='con1', **kwargs):
+        """
+            Update the analog_inputs in the give controller and channel.\n
+            ctrl_name: "con1" for default.\n
+            channel: 1...\n
+            kwargs: offset=0.02, gain_db=10.
+        """
+        where = self.__config["controllers"][ctrl_name]["analog_inputs"][channel]
+        if kwargs != {}:
+            for info in kwargs:
+                if info.lower() in ["offset","gain_db"]:
+                    where[info] = kwargs[info]
+                else:
+                    raise KeyError("Check the key name in kwargs, it should be 'offset' or 'gain_db'.")
+        else:
+            raise ValueError("You should give the info want to update in kwargs!")
 
     def update_element( self, name:str, setting:dict ):
         update_setting = {name:setting}
