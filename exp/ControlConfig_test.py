@@ -71,4 +71,10 @@ init_config.update_controlWaveform(the_specs.QsXyInfo)
 init_config.set_wiring("con1")
 init_config.update_z_offset(Zinfo=z1,control_mache="con1",mode='idle')
 init_config.update_z_offset(Zinfo=z2,control_mache="con1",mode='offset')
-print(f"After update the z offset:\n{init_config.get_config()}")
+# print(f"After update the z offset:\n{init_config.get_config()}")
+
+''' update the downconverter info '''
+print(f"Before update:\n{init_config.get_config()['controllers']}")
+init_config.update_downconverter(channel=1,offset=0.03,gain_db=3)
+init_config.update_downconverter(channel=2,offset=0.027,gain_db=7)
+print(f"\nAfter update:\n{init_config.get_config()['controllers']}")

@@ -18,6 +18,10 @@ from set_octave import OctaveUnit, octave_declaration
 #    Dynamic configurations    #
 ################################
 from QM_config_dynamic import QM_config, Circuit_info
+dyna_config = QM_config()       
+spec_recorder = Circuit_info(q_num=4)
+spec_recorder.import_spec("exp/allXY/spec_v1113")
+dyna_config.import_config("exp/allXY/config_v1113")
 
 #################################
 # pre-defined target variables  #
@@ -26,7 +30,7 @@ target_q = "q1_xy"  # The qubit under study, ""q2_xy
 target_res = "rr1"  # The resonator to measure the qubit defined above
 read_from_signal = 'I' # Read I signal
 iteration_threshold = 10
-tg = pi_len
+tg = spec_recorder.spec['XyInfo']['pi_len_q1']
 q_no = target_q.split("_")[0][-1]
 ######################
 # Network parameters #
@@ -41,9 +45,6 @@ octaves = [octave_1]
 # Configure the Octaves
 octave_config = octave_declaration(octaves)
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-
-
-dyna_config = {}       
 
 #========== Works start here ========================================#
 
