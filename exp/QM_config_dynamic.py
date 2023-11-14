@@ -224,8 +224,18 @@ class QM_config():
             "version": 1,
             "controllers": {},
             "elements": {},
-            "pulses": {},
+            "pulses": {
+                "const_pulse": {
+                    "operation": "control",
+                    "length": 1000,
+                    "waveforms": {
+                        "I": "const_wf",
+                        "Q": "zero_wf",
+                    },
+                },                
+            },
             "waveforms": {
+                "const_wf": {"type": "constant", "sample": 1},
                 "zero_wf": {"type": "constant", "sample": 0.0},
             },
             "digital_waveforms": {
@@ -286,9 +296,10 @@ class QM_config():
             raise ValueError("You should give the info want to update in kwargs!")
 
     def update_element( self, name:str, setting:dict ):
-        print(self.__config["elements"])
-        self.__config["elements"][name].update(setting)
-        print(self.__config["elements"])
+        if name in self.__config["elements"].keys():
+            self.__config["elements"][name].update(setting)
+        else:
+            print(f"Warning: No element name {name}")
 
     def update_mixer( self, name:str, setting:dict ):
         update_setting = {name:setting}
@@ -297,6 +308,20 @@ class QM_config():
     def add_element( self, name, setting:dict = None ):
         """
         Add a initial tempelate for a element
+        { \n
+            "mixInputs": { \n
+                    "I": None, \n
+                    "Q": None, \n
+                    "lo_frequency": None, \n
+                    "mixer": None, \n
+            }, \n
+            "intermediate_frequency":  None, \n
+            "operations": {}, \n
+            "outputs": {}, \n
+            "time_of_flight": None, \n
+            "smearing": None, \n
+            }
+        }
         """
         if setting == None:
             setting = {
@@ -316,8 +341,89 @@ class QM_config():
             }
 
         self.__config["elements"][name]=setting
-        print(self.__config["elements"][name])
-        print("----------------------\n")
+
+    def add_pulse( self, name, setting:dict = None ):
+        """
+        Add a initial tempelate for a pulse
+        {
+            "operation": None,
+            "length": None,
+            "waveforms": {},
+            "integration_weights": {},
+            "digital_marker": None,
+            }
+        """
+        if setting == None:
+            setting = {
+            "operation": None,
+            "length": None,
+            "waveforms": {},
+            "integration_weights": {},
+            "digital_marker": None,
+            }
+
+        self.__config["pulses"][name]=setting
+
+    def add_waveform( self, name, setting:dict = None ):
+        """
+        Add a initial tempelate for a waveform
+        { \n
+           "type": "arbitrary", \n
+           "samples": y180_Q_wf_q1.tolist()  \n
+        }
+        """
+        if setting == None:
+            setting = {
+                "type": None, 
+                "samples": None
+            }
+
+        self.__config["waveforms"][name]=setting
+
+    def add_integrationWeight( self, name, setting:dict = None ):
+        """
+        Add a initial tempelate for a integration_weight \n
+        { \n
+            "cosine": [(np.cos(rotation_angle_q1), readout_len)], \n
+            "sine": [(np.sin(rotation_angle_q1), readout_len)], \n
+        }
+        """
+        if setting == None:
+            setting = {
+                "cosine": None, 
+                "sine": None
+            }
+        self.__config["integration_weights"][name]=setting
+
+    def add_mixer( self, name, setting:dict = None ):
+        """
+        Add a initial tempelate for a mixer \n
+        { \n
+            "intermediate_frequency": resonator_IF[0], \n
+            "lo_frequency": resonator_LO, \n
+            "correction": (1, 0, 0, 1), \n
+        }
+        """
+        if setting == None:
+            setting = {
+                "intermediate_frequency": None,
+                "lo_frequency": None,
+                "correction": (1, 0, 0, 1),
+            }
+
+        if name in self.__config["mixers"].keys():
+            for mixer_info in self.__config["mixers"][name]:
+
+                is_exist_IF = setting["intermediate_frequency"] == mixer_info["intermediate_frequency"]
+                is_exist_LO = setting["lo_frequency"] == mixer_info["lo_frequency"]
+                if not (is_exist_IF and is_exist_LO):
+                    self.__config["mixers"][name].append(setting)
+                else: 
+                    print( f"intermediate frequency {setting['intermediate_frequency']} and LO frequency {setting['lo_frequency']} is already in {name}.")
+
+        else:
+            self.__config["mixers"][name]=[setting]
+
     def update_element_mixer( self, name, mixInputs:dict ):
         """
         Change the element mixer setting (mixInputs)
@@ -348,45 +454,65 @@ class QM_config():
         }
         self.update_element( name, setting ) 
         
-    def create_ROChannel( name, wiring, pulse_info ):
+    def create_roChannel( self, name, element, pulse, waveform ):
         """
-        wiring ex.
-        {
-            "up_I":("con1",1)
-            "up_Q":("con1",2)            
-            "down_I":("con1",1)
-            "down_Q":("con1",2)
-            "freq_LO": 6, # GHz
-            "mixer": "octave_1_ro_1",
-            "time_of_flight": 250, # ns
-            "integration_time": 2000 # ns
-        }
-        individual setting : list
-        {
-            "name":"r1",
-            "IF": 6.01, # GHz
-            "amp": 0.01 # V
-        }
-        register readout pulse by name rp f"readout_pulse_{name}"
-        """
-
-        resonator_element_template_dict = {
-            "mixInputs": {
-                "I": wiring["up_I"],
-                "Q": wiring["up_I"],
-                "lo_frequency": wiring["freq_LO"],
-                "mixer": wiring["mixer"],
-            },
-            "intermediate_frequency": pulse_info["IF"], 
-            "operations": {
-            },
-            "outputs": {
+        element structure \n
+        { \n
+            "mixInputs": { \n
+                "I": ("con1", 1), \n
+                "Q": ("con1", 2), \n
+                "lo_frequency": resonator_LO, \n
+                "mixer": "octave_octave1_1", \n
+            }, \n
+            "intermediate_frequency": resonator_IF[0], \n
+            "operations": {}, \n
+            "outputs": { \n
                 "out1": ("con1", 1),
                 "out2": ("con1", 2),
-            },
-            "time_of_flight": wiring["mixer"],
-            "smearing": 0,
+            }, \n
+            "time_of_flight": time_of_flight, \n
+            "smearing": 0, \n
+        } \n
+
+        register readout pulse by name f"{name}_ro_pulse" \n
+        { \n
+            "operation": "measurement", \n
+            "length": integration_time, \n
+            "waveforms": {}, \n
+            "integration_weights": {}, \n
+            "digital_marker": "ON", \n
         }
+
+        register readout pulse by name f"{name}_ro_wf" \n
+        { \n
+           "type": "arbitrary", \n
+           "samples": y180_Q_wf_q1.tolist()  \n
+        }
+        """
+        pulse_name = f"{name}_ro_pulse"
+        waveform_name = f"{name}_ro_wf"
+
+        element["operations"] = {
+            "readout": pulse_name
+        }
+        mixer_name = element["mixInputs"]["mixer"]
+        mixer_setting = {
+            "intermediate_frequency": element["intermediate_frequency"],
+            "lo_frequency": element["lo_frequency"],
+            "correction": (1, 0, 0, 1),
+        }
+        self.add_element( name, element )
+        self.add_pulse( pulse_name, pulse )
+        self.add_waveform( waveform_name, waveform )
+        self.add_mixer( mixer_name, mixer_setting )
+
+
+    def create_qubit( self, name ):
+
+        self.create_roChannel( f"{name}_ro")
+        self.create_xyChannel( f"{name}_xy")
+        # create constant and saturation waveform
+
 
     def create_multiplex_readout_channel( self, common_wiring:dict, individual_setting:list):
         """
@@ -501,7 +627,7 @@ class QM_config():
 
     # Control related shows below
     
-    def update_control_channels(self,target_q:str,**kwargs):
+    def update_control_channels( self, target_q:str,**kwargs):
         """
             modify the control wiring channel for target qubit \n
             target_q : "q1"...\n
@@ -528,7 +654,7 @@ class QM_config():
         self.__config["mixers"][mixer_name][0]["correction"] = correct
         print(f"Correction for {mixer_name} had been modified!")
 
-    def create_element_xy(self, wiringANDmachine:list, XYinfo:dict):
+    def create_xyChannel(self, name, element, wiringANDmachine, XYinfo:dict):
         """
         target_q : "q2"..\n
         wiringANDmachine ex:\n
@@ -540,79 +666,77 @@ class QM_config():
         },]\n
 
         xyinfo is from Circuit_info().QsXyInfo\n
+        Native gates ["x180","y180","x90","-x90","y90","-y90"]
         """
-        for wiringInfo in wiringANDmachine:
-            # create xy dict in element
-            xy_element_template_dict = {
-                "mixInputs": {
-                    "I": wiringInfo["I"],
-                    "Q": wiringInfo["Q"],
-                    "lo_frequency": XYinfo["qubit_LO_"+wiringInfo['name']],
-                    "mixer": wiringInfo["mixer"],
-                },
-                "intermediate_frequency": XYinfo["qubit_IF_"+wiringInfo['name']],  
-                "operations": {
-                    "cw": "const_pulse",
-                    "saturation": "saturation_pulse",
-                    "x180": f"x180_pulse_{wiringInfo['name']}",
-                    "x90": f"x90_pulse_{wiringInfo['name']}",
-                    "-x90": f"-x90_pulse_{wiringInfo['name']}",
-                    "y90": f"y90_pulse_{wiringInfo['name']}",
-                    "y180": f"y180_pulse_{wiringInfo['name']}",
-                    "-y90": f"-y90_pulse_{wiringInfo['name']}",
+
+        # create xy dict in element
+        # xy_element_template_dict = {
+        #     "mixInputs": {
+        #         "I": wiringInfo["I"],
+        #         "Q": wiringInfo["Q"],
+        #         "lo_frequency": XYinfo["qubit_LO_"+wiringInfo['name']],
+        #         "mixer": wiringInfo["mixer"],
+        #     },
+        #     "intermediate_frequency": XYinfo["qubit_IF_"+wiringInfo['name']],  
+        #     "operations": {
+        #         "cw": "const_pulse",
+        #         "saturation": "saturation_pulse",
+        #         "x180": f"x180_pulse_{wiringInfo['name']}",
+        #         "x90": f"x90_pulse_{wiringInfo['name']}",
+        #         "-x90": f"-x90_pulse_{wiringInfo['name']}",
+        #         "y90": f"y90_pulse_{wiringInfo['name']}",
+        #         "y180": f"y180_pulse_{wiringInfo['name']}",
+        #         "-y90": f"-y90_pulse_{wiringInfo['name']}",
+        #     }
+        # }  
+        default_native_gates = [ "x180","y180","x90","-x90","y90","-y90" ]
+
+        element["operations"] = {
+            "cw": f"const_pulse",
+            "saturation": f"saturation_pulse",
+        }
+        for gate_name in default_native_gates:
+            element["operations"][gate_name] = f"{name}_{gate_name}_pulse"
+        self.add_element( f"{name}_xy", element)
+        
+        # Create the mixer info for control
+        mixer_name = element["mixInputs"]["mixer"]
+        mixer_setting = {
+            "intermediate_frequency": element["intermediate_frequency"],
+            "lo_frequency": element["lo_frequency"],
+            "correction": (1, 0, 0, 1),
+        }
+        self.add_mixer( mixer_name, mixer_setting )
+        # create corresponding waveform name in pulses dict, create waveform list in waveforms dict
+        wave_maker = Waveform(XYinfo)
+
+        for gate_name in default_native_gates:
+
+            pulse_name = f"{name}_{gate_name}_pulse"
+            waveform_name = f"{name}_{gate_name}_wf"
+            self.__config["pulses"][pulse_name] = {
+                "operation": "control",
+                "length": XYinfo[f"{name}_pi_len"],
+                "waveforms": {
+                    "I": f"{waveform_name}_I",
+                    "Q": f"{waveform_name}_Q",
                 }
             }
-            self.add_element(name=f"{wiringInfo['name']}_xy", setting=xy_element_template_dict)
-            
-            # Create the mixer info for control
-            mixer_template_list = [   
-                {
-                    "intermediate_frequency": XYinfo["qubit_IF_"+wiringInfo['name']], 
-                    "lo_frequency": XYinfo["qubit_LO_"+wiringInfo['name']],
-                    "correction": (1, 0, 0, 1),
-                }
-            ]
-            self.__config["mixers"][wiringInfo["mixer"]] = mixer_template_list
-            # create corresponding waveform name in pulses dict, create waveform list in waveforms dict
-            wave_maker = Waveform(XYinfo)
-            for waveform in self.__config["elements"][f"{wiringInfo['name']}_xy"]["operations"]:
-                if waveform not in ["cw", "saturation"]:
-                    rotate_to = "minus_" if waveform[0] == "-" else ""
-                    new_wf_namae = rotate_to + waveform.split("-")[-1]
-                    self.__config["pulses"][f"{waveform}_pulse_{wiringInfo['name']}"] = {
-                        "operation": "control",
-                        "length": XYinfo[f"pi_len_{wiringInfo['name']}"],
-                        "waveforms": {
-                            "I": f"{new_wf_namae}_I_wf_{wiringInfo['name']}",
-                            "Q": f"{new_wf_namae}_Q_wf_{wiringInfo['name']}",
-                        }
-                    }
+            match gate_name:
+                    case "x180": a = "x"
+                    case "y180": a = "y"
+                    case "x90": a = "x/2"
+                    case "-x90": a = "-x/2"
+                    case "y90": a = "y/2"
+                    case "-y90": a = "-y/2"
+                    case _: a = None
+            # Create waveform list, if spec is updated it also need to be updated
+            for waveform_basis in ["I","Q"]:
+                ''' waveform_basis is "I" or "Q" '''
+                waveform_name = f"{waveform_name}_{waveform_basis}"
+                wf = wave_maker.build_waveform(target_q=name,axis=a)
+                self.__config["waveforms"][waveform_name] = {"type": "arbitrary", "samples":wf[waveform_basis].tolist()}
 
-                    # Create waveform list, if spec is updated it also need to be updated
-                    for waveform_basis in self.__config["pulses"][f"{waveform}_pulse_{wiringInfo['name']}"]["waveforms"]:
-                        ''' waveform_basis is "I" or "Q" '''
-                        waveform_name = self.__config["pulses"][f"{waveform}_pulse_{wiringInfo['name']}"]["waveforms"][waveform_basis]
-                        posit_minus= "-" if waveform_name.split("_")[0]=='minus' else ""
-                        axis = waveform_name.split("_")[1] if waveform_name.split("_")[0]=='minus' else waveform_name.split("_")[0]
-                        scale = "/2" if axis[1:] == "90" else ""
-
-                        wf = wave_maker.build_waveform(target_q=wiringInfo['name'],axis=posit_minus+axis[0]+scale)
-                        
-                        self.__config["waveforms"][waveform_name] = {"type": "arbitrary", "samples":wf[waveform_basis].tolist()}
-
-        # create constant and saturation waveform    
-        for waveform in ["cw", "saturation"]:
-            wfna = "const" if waveform == "cw" else  waveform
-            self.__config["pulses"][f"{wfna}_pulse"] = {
-                "operation": "control",
-                "length": XYinfo[f"{wfna}_len"],
-                "waveforms": {
-                    "I": f"{wfna}_wf",
-                    "Q": "zero_wf",
-                }
-            } 
-            self.__config["waveforms"][f"{wfna}_wf"] = {"type": "constant", "samples":XYinfo[f"{wfna}_amp"]}       
-        self.__config["waveforms"]["zero_wf"] = {"type": "constant", "samples":0.0}
 
     ### directly update the frequency info into config ### 
     def update_controlFreq(self,updatedInfo:dict):
