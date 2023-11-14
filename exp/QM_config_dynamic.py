@@ -286,9 +286,8 @@ class QM_config():
             raise ValueError("You should give the info want to update in kwargs!")
 
     def update_element( self, name:str, setting:dict ):
-        update_setting = {name:setting}
         print(self.__config["elements"])
-        self.__config["elements"].update(update_setting)
+        self.__config["elements"][name].update(setting)
         print(self.__config["elements"])
 
     def update_mixer( self, name:str, setting:dict ):
