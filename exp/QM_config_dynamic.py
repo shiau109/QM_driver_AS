@@ -287,7 +287,9 @@ class QM_config():
 
     def update_element( self, name:str, setting:dict ):
         update_setting = {name:setting}
+        print(self.__config["elements"])
         self.__config["elements"].update(update_setting)
+        print(self.__config["elements"])
 
     def update_mixer( self, name:str, setting:dict ):
         update_setting = {name:setting}
@@ -315,7 +317,8 @@ class QM_config():
             }
 
         self.__config["elements"][name]=setting
-
+        print(self.__config["elements"][name])
+        print("----------------------\n")
     def update_element_mixer( self, name, mixInputs:dict ):
         """
         Change the element mixer setting (mixInputs)
@@ -400,7 +403,7 @@ class QM_config():
         individual setting : list
         {
             "name":"r1",
-            "freq_RO": 6.01, # GHz
+            "freq_IF": -30.5 , # MHz
             "amp": 0.01 # V
         }
         register readout pulse by name rp f"readout_pulse_{name}"
@@ -470,8 +473,8 @@ class QM_config():
             ro_channel_name = setting['name']
             pulse_name = f"readout_pulse_{ro_channel_name}"
             waveform_name = f"readout_wf_{ro_channel_name}"
-            freq_RO = int(setting["freq_RO"] * u.GHz) 
-            freq_IF = freq_RO-freq_LO
+            freq_IF = int(setting["freq_IF"] * u.MHz) 
+            
 
             # Complete element config setting
             complete_element = resonator_element_template_dict
