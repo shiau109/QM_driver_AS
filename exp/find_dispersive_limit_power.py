@@ -92,7 +92,7 @@ def mRO_power_dep_resonator( freq_IF_center:list, df_array, amp_ratio, cd_time, 
         ro_ch_name.append(f"{r_name}_I")
         ro_ch_name.append(f"{r_name}_Q")
 
-    data_list = ro_ch_name +["iteration"]   
+    data_list = ro_ch_name + ["iteration"]   
     results = fetching_tool(job, data_list=data_list, mode="wait_for_all")
     fetch_data = results.fetch_all()
     output_data = {}
