@@ -506,12 +506,59 @@ class QM_config():
         self.add_waveform( waveform_name, waveform )
         self.add_mixer( mixer_name, mixer_setting )
 
+    def get_element_template( self ):
+        element_template = {
+            "mixInputs": {
+                "I": None,
+                "Q": None,
+                "lo_frequency": None,
+                "mixer": None,
+            },
+            "intermediate_frequency":  None, 
+            "operations": {},
+            "outputs": {},
+            "time_of_flight": None,
+            "smearing": None,
+        } 
+        return element_template       
+    def create_qubit( self, name, ROinfo, XYinfo ):
+        """
+        ROinfo
+            "ro_IF","ro_LO","electrical_delay","up_I","up_Q","down_I","down_Q","integration_time","ro_wf","mixer"
+        
+        XYinfo
+        keys
+        "pi_amp","pi_len","qubit_LO","qubit_IF","drag_coef","anharmonicity","AC_stark_detuning","waveform_func"
+        
+        """
+        
+        # Build RO
+        ro_element = self.get_element_template()
+        ro_element["mixInputs"]["I"] = ROinfo["up_I"]
+        ro_element["mixInputs"]["Q"] = ROinfo["up_Q"]
+        ro_element["mixInputs"]["lo_frequency"] = ROinfo["ro_LO"]
+        ro_element["mixInputs"]["mixer"] = ROinfo["mixer"]
+        ro_element["intermediate_frequency"] = ROinfo["ro_IF"]*u.MHz
+        ro_element["outputs"]["out1"] = ROinfo["down_I"]
+        ro_element["outputs"]["out2"] = ROinfo["down_Q"]
+        ro_element["time_of_flight"] = ROinfo["electrical_delay"]
 
-    def create_qubit( self, name ):
+        ro_pulse = { 
+            "operation": "measurement", 
+            "length": ROinfo["integration_time"], 
+            "waveforms": {}, 
+            "integration_weights": {}, 
+            "digital_marker": "ON", 
+        }   
+        ro_wf = {
+           "type": "arbitrary",
+           "samples": ROinfo["ro_wf"]
+        } 
+        self.create_roChannel( f"{name}_ro", ro_element, ro_pulse, ro_wf)
 
-        self.create_roChannel( f"{name}_ro")
-        self.create_xyChannel( f"{name}_xy")
-        # create constant and saturation waveform
+        # Build XY
+        xy_element = self.get_element_template()
+        self.create_xyChannel( f"{name}_xy", xy_element, XYinfo)
 
 
     def create_multiplex_readout_channel( self, common_wiring:dict, individual_setting:list):
@@ -654,7 +701,7 @@ class QM_config():
         self.__config["mixers"][mixer_name][0]["correction"] = correct
         print(f"Correction for {mixer_name} had been modified!")
 
-    def create_xyChannel(self, name, element, wiringANDmachine, XYinfo:dict):
+    def create_xyChannel(self, name, element, XYinfo:dict):
         """
         target_q : "q2"..\n
         wiringANDmachine ex:\n
@@ -669,26 +716,6 @@ class QM_config():
         Native gates ["x180","y180","x90","-x90","y90","-y90"]
         """
 
-        # create xy dict in element
-        # xy_element_template_dict = {
-        #     "mixInputs": {
-        #         "I": wiringInfo["I"],
-        #         "Q": wiringInfo["Q"],
-        #         "lo_frequency": XYinfo["qubit_LO_"+wiringInfo['name']],
-        #         "mixer": wiringInfo["mixer"],
-        #     },
-        #     "intermediate_frequency": XYinfo["qubit_IF_"+wiringInfo['name']],  
-        #     "operations": {
-        #         "cw": "const_pulse",
-        #         "saturation": "saturation_pulse",
-        #         "x180": f"x180_pulse_{wiringInfo['name']}",
-        #         "x90": f"x90_pulse_{wiringInfo['name']}",
-        #         "-x90": f"-x90_pulse_{wiringInfo['name']}",
-        #         "y90": f"y90_pulse_{wiringInfo['name']}",
-        #         "y180": f"y180_pulse_{wiringInfo['name']}",
-        #         "-y90": f"-y90_pulse_{wiringInfo['name']}",
-        #     }
-        # }  
         default_native_gates = [ "x180","y180","x90","-x90","y90","-y90" ]
 
         element["operations"] = {
