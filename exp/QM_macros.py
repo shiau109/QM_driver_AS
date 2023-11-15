@@ -63,7 +63,7 @@ def multiRO_measurement( iqdata_stream, resonators:list, sequential=False, amp_m
         if sequential and idx < ro_channel_num -1:
             align(f"{res}", f"{resonators[idx+1]}")
 
-def multiRO_pre_save( iqdata_stream, resonators:list, buffer_shape:tuple ):
+def multiRO_pre_save( iqdata_stream, resonators:list, buffer_shape:tuple, suffix:str='' ):
     """
     Save RO pulse signal on FPGA
     """
@@ -73,8 +73,21 @@ def multiRO_pre_save( iqdata_stream, resonators:list, buffer_shape:tuple ):
         
     ro_channel_num = len(resonators)
     for idx_res, res in enumerate(resonators):
-        I_st[idx_res].buffer(*buffer_shape).average().save(f"{res}_I")
-        Q_st[idx_res].buffer(*buffer_shape).average().save(f"{res}_Q")  
+        I_st[idx_res].buffer(*buffer_shape).average().save(f"{res}_I{suffix}")
+        Q_st[idx_res].buffer(*buffer_shape).average().save(f"{res}_Q{suffix}")  
+
+def multiRO_pre_save_singleShot( iqdata_stream, resonators:list, suffix:str ):
+    """
+    Save RO pulse signal on FPGA
+    """
+    (I, I_st, Q, Q_st) = iqdata_stream
+    if type(resonators) is not list:
+        resonators = [resonators]
+        
+    ro_channel_num = len(resonators)
+    for idx_res, res in enumerate(resonators):
+        I_st[idx_res].save_all(f"{res}_I{suffix}")
+        Q_st[idx_res].save_all(f"{res}_Q{suffix}")  
         # I_st[idx_res].average().save(f"{res}_I")
         # Q_st[idx_res].average().save(f"{res}_Q")    
 

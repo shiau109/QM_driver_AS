@@ -65,7 +65,7 @@ def search_resonators( frequencies, config, ro_element, n_avg, qmm:QuantumMachin
 
         with stream_processing():
             # Cast the data into a 1D vector, average the 1D vectors together and store the results on the OPX processor
-            multiRO_pre_save( iqdata_stream, ro_element, (freq_len))
+            multiRO_pre_save( iqdata_stream, ro_element, (freq_len,))
             n_st.save("iteration")
     ###########
     # execute #
