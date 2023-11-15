@@ -7,8 +7,6 @@ from numpy.random import randint as R
 
 from allXY_tool import get_costfuncs, AllXY_nextstep_teller, result_arranger
 from AutoAllxy_QM import AllXY_real
-import configuration_with_octave as config_octave
-from configuration_with_octave import *
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from set_octave import OctaveUnit, octave_declaration
 
@@ -23,15 +21,24 @@ spec_recorder = Circuit_info(q_num=4)
 spec_recorder.import_spec("exp/allXY/spec_v1113")
 dyna_config.import_config("exp/allXY/config_v1113")
 
+def update_Qinfo(target,amp_modi_ratio,detune_modi):
+    new_amp = spec_recorder.QsXyInfo[f"pi_amp_{target}"] + spec_recorder.QsXyInfo[f"pi_amp_{target}"]*amp_modi_ratio
+    new_freq = spec_recorder.QsXyInfo[f"qubit_IF_{target}"]*1e-6 + detune_modi
+    spec_recorder.update_aXyInfo_for(target_q=target,amp=new_amp)
+    dyna_config.update_controlWaveform(spec_recorder.QsXyInfo)
+    dyna_config.update_controlFreq(spec_recorder.update_aXyInfo_for(target_q=target,IF=new_freq))
+
+    return new_amp
+
 #################################
 # pre-defined target variables  #
 #################################
-target_q = "q1_xy"  # The qubit under study, ""q2_xy
+target_q = "q1"  # The qubit under study, ""q2_xy
 target_res = "rr1"  # The resonator to measure the qubit defined above
 read_from_signal = 'I' # Read I signal
 iteration_threshold = 10
-tg = spec_recorder.spec['XyInfo']['pi_len_q1']
-q_no = target_q.split("_")[0][-1]
+tg = spec_recorder.QsXyInfo[f'pi_len_{target_q}']
+
 ######################
 # Network parameters #
 ######################
@@ -53,9 +60,9 @@ print(f"calculating the cost func for tg={tg}...")
 cost_expres, theoretical_allXY = get_costfuncs(tg)
 print(f"calculation complete!")
 # initailize the allXY experiment with manually measured papmeters
-print(f"q1 XYL={config_octave.pi_amp_q1}")
-print(f"q1 xyIF = {config_octave.qubit_IF_q1}")
-answer = AllXY_real(qb=target_q,res=target_res,signal_target=read_from_signal,configration=dyna_config,qm_mache=qmm)
+print(f"q1 XYL={spec_recorder.QsXyInfo[f'pi_amp_{target_q}']}")
+print(f"q1 xyIF = {spec_recorder.QsXyInfo[f'qubit_IF_{target_q}']}")
+answer = AllXY_real(qb=f"{target_q}_xy",res=target_res,pi_len=tg,signal_target=read_from_signal,configration=dyna_config,qm_mache=qmm)
 answer = result_arranger(answer)
 print(f"ans = {answer}. Start calculating the error...")
 amp_modi_ratio, detune_modi = AllXY_nextstep_teller(answer,cost_expres)
@@ -63,7 +70,7 @@ print(f"to modified: amp={amp_modi_ratio}, detune={detune_modi}MHz") # 1e12 got 
 # update the config about amp and detune
 '''To check'''
 print(f"Start updating parameters...")
-update_Qinfo(q_no,amp_modi_ratio,detune_modi*1e6)
+new_amp = update_Qinfo(target_q,amp_modi_ratio,detune_modi)
 print(f"Update complete!")
 # flow records
 exp_record = {'0':answer}
@@ -74,11 +81,11 @@ detune_error_record = [detune_modi]
 itera = 0
 while abs(amp_modi_ratio) > 1e-3 and abs(detune_modi)*1e3 > 20 : # amp_ratio_error < 0.01 AND detune_error < 20KHz break
     print(f"iteration= {itera+1}...")
-    if abs(amp_modi_ratio) < 0.5 and abs(detune_modi) < 50:  # safety guard
+    if abs(new_amp) < 0.25 and abs(detune_modi) < 50:  # safety guard
         print("Safty guard pass!")
         itera += 1
         # after updating run a new exp 
-        answer = AllXY_real(qb=target_q,res=target_res,signal_target=read_from_signal)
+        answer = AllXY_real(qb=f"{target_q}_xy",res=target_res,pi_len=tg,signal_target=read_from_signal)
         answer = result_arranger(answer)
         amp_modi_ratio, detune_modi = AllXY_nextstep_teller(answer,cost_expres)
         amp_error_record.append(amp_modi_ratio)
@@ -90,7 +97,7 @@ while abs(amp_modi_ratio) > 1e-3 and abs(detune_modi)*1e3 > 20 : # amp_ratio_err
         break
     # update the config about amp and detune
     '''To check'''
-    update_Qinfo(q_no,amp_modi_ratio,detune_modi)
+    new_amp = update_Qinfo(target_q,amp_modi_ratio,detune_modi)
     # Iterations counts and conditional break
     if itera == iteration_threshold+1:
         print(f"Max Iterations={iteration_threshold} completed!")
@@ -98,8 +105,10 @@ while abs(amp_modi_ratio) > 1e-3 and abs(detune_modi)*1e3 > 20 : # amp_ratio_err
     
 
 # get the optimized answer from terminal
-print(f"\nAfter optimization, XYL={config_octave.pi_amp_q1}")
-print(f"After optimization, Qubit_IF={config_octave.qubit_IF_q1} MHz\n")
+print(f"\nAfter optimization, XYL={spec_recorder.QsXyInfo[f'pi_amp_{target_q}']}")
+print(f"After optimization, Qubit_IF={spec_recorder.QsXyInfo[f'qubit_IF_{target_q}']} MHz\n")
+spec_recorder.export_spec("optied_spec")
+dyna_config.export_config("optied_config")
 
 # plot out the details in optimization iterations
 plt.figure(figsize=(18, 27))
