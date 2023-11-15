@@ -65,16 +65,16 @@ qubit_LO = np.zeros(5)
 qubit_LO[0] = (4.055) * u.GHz
 qubit_LO[1] = (4.4) * u.GHz
 qubit_LO[2] = (3.6) * u.GHz
-qubit_LO[3] = (3.7) * u.GHz
+qubit_LO[3] = (3.95) * u.GHz
 # qubit_LO[3] = (4.75) * u.GHz
 qubit_LO[4] = (4.75) * u.GHz
 
 # Qubits IF
 qubit_IF = np.zeros(5)
-qubit_IF[0] = (-116.8+0.245) * u.MHz #(4013-0.0088-0.0037 -4200) * u.MHz
-qubit_IF[1] = (-203.57-1.054) * u.MHz #(4156-0.119  -4200) * u.MHz
-qubit_IF[2] = (-100-0.55+0.209) * u.MHz
-qubit_IF[3] = (-104-0.49+0.041-0.104-0.091+250) * u.MHz
+qubit_IF[0] = (-116.8+0.245) * u.MHz 
+qubit_IF[1] = (-203.57-1.054) * u.MHz 
+qubit_IF[2] = (-76.5+1.243-0.09) * u.MHz
+qubit_IF[3] = (-104.231-0.024) * u.MHz
 # qubit_IF[3] = (-84.8-0.56) * u.MHz
 qubit_IF[4] = (-92) * u.MHz
 # For comparing 2q:
@@ -99,8 +99,8 @@ pi_len = 20
 pi_sigma = pi_len / 4
 pi_amp_q1 = 0.15*0.872*0.975*0.97
 pi_amp_q2 = 0.15*0.57*0.99
-pi_amp_q3 = 0.1*0.86*0.995
-pi_amp_q4 = 0.1*1.135*1.005
+pi_amp_q3 = 0.098*1.01
+pi_amp_q4 = 0.05703375*0.965
 # pi_amp_q4 = 0.1*1.135*1.005*0.805
 pi_amp_q5 = 0.5
 
@@ -193,12 +193,19 @@ minus_y90_I_wf_q5, minus_y90_Q_wf_q5 = (-1) * minus_y90_der_wf_q5, minus_y90_wf_
 ##########################################
 flux_settle_time = 100 * u.ns
 max_frequency_point = np.zeros(5)
-max_frequency_point[0] = 1.700e-01
-max_frequency_point[1] = 2.000e-01
-max_frequency_point[2] = 3.300e-01
-max_frequency_point[3] = -3.300e-01
+max_frequency_point[0] = -3.400e-01
+max_frequency_point[1] = -3.000e-01
+max_frequency_point[2] = -3.100e-01
+max_frequency_point[3] = -3.200e-01
 # max_frequency_point[3] = -2.800e-01
 max_frequency_point[4] = -2.800e-01
+
+min_frequency_point = np.zeros(5)
+min_frequency_point[0] = 0
+min_frequency_point[1] = 4.000e-02
+min_frequency_point[2] = 4.000e-02
+min_frequency_point[3] = 4.000e-02
+min_frequency_point[4] = 0
 
 idle_q1 = max_frequency_point[0] - 0.26
 idle_q2 = max_frequency_point[1] + 0.0
@@ -218,10 +225,10 @@ p[4] = [2999999.9107172964,  4.717259048157249,  0.27608944530859275,  0.4999999
 
 # Final value
 p1 = [[],[],[],[],[]]
-p1[0] = [3.00000000e+06, 4.71098538e+00, 2.49892047e-01, 5.00000000e-01, 5.73268899e+09]
-p1[1] = [3.00000000e+06, 4.79395032e+00, 1.38563407e-01, 4.62379805e-01, 6.02208261e+09]
-p1[2] = [2.37086271e+06, 4.64275041e+00, 2.25382443e-01, 3.47391255e-01, 5.84448531e+09]
-p1[3] = [2.99953243e+06, 4.93900859e+00, 9.93437272e-02, 3.26342156e-01, 6.10991109e+09]
+p1[0] = [2.99999985e+06, 4.63740337e+00, 2.87575166e-01, 3.37430408e-01, 5.73279474e+09]
+p1[1] = [3.00000000e+06, 4.56771904e+00, 1.44636142e-01, 3.02362805e-01, 6.02213301e+09]
+p1[2] = [2.22397609e+06, 4.47370446e+00, 2.20718217e-01, 3.12854012e-01, 5.84462834e+09]
+p1[3] = [2.99956195e+06, 4.43484675e+00, 1.09185256e-01, 3.15977411e-01, 6.10993867e+09]
 p1[4] = [2999999.9107172964,  4.717259048157249,  0.27608944530859275,  0.4999999999981507, 6.11e9]
 
 const_flux_len = 200
@@ -240,10 +247,10 @@ g_cz_1_2_q2 = 0.5 * abs(0.5-idle_q2) * gaussian(16, 16/4)
 resonator_LO = 5.95 * u.GHz
 # Resonators IF
 resonator_IF = np.zeros(5)
-resonator_IF[0] = int((-214.51) * u.MHz)
-resonator_IF[1] = int((74.7) * u.MHz)
-resonator_IF[2] = int((-103.51) * u.MHz) 
-resonator_IF[3] = int((162.77) * u.MHz)
+resonator_IF[0] = int((-214.21) * u.MHz)
+resonator_IF[1] = int((75.133) * u.MHz)
+resonator_IF[2] = int((-103.15) * u.MHz) 
+resonator_IF[3] = int((162.94) * u.MHz)
 # resonator_IF[3] = int((-24.9) * u.MHz)
 resonator_IF[4] = int((-27.8) * u.MHz)
 # Above is for verifying wide-sweep results: -156, -38, 39, 137, 231

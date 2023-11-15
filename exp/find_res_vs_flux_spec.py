@@ -1,24 +1,3 @@
-"""
-        RESONATOR SPECTROSCOPY VERSUS FLUX
-This sequence involves measuring the resonator by sending a readout pulse and demodulating the signals to
-extract the 'I' and 'Q' quadratures. This is done across various readout intermediate frequencies and flux biases.
-The resonator frequency as a function of flux bias is then extracted and fitted so that the parameters can be stored in the configuration.
-
-This information can then be used to adjust the readout frequency for the maximum frequency point.
-
-Prerequisites:
-    - Calibration of the time of flight, offsets, and gains (referenced as "time_of_flight").
-    - Calibration of the IQ mixer connected to the readout line (be it an external mixer or an Octave port).
-    - Identification of the resonator's resonance frequency (referred to as "resonator_spectroscopy_multiplexed").
-    - Configuration of the readout pulse amplitude and duration.
-    - Specification of the expected resonator depletion time in the configuration.
-
-Before proceeding to the next node:
-    - Update the readout frequency, labeled as "resonator_IF", in the configuration.
-    - Adjust the flux bias to the maximum frequency point, labeled as "max_frequency_point", in the configuration.
-    - Update the resonator frequency versus flux fit parameters (amplitude_fit, frequency_fit, phase_fit, offset_fit) in the configuration
-"""
-
 from qm.qua import *
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm import SimulationConfig
@@ -38,17 +17,14 @@ from datetime import datetime
 import sys
 
 q_id = [0,1,2,3]
-n_avg = 1000
+n_avg = 500
 span = 3 * u.MHz
 df = 100 * u.kHz
 dfs = np.arange(-span, +span + 0.1, df)
 
-flux_min = -0.5
-flux_max = 0.5
-step = 0.01
-flux = np.arange(flux_min, flux_max + step / 2, step)
+flux = np.arange(-0.5, 0.5, 0.01)
 depletion_time = 10 * u.us
-
+operation_flux_point = [0,0,0,0] 
 simulate = False
 
 def mRO_flux_dep_resonator( q_id,n_avg,dfs,flux,depletion_time,simulate,mode,qmm):
@@ -61,6 +37,8 @@ def mRO_flux_dep_resonator( q_id,n_avg,dfs,flux,depletion_time,simulate,mode,qmm
                 for i in q_id:
                     update_frequency("rr%s"%(i+1), df + resonator_IF[i])
                 with for_(*from_array(dc, flux)):
+                    for i in [0,1,2,3]: # set all resonators in operation points
+                        set_dc_offset("q%s_z"%(i+1), "single", operation_flux_point[i])  
                     for i in q_id:
                         set_dc_offset("q%s_z"%(i+1), "single", dc)                   
                     wait(flux_settle_time * u.ns)  
@@ -105,10 +83,10 @@ def mRO_flux_dep_resonator( q_id,n_avg,dfs,flux,depletion_time,simulate,mode,qmm
             S = u.demod2volts(I[q_id.index(i)] + 1j * Q[q_id.index(i)], readout_len)
             R = np.abs(S)
             phase = np.angle(S)
-            Flux[i] = flux
-            Frequency[i] = dfs + resonator_IF[i] + resonator_LO
-            Amplitude[i] = R
-            Phase[i] = signal.detrend(np.unwrap(phase)) 
+            Flux[q_id.index(i)] = flux
+            Frequency[q_id.index(i)] = dfs + resonator_IF[i] + resonator_LO
+            Amplitude[q_id.index(i)] = R
+            Phase[q_id.index(i)] = signal.detrend(np.unwrap(phase)) 
         qm.close()
         return Flux, Frequency, Amplitude, Phase, I, Q
 
@@ -121,10 +99,10 @@ def res_flux_live_plot(I,Q):
         S = I[q_id.index(i)] + 1j * Q[q_id.index(i)]
         R = np.abs(S)
         phase = np.angle(S)
-        Flux[i] = flux
-        Frequency[i] = dfs + resonator_IF[i] + resonator_LO
-        Amplitude[i] = R
-        Phase[i] = signal.detrend(np.unwrap(phase)) 
+        Flux[q_id.index(i)] = flux
+        Frequency[q_id.index(i)] = dfs + resonator_IF[i] + resonator_LO
+        Amplitude[q_id.index(i)] = R
+        Phase[q_id.index(i)] = signal.detrend(np.unwrap(phase)) 
         x_label = "Flux bias [V]"
         y_label = "Readout Freq [GHz]"  
         title = "Flux dep. Resonator spectroscopy"
@@ -135,7 +113,7 @@ def res_flux_live_plot(I,Q):
         if q_id.index(i)==0: 
             plt.ylabel(y_label)
         plt.xlabel(x_label)
-        plt.pcolor(Flux[i], Frequency[i], Amplitude[i])        
+        plt.pcolor(Flux[q_id.index(i)], Frequency[q_id.index(i)], Amplitude[q_id.index(i)])        
         plt.gca().yaxis.set_major_formatter(FuncFormatter(format_y_axis))
     plt.tight_layout()
     plt.pause(0.1)
@@ -144,45 +122,62 @@ def format_y_axis(value, tick_number):
     return f'{value * 1e-9:.3f}'
 
 def res_flux_fitting(signal):
-    min_index = [[] for _ in q_id]
-    max_index = [[] for _ in q_id]
+    resonance_index = [[] for _ in q_id] # Find the index of the resonance frequency
     res_F = [[] for _ in q_id]
     resonator_flux_params, resonator_flux_covariance = [], []
     res_LO = resonator_LO
     for i in q_id:
-        for j in range(len(Flux[i])):
-            min_index[i].append(np.argmin(signal[i][:,j]))
+        for j in range(len(Flux[q_id.index(i)])):
+            resonance_index[q_id.index(i)].append(np.argmin(signal[q_id.index(i)][:,j]))
 
         temp_params, temp_covariance = curve_fit(
             f = resonator_flux, 
-            xdata = Flux[i],
-            ydata = Frequency[i][min_index[i]],
+            xdata = Flux[q_id.index(i)],
+            ydata = Frequency[q_id.index(i)][resonance_index[q_id.index(i)]],
             p0=p[i],
             bounds = ([0,0,0,-0.5,-np.inf], [3e6,7,10,0.5,np.inf]))
         resonator_flux_params.append(temp_params)
         resonator_flux_covariance.append(temp_covariance)
-        res_F[i].append(resonator_flux(Flux[i], *resonator_flux_params[i]))
-        res_F[i] = res_F[i][0]
-        max_index[i] = np.argmax(res_F[i])
-        second_largest_value = np.partition(res_F[i], -2)[-2] 
-        second_largest_index = np.where(res_F[i] == second_largest_value)[0][0]
-        max_flux = Flux[i][max_index[i]]
-        sec_flux = Flux[i][second_largest_index]
+        res_F[q_id.index(i)].append(resonator_flux(Flux[q_id.index(i)], *resonator_flux_params[q_id.index(i)]))
+        res_F[q_id.index(i)] = res_F[q_id.index(i)][0]
+        sorted_indices = np.argsort(res_F[q_id.index(i)])
+        max_index = np.argmax(res_F[q_id.index(i)])
+        second_largest_index = sorted_indices[-2]
+        max_flux = Flux[q_id.index(i)][max_index]
+        second_largest_flux = Flux[q_id.index(i)][second_largest_index]
+        second_min_index = sorted_indices[1]
+        min_index = np.argmin(res_F[q_id.index(i)])
+        min_flux = Flux[q_id.index(i)][min_index]
+        second_min_flux = Flux[q_id.index(i)][second_min_index]
 
-        if abs(max_flux) >= abs(sec_flux):
-            max_ROF =  resonator_flux(sec_flux, *resonator_flux_params[i])
-            print(f'Q{i+1}: maximum ROF: {max_ROF:.4e}, maximum res_IF: {(max_ROF-res_LO):.4e}, corresponding flux: {sec_flux:.3e}')
-        else:
-            max_ROF =  resonator_flux(max_flux, *resonator_flux_params[i])
+        if abs(max_flux-second_largest_flux) > 0.1: # It means we have two maximum sweet points in our flux span.
+            if abs(max_flux) >= abs(second_largest_flux):
+                max_ROF =  resonator_flux(second_largest_flux, *resonator_flux_params[q_id.index(i)])
+                print(f'Q{i+1}: maximum ROF: {max_ROF:.4e}, maximum res_IF: {(max_ROF-res_LO):.4e}, corresponding flux: {second_largest_flux:.3e}')
+            else:
+                max_ROF =  resonator_flux(max_flux, *resonator_flux_params[q_id.index(i)])
+                print(f'Q{i+1}: maximum ROF: {max_ROF:.4e}, maximum res_IF: {(max_ROF-res_LO):.4e}, corresponding flux: {max_flux:.3e}')
+        else: # It means we only have one maximum sweet point in our flux span.
+            max_ROF =  resonator_flux(max_flux, *resonator_flux_params[q_id.index(i)])
             print(f'Q{i+1}: maximum ROF: {max_ROF:.4e}, maximum res_IF: {(max_ROF-res_LO):.4e}, corresponding flux: {max_flux:.3e}')            
-    print(resonator_flux_params)
-    return res_F, min_index
+        if abs(min_flux-second_min_flux) > 0.1: # It means we have two minimum points in our flux span.
+            if abs(min_flux) >= abs(second_min_flux):
+                min_ROF =  resonator_flux(second_min_flux, *resonator_flux_params[q_id.index(i)])
+                print(f'Q{i+1}: minimum ROF: {min_ROF:.4e}, minimum res_IF: {(min_ROF-res_LO):.4e}, corresponding flux: {second_min_flux:.3e}')
+            else:
+                min_ROF =  resonator_flux(min_flux, *resonator_flux_params[q_id.index(i)])
+                print(f'Q{i+1}: minimum ROF: {min_ROF:.4e}, minimum res_IF: {(min_ROF-res_LO):.4e}, corresponding flux: {min_flux:.3e}')
+        else: # It means we only have one minimum point in our flux span.
+            min_ROF =  resonator_flux(min_flux, *resonator_flux_params[q_id.index(i)])
+            print(f'Q{i+1}: minimum ROF: {min_ROF:.4e}, minimum res_IF: {(min_ROF-res_LO):.4e}, corresponding flux: {min_flux:.3e}') 
+        print(f"Q{i+1} fitting params: {resonator_flux_params[q_id.index(i)]}")           
+    return res_F, resonance_index
 
 def res_flux_plot(Flux,Frequency,signal,fitting):
     x_label = "Flux bias [V]"
     y_label = "Readout Freq [GHz]"
     if fitting:  
-        res_F, min_index = res_flux_fitting(signal)
+        res_F, resonance_index = res_flux_fitting(signal)
         for i in q_id: 
             # TOP figure
             plt.subplot(2, len(q_id), q_id.index(i)+1)
@@ -190,8 +185,8 @@ def res_flux_plot(Flux,Frequency,signal,fitting):
             plt.title("q%s:"%(i+1))
             if q_id.index(i)==0: 
                 plt.ylabel(y_label)
-            plt.pcolor(Flux[i], Frequency[i], signal[i])        
-            plt.plot(Flux[i], Frequency[i][min_index[i]])
+            plt.pcolor(Flux[q_id.index(i)], Frequency[q_id.index(i)], signal[q_id.index(i)])        
+            plt.plot(Flux[q_id.index(i)], Frequency[q_id.index(i)][resonance_index[q_id.index(i)]])
             plt.gca().yaxis.set_major_formatter(FuncFormatter(format_y_axis))
             # BOTTOM figure
             plt.subplot(2, len(q_id), len(q_id)+q_id.index(i)+1)
@@ -199,8 +194,8 @@ def res_flux_plot(Flux,Frequency,signal,fitting):
             plt.xlabel(x_label)
             if q_id.index(i)==0:
                 plt.ylabel(y_label)
-            plt.plot(Flux[i], Frequency[i][min_index[i]])
-            plt.plot(Flux[i], res_F[i])
+            plt.plot(Flux[q_id.index(i)], Frequency[q_id.index(i)][resonance_index[q_id.index(i)]])
+            plt.plot(Flux[q_id.index(i)], res_F[q_id.index(i)])
             plt.gca().yaxis.set_major_formatter(FuncFormatter(format_y_axis))  
         plt.tight_layout()
     else:
@@ -217,6 +212,27 @@ def res_flux_plot(Flux,Frequency,signal,fitting):
     plt.show()
 
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
+# Flux, Frequency, Amplitude, Phase, I, Q = mRO_flux_dep_resonator(q_id,n_avg,dfs,flux,depletion_time,simulate,'live',qmm) 
+# fig = res_flux_plot(Flux,Frequency,Amplitude,True)
+
+# Q1: maximum ROF: 5.7358e+09, maximum res_IF: -2.1422e+08, corresponding flux: -3.500e-01
+# Q1: minimum ROF: 5.7344e+09, minimum res_IF: -2.1557e+08, corresponding flux: 4.441e-16
+# Q1 fitting params: [2.99999984e+06 4.45914973e+00 2.92751456e-01 3.52360851e-01
+#  5.73278447e+09]
+# Q2: maximum ROF: 6.0251e+09, maximum res_IF: 7.5132e+07, corresponding flux: -3.100e-01
+# Q2: minimum ROF: 6.0244e+09, minimum res_IF: 7.4368e+07, corresponding flux: 3.000e-02
+# Q2 fitting params: [2.99966759e+06 4.63869457e+00 1.45922984e-01 3.06517001e-01
+#  6.02213244e+09]
+# Q3: maximum ROF: 5.8469e+09, maximum res_IF: -1.0315e+08, corresponding flux: -3.000e-01
+# Q3: minimum ROF: 5.8460e+09, minimum res_IF: -1.0396e+08, corresponding flux: 4.000e-02
+# Q3 fitting params: [1.21997328e+06 4.56292000e+00 5.00492826e-01 2.99382282e-01
+#  5.84563065e+09]
+# Q4: maximum ROF: 6.1129e+09, maximum res_IF: 1.6291e+08, corresponding flux: -2.800e-01
+# Q4: minimum ROF: 6.1124e+09, minimum res_IF: 1.6238e+08, corresponding flux: 5.000e-02
+# Q4 fitting params: [1.19360646e+06 4.79382094e+00 2.84429045e-01 2.82308549e-01
+#  6.11171247e+09]
+
+q_id = [3]
+operation_flux_point = [0, 4.000e-02, 4.000e-02, 0] 
 Flux, Frequency, Amplitude, Phase, I, Q = mRO_flux_dep_resonator(q_id,n_avg,dfs,flux,depletion_time,simulate,'live',qmm) 
 fig = res_flux_plot(Flux,Frequency,Amplitude,True)
-    

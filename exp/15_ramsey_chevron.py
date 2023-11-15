@@ -37,12 +37,12 @@ warnings.filterwarnings("ignore")
 ###################
 # The QUA program #
 ###################
-n_avg = 100  # Number of averages
+n_avg = 1000  # Number of averages
 q_id = [0,1,2,3]
-dfs = np.arange(-1e6, 1e6, 0.01e6)  # Frequency detuning sweep in Hz
-t_delay = np.arange(1, 1000, 4)  # Idle time sweep in clock cycles (Needs to be a list of integers)
+dfs = np.arange(-1.5e6, 1.5e6, 0.1e6)  # Frequency detuning sweep in Hz
+t_delay = np.arange(1, 200, 4)  # Idle time sweep in clock cycles (Needs to be a list of integers)
 
-operation_flux_point = [-0.177, -0.132, -0.009, -3.300e-01] 
+operation_flux_point = [0, 4.000e-02, -3.100e-01, 4.000e-02]
 
 with program() as ramsey:
     I, I_st, Q, Q_st, n, n_st = qua_declaration(nb_of_qubits=4)
@@ -57,8 +57,8 @@ with program() as ramsey:
             # Update the frequency of the two qubit elements
             # update_frequency("q1_xy", df + qubit_IF[0])
             # update_frequency("q2_xy", df + qubit_IF[1])
-            # update_frequency("q3_xy", df + qubit_IF[2])
-            update_frequency("q4_xy", df + qubit_IF[3])
+            update_frequency("q3_xy", df + qubit_IF[2])
+            # update_frequency("q4_xy", df + qubit_IF[3])
             
             with for_(*from_array(t, t_delay)):
                 # qubit 1
@@ -70,13 +70,13 @@ with program() as ramsey:
                 # wait(t, "q2_xy")
                 # play("x90", "q2_xy")
                 # qubit 3
-                # play("x90", "q3_xy")
-                # wait(t, "q3_xy")
-                # play("x90", "q3_xy")
+                play("x90", "q3_xy")
+                wait(t, "q3_xy")
+                play("x90", "q3_xy")
                 # qubit 4
-                play("x90", "q4_xy")
-                wait(t, "q4_xy")
-                play("x90", "q4_xy")
+                # play("x90", "q4_xy")
+                # wait(t, "q4_xy")
+                # play("x90", "q4_xy")
                 # Align the elements to measure after having waited a time "tau" after the qubit pulses.
                 align()
                 # Measure the state of the resonators
@@ -143,7 +143,7 @@ else:
         plt.subplot(241)
         plt.cla()
         plt.pcolor(4 * t_delay, dfs / u.MHz, I1)
-        plt.title(f"Center frequency = {(qubit_LO_q1 + qubit_IF[0]) / u.MHz} MHz \n Qubit 1 I")
+        plt.title(f"Center frequency = {(qubit_LO[0] + qubit_IF[0]) / u.MHz} MHz \n Qubit 1 I")
         plt.ylabel("Frequency detuning [MHz]")
         plt.axhline(y=0, color="k", ls="--", alpha=0.8, linewidth=3)
         plt.subplot(245)
@@ -155,7 +155,7 @@ else:
         plt.subplot(242)
         plt.cla()
         plt.pcolor(4 * t_delay, dfs / u.MHz, I2)
-        plt.title(f"Center frequency = {(qubit_LO_q2 + qubit_IF[1]) / u.MHz} MHz \n Qubit 2 I")
+        plt.title(f"Center frequency = {(qubit_LO[1]+ qubit_IF[1]) / u.MHz} MHz \n Qubit 2 I")
         plt.axhline(y=0, color="k", ls="--", alpha=0.8, linewidth=3)
         plt.subplot(246)
         plt.cla()
@@ -165,7 +165,7 @@ else:
         plt.subplot(243)
         plt.cla()
         plt.pcolor(4 * t_delay, dfs / u.MHz, I3)
-        plt.title(f"Center frequency = {(qubit_LO_q1 + qubit_IF[2]) / u.MHz} MHz \n Qubit 3 I")
+        plt.title(f"Center frequency = {(qubit_LO[2]+ qubit_IF[2]) / u.MHz} MHz \n Qubit 3 I")
         plt.ylabel("Frequency detuning [MHz]")
         plt.axhline(y=0, color="k", ls="--", alpha=0.8, linewidth=3)
         plt.subplot(247)
@@ -177,7 +177,7 @@ else:
         plt.subplot(244)
         plt.cla()
         plt.pcolor(4 * t_delay, dfs / u.MHz, I4)
-        plt.title(f"Center frequency = {(qubit_LO_q2 + qubit_IF[3]) / u.MHz} MHz \n Qubit 4 I")
+        plt.title(f"Center frequency = {(qubit_LO[3] + qubit_IF[3]) / u.MHz} MHz \n Qubit 4 I")
         plt.axhline(y=0, color="k", ls="--", alpha=0.8, linewidth=3)
         plt.subplot(248)
         plt.cla()

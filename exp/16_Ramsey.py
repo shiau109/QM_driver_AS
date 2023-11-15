@@ -35,10 +35,10 @@ warnings.filterwarnings("ignore")
 ###################
 # The QUA program #
 ###################
-n_avg = 10000  # Number of averages
+n_avg = 200  # Number of averages
 idle_times = np.arange(4, 2500, 5)  # Idle time sweep in clock cycles (Needs to be a list of integers)
 detuning = 1e6  # "Virtual" detuning in Hz
-operation_flux_point = [-0.177, -0.132, -0.009, -2.800e-01] 
+operation_flux_point = [0, 4.000e-02, -3.100e-01, 4.000e-02]
 q_id = [0,1,2,3]
 
 with program() as ramsey:
@@ -48,7 +48,7 @@ with program() as ramsey:
     # Adjust the flux line biases to check whether you are actually measuring the qubit
     for i in q_id:
         set_dc_offset("q%s_z"%(i+1), "single", operation_flux_point[i])
-    update_frequency("q4_xy", detuning + qubit_IF[3])
+    update_frequency("q3_xy", detuning + qubit_IF[2])
     with for_(n, 0, n < n_avg, n + 1):
         with for_(*from_array(t, idle_times)):
             # Rotate the frame of the second x90 gate to implement a virtual Z-rotation
@@ -69,16 +69,16 @@ with program() as ramsey:
             # play("x90", "q2_xy")  # 2nd x90 gate
 
             # Qubit 3
-            # play("x90", "q3_xy")  # 1st x90 gate
-            # wait(t, "q3_xy")  # Wait a varying idle time
+            play("x90", "q3_xy")  # 1st x90 gate
+            wait(t, "q3_xy")  # Wait a varying idle time
             # # frame_rotation_2pi(phi, "q3_xy")  # Virtual Z-rotation
-            # play("x90", "q3_xy")  # 2nd x90 gate
+            play("x90", "q3_xy")  # 2nd x90 gate
 
             # Qubit 4
-            play("x90", "q4_xy")  # 1st x90 gate
-            wait(t, "q4_xy")  # Wait a varying idle time
+            # play("x90", "q4_xy")  # 1st x90 gate
+            # wait(t, "q4_xy")  # Wait a varying idle time
             # frame_rotation_2pi(phi, "q4_xy")  # Virtual Z-rotation
-            play("x90", "q4_xy")  # 2nd x90 gate
+            # play("x90", "q4_xy")  # 2nd x90 gate
 
             # Align the elements to measure after having waited a time "tau" after the qubit pulses.
             align()
@@ -170,22 +170,22 @@ else:
         # plt.title("Q2")
         # plt.xlabel("Idle times [ns]")
 
-        # plt.subplot(121)
-        # plt.cla()
-        # plt.plot(4 * idle_times, I3)
-        # plt.title("Qubit 3")
-        # plt.subplot(122)
-        # plt.cla()
-        # plt.plot(4 * idle_times, Q3)
-        # plt.title("Q3")
-        # plt.xlabel("Idle times [ns]")
-
-        plt.title("Qubit 4")
-        # plt.subplot(236)
+        plt.subplot(121)
         plt.cla()
-        plt.plot(4 * idle_times, Q4)
-        plt.title("Q4")
+        plt.plot(4 * idle_times, I3)
+        plt.title("Qubit 3")
+        plt.subplot(122)
+        plt.cla()
+        plt.plot(4 * idle_times, Q3)
+        plt.title("Q3")
         plt.xlabel("Idle times [ns]")
+
+        # plt.title("Qubit 4")
+        # # plt.subplot(236)
+        # plt.cla()
+        # plt.plot(4 * idle_times, Q4)
+        # plt.title("Q4")
+        # plt.xlabel("Idle times [ns]")
         plt.tight_layout()
         plt.pause(0.1)
     # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
@@ -213,25 +213,25 @@ else:
         # plt.xlabel("Idle times [ns]")
         # plt.ylabel("I quadrature [V]")
 
-        # plt.subplot(121)
-        # fit.ramsey(4 * idle_times, I3, plot=True)
-        # plt.xlabel("Idle times [ns]")
-        # plt.ylabel("I quadrature [V]")
-        # plt.title("Qubit 3")
-        # plt.subplot(122)
-        # fit.ramsey(4 * idle_times, Q3, plot=True)
-        # plt.xlabel("Idle times [ns]")
-        # plt.ylabel("I quadrature [V]")
-
         plt.subplot(121)
-        fit.ramsey(4 * idle_times, I4, plot=True)
+        fit.ramsey(4 * idle_times, I3, plot=True)
         plt.xlabel("Idle times [ns]")
         plt.ylabel("I quadrature [V]")
-        plt.title("Qubit 4")
+        plt.title("Qubit 3")
         plt.subplot(122)
-        fit.ramsey(4 * idle_times, Q4, plot=True)
+        fit.ramsey(4 * idle_times, Q3, plot=True)
         plt.xlabel("Idle times [ns]")
         plt.ylabel("I quadrature [V]")
+
+        # plt.subplot(121)
+        # fit.ramsey(4 * idle_times, I4, plot=True)
+        # plt.xlabel("Idle times [ns]")
+        # plt.ylabel("I quadrature [V]")
+        # plt.title("Qubit 4")
+        # plt.subplot(122)
+        # fit.ramsey(4 * idle_times, Q4, plot=True)
+        # plt.xlabel("Idle times [ns]")
+        # plt.ylabel("I quadrature [V]")
 
         plt.tight_layout()
         plt.show()

@@ -22,6 +22,24 @@ def resonator_flux(flux, IF_max, coeff, gamma, flux_offset, offset_ROF ):
     phai = (flux + flux_offset) * coeff
     return IF_max * np.sqrt(np.cos(phai)**2 + d**2 * np.sin(phai)**2) + offset_ROF
 
+def flux_qubit_spec(flux,v_period,max_freq,max_flux,idle_freq,idle_flux,Ec):
+    v_offset = max_flux
+    A_idle = np.cos(((idle_flux-v_offset)/v_period)*np.pi)**2
+    E_Jsum = (max_freq+Ec)**2/(8*Ec)
+    d = (((idle_freq+Ec)**2/(8*Ec*E_Jsum))**2-A_idle)/(1-A_idle)
+    A = np.cos(((flux-v_offset)/v_period)*np.pi)**2
+    freq = np.sqrt(8*E_Jsum*np.sqrt(A+(1-A)*d)*Ec)-Ec
+    return freq
+
+def flux_qubit_spec_with_d(flux,v_period,max_freq,max_flux,Ec,d):
+    v_offset = max_flux
+    E_Jsum = (max_freq+Ec)**2/(8*Ec)
+    A = np.cos(((flux-v_offset)/v_period)*np.pi)**2
+    freq = np.sqrt(8*E_Jsum*np.sqrt(A+(1-A)*d)*Ec)-Ec
+    return freq
+
+
+
 
 if __name__ == '__main__':
     ### Test S21_notch
@@ -31,7 +49,15 @@ if __name__ == '__main__':
     # plt.show()
     ### Test resonator_flux
     x = np.linspace(-0.5,0.5,5000)
-    plt.plot(x, resonator_flux(x, 2e6, 5, 2.5, -0.2, 5.734e9))
-
+    # plt.plot(x, resonator_flux(x, 2e6, 5, 2.5, -0.2, 5.734e9))
+    flux = np.arange(-0.5, 0.5, 0.001)
     # plt.plot(x, resonator_flux(x, 1.6e6,  4.93558591e+00, 3,  3.67462775e+01, -1.584e8))   
+    # plt.show()
+    v_period = 0.72
+    max_freq = 3.5235
+    max_flux = -3.300e-01
+    idle_freq = 3.35
+    idle_flux = 0.16
+    Ec = 0.2
+    plt.plot(flux,flux_qubit_spec(flux,v_period=0.7,max_freq=(3.5235e9),max_flux=0.004,idle_freq=(3.2252e9),idle_flux=0.146,Ec=0.2e9))
     plt.show()

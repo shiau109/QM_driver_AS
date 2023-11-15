@@ -49,10 +49,10 @@ save_path = f"{save_dir}\{save_time}_{save_progam_name}"
 ###################
 # The QUA program #
 ###################
-q_id = [3]
+q_id = [2]
 focus = False
-n_avg = 10000  # The number of averages
-operation_flux_point = [-0.177, -0.132, -0.009, -3.300e-01] 
+n_avg = 1000  # The number of averages
+operation_flux_point = [-1.600e-01, -1.200e-01, -3.300e-01, 3.000e-02] 
 
 # Adjust the pulse duration and amplitude to drive the qubit into a mixed state
 saturation_len = 20 * u.us  # In ns (should be < FFT of df)

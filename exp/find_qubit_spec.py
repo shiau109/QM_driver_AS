@@ -11,26 +11,16 @@ import warnings
 from common_fitting_func import *
 warnings.filterwarnings("ignore")
 
-
-# Get the resonator frequency vs flux trend from the node 05_resonator_spec_vs_flux.py in order to always measure on
-# resonance while sweeping the flux
-def cosine_func(x, amplitude, frequency, phase, offset):
-    return amplitude * np.cos(2 * np.pi * frequency * x + phase) + offset
-
-
-###################
-# The QUA program #
-###################
-n_avg = 1000  # The number of averages
+n_avg = 500  # The number of averages
 # Adjust the pulse duration and amplitude to drive the qubit into a mixed state
 saturation_len = 12 * u.us  # In ns
-saturation_amp = 0 #0.05  # pre-factor to the value defined in the config - restricted to [-2; 2)
+saturation_amp =  0.03  # pre-factor to the value defined in the config - restricted to [-2; 2)
 # Qubit detuning sweep with respect to qubit_IF
-dfs = np.arange(-350e6, +200e6, 0.5e6)
+dfs = np.arange(-350e6, +100e6, 0.1e6)
 # Flux sweep
-flux = np.arange(-0.1, 0.3, 0.01)
+flux = np.arange(-0.1, 0.2, 0.01)
 Qi = 3
-operation_flux_point = [-0.177, -0.132, 3.300e-01, -0.003] 
+operation_flux_point = [0, 4.000e-02, -3.100e-01, 4.000e-02] 
 res_F = resonator_flux( flux + operation_flux_point[Qi-1], *p1[Qi-1])
 res_IF = (res_F - resonator_LO)/1e6
 res_IF_list = []
@@ -129,7 +119,7 @@ def qubit_flux_fitting(I,Q,Qi):
     resonator_flux_params, resonator_flux_covariance = [], []   
     for i in q_id:
         Flux[i] = flux
-        Frequency[i] = dfs + resonator_IF[i] + resonator_LO
+        Frequency[i] = dfs + qubit_IF[i] + qubit_LO[i]
         S = I[i] + 1j * Q[i]
         R.append(np.abs(S))
         phase.append(np.angle(S))
@@ -139,14 +129,16 @@ def qubit_flux_fitting(I,Q,Qi):
 
     plt.subplot(1, 2, 1)
     plt.cla()
-    plt.title(f"q{i+1}:")
+    plt.title(f"q{Qi}:")
     plt.pcolor(Flux[Qi-1], Frequency[Qi-1], R[Qi-1])        
     plt.plot(Flux[Qi-1], Frequency[Qi-1][min_index[Qi-1]])
     plt.subplot(1, 2, 2)
     plt.cla()
-    plt.title(f"q{i+1}:")
+    plt.title(f"q{Qi}:")
     plt.pcolor(Flux[Qi-1], Frequency[Qi-1], phase[Qi-1])        
     plt.plot(Flux[Qi-1], Frequency[Qi-1][max_index[Qi-1]])
+
+    plt.plot(flux,flux_qubit_spec(flux,v_period=0.7,max_freq=(3.5235e9),max_flux=0.004,idle_freq=(3.2252e9),idle_flux=0.146,Ec=0.2e9))
 
     plt.tight_layout()
     plt.show()
@@ -155,3 +147,6 @@ def qubit_flux_fitting(I,Q,Qi):
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
 I, Q = flux_twotone_qubit(q_id,Qi,simulate,qmm)
 qubit_flux_fitting(I,Q,Qi)
+
+### Q3
+# plt.plot(flux,flux_qubit_spec(flux,v_period=0.7,max_freq=(3.5235e9),max_flux=0.004,idle_freq=(3.2252e9),idle_flux=0.146,Ec=0.2e9))

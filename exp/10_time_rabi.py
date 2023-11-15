@@ -36,13 +36,13 @@ warnings.filterwarnings("ignore")
 ###################
 # The QUA program #
 ###################
-t_min = 4
+t_min = 0
 t_max = 100
 dt = 1
 times = np.arange(t_min, t_max, dt)  # In clock cycles = 4ns
 cooldown_time = 1 * u.us
 n_avg = 5000
-operation_flux_point = [-0.177, -0.132, -0.009, -3.300e-01] 
+operation_flux_point = [0, 4.000e-02, -3.100e-01, 4.000e-02]
 q_id = [0,1,2,3]
 with program() as rabi:
     I, I_st, Q, Q_st, n, n_st = qua_declaration(nb_of_qubits=4)
@@ -57,8 +57,8 @@ with program() as rabi:
             # Play the qubit pulses
             # play("x180", "q1_xy", duration=t)
             # play("x180", "q2_xy", duration=t)
-            # play("x180", "q3_xy", duration=t)
-            play("x180", "q4_xy", duration=t)
+            play("x180", "q3_xy", duration=t)
+            # play("x180", "q4_xy", duration=t)
             # Align the elements to measure after playing the qubit pulses.
             align()
             # Start using Rotated integration weights (cf. IQ_blobs.py)
@@ -187,17 +187,17 @@ else:
         # plt.ylabel("I quadrature [V]")
         # plt.title("Qubit 3")
 
-        fit.rabi(4 * times, I4, plot=True)
+        fit.rabi(4 * times, I3, plot=True)
         plt.xlabel("Qubit pulse duration [ns]")
         plt.ylabel("I quadrature [V]")
-        plt.title("Qubit 4")
+        plt.title("Qubit 3")
         plt.tight_layout()
-        
+
         plt.figure()
-        fit.rabi(4 * times, Q4, plot=True)
+        fit.rabi(4 * times, Q3, plot=True)
         plt.xlabel("Qubit pulse duration [ns]")
         plt.ylabel("Q quadrature [V]")
-        plt.title("Qubit 4")
+        plt.title("Qubit 3")
         plt.tight_layout()
     
     except (Exception,):

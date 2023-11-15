@@ -49,3 +49,19 @@ plt.show()
 # 输出拟合得到的平均值和标准差
 print(f'Mean: {mu:.2f}')
 print(f'Standard Deviation: {sigma:.2f}')
+
+
+import numpy as np
+
+my_list = [4, 1, 3, 7, 2, 9]
+
+# 使用 argsort 找到排序后的索引
+sorted_indices = np.argsort(my_list)
+
+# 取排序后的数组的第二个索引，即第二小值在原数组中的索引
+second_min_index = sorted_indices[1]
+second_min_value = my_list[second_min_index]
+
+print(f"第二小值的索引: {second_min_index}")
+print(f"第二小值的值: {second_min_value}")
+print(my_list)
