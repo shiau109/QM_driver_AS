@@ -97,6 +97,10 @@ def allXY(pulses, qubit, resonator, pi_len):
     elif resonator == "rr2":
         align(qubit, "rr1")
         measure("readout", "rr1", None)
+    # for dynamic config
+    elif resonator == "q4_ro":
+        align(qubit, "q3_ro")
+        measure("readout", "q3_ro", None)
     measure(
         "readout",
         resonator,
@@ -110,7 +114,7 @@ def allXY(pulses, qubit, resonator, pi_len):
 ###################
 # The QUA program #
 ###################
-def AllXY_real(qb,res,pi_len,signal_target,configuration,qm_mache):
+def AllXY_real(qb,res,pi_len,signal_target,configuration,qm_mache,mode):
     with program() as ALL_XY:
         n = declare(int)
         n_st = declare_stream()
@@ -168,44 +172,43 @@ def AllXY_real(qb,res,pi_len,signal_target,configuration,qm_mache):
         job = qm.execute(ALL_XY)
         # Get results from QUA program
         data_list = ["n"] + list(np.concatenate([[f"I{i}", f"Q{i}"] for i in range(len(sequence))]))
-        results = fetching_tool(job, data_list, mode="wait_for_all")
-        resul = results.fetch_all()
+        results = fetching_tool(job, data_list, mode)
+        
         # Live plotting
-        # fig = plt.figure()
-        # interrupt_on_close(fig, job)  # Interrupts the job when closing the figure
-        # while results.is_processing():
-        #     # Fetch results
-        #     resul = results.fetch_all()
-        #     I = -np.array(resul[1::2])
-        #     Q = -np.array(resul[2::2])
-        #     n = resul[0]
-        #     # Progress bar
-        #     progress_counter(n, n_avg, start_time=results.start_time)
-        #     # Plot results
-        #     plt.suptitle(f"All XY for qubit {qb} \n Number of average = {n_avg}")
-        #     plt.subplot(211)
-        #     plt.cla()
-        #     plt.plot(I, "bx-", label="Experimental data")
-        #     plt.plot([np.max(I)] * 5 + [(np.mean(I))] * 12 + [np.min(I)] * 4, "rx-", label="Expected value")
-        #     plt.ylabel("I quadrature [a.u.]")
-        #     plt.xticks(ticks=range(len(sequence)), labels=["" for _ in sequence], rotation=45)
-        #     plt.legend()
-        #     plt.subplot(212)
-        #     plt.cla()
-        #     plt.plot(Q, "bx", label="Experimental data")
-        #     plt.plot([np.max(Q)] * 5 + [(np.mean(Q))] * 12 + [np.min(Q)] * 4, "r-", label="Expected value")
-        #     plt.ylabel("Q quadrature [a.u.]")
-        #     plt.xticks(ticks=range(len(sequence)), labels=[str(el) for el in sequence], rotation=45)
-        #     plt.legend()
-        #     plt.tight_layout()
-        #     plt.pause(0.1)
-        #     plt.show()
-
+        if mode == 'live':
+            fig = plt.figure()
+            interrupt_on_close(fig, job)  # Interrupts the job when closing the figure
+            while results.is_processing():
+                # Fetch results
+                resul = results.fetch_all()
+                I = -np.array(resul[1::2])
+                Q = -np.array(resul[2::2])
+                n = resul[0]
+                # Progress bar
+                progress_counter(n, n_avg, start_time=results.start_time)
+                # Plot results
+                plt.suptitle(f"All XY for qubit {qb} \n Number of average = {n_avg}")
+                plt.subplot(211)
+                plt.cla()
+                plt.plot(I, "bx-", label="Experimental data")
+                plt.plot([np.max(I)] * 5 + [(np.mean(I))] * 12 + [np.min(I)] * 4, "rx-", label="Expected value")
+                plt.ylabel("I quadrature [a.u.]")
+                plt.xticks(ticks=range(len(sequence)), labels=["" for _ in sequence], rotation=45)
+                plt.legend()
+                plt.subplot(212)
+                plt.cla()
+                plt.plot(Q, "bx", label="Experimental data")
+                plt.plot([np.max(Q)] * 5 + [(np.mean(Q))] * 12 + [np.min(Q)] * 4, "r-", label="Expected value")
+                plt.ylabel("Q quadrature [a.u.]")
+                plt.xticks(ticks=range(len(sequence)), labels=[str(el) for el in sequence], rotation=45)
+                plt.legend()
+                plt.tight_layout()
+                plt.pause(0.1)
+                plt.show()
+        else:
+            resul = results.fetch_all()
         # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
         qm.close()
-
-        print(I)
-
         if signal_target == 'I':
             return -np.array(resul[1::2])
         elif signal_target == 'Q':
