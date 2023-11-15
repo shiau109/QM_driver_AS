@@ -30,7 +30,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-def freq_dep_SNR( q_name:list, dfs, ro_element:list, n_avg, config, qmm:QuantumMachinesManager ):
+def freq_dep_signal( dfs, q_name:list, ro_element:list, n_avg, config, qmm:QuantumMachinesManager ):
 
     center_IF = {}
     for r in ro_element:
@@ -97,17 +97,93 @@ def freq_dep_SNR( q_name:list, dfs, ro_element:list, n_avg, config, qmm:QuantumM
     qm.close()
     return output_data
 
+def power_dep_signal( amp_ratio, q_name:list, ro_element:list, n_avg, config, qmm:QuantumMachinesManager ):
 
-def plot_freq_SNR( freq, data, label ):
+    center_IF = {}
+    for r in ro_element:
+        center_IF[r] = config["elements"][r]["intermediate_frequency"]
+    amp_len = amp_ratio.shape[-1]
+    ###################
+    # The QUA program #
+    ###################
+    with program() as ro_freq_opt:
+        iqdata_stream_g = multiRO_declare(ro_element)
+        iqdata_stream_e = multiRO_declare(ro_element)
+        n = declare(int)
+        n_st = declare_stream()
+        a = declare(fixed)  # QUA variable for the readout frequency
+
+        with for_(n, 0, n < n_avg, n + 1):
+            with for_(*from_array(a, amp_ratio)):
+
+                # Reset both qubits to ground
+                wait(thermalization_time * u.ns)
+                # Measure the ground IQ blobs
+                multiRO_measurement(iqdata_stream_g, ro_element, weights="rotated_", amp_modify = a)
+                align()
+                # Reset both qubits to ground
+                wait(thermalization_time * u.ns)
+                # Measure the excited IQ blobs
+                for name in q_name:
+                    play("x180", name)
+                align()
+                multiRO_measurement(iqdata_stream_e, ro_element, weights="rotated_", amp_modify = a)
+            # Save the averaging iteration to get the progress bar
+            save(n, n_st)
+
+        with stream_processing():
+            n_st.save("n")
+            multiRO_pre_save( iqdata_stream_g, ro_element, (amp_len,), "_g" )
+            multiRO_pre_save( iqdata_stream_e, ro_element, (amp_len,), "_e" )
+
+
+    # Open the quantum machine
+    qm = qmm.open_qm(config)
+    # Send the QUA program to the OPX, which compiles and executes it
+    job = qm.execute(ro_freq_opt)
+    # Get results from QUA program
+    
+    data_list = []
+    for r in ro_element:
+        data_list.append(f"{r}_I_g")
+        data_list.append(f"{r}_Q_g")
+        data_list.append(f"{r}_I_e")
+        data_list.append(f"{r}_Q_e")
+
+    results = fetching_tool(job, data_list=data_list, mode="wait_for_all")
+    fetch_data = results.fetch_all()
+    output_data = {}
+    for r_idx, r_name in enumerate(ro_element):
+        output_data[r_name] = np.array(
+            [[fetch_data[r_idx*4], fetch_data[r_idx*4+1]],
+             [fetch_data[r_idx*4+2], fetch_data[r_idx*4+3]]])
+    
+    # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
+    qm.close()
+    return output_data
+
+def plot_freq_signal( x, data, label ):
     sig = get_signal_amplitude(data)
     plt.suptitle("Readout frequency optimization")
     plt.cla()
-    plt.plot( freq, sig, ".-")
+    plt.plot( x, sig, ".-")
     plt.title(f"{label} RO frequency")
     plt.xlabel("Readout frequency detuning [MHz]")
     plt.ylabel("SNR")
     plt.grid("on")
     # print(f"The optimal readout frequency is {dfs[np.argmax(SNR1)] + resonator_IF_q1} Hz (SNR={max(SNR1)})")
+
+def plot_amp_signal( x, data, label ):
+    sig = get_signal_amplitude(data)
+    plt.suptitle("Readout amplitude optimization")
+    plt.cla()
+    plt.plot( x, sig, ".-")
+    plt.title(f"{label} RO amplitude")
+    plt.xlabel("Readout amplitude ")
+    plt.ylabel("SNR")
+    plt.grid("on")
+    # print(f"The optimal readout frequency is {dfs[np.argmax(SNR1)] + resonator_IF_q1} Hz (SNR={max(SNR1)})")
+
 
 def get_signal_amplitude( data ):
     """
@@ -126,8 +202,13 @@ if __name__ == '__main__':
     n_avg = 4000
     # The frequency sweep around the resonators' frequency "resonator_IF_q"
     dfs = np.arange(-10e6, 10e6, 0.1e6)
+    operate_qubit = ["q1_xy", "q2_xy"]
     ro_element = ["rr1","rr2"]
-    data = freq_dep_SNR( ["q1_xy", "q2_xy"], dfs, ["rr1","rr2"], n_avg, config, qmm)
-
+    data = freq_dep_signal( dfs, operate_qubit, ro_element, n_avg, config, qmm)
     for r in ro_element:
-        plot_freq_SNR( dfs, data[r], r )
+        plot_freq_signal( dfs, data[r], r )
+
+    amps = np.linspace(0, 1.8, 180)
+    data = power_dep_signal( amps, operate_qubit, ro_element, n_avg, config, qmm)
+    for r in ro_element:
+        plot_amp_signal( amps, data[r], r )
