@@ -8,7 +8,7 @@ from qualang_tools.results import fetching_tool, progress_counter
 from qualang_tools.plot import interrupt_on_close
 from macros import qua_declaration, multiplexed_readout
 from qualang_tools.plot.fitting import Fit
-from common_fitting_func import gaussian
+from common_fitting_func import *
 from scipy.optimize import curve_fit
 import warnings
 
@@ -17,12 +17,18 @@ warnings.filterwarnings("ignore")
 def T2_exp(Qi,n_avg,idle_times,operation_flux_point,q_id,qmm):
     resonators = [i+1 for i in q_id]
     res_num = len(resonators)
+    res_F = resonator_flux( operation_flux_point[Qi-1], *p1[Qi-1])
+    res_IF = (res_F - resonator_LO)/1e6
+    res_IF = int(res_IF * u.MHz)
     with program() as ramsey:
         I, I_st, Q, Q_st, n, n_st = qua_declaration(res_num)
         t = declare(int)  
+        resonator_freq = declare(int, value=res_IF)
         for i in q_id:
             set_dc_offset(f"q{i+1}_z", "single", operation_flux_point[i])
         update_frequency(f"q{Qi}_xy", detuning + qubit_IF[Qi-1])
+        update_frequency(f"rr{Qi}", resonator_freq)
+        wait(flux_settle_time * u.ns)
         with for_(n, 0, n < n_avg, n + 1):
             with for_(*from_array(t, idle_times)):
                 # Qubit Qi
@@ -73,25 +79,31 @@ def T2_plot(I, Q, Qi,fitting):
     plt.tight_layout()
     plt.pause(0.1)
     if fitting:
-        fit = Fit()
-        plt.figure()
-        plt.suptitle(f"Ramsey measurement with detuning={detuning} Hz")
-        plt.subplot(121)
-        fit.ramsey(4 * idle_times, I, plot=True)
-        plt.xlabel("Idle times [ns]")
-        plt.ylabel("I quadrature [V]")
-        plt.subplot(122)
-        fit.ramsey(4 * idle_times, Q, plot=True)
-        plt.xlabel("Idle times [ns]")
-        plt.ylabel("Q quadrature [V]")
-        plt.title(f"Qubit {Qi}")
-        plt.tight_layout()
-        plt.show()
-
+        try:
+            fit = Fit()
+            plt.figure()
+            plt.suptitle(f"Ramsey measurement with detuning={detuning} Hz")
+            plt.subplot(121)
+            fit.ramsey(4 * idle_times, I, plot=True)
+            plt.xlabel("Idle times [ns]")
+            plt.ylabel("I quadrature [V]")
+            plt.subplot(122)
+            fit.ramsey(4 * idle_times, Q, plot=True)
+            plt.xlabel("Idle times [ns]")
+            plt.ylabel("Q quadrature [V]")
+            plt.title(f"Qubit {Qi}")
+            plt.tight_layout()
+            plt.show()
+        except (Exception,):
+            pass
 def T2_fitting(signal):
-    fit = Fit()
-    decay_fit = fit.ramsey(4 * idle_times, signal, plot=False)
-    qubit_T2 = np.round(np.abs(decay_fit["T2"][0]) / 4) * 4
+    try:
+        fit = Fit()
+        decay_fit = fit.ramsey(4 * idle_times, signal, plot=False)
+        qubit_T2 = np.round(np.abs(decay_fit["T2"][0]) / 4) * 4
+    except Exception as e:     
+        print(f"An error occurred: {e}")  
+        qubit_T2 = 0
     return qubit_T2
 
 def multi_T2_exp(m, Qi, n_avg,idle_times,operation_flux_point,q_id,qmm):
@@ -100,21 +112,22 @@ def multi_T2_exp(m, Qi, n_avg,idle_times,operation_flux_point,q_id,qmm):
         I, Q = T2_exp(Qi,n_avg,idle_times,operation_flux_point,q_id,qmm)
         T2_I.append(T2_fitting(I))
         T2_Q.append(T2_fitting(Q))
+        print(f'iteration: {i+1}')
     return T2_I, T2_Q
 
-def T2_hist(data,T2_max,signal_name):
+def T2_hist(data, T2_max, signal_name):
     try:
-        new_data = [round(x / 1000) for x in data] # change ns to us
-        bin_width = 0.5
-        start_value = 0.75
-        end_value = T2_max + 0.25
+        new_data = [x / 1000 for x in data]  
+        bin_width = 0.5  
+        start_value = -0.25  
+        end_value = T2_max + 0.25  
         custom_bins = [start_value + i * bin_width for i in range(int((end_value - start_value) / bin_width) + 1)]
         hist_values, bin_edges = np.histogram(new_data, bins=custom_bins, density=True)
         bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
         params, covariance = curve_fit(gaussian, bin_centers, hist_values)
         mu, sigma = params
         plt.cla()
-        plt.hist(new_data, bins=custom_bins, density=True, alpha=0.7, color='blue', label='Histogram')
+        plt.hist(new_data, bins=custom_bins, density=True, alpha=0.7, color='blue', label='Histogram') 
         xmin, xmax = plt.xlim()
         x = np.linspace(xmin, xmax, 100)
         p = gaussian(x, mu, sigma)
@@ -124,20 +137,20 @@ def T2_hist(data,T2_max,signal_name):
         plt.show()
         print(f'Mean: {mu:.2f}')
         print(f'Standard Deviation: {sigma:.2f}')
-    except (Exception,):
-        pass
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
-n_avg = 500  
-idle_times = np.arange(4, 2500, 5)  
+n_avg = 750
+idle_times = np.arange(4, 2200, 10)  
 detuning = 1e6  
-operation_flux_point = [0, 4.000e-02, -3.100e-01, 4.000e-02]
+operation_flux_point = [0, 4.000e-02, 4.000e-02, -3.200e-01] 
 q_id = [0,1,2,3]
-Qi = 3
+Qi = 4
 
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
 # I,Q = T2_exp(Qi,n_avg,idle_times,operation_flux_point,q_id,qmm)
 # T2_plot(I, Q, Qi, True)
-m = 2
+m = 100
 T2_I, T2_Q = multi_T2_exp(m, Qi, n_avg,idle_times,operation_flux_point,q_id,qmm)
-T2_hist(T2_I,20,'I')
-T2_hist(T2_Q,20,'Q')
+T2_hist(T2_I,15,'I')
+T2_hist(T2_Q,15,'Q')

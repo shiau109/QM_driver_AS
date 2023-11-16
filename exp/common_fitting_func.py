@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.stats import norm
+from scipy.optimize import fsolve
 import matplotlib.pyplot as plt
+from configuration import *
 
 def gaussian(x, mu, sigma):
     return norm.pdf(x, mu, sigma)
@@ -39,25 +41,38 @@ def flux_qubit_spec_with_d(flux,v_period,max_freq,max_flux,Ec,d):
     return freq
 
 
-
-
 if __name__ == '__main__':
     ### Test S21_notch
     # x = np.linspace(-48e6,-44e6,5000)
     # print(type(S21_notch(x)))
     # plt.plot(x, S21_notch(x, -46.5e6, 9.0e+02, 1.0e+03, 0.0e+00, 0.035))
     # plt.show()
+
     ### Test resonator_flux
-    x = np.linspace(-0.5,0.5,5000)
-    # plt.plot(x, resonator_flux(x, 2e6, 5, 2.5, -0.2, 5.734e9))
+    Qi = 3
     flux = np.arange(-0.5, 0.5, 0.001)
-    # plt.plot(x, resonator_flux(x, 1.6e6,  4.93558591e+00, 3,  3.67462775e+01, -1.584e8))   
+    res_F = resonator_flux(-3.100e-01+0.14, *p1[Qi-1])
+    res_IF = (res_F - resonator_LO)/1e6
+    res_IF = int(res_IF * u.MHz)
+    print(res_IF)
+    # plt.plot(x, resonator_flux(x, 2.22397609e+06, 4.47370446e+00, 2.20718217e-01, 3.12854012e-01, 5.84462834e+09))   
     # plt.show()
-    v_period = 0.72
-    max_freq = 3.5235
-    max_flux = -3.300e-01
-    idle_freq = 3.35
-    idle_flux = 0.16
-    Ec = 0.2
-    plt.plot(flux,flux_qubit_spec(flux,v_period=0.7,max_freq=(3.5235e9),max_flux=0.004,idle_freq=(3.2252e9),idle_flux=0.146,Ec=0.2e9))
-    plt.show()
+
+    ##################### Qubit spec ############################ 
+    # v_period = 0.72
+    # max_freq = 3.5235
+    # max_flux = -3.300e-01
+    # idle_freq = 3.35
+    # idle_flux = 0.16
+    # Ec = 0.2
+    # # plt.plot(flux,flux_qubit_spec(flux,v_period=0.7,max_freq=(3.5235e9),max_flux=0.004,idle_freq=(3.2252e9),idle_flux=0.146,Ec=0.2e9))
+    # # plt.show()
+    # target_value = 3.1931e9
+    # initial_guess = 0.15
+    # solution = fsolve(
+    #     lambda x: flux_qubit_spec(x,v_period=0.7,max_freq=(3.5235e9),max_flux=0.004,idle_freq=(3.2252e9),idle_flux=0.146,Ec=0.2e9)
+    #                    - target_value, initial_guess)
+
+    # print(f"The solution to f(x) = {target_value} is x = {solution[0]}")
+    # # Q3
+    # The solution to f(x) = 3193100000.0 is x = 0.15361442261694103

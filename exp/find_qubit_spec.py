@@ -18,7 +18,7 @@ saturation_amp =  0.03  # pre-factor to the value defined in the config - restri
 # Qubit detuning sweep with respect to qubit_IF
 dfs = np.arange(-350e6, +100e6, 0.1e6)
 # Flux sweep
-flux = np.arange(-0.1, 0.2, 0.01)
+flux = np.arange(0, 0.3, 0.01)
 Qi = 3
 operation_flux_point = [0, 4.000e-02, -3.100e-01, 4.000e-02] 
 res_F = resonator_flux( flux + operation_flux_point[Qi-1], *p1[Qi-1])

@@ -29,6 +29,7 @@ from qualang_tools.results import fetching_tool
 from qualang_tools.plot import interrupt_on_close
 from qualang_tools.results import progress_counter
 from macros import qua_declaration, multiplexed_readout
+from common_fitting_func import *
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -39,26 +40,29 @@ warnings.filterwarnings("ignore")
 ###################
 n_avg = 1000  # Number of averages
 q_id = [0,1,2,3]
-dfs = np.arange(-1.5e6, 1.5e6, 0.1e6)  # Frequency detuning sweep in Hz
+dfs = np.arange(-1e6, 1e6, 0.05e6)  # Frequency detuning sweep in Hz
 t_delay = np.arange(1, 200, 4)  # Idle time sweep in clock cycles (Needs to be a list of integers)
-
-operation_flux_point = [0, 4.000e-02, -3.100e-01, 4.000e-02]
-
+Qi = 4
+operation_flux_point = [0, 4.000e-02, 4.000e-02, -3.200e-01] 
+res_F = resonator_flux( operation_flux_point[Qi-1], *p1[Qi-1])
+res_IF = (res_F - resonator_LO)/1e6
+res_IF = int(res_IF * u.MHz)
 with program() as ramsey:
     I, I_st, Q, Q_st, n, n_st = qua_declaration(nb_of_qubits=4)
     t = declare(int)  # QUA variable for the idle time
     df = declare(int)  # QUA variable for the qubit frequency
     # Adjust the flux line biases to check whether you are actually measuring the qubit
+    resonator_freq1 = declare(int, value=res_IF)
     for i in q_id:
         set_dc_offset("q%s_z"%(i+1), "single", operation_flux_point[i])
-
+    update_frequency(f"rr{Qi}", resonator_freq1)
     with for_(n, 0, n < n_avg, n + 1):
         with for_(*from_array(df, dfs)):
             # Update the frequency of the two qubit elements
             # update_frequency("q1_xy", df + qubit_IF[0])
             # update_frequency("q2_xy", df + qubit_IF[1])
-            update_frequency("q3_xy", df + qubit_IF[2])
-            # update_frequency("q4_xy", df + qubit_IF[3])
+            # update_frequency("q3_xy", df + qubit_IF[2])
+            update_frequency("q4_xy", df + qubit_IF[3])
             
             with for_(*from_array(t, t_delay)):
                 # qubit 1
@@ -70,13 +74,13 @@ with program() as ramsey:
                 # wait(t, "q2_xy")
                 # play("x90", "q2_xy")
                 # qubit 3
-                play("x90", "q3_xy")
-                wait(t, "q3_xy")
-                play("x90", "q3_xy")
+                # play("x90", "q3_xy")
+                # wait(t, "q3_xy")
+                # play("x90", "q3_xy")
                 # qubit 4
-                # play("x90", "q4_xy")
-                # wait(t, "q4_xy")
-                # play("x90", "q4_xy")
+                play("x90", "q4_xy")
+                wait(t, "q4_xy")
+                play("x90", "q4_xy")
                 # Align the elements to measure after having waited a time "tau" after the qubit pulses.
                 align()
                 # Measure the state of the resonators

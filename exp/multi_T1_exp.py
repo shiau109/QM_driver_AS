@@ -9,21 +9,28 @@ from qualang_tools.plot import interrupt_on_close
 from qualang_tools.results import progress_counter
 from qualang_tools.plot.fitting import Fit
 from macros import qua_declaration, multiplexed_readout
-from common_fitting_func import gaussian
+from common_fitting_func import *
 from scipy.optimize import curve_fit
 import warnings
 
 warnings.filterwarnings("ignore")
 
+
 def T1_exp(Qi,n_avg,t_delay,operation_flux_point,q_id,qmm):
     resonators = [i+1 for i in q_id]
     res_num = len(resonators)
+    res_F = resonator_flux( operation_flux_point[Qi-1], *p1[Qi-1])
+    res_IF = (res_F - resonator_LO)/1e6
+    res_IF = int(res_IF * u.MHz)
     # QUA program
     with program() as T1:
         I, I_st, Q, Q_st, n, n_st = qua_declaration(res_num)
         t = declare(int)  
+        resonator_freq = declare(int, value=res_IF)
         for i in q_id:
             set_dc_offset(f"q{i+1}_z", "single", operation_flux_point[i])
+        update_frequency(f"rr{Qi}", resonator_freq)
+        wait(flux_settle_time * u.ns)  
         with for_(n, 0, n < n_avg, n + 1):
             with for_(*from_array(t, t_delay)):
                 play("x180", f"q{Qi}_xy")
@@ -105,6 +112,7 @@ def multi_T1_exp(m, Qi, n_avg,t_delay,operation_flux_point,q_id,qmm):
         I, Q = T1_exp(Qi,n_avg,t_delay,operation_flux_point,q_id,qmm)
         T1_I.append(T1_fitting(I))
         T1_Q.append(T1_fitting(Q))
+        print(f'iteration: {i+1}')
     return T1_I, T1_Q
 
 def T1_hist(data,T1_max,signal_name):
@@ -132,17 +140,16 @@ def T1_hist(data,T1_max,signal_name):
     except (Exception,):
         pass
 
-n_avg = 200
+n_avg = 500
 t_delay = np.arange(4, 25000, 200)  
-operation_flux_point = [0, 4.000e-02, -3.100e-01, 4.000e-02]
+operation_flux_point = [0, 4.000e-02, 4.000e-02, -3.200e-01] 
 q_id = [0,1,2,3]
-Qi = 3
+Qi = 4
 # Qi = 1 stands for Q1
-
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-I,Q = T1_exp(Qi,n_avg,t_delay,operation_flux_point,q_id,qmm)
-T1_plot(I, Q, Qi,True)
-m = 2
+# I,Q = T1_exp(Qi,n_avg,t_delay,operation_flux_point,q_id,qmm)
+# T1_plot(I, Q, Qi,True)
+m = 100
 T1_I, T1_Q = multi_T1_exp(m, Qi, n_avg, t_delay, operation_flux_point, q_id, qmm)
 T1_hist(T1_I,50,'I')
 T1_hist(T1_Q,50,'Q')
