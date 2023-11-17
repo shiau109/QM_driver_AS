@@ -40,10 +40,10 @@ warnings.filterwarnings("ignore")
 ###################
 n_avg = 1000  # Number of averages
 q_id = [0,1,2,3]
-dfs = np.arange(-1e6, 1e6, 0.05e6)  # Frequency detuning sweep in Hz
+dfs = np.arange(-5e6, 5e6, 0.1e6)  # Frequency detuning sweep in Hz
 t_delay = np.arange(1, 200, 4)  # Idle time sweep in clock cycles (Needs to be a list of integers)
-Qi = 4
-operation_flux_point = [0, 4.000e-02, 4.000e-02, -3.200e-01] 
+Qi = 3
+operation_flux_point = [0, 4.000e-02, -3.100e-01-0.0407, -3.200e-01] 
 res_F = resonator_flux( operation_flux_point[Qi-1], *p1[Qi-1])
 res_IF = (res_F - resonator_LO)/1e6
 res_IF = int(res_IF * u.MHz)
@@ -61,8 +61,8 @@ with program() as ramsey:
             # Update the frequency of the two qubit elements
             # update_frequency("q1_xy", df + qubit_IF[0])
             # update_frequency("q2_xy", df + qubit_IF[1])
-            # update_frequency("q3_xy", df + qubit_IF[2])
-            update_frequency("q4_xy", df + qubit_IF[3])
+            update_frequency("q3_xy", df + qubit_IF[2])
+            # update_frequency("q4_xy", df + qubit_IF[3])
             
             with for_(*from_array(t, t_delay)):
                 # qubit 1
@@ -74,13 +74,13 @@ with program() as ramsey:
                 # wait(t, "q2_xy")
                 # play("x90", "q2_xy")
                 # qubit 3
-                # play("x90", "q3_xy")
-                # wait(t, "q3_xy")
-                # play("x90", "q3_xy")
+                play("x90", "q3_xy")
+                wait(t, "q3_xy")
+                play("x90", "q3_xy")
                 # qubit 4
-                play("x90", "q4_xy")
-                wait(t, "q4_xy")
-                play("x90", "q4_xy")
+                # play("x90", "q4_xy")
+                # wait(t, "q4_xy")
+                # play("x90", "q4_xy")
                 # Align the elements to measure after having waited a time "tau" after the qubit pulses.
                 align()
                 # Measure the state of the resonators

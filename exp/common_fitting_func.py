@@ -49,30 +49,28 @@ if __name__ == '__main__':
     # plt.show()
 
     ### Test resonator_flux
-    Qi = 3
-    flux = np.arange(-0.5, 0.5, 0.001)
-    res_F = resonator_flux(-3.100e-01+0.14, *p1[Qi-1])
-    res_IF = (res_F - resonator_LO)/1e6
-    res_IF = int(res_IF * u.MHz)
-    print(res_IF)
+    # Qi = 3
+    # flux = np.arange(-0.5, 0.5, 0.001)
+    # res_F = resonator_flux(-3.100e-01+0.14, *p1[Qi-1])
+    # res_IF = (res_F - resonator_LO)/1e6
+    # res_IF = int(res_IF * u.MHz)
+    # print(res_IF)
     # plt.plot(x, resonator_flux(x, 2.22397609e+06, 4.47370446e+00, 2.20718217e-01, 3.12854012e-01, 5.84462834e+09))   
     # plt.show()
 
     ##################### Qubit spec ############################ 
-    # v_period = 0.72
-    # max_freq = 3.5235
-    # max_flux = -3.300e-01
-    # idle_freq = 3.35
-    # idle_flux = 0.16
-    # Ec = 0.2
-    # # plt.plot(flux,flux_qubit_spec(flux,v_period=0.7,max_freq=(3.5235e9),max_flux=0.004,idle_freq=(3.2252e9),idle_flux=0.146,Ec=0.2e9))
-    # # plt.show()
-    # target_value = 3.1931e9
-    # initial_guess = 0.15
-    # solution = fsolve(
-    #     lambda x: flux_qubit_spec(x,v_period=0.7,max_freq=(3.5235e9),max_flux=0.004,idle_freq=(3.2252e9),idle_flux=0.146,Ec=0.2e9)
-    #                    - target_value, initial_guess)
 
-    # print(f"The solution to f(x) = {target_value} is x = {solution[0]}")
+    flux = np.arange(-0.5, 0.5, 0.001)
+    plt.plot(flux,flux_qubit_spec(flux,v_period=0.72,max_freq=(3.8497e9),max_flux=-0.0204,idle_freq=(3.6507e9),idle_flux=0.0917,Ec=0.196e9))
+    plt.show()
+    target_value = 3.724653e9
+    initial_guess = 0.1
+    solution = fsolve(
+        lambda x: flux_qubit_spec(x, v_period=0.72,max_freq=(3.8497e9),max_flux=-0.0204,idle_freq=(3.6507e9),idle_flux=0.0917,Ec=0.196e9)
+                       - target_value, initial_guess)
+
+    print(f"The solution to f(x) = {target_value} is x = {solution[0]}")
     # # Q3
     # The solution to f(x) = 3193100000.0 is x = 0.15361442261694103
+    # # Q4  
+    # The solution to f(x) = 3724653000.0 is x = 0.06834788688427282

@@ -11,26 +11,6 @@ import warnings
 from common_fitting_func import *
 warnings.filterwarnings("ignore")
 
-n_avg = 500  # The number of averages
-# Adjust the pulse duration and amplitude to drive the qubit into a mixed state
-saturation_len = 12 * u.us  # In ns
-saturation_amp =  0.03  # pre-factor to the value defined in the config - restricted to [-2; 2)
-# Qubit detuning sweep with respect to qubit_IF
-dfs = np.arange(-350e6, +100e6, 0.1e6)
-# Flux sweep
-flux = np.arange(0, 0.3, 0.01)
-Qi = 3
-operation_flux_point = [0, 4.000e-02, -3.100e-01, 4.000e-02] 
-res_F = resonator_flux( flux + operation_flux_point[Qi-1], *p1[Qi-1])
-res_IF = (res_F - resonator_LO)/1e6
-res_IF_list = []
-
-for IF in res_IF:
-    res_IF_list.append(int(IF * u.MHz))  
-
-q_id = [0,1,2,3]
-simulate = False
-
 def flux_twotone_qubit(q_id, Qi, simulate,qmm):
     res_num = len(q_id)
     with program() as multi_qubit_spec_vs_flux:
@@ -138,11 +118,27 @@ def qubit_flux_fitting(I,Q,Qi):
     plt.pcolor(Flux[Qi-1], Frequency[Qi-1], phase[Qi-1])        
     plt.plot(Flux[Qi-1], Frequency[Qi-1][max_index[Qi-1]])
 
-    plt.plot(flux,flux_qubit_spec(flux,v_period=0.7,max_freq=(3.5235e9),max_flux=0.004,idle_freq=(3.2252e9),idle_flux=0.146,Ec=0.2e9))
+    plt.plot(flux,flux_qubit_spec(flux,v_period=0.72,max_freq=(3.8497e9),max_flux=-0.0289,idle_freq=(3.7497e9),idle_flux=0.05,Ec=0.196e9))
 
     plt.tight_layout()
     plt.show()
 
+n_avg = 500  
+saturation_len = 12 * u.us  
+saturation_amp =  0.01 
+dfs = np.arange(-350e6, +100e6, 0.1e6)
+flux = np.arange(-0.1, 0.1, 0.01)
+Qi = 3
+operation_flux_point = [0, 4.000e-02, -3.100e-01, -3.200e-01] 
+res_F = resonator_flux( flux + operation_flux_point[Qi-1], *p1[Qi-1])
+res_IF = (res_F - resonator_LO)/1e6
+res_IF_list = []
+
+for IF in res_IF:
+    res_IF_list.append(int(IF * u.MHz))  
+
+q_id = [0,1,2,3]
+simulate = False
 
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
 I, Q = flux_twotone_qubit(q_id,Qi,simulate,qmm)
@@ -150,3 +146,6 @@ qubit_flux_fitting(I,Q,Qi)
 
 ### Q3
 # plt.plot(flux,flux_qubit_spec(flux,v_period=0.7,max_freq=(3.5235e9),max_flux=0.004,idle_freq=(3.2252e9),idle_flux=0.146,Ec=0.2e9))
+
+### Q4
+# plt.plot(flux,flux_qubit_spec(flux,v_period=0.72,max_freq=(3.8497e9),max_flux=-0.0204,idle_freq=(3.6507e9),idle_flux=0.0917,Ec=0.196e9))

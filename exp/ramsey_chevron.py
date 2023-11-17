@@ -19,17 +19,20 @@ warnings.filterwarnings("ignore")
 
 def ramsey_chevron(n_avg,q_id,Qi,dfs,operation_flux_point,t_delay,simulate):
     res_num = len(q_id)
-    res_F = resonator_flux( operation_flux_point[Qi-1], *p1[Qi-1])
-    res_IF = (res_F - resonator_LO)/1e6
-    res_IF = int(res_IF * u.MHz)
+    res_IF = []
+    resonator_freq = [[] for _ in q_id]
+    for i in q_id:
+        res_F = resonator_flux( operation_flux_point[i], *p1[i])
+        res_F = (res_F - resonator_LO)/1e6
+        res_IF.append(int(res_F * u.MHz))
     with program() as ramsey:
         I, I_st, Q, Q_st, n, n_st = qua_declaration(nb_of_qubits=res_num)
         t = declare(int)  
-        df = declare(int)  
-        resonator_freq = declare(int, value=res_IF)
+        df = declare(int)        
         for i in q_id:
+            resonator_freq[i] = declare(int, value=res_IF[i])
             set_dc_offset(f"q{i+1}_z", "single", operation_flux_point[i])
-        update_frequency(f"rr{Qi}", resonator_freq)
+            update_frequency(f"rr{i+1}", resonator_freq[i])
         with for_(n, 0, n < n_avg, n + 1):
             with for_(*from_array(df, dfs)):
                 update_frequency(f"q{Qi}_xy", df + qubit_IF[Qi-1])    
@@ -47,7 +50,6 @@ def ramsey_chevron(n_avg,q_id,Qi,dfs,operation_flux_point,t_delay,simulate):
             for i in q_id:
                 I_st[q_id.index(i)].buffer(len(t_delay)).buffer(len(dfs)).average().save(f"I{i+1}")
                 Q_st[q_id.index(i)].buffer(len(t_delay)).buffer(len(dfs)).average().save(f"Q{i+1}")                
-
     if simulate:
         simulation_config = SimulationConfig(duration=10_000)  
         job = qmm.simulate(config, ramsey, simulation_config)
@@ -60,7 +62,6 @@ def ramsey_chevron(n_avg,q_id,Qi,dfs,operation_flux_point,t_delay,simulate):
         I_list, Q_list = [f"I{i+1}" for i in range(res_num)], [f"Q{i+1}" for i in range(res_num)]
         results = fetching_tool(job, I_list + Q_list + ["n"], mode="live")
         while results.is_processing():
-
             all_results = results.fetch_all()
             n = all_results[-1]
             I, Q = all_results[0:res_num], all_results[res_num:res_num*2] 
@@ -68,10 +69,10 @@ def ramsey_chevron(n_avg,q_id,Qi,dfs,operation_flux_point,t_delay,simulate):
                 I[i] = u.demod2volts(I[i], readout_len)
                 Q[i] = u.demod2volts(Q[i], readout_len)
             progress_counter(n, n_avg, start_time=results.start_time)
-            live_plotting(I,Q,Qi)
+            live_plotting(I[Qi-1],Q[Qi-1],Qi)
         qm.close()
         plt.show()
-        return I, Q
+        return I[Qi-1], Q[Qi-1]
     
 def live_plotting(I,Q,Qi):
     plt.suptitle("Ramsey chevron \n Number of average = " + str(n_avg))
@@ -94,8 +95,8 @@ qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_na
 simulate = False
 n_avg = 1000  
 q_id = [0,1,2,3]
-dfs = np.arange(-1e6, 1e6, 0.05e6)  
+dfs = np.arange(-10e6, 10e6, 0.1e6)  
 t_delay = np.arange(1, 200, 4) 
-Qi = 4
-operation_flux_point = [0, 4.000e-02, 4.000e-02, -3.200e-01] 
+Qi = 3
+operation_flux_point = [0, 4.000e-02, -3.100e-01-0.0407, -3.200e-01] 
 I,Q = ramsey_chevron(n_avg,q_id,Qi,dfs,operation_flux_point,t_delay,simulate)

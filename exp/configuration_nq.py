@@ -75,7 +75,7 @@ qubit_IF[0] = (-116.8+0.245) * u.MHz       # Q1
 qubit_IF[1] = (-203.57-1.054) * u.MHz      # Q2
 qubit_IF[2] = (-75.347) * u.MHz
 # qubit_IF[2] = (-306+1.45+0.07) * u.MHz     # Q3
-qubit_IF[3] = (-109.18+0.39-0.014) * u.MHz     # Q4
+qubit_IF[3] = (-108.804) * u.MHz     # Q4
 # qubit_IF[3] = (-84.8-0.56) * u.MHz
 qubit_IF[4] = (-92) * u.MHz                # Q5
 # For comparing 2q:
