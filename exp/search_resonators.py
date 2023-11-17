@@ -48,7 +48,7 @@ def search_resonators( frequencies, config, ro_element, n_avg, qmm:QuantumMachin
 
         f = declare(int)  # QUA variable for the readout frequency --> Hz int 32 up to 2^32
 
-        iqdata_stream = multiRO_declare( [ro_element] )
+        iqdata_stream = multiRO_declare( ro_element )
 
         n = declare(int)
         n_st = declare_stream()
@@ -75,7 +75,6 @@ def search_resonators( frequencies, config, ro_element, n_avg, qmm:QuantumMachin
     # Send the QUA program to the OPX, which compiles and executes it
     job = qm.execute(resonator_spec)
     # Get results from QUA program
-    
     results = fetching_tool(job, data_list=[f"{ro_element}_I", f"{ro_element}_Q", "iteration"], mode="wait_for_all")
     output_data = results.fetch_all()
     # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
@@ -90,6 +89,5 @@ if __name__ == '__main__':
 
     idata, qdata, repetition = search_resonators(search_range,config,"rr1",100,qmm)  
     zdata = idata +1j*qdata
-    print(idata.shape)
     plt.plot(search_range, np.abs(zdata),label="Origin")
     plt.show()

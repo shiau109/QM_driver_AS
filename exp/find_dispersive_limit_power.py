@@ -66,7 +66,7 @@ def mRO_power_dep_resonator( ro_element, df_array, amp_ratio, cd_time, n_avg, co
                 with for_(*from_array(df, df_array)):
                         
                     for r in ro_element:
-                        update_frequency( r, center_IF[r])
+                        update_frequency( r, center_IF[r]+df)
 
                     multiRO_measurement( iqdata_stream, ro_element, amp_modify=a )
 
@@ -98,39 +98,40 @@ def mRO_power_dep_resonator( ro_element, df_array, amp_ratio, cd_time, n_avg, co
     qm.close()
     return output_data
 
-def plot_power_dep_resonator( data, ax=None ):
-        idata = data["rr1"][0]
-        qdata = data["rr1"][1]
-        zdata = idata +1j*qdata
-        s21 = zdata/amp_ratio[:,None]
+def plot_power_dep_resonator( dfs, amp_log_ratio, data, ax=None ):
+    idata = data[0]
+    qdata = data[1]
+    zdata = idata +1j*qdata
+    s21 = zdata/amp_ratio[:,None]
 
-        if ax==None:
-            fig, ax = plt.subplots()
-            c = ax.pcolormesh(dfs, amp_log_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
-            ax.set_title('pcolormesh')
-        return fig
-    
+    if ax==None:
+        fig, ax = plt.subplots()
+        ax.set_title('pcolormesh')
+        fig.show()
+    ax.pcolormesh(dfs, amp_log_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
 
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
-    n_avg = 100  # The number of averages
+    n_avg = 200  # The number of averages
     # The frequency sweep around the resonators' frequency "resonator_IF_q"
 
-    span = 10 * u.MHz
+    span = 5 * u.MHz
     df = 0.1 * u.MHz
     dfs = np.arange(-span, +span + 0.1, df)
 
 
     # The readout amplitude sweep (as a pre-factor of the readout amplitude) - must be within [-2; 2)
-    # amp_ratio = np.linspace( 0.05, 1.5, 30)    # Linear
-    amp_ratio = np.logspace(-2, 0, 10)  # Log
-    amp_log_ratio = np.log10(amp_ratio)
+    amp_ratio = np.linspace( 0.05, 1.5, 30)    # Linear
+    # amp_ratio = np.logspace(-1, 0, 10)  # Log
+    # amp_log_ratio = np.log10(amp_ratio)*10
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
     
-    resonators = ["rr1","rr2"]
+    resonators = ["rr1","rr2","rr3","rr4"]
     output_data = mRO_power_dep_resonator( resonators ,dfs, amp_ratio,1000,n_avg,config,qmm)  
     for r in resonators:
-        mfg = plot_power_dep_resonator(output_data[r])
-        mfg.show()
+        fig, ax = plt.subplots()
+        plot_power_dep_resonator(dfs, amp_ratio, output_data[r], ax)
+        ax.set_title(r)
+    plt.show()
  
