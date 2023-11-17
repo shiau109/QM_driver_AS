@@ -84,7 +84,7 @@ def search_resonators( frequencies, config, ro_element, n_avg, qmm:QuantumMachin
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
-    
+
     search_range = np.arange(-400e6, 400e6, 0.5e6)
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
 
@@ -92,4 +92,4 @@ if __name__ == '__main__':
     zdata = idata +1j*qdata
     print(idata.shape)
     plt.plot(search_range, np.abs(zdata),label="Origin")
-
+    plt.show()
