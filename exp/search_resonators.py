@@ -22,7 +22,7 @@ from qualang_tools.results import progress_counter, fetching_tool
 from qualang_tools.loops import from_array
 import warnings
 
-from QM_macros_jacky import multiRO_declare, multiRO_measurement, multiRO_pre_save
+from QM_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 
 warnings.filterwarnings("ignore")
 
@@ -77,15 +77,6 @@ def search_resonators( frequencies, config, ro_element, n_avg, qmm:QuantumMachin
     # Get results from QUA program
     
     results = fetching_tool(job, data_list=[f"{ro_element}_I", f"{ro_element}_Q", "iteration"], mode="wait_for_all")
-    # while results.is_processing():
-    #     # Fetch results
-    #     I, Q, iteration = results.fetch_all()
-    #     # Convert results into Volts
-    #     # S = u.demod2volts(I + 1j * Q, readout_len)
-    #     # R = np.abs(S)  # Amplitude
-    #     # phase = np.angle(S)  # Phase
-    #     # Progress bar
-    #     progress_counter(iteration, n_avg, start_time=results.get_start_time())
     output_data = results.fetch_all()
     # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
     qm.close()
@@ -93,42 +84,12 @@ def search_resonators( frequencies, config, ro_element, n_avg, qmm:QuantumMachin
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
-    from QM_config_dynamic import QM_config
-    myConfig = QM_config()
-    myConfig.set_wiring("con1")
-    mRO_common = {
-            "I":("con1",1),
-            "Q":("con1",2),
-            "freq_LO": 6, # GHz
-            "mixer": "octave_octave1_1",
-            "time_of_flight": 200, # ns
-            "integration_time": 2000, # ns
-        }
-    mRO_individual = [
-        {
-            "name":"rr1", 
-            "freq_RO": 6.01, # GHz
-            "amp": 0.05, # V
-        }
-    ]
-    myConfig.update_multiplex_readout_channel(mRO_common, mRO_individual )
+    
     search_range = np.arange(-400e6, 400e6, 0.5e6)
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-    
-    test_config = myConfig.get_config()
-    # print(test_config["elements"]["rr1"])
-    # print(test_config["controllers"])
-    # print(test_config["waveforms"])
-    # print(test_config["mixers"])
 
     idata, qdata, repetition = search_resonators(search_range,config,"rr1",100,qmm)  
     zdata = idata +1j*qdata
     print(idata.shape)
     plt.plot(search_range, np.abs(zdata),label="Origin")
 
-    idata, qdata, repetition = search_resonators(search_range,test_config,"rr1",100,qmm)  
-    zdata = idata +1j*qdata
-    print(idata.shape)
-    plt.plot(search_range, np.abs(zdata),label="Dynamic")
-    plt.legend()
-    plt.show()
