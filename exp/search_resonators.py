@@ -22,7 +22,7 @@ from qualang_tools.results import progress_counter, fetching_tool
 from qualang_tools.loops import from_array
 import warnings
 
-from QM_macros_jacky import multiRO_declare, multiRO_measurement, multiRO_pre_save
+from QM_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 
 warnings.filterwarnings("ignore")
 

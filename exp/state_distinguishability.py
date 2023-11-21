@@ -25,7 +25,6 @@ from configuration import *
 import matplotlib.pyplot as plt
 from qualang_tools.results import fetching_tool
 from qualang_tools.analysis import two_state_discriminator
-from macros import qua_declaration, multiplexed_readout
 from QM_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save_singleShot
 
 
@@ -85,8 +84,8 @@ def state_distinguishability( q_id:list, ro_element, shot_num, config, qmm:Quant
     data_list = []
     for r in ro_element:
         data_list.append(f"{r}_I_g")
-        data_list.append(f"{r}_Q_g")
-        data_list.append(f"{r}_I_e")
+        data_list.append(f"{r}_Q_e")
+        data_list.append(f"{r}_I_g")
         data_list.append(f"{r}_Q_e")
 
     
