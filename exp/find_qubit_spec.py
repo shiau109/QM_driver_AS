@@ -38,24 +38,23 @@ def flux_twotone_qubit(q_id, Qi, flux_Qi, flux, plot_index, simulate,qmm):
         with for_(n, 0, n < n_avg, n + 1):
             for i in q_id:
                 set_dc_offset(f"q{i+1}_z", "single", operation_flux_point[i])
-            with for_(*from_array(df, dfs)):
-                update_frequency(f"q{Qi}_xy", df + qubit_IF[Qi-1])
-                assign(index, 0)
-                with for_(*from_array(dc, flux)):
-                    set_dc_offset(f"q{flux_Qi}_z", "single", dc + operation_flux_point[flux_Qi-1])
-                    wait(flux_settle_time * u.ns) 
-                    ### Constantly varying resonator freq corresponding to the flux
-                    if Qi==flux_Qi: update_frequency(f"rr{Qi}", resonator_freq[index])
-
+            assign(index, 0)     
+            with for_(*from_array(dc, flux)):
+                set_dc_offset(f"q{flux_Qi}_z", "single", dc + operation_flux_point[flux_Qi-1])  
+                ### Constantly varying resonator freq corresponding to the flux
+                if Qi==flux_Qi: update_frequency(f"rr{Qi}", resonator_freq[index])                
+                with for_(*from_array(df, dfs)):
+                    update_frequency(f"q{Qi}_xy", df + qubit_IF[Qi-1]) 
+                    wait(thermalization_time * u.ns) 
                     play("saturation" * amp(saturation_amp), f"q{Qi}_xy", duration=saturation_len * u.ns)
                     multiplexed_readout(I, I_st, Q, Q_st, resonators=[x+1 for x in q_id], amplitude=0.9)
-                    assign(index, index + 1)
+                assign(index, index + 1)
             save(n, n_st)
         with stream_processing():
             n_st.save("n")
             for i in q_id:
-                I_st[q_id.index(i)].buffer(len(flux)).buffer(len(dfs)).average().save(f"I{i+1}")
-                Q_st[q_id.index(i)].buffer(len(flux)).buffer(len(dfs)).average().save(f"Q{i+1}")
+                I_st[q_id.index(i)].buffer( len(flux),len(dfs) ).average().save(f"I{i+1}")
+                Q_st[q_id.index(i)].buffer( len(flux),len(dfs) ).average().save(f"Q{i+1}")
     if simulate:
         simulation_config = SimulationConfig(duration=10_000)  # In clock cycles = 4ns
         job = qmm.simulate(config, multi_qubit_spec_vs_flux, simulation_config)
@@ -94,7 +93,7 @@ def live_plotting(Amplitude,Phase,plot_index):
     plt.suptitle("Qubit spectroscopy")
     plt.subplot(221)
     plt.cla()
-    plt.pcolor(flux, (qubit_IF[Qi-1] + dfs) / u.MHz, Amplitude[plot_index])
+    plt.pcolor(flux, (qubit_IF[Qi-1] + dfs) / u.MHz, Amplitude[plot_index].transpose())
     plt.colorbar()
     plt.xlabel(f"qubit {flux_Qi} Flux bias [V]")
     plt.ylabel(f"q{Qi} IF [MHz]")
@@ -102,7 +101,7 @@ def live_plotting(Amplitude,Phase,plot_index):
 
     plt.subplot(222)
     plt.cla()
-    plt.pcolor(flux, (qubit_IF[Qi-1] + dfs) / u.MHz, Phase[plot_index])
+    plt.pcolor(flux, (qubit_IF[Qi-1] + dfs) / u.MHz, Phase[plot_index].transpose())
     plt.colorbar()
     plt.xlabel(f"qubit {flux_Qi} Flux bias [V]")
     plt.ylabel(f"q{Qi} IF [MHz]")
@@ -111,14 +110,14 @@ def live_plotting(Amplitude,Phase,plot_index):
 
     plt.subplot(223)
     plt.cla()
-    plt.pcolor(flux, (qubit_IF[Qi-1] + dfs + qubit_LO[Qi-1])/ u.GHz, Amplitude[plot_index])
+    plt.pcolor(flux, (qubit_IF[Qi-1] + dfs + qubit_LO[Qi-1])/ u.GHz, Amplitude[plot_index].transpose())
     plt.colorbar()
     plt.xlabel(f"qubit {flux_Qi} Flux bias [V]")
     plt.ylabel(f"q{Qi} [GHz]")
 
     plt.subplot(224)
     plt.cla()
-    plt.pcolor(flux, (qubit_IF[Qi-1] + dfs + qubit_LO[Qi-1])/ u.GHz, Phase[plot_index])
+    plt.pcolor(flux, (qubit_IF[Qi-1] + dfs + qubit_LO[Qi-1])/ u.GHz, Phase[plot_index].transpose())
     plt.colorbar()
     plt.xlabel(f"qubit {flux_Qi} Flux bias [V]")
     plt.ylabel(f"q{Qi} [GHz]")
@@ -154,7 +153,7 @@ def qubit_flux_fitting(I,Q,plot_index,fitting):
     plt.subplot(1, 2, 1)
     plt.cla()
     plt.title(f"q{Qi}:")
-    plt.pcolor(Flux[plot_index], Frequency[plot_index], R[plot_index])        
+    plt.pcolor(Flux[plot_index], Frequency[plot_index], R[plot_index].transpose())        
     plt.plot(Flux[plot_index], Frequency[plot_index][min_index[plot_index]])
     print(f'amp_max qubit_freq: {amp_max_qubit_freq}')
     print(f'amp_max qubit_freq_flux: {amp_max_qubit_flux}')
@@ -169,7 +168,7 @@ def qubit_flux_fitting(I,Q,plot_index,fitting):
     plt.subplot(1, 2, 2)
     plt.cla()
     plt.title(f"q{Qi}:")
-    plt.pcolor(Flux[plot_index], Frequency[plot_index], phase[plot_index])        
+    plt.pcolor(Flux[plot_index], Frequency[plot_index], phase[plot_index].transpose())        
     plt.plot(Flux[plot_index], Frequency[plot_index][max_index[plot_index]])
     print(f'phase_max qubit_freq: {phase_max_qubit_freq}')
     print(f'phase_max qubit_freq_flux: {phase_max_qubit_flux}')
@@ -186,20 +185,19 @@ def qubit_flux_fitting(I,Q,plot_index,fitting):
 
 n_avg = 100  
 saturation_len = 12 * u.us  
-saturation_amp =  0.01
+saturation_amp =  0.05
 q_id = [1,2,3,4]
-Qi = 3
+Qi = 4
 flux_Qi = 4
 fitting = False
 for i in q_id: 
     if i == Qi-1: plot_index = q_id.index(i)  
-dfs = np.arange(-40e6, 150e6, 0.01e6)
-flux = np.arange(0.11, 0.17, 0.0005)
+dfs = np.arange(-300e6, 50e6, 1e6)
+flux = np.arange(-0.02, 0.25, 0.01)
 Flux = np.zeros((len(q_id), len(flux)))
 Frequency = np.zeros((len(q_id), len(dfs)))
-Amplitude = np.zeros((len(q_id), len(dfs), len(flux)))
-Phase = np.zeros((len(q_id), len(dfs), len(flux)))
-
+Amplitude = np.zeros((len(q_id), len(flux), len(dfs)))
+Phase = np.zeros((len(q_id), len(flux), len(dfs)))
 operation_flux_point = [0, -3.000e-01, -0.2525, -0.3433, -3.400e-01] 
 simulate = False
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)

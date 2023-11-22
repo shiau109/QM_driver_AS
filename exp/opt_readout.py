@@ -200,16 +200,17 @@ def get_signal_amplitude( data ):
 if __name__ == '__main__':
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
 
-    n_avg = 4000
+    n_avg = 200
     # The frequency sweep around the resonators' frequency "resonator_IF_q"
-    dfs = np.arange(-10e6, 10e6, 0.1e6)
-    operate_qubit = ["q1_xy", "q2_xy"]
-    ro_element = ["rr1","rr2"]
+    dfs = np.arange(-5e6, 5e6, 0.1e6)
+    operate_qubit = [ "q4_xy"]
+    ro_element = ["rr4"]
     data = freq_dep_signal( dfs, operate_qubit, ro_element, n_avg, config, qmm)
     for r in ro_element:
         plot_freq_signal( dfs, data[r], r )
-
+    plt.show()
     amps = np.linspace(0, 1.8, 180)
     data = power_dep_signal( amps, operate_qubit, ro_element, n_avg, config, qmm)
     for r in ro_element:
         plot_amp_signal( amps, data[r], r )
+    plt.show()

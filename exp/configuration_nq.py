@@ -64,16 +64,16 @@ octave_config = octave_declaration(octaves)
 qubit_LO = np.zeros(5)
 qubit_LO[0] = (4.055) * u.GHz
 qubit_LO[1] = (4.4) * u.GHz
-qubit_LO[2] = (3.4) * u.GHz
-qubit_LO[3] = (3.8) * u.GHz
+qubit_LO[2] = (3.5) * u.GHz
+qubit_LO[3] = (3.95) * u.GHz
 qubit_LO[4] = (4.75) * u.GHz
 
 # Qubits IF
 qubit_IF = np.zeros(5)
 qubit_IF[0] = (-116.8+0.245) * u.MHz       # Q1
 qubit_IF[1] = (-203.57-1.054) * u.MHz      # Q2
-qubit_IF[2] = (-211.15-2.54+1-0.25) * u.MHz
-qubit_IF[3] = (-89.8071-0.036) * u.MHz     # Q4
+qubit_IF[2] = (-212.94+1.49+100-200) * u.MHz
+qubit_IF[3] = (-83.5531-0.13-5-1.08+0.24) * u.MHz     # Q4
 qubit_IF[4] = (-92) * u.MHz                # Q5
 # For comparing 2q:
 # qubit_IF[1] = qubit_IF[0]
@@ -98,15 +98,22 @@ pi_sigma = pi_len / 4
 pi_amp_q1 = 0.15*0.872*0.975*0.97
 pi_amp_q2 = 0.15*0.57*0.99 *0.605
 pi_amp_q3 = 0.0343*0.69*0.9875
-pi_amp_q4 = 0.1609*0.95*1.015*0.995
+pi_amp_q4 = 0.1609*0.95*1.015*0.995*1.035
 # pi_amp_q4 = 0.1*1.135*1.005*0.805
 pi_amp_q5 = 0.5
+
+r90_amp_q1 = pi_amp_q1/2
+r90_amp_q2 = pi_amp_q2/2
+r90_amp_q3 = pi_amp_q3/2
+r90_amp_q4 = pi_amp_q4/2 *1.104*0.99
+# pi_amp_q4 = 0.1*1.135*1.005*0.805
+r90_amp_q5 = pi_amp_q5/2
 
 # DRAG coefficients (# No DRAG when drag_coef_qi=0, it's just a gaussian.)
 drag_coef_q1 = 0.68
 drag_coef_q2 = 1.3
 drag_coef_q3 = 0.5
-drag_coef_q4 = 0
+drag_coef_q4 = 1.0
 drag_coef_q5 = 0
 anharmonicity_q1 = -(450.2-344.2)*2 * u.MHz
 anharmonicity_q2 = -(470.7-369.2)*2 * u.MHz
@@ -131,26 +138,26 @@ x180_I_wf_q4, x180_Q_wf_q4 = x180_wf_q4, x180_der_wf_q4
 x180_wf_q5, x180_der_wf_q5 = np.array(drag_gaussian_pulse_waveforms(pi_amp_q5, pi_len, pi_sigma, drag_coef_q5, anharmonicity_q5, AC_stark_detuning_q5))
 x180_I_wf_q5, x180_Q_wf_q5 = x180_wf_q5, x180_der_wf_q5
 # DRAG waveforms (x90)
-x90_wf_q1, x90_der_wf_q1 = np.array(drag_gaussian_pulse_waveforms(pi_amp_q1 / 2, pi_len, pi_sigma, drag_coef_q1, anharmonicity_q1, AC_stark_detuning_q1))
+x90_wf_q1, x90_der_wf_q1 = np.array(drag_gaussian_pulse_waveforms(r90_amp_q1, pi_len, pi_sigma, drag_coef_q1, anharmonicity_q1, AC_stark_detuning_q1))
 x90_I_wf_q1, x90_Q_wf_q1 = x90_wf_q1, x90_der_wf_q1
-x90_wf_q2, x90_der_wf_q2 = np.array(drag_gaussian_pulse_waveforms(pi_amp_q2 / 2, pi_len, pi_sigma, drag_coef_q2, anharmonicity_q2, AC_stark_detuning_q2))
+x90_wf_q2, x90_der_wf_q2 = np.array(drag_gaussian_pulse_waveforms(r90_amp_q2, pi_len, pi_sigma, drag_coef_q2, anharmonicity_q2, AC_stark_detuning_q2))
 x90_I_wf_q2, x90_Q_wf_q2 = x90_wf_q2, x90_der_wf_q2
-x90_wf_q3, x90_der_wf_q3 = np.array(drag_gaussian_pulse_waveforms(pi_amp_q3 / 2, pi_len, pi_sigma, drag_coef_q3, anharmonicity_q3, AC_stark_detuning_q3))
+x90_wf_q3, x90_der_wf_q3 = np.array(drag_gaussian_pulse_waveforms(r90_amp_q3, pi_len, pi_sigma, drag_coef_q3, anharmonicity_q3, AC_stark_detuning_q3))
 x90_I_wf_q3, x90_Q_wf_q3 = x90_wf_q3, x90_der_wf_q3
-x90_wf_q4, x90_der_wf_q4 = np.array(drag_gaussian_pulse_waveforms(pi_amp_q4 / 2, pi_len, pi_sigma, drag_coef_q4, anharmonicity_q4, AC_stark_detuning_q4))
+x90_wf_q4, x90_der_wf_q4 = np.array(drag_gaussian_pulse_waveforms(r90_amp_q4, pi_len, pi_sigma, drag_coef_q4, anharmonicity_q4, AC_stark_detuning_q4))
 x90_I_wf_q4, x90_Q_wf_q4 = x90_wf_q4, x90_der_wf_q4
-x90_wf_q5, x90_der_wf_q5 = np.array(drag_gaussian_pulse_waveforms(pi_amp_q5 / 2, pi_len, pi_sigma, drag_coef_q5, anharmonicity_q5, AC_stark_detuning_q5))
+x90_wf_q5, x90_der_wf_q5 = np.array(drag_gaussian_pulse_waveforms(r90_amp_q5, pi_len, pi_sigma, drag_coef_q5, anharmonicity_q5, AC_stark_detuning_q5))
 x90_I_wf_q5, x90_Q_wf_q5 = x90_wf_q5, x90_der_wf_q5
 # DRAG waveforms (-x90)
-minus_x90_wf_q1, minus_x90_der_wf_q1 = np.array(drag_gaussian_pulse_waveforms(-pi_amp_q1 / 2, pi_len, pi_sigma, drag_coef_q1, anharmonicity_q1, AC_stark_detuning_q1))
+minus_x90_wf_q1, minus_x90_der_wf_q1 = np.array(drag_gaussian_pulse_waveforms(-r90_amp_q1, pi_len, pi_sigma, drag_coef_q1, anharmonicity_q1, AC_stark_detuning_q1))
 minus_x90_I_wf_q1, minus_x90_Q_wf_q1 = minus_x90_wf_q1, minus_x90_der_wf_q1
-minus_x90_wf_q2, minus_x90_der_wf_q2 = np.array(drag_gaussian_pulse_waveforms(-pi_amp_q2 / 2, pi_len, pi_sigma, drag_coef_q2, anharmonicity_q2, AC_stark_detuning_q2))
+minus_x90_wf_q2, minus_x90_der_wf_q2 = np.array(drag_gaussian_pulse_waveforms(-r90_amp_q2, pi_len, pi_sigma, drag_coef_q2, anharmonicity_q2, AC_stark_detuning_q2))
 minus_x90_I_wf_q2, minus_x90_Q_wf_q2 = minus_x90_wf_q2, minus_x90_der_wf_q2
-minus_x90_wf_q3, minus_x90_der_wf_q3 = np.array(drag_gaussian_pulse_waveforms(-pi_amp_q3 / 2, pi_len, pi_sigma, drag_coef_q3, anharmonicity_q3, AC_stark_detuning_q3))
+minus_x90_wf_q3, minus_x90_der_wf_q3 = np.array(drag_gaussian_pulse_waveforms(-r90_amp_q3, pi_len, pi_sigma, drag_coef_q3, anharmonicity_q3, AC_stark_detuning_q3))
 minus_x90_I_wf_q3, minus_x90_Q_wf_q3 = minus_x90_wf_q3, minus_x90_der_wf_q3
-minus_x90_wf_q4, minus_x90_der_wf_q4 = np.array(drag_gaussian_pulse_waveforms(-pi_amp_q4 / 2, pi_len, pi_sigma, drag_coef_q4, anharmonicity_q4, AC_stark_detuning_q4))
+minus_x90_wf_q4, minus_x90_der_wf_q4 = np.array(drag_gaussian_pulse_waveforms(-r90_amp_q4, pi_len, pi_sigma, drag_coef_q4, anharmonicity_q4, AC_stark_detuning_q4))
 minus_x90_I_wf_q4, minus_x90_Q_wf_q4 = minus_x90_wf_q4, minus_x90_der_wf_q4
-minus_x90_wf_q5, minus_x90_der_wf_q5 = np.array(drag_gaussian_pulse_waveforms(-pi_amp_q5 / 2, pi_len, pi_sigma, drag_coef_q5, anharmonicity_q5, AC_stark_detuning_q5))
+minus_x90_wf_q5, minus_x90_der_wf_q5 = np.array(drag_gaussian_pulse_waveforms(-r90_amp_q5, pi_len, pi_sigma, drag_coef_q5, anharmonicity_q5, AC_stark_detuning_q5))
 minus_x90_I_wf_q5, minus_x90_Q_wf_q5 = minus_x90_wf_q5, minus_x90_der_wf_q5
 # DRAG waveforms (y180)
 y180_wf_q1, y180_der_wf_q1 = np.array(drag_gaussian_pulse_waveforms(pi_amp_q1, pi_len, pi_sigma, drag_coef_q1, anharmonicity_q1, AC_stark_detuning_q1))
@@ -164,26 +171,26 @@ y180_I_wf_q4, y180_Q_wf_q4 = (-1) * y180_der_wf_q4, y180_wf_q4
 y180_wf_q5, y180_der_wf_q5 = np.array(drag_gaussian_pulse_waveforms(pi_amp_q5, pi_len, pi_sigma, drag_coef_q5, anharmonicity_q5, AC_stark_detuning_q5))
 y180_I_wf_q5, y180_Q_wf_q5 = (-1) * y180_der_wf_q5, y180_wf_q5
 # DRAG waveforms (y90)
-y90_wf_q1, y90_der_wf_q1 = np.array(drag_gaussian_pulse_waveforms(pi_amp_q1 / 2, pi_len, pi_sigma, drag_coef_q1, anharmonicity_q1, AC_stark_detuning_q1))
+y90_wf_q1, y90_der_wf_q1 = np.array(drag_gaussian_pulse_waveforms(r90_amp_q1, pi_len, pi_sigma, drag_coef_q1, anharmonicity_q1, AC_stark_detuning_q1))
 y90_I_wf_q1, y90_Q_wf_q1 = (-1) * y90_der_wf_q1, y90_wf_q1
-y90_wf_q2, y90_der_wf_q2 = np.array(drag_gaussian_pulse_waveforms(pi_amp_q2 / 2, pi_len, pi_sigma, drag_coef_q2, anharmonicity_q2, AC_stark_detuning_q2))
+y90_wf_q2, y90_der_wf_q2 = np.array(drag_gaussian_pulse_waveforms(r90_amp_q2, pi_len, pi_sigma, drag_coef_q2, anharmonicity_q2, AC_stark_detuning_q2))
 y90_I_wf_q2, y90_Q_wf_q2 = (-1) * y90_der_wf_q2, y90_wf_q2
-y90_wf_q3, y90_der_wf_q3 = np.array(drag_gaussian_pulse_waveforms(pi_amp_q3 / 2, pi_len, pi_sigma, drag_coef_q3, anharmonicity_q3, AC_stark_detuning_q3))
+y90_wf_q3, y90_der_wf_q3 = np.array(drag_gaussian_pulse_waveforms(r90_amp_q3, pi_len, pi_sigma, drag_coef_q3, anharmonicity_q3, AC_stark_detuning_q3))
 y90_I_wf_q3, y90_Q_wf_q3 = (-1) * y90_der_wf_q3, y90_wf_q3
-y90_wf_q4, y90_der_wf_q4 = np.array(drag_gaussian_pulse_waveforms(pi_amp_q4 / 2, pi_len, pi_sigma, drag_coef_q4, anharmonicity_q4, AC_stark_detuning_q4))
+y90_wf_q4, y90_der_wf_q4 = np.array(drag_gaussian_pulse_waveforms(r90_amp_q4, pi_len, pi_sigma, drag_coef_q4, anharmonicity_q4, AC_stark_detuning_q4))
 y90_I_wf_q4, y90_Q_wf_q4 = (-1) * y90_der_wf_q4, y90_wf_q4
-y90_wf_q5, y90_der_wf_q5 = np.array(drag_gaussian_pulse_waveforms(pi_amp_q5 / 2, pi_len, pi_sigma, drag_coef_q5, anharmonicity_q5, AC_stark_detuning_q5))
+y90_wf_q5, y90_der_wf_q5 = np.array(drag_gaussian_pulse_waveforms(r90_amp_q5, pi_len, pi_sigma, drag_coef_q5, anharmonicity_q5, AC_stark_detuning_q5))
 y90_I_wf_q5, y90_Q_wf_q5 = (-1) * y90_der_wf_q5, y90_wf_q5
 # DRAG waveforms (-y90)
-minus_y90_wf_q1, minus_y90_der_wf_q1 = np.array(drag_gaussian_pulse_waveforms(-pi_amp_q1 / 2, pi_len, pi_sigma, drag_coef_q1, anharmonicity_q1, AC_stark_detuning_q1))
+minus_y90_wf_q1, minus_y90_der_wf_q1 = np.array(drag_gaussian_pulse_waveforms(-r90_amp_q1, pi_len, pi_sigma, drag_coef_q1, anharmonicity_q1, AC_stark_detuning_q1))
 minus_y90_I_wf_q1, minus_y90_Q_wf_q1 = (-1) * minus_y90_der_wf_q1, minus_y90_wf_q1
-minus_y90_wf_q2, minus_y90_der_wf_q2 = np.array(drag_gaussian_pulse_waveforms(-pi_amp_q2 / 2, pi_len, pi_sigma, drag_coef_q2, anharmonicity_q2, AC_stark_detuning_q2))
+minus_y90_wf_q2, minus_y90_der_wf_q2 = np.array(drag_gaussian_pulse_waveforms(-r90_amp_q2, pi_len, pi_sigma, drag_coef_q2, anharmonicity_q2, AC_stark_detuning_q2))
 minus_y90_I_wf_q2, minus_y90_Q_wf_q2 = (-1) * minus_y90_der_wf_q2, minus_y90_wf_q2
-minus_y90_wf_q3, minus_y90_der_wf_q3 = np.array(drag_gaussian_pulse_waveforms(-pi_amp_q3 / 2, pi_len, pi_sigma, drag_coef_q3, anharmonicity_q3, AC_stark_detuning_q3))
+minus_y90_wf_q3, minus_y90_der_wf_q3 = np.array(drag_gaussian_pulse_waveforms(-r90_amp_q3, pi_len, pi_sigma, drag_coef_q3, anharmonicity_q3, AC_stark_detuning_q3))
 minus_y90_I_wf_q3, minus_y90_Q_wf_q3 = (-1) * minus_y90_der_wf_q3, minus_y90_wf_q3
-minus_y90_wf_q4, minus_y90_der_wf_q4 = np.array(drag_gaussian_pulse_waveforms(-pi_amp_q4 / 2, pi_len, pi_sigma, drag_coef_q4, anharmonicity_q4, AC_stark_detuning_q4))
+minus_y90_wf_q4, minus_y90_der_wf_q4 = np.array(drag_gaussian_pulse_waveforms(-r90_amp_q4, pi_len, pi_sigma, drag_coef_q4, anharmonicity_q4, AC_stark_detuning_q4))
 minus_y90_I_wf_q4, minus_y90_Q_wf_q4 = (-1) * minus_y90_der_wf_q4, minus_y90_wf_q4
-minus_y90_wf_q5, minus_y90_der_wf_q5 = np.array(drag_gaussian_pulse_waveforms(-pi_amp_q5 / 2, pi_len, pi_sigma, drag_coef_q5, anharmonicity_q5, AC_stark_detuning_q5))
+minus_y90_wf_q5, minus_y90_der_wf_q5 = np.array(drag_gaussian_pulse_waveforms(-r90_amp_q5, pi_len, pi_sigma, drag_coef_q5, anharmonicity_q5, AC_stark_detuning_q5))
 minus_y90_I_wf_q5, minus_y90_Q_wf_q5 = (-1) * minus_y90_der_wf_q5, minus_y90_wf_q5
 
 ##########################################
@@ -339,7 +346,7 @@ rotation_angle_q5 = (0 / 180) * np.pi
 ge_threshold_q1 = 0.000909
 ge_threshold_q2 = 0.000229
 ge_threshold_q3 = 0
-ge_threshold_q4 = 0
+ge_threshold_q4 = 2.419e-04
 ge_threshold_q5 = 0
 
 #############################################

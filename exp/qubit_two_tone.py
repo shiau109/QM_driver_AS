@@ -92,7 +92,7 @@ def live_plotting(Amplitude,Phase,plot_index):
 q_id = [1,2,3,4]
 Qi = 3
 n_avg = 1000 
-operation_flux_point = [0, -3.000e-01, -0.2525, -0.3433 + 0.12 , -3.400e-01] 
+operation_flux_point = [0, -3.000e-01, -0.2525, -0.3433 , -3.400e-01] 
 saturation_amp = 0.01
 saturation_len = 20 * u.us  
 dfs = np.arange(-40e6, 150e6, 0.05e6)
