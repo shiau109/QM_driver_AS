@@ -43,7 +43,7 @@ import sys
 
 def mRO_power_dep_resonator( ro_element, df_array, amp_ratio, cd_time, n_avg, config, qmm:QuantumMachinesManager)->dict:
     """
-
+    df_array ref is IF on config
     """
     center_IF = {}
     for r in ro_element:
@@ -99,6 +99,12 @@ def mRO_power_dep_resonator( ro_element, df_array, amp_ratio, cd_time, n_avg, co
     return output_data
 
 def plot_power_dep_resonator( dfs, amp_log_ratio, data, ax=None ):
+    """
+    data shape ( 2, N, M )
+    2 is I,Q
+    N is freq
+    M is RO amp
+    """
     idata = data[0]
     qdata = data[1]
     zdata = idata +1j*qdata
