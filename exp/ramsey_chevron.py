@@ -95,8 +95,8 @@ if __name__ == '__main__':
     simulate = False
     n_avg = 100  
     q_id = [1,2,3,4]
-    dfs = np.arange(-5e6, 5e6, 0.05e6)  
-    t_delay = np.arange(1, 200, 4) 
+    dfs = np.arange(-1e6, 1e6, 0.01e6)  
+    t_delay = np.arange(1, 500, 10) 
     Qi = 4
     for i in q_id: 
         if i == Qi-1: plot_index = q_id.index(i) 
