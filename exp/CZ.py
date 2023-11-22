@@ -42,28 +42,35 @@ warnings.filterwarnings("ignore")
 ####################
 # Define variables #
 ####################
-qubit_to_flux_tune = 2  # Qubit number to flux-tune
-scale_reference = const_flux_amp # for const
+qubit_to_flux_tune = 4  # Qubit number to flux-tune
+scale_reference = const_flux_amp # for const # 0.45
 # scale_reference = cz_point_1_2_q2-idle_q2 # for gaussian-like cz
 
 Qi = 4
-n_avg = 130000  # The number of averages
+n_avg = 130  # The number of averages
 ts = np.arange(4, 60, 1)  # The flux pulse durations in clock cycles (4ns) - Must be larger than 4 clock cycles.
-operation_flux_point = [0, 4.000e-02, -3.100e-01, -3.200e-01] 
-amps = (np.arange(0, 0.07, 0.0001)-operation_flux_point[Qi-1]) 
-q_id = [0,1,2,3]
-res_F = resonator_flux( operation_flux_point[Qi-1], *p1[Qi-1])
-res_IF = (res_F - resonator_LO)/1e6
-res_IF = int(res_IF * u.MHz)
+operation_flux_point = [0, -3.000e-01, -0.2525, -0.3433, -3.400e-01] 
+amps = (np.arange(0, 0.35, 0.001)) 
+q_id = [1,2,3,4]
+
+res_F3 = cosine_func( operation_flux_point[2], *g1[2])
+res_IF3 = (res_F3 - resonator_LO)/1e6
+res_IF3 = int(res_IF3 * u.MHz)
+
+res_F4 = cosine_func( operation_flux_point[3], *g1[3])
+res_IF4 = (res_F4 - resonator_LO)/1e6
+res_IF4 = int(res_IF4 * u.MHz)
 
 with program() as cz:
     I, I_st, Q, Q_st, n, n_st = qua_declaration(nb_of_qubits=4)
     t = declare(int)  # QUA variable for the flux pulse duration
     a = declare(fixed)  # QUA variable for the flux pulse amplitude pre-factor.
-    resonator_freq = declare(int, value=res_IF)
+    resonator_freq3 = declare(int, value=res_IF3)
+    resonator_freq4 = declare(int, value=res_IF4)
     for i in q_id:
         set_dc_offset("q%s_z"%(i+1), "single", operation_flux_point[i])
-    update_frequency(f"rr{Qi}", resonator_freq)
+    update_frequency(f"rr{3}", resonator_freq3)
+    update_frequency(f"rr{4}", resonator_freq4)
     with for_(n, 0, n < n_avg, n + 1):
         with for_(*from_array(t, ts)):
             with for_(*from_array(a, amps)):
@@ -93,6 +100,14 @@ with program() as cz:
         # resonator 2
         I_st[1].buffer(len(amps)).buffer(len(ts)).average().save("I2")
         Q_st[1].buffer(len(amps)).buffer(len(ts)).average().save("Q2")
+        # resonator 3
+        I_st[2].buffer(len(amps)).buffer(len(ts)).average().save("I3")
+        Q_st[2].buffer(len(amps)).buffer(len(ts)).average().save("Q3")
+        # resonator 4
+        I_st[3].buffer(len(amps)).buffer(len(ts)).average().save("I4")
+        Q_st[3].buffer(len(amps)).buffer(len(ts)).average().save("Q4")
+
+
 
 #####################################
 #  Open Communication with the QOP  #
@@ -110,6 +125,7 @@ if simulate:
     simulation_config = SimulationConfig(duration=10_000)  # In clock cycles = 4ns
     job = qmm.simulate(config, cz, simulation_config)
     job.get_simulated_samples().con1.plot()
+    plt.show()
 else:
     # Open the quantum machine
     qm = qmm.open_qm(config)
@@ -119,41 +135,65 @@ else:
     fig = plt.figure()
     interrupt_on_close(fig, job)
     # Tool to easily fetch results from the OPX (results_handle used in it)
-    results = fetching_tool(job, ["n", "I1", "Q1", "I2", "Q2"], mode="live")
+    results = fetching_tool(job, ["n", "I1", "Q1", "I2", "Q2", "I3", "Q3", "I4", "Q4"], mode="live")
     # Live plotting
     while results.is_processing():
         # Fetch results
-        n, I1, Q1, I2, Q2 = results.fetch_all()
+        n, I1, Q1, I2, Q2, I3, Q3, I4, Q4 = results.fetch_all()
         # Convert the results into Volts
         I1, Q1 = u.demod2volts(I1, readout_len), u.demod2volts(Q1, readout_len)
         I2, Q2 = u.demod2volts(I2, readout_len), u.demod2volts(Q2, readout_len)
+        I3, Q3 = u.demod2volts(I3, readout_len), u.demod2volts(Q3, readout_len)
+        I4, Q4 = u.demod2volts(I4, readout_len), u.demod2volts(Q4, readout_len)        
         # Progress bar
         progress_counter(n, n_avg, start_time=results.start_time)
         # Plot
         plt.suptitle(f"CZ chevron sweeping the flux on qubit {qubit_to_flux_tune}")
+        # plt.subplot(221)
+        # plt.cla()
+        # plt.pcolor(amps * scale_reference + flux_offset, 4 * ts, I1)
+        # plt.title("q1 - I [V]")
+        # plt.ylabel("Interaction time (ns)")
+        # plt.subplot(223)
+        # plt.cla()
+        # plt.pcolor(amps * scale_reference + flux_offset, 4 * ts, Q1)
+        # plt.title("q1 - Q [V]")
+        # plt.xlabel("Flux amplitude (V)")
+        # plt.ylabel("Interaction time (ns)")
+        # plt.subplot(222)
+        # plt.cla()
+        # plt.pcolor(amps * scale_reference + flux_offset, 4 * ts, I2)
+        # plt.title("q2 - I [V]")
+        # plt.subplot(224)
+        # plt.cla()
+        # plt.pcolor(amps * scale_reference + flux_offset, 4 * ts, Q2)
+        # plt.title("q2 - Q [V]")
+        # plt.xlabel("Flux amplitude (V)")
+
         plt.subplot(221)
         plt.cla()
-        plt.pcolor(amps * scale_reference + flux_offset, 4 * ts, I1)
-        plt.title("q1 - I [V]")
-        plt.ylabel("Interaction time (ns)")
+        plt.pcolor(amps * scale_reference, 4 * ts, I3)
+        plt.title("q3 - I [V]")
         plt.subplot(223)
         plt.cla()
-        plt.pcolor(amps * scale_reference + flux_offset, 4 * ts, Q1)
-        plt.title("q1 - Q [V]")
+        plt.pcolor(amps * scale_reference, 4 * ts, Q3)
+        plt.title("q3 - Q [V]")
         plt.xlabel("Flux amplitude (V)")
-        plt.ylabel("Interaction time (ns)")
+
         plt.subplot(222)
         plt.cla()
-        plt.pcolor(amps * scale_reference + flux_offset, 4 * ts, I2)
-        plt.title("q2 - I [V]")
+        plt.pcolor(amps * scale_reference, 4 * ts, I4)
+        plt.title("q4 - I [V]")
         plt.subplot(224)
         plt.cla()
-        plt.pcolor(amps * scale_reference + flux_offset, 4 * ts, Q2)
-        plt.title("q2 - Q [V]")
-        plt.xlabel("Flux amplitude (V)")
+        plt.pcolor(amps * scale_reference, 4 * ts, Q4)
+        plt.title("q4 - Q [V]")
+        plt.xlabel("Flux amplitude (V)")        
+
+
         plt.tight_layout()
         plt.pause(0.1)
     # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
     qm.close()
-
+    plt.show()
     # np.savez(save_dir/'cz', I1=I1, Q1=Q1, I2=I2, Q2=Q2, ts=ts, amps=amps)

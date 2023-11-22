@@ -64,19 +64,16 @@ octave_config = octave_declaration(octaves)
 qubit_LO = np.zeros(5)
 qubit_LO[0] = (4.055) * u.GHz
 qubit_LO[1] = (4.4) * u.GHz
-qubit_LO[2] = (3.6) * u.GHz
-qubit_LO[3] = (3.95) * u.GHz
-# qubit_LO[3] = (4.75) * u.GHz
+qubit_LO[2] = (3.4) * u.GHz
+qubit_LO[3] = (3.8) * u.GHz
 qubit_LO[4] = (4.75) * u.GHz
 
 # Qubits IF
 qubit_IF = np.zeros(5)
 qubit_IF[0] = (-116.8+0.245) * u.MHz       # Q1
 qubit_IF[1] = (-203.57-1.054) * u.MHz      # Q2
-qubit_IF[2] = (-75.347) * u.MHz
-# qubit_IF[2] = (-306+1.45+0.07) * u.MHz     # Q3
-qubit_IF[3] = (-108.804) * u.MHz     # Q4
-# qubit_IF[3] = (-84.8-0.56) * u.MHz
+qubit_IF[2] = (-211.15-2.54+1-0.25) * u.MHz
+qubit_IF[3] = (-89.8071-0.036) * u.MHz     # Q4
 qubit_IF[4] = (-92) * u.MHz                # Q5
 # For comparing 2q:
 # qubit_IF[1] = qubit_IF[0]
@@ -96,12 +93,12 @@ const_amp = 270 * u.mV
 saturation_len = 1 * u.us
 saturation_amp = 0.1
 # Pi pulse parameters
-pi_len = 20
+pi_len = 40
 pi_sigma = pi_len / 4
 pi_amp_q1 = 0.15*0.872*0.975*0.97
 pi_amp_q2 = 0.15*0.57*0.99 *0.605
-pi_amp_q3 = 0.09877
-pi_amp_q4 = 0.11585*1.01
+pi_amp_q3 = 0.0343*0.69*0.9875
+pi_amp_q4 = 0.1609*0.95*1.015*0.995
 # pi_amp_q4 = 0.1*1.135*1.005*0.805
 pi_amp_q5 = 0.5
 
@@ -196,17 +193,16 @@ flux_settle_time = 100 * u.ns
 max_frequency_point = np.zeros(5)
 max_frequency_point[0] = -3.400e-01
 max_frequency_point[1] = -3.000e-01
-max_frequency_point[2] = -3.100e-01
-max_frequency_point[3] = -3.200e-01
-# max_frequency_point[3] = -2.800e-01
-max_frequency_point[4] = -2.800e-01
+max_frequency_point[2] = -2.845e-01
+max_frequency_point[3] = -3.414e-01
+max_frequency_point[4] = -3.350e-01
 
 min_frequency_point = np.zeros(5)
 min_frequency_point[0] = 0
-min_frequency_point[1] = 4.000e-02
-min_frequency_point[2] = 4.000e-02
-min_frequency_point[3] = 4.000e-02
-min_frequency_point[4] = 0
+min_frequency_point[1] = 5.000e-02
+min_frequency_point[2] = 3.500e-02
+min_frequency_point[3] = -1.914e-01
+min_frequency_point[4] = 5.000e-03
 
 idle_q1 = max_frequency_point[0] - 0.26
 idle_q2 = max_frequency_point[1] + 0.0
@@ -216,21 +212,35 @@ idle_q5 = max_frequency_point[4] + 0.0
 
 # Resonator frequency versus flux fit parameters according to resonator_spec_vs_flux
 # Initial value
-p = [[],[],[],[],[]]
-p[0] = [2999999.9107172964,  4.717259048157249,  0.27608944530859275,  0.4999999999981507, 5732755699.221205]
-p[1] = [2999999.9107172964,  4.717259048157249,  0.27608944530859275,  0.4999999999981507, 6e9]
-p[2] = [2999999.9107172964,  4.717259048157249,  0.27608944530859275,  0.4999999999981507, 5.8e9]
-# p[3] = [2999999.9107172964,  4.717259048157249,  0.27608944530859275,  0.4999999999981507, 6.11e9]
-p[3] = [2999999.9107172964,  4.717259048157249,  0.27608944530859275,  0.4999999999981507, 5.9e9]
-p[4] = [2999999.9107172964,  4.717259048157249,  0.27608944530859275,  0.4999999999981507, 6.11e9]
-
+p0 = [[],[],[],[],[]]
+p0[0] = [2999999.9107172964,  4.717259048157249,  0.27608944530859275,  0.4999999999981507, 5732755699.221205]
+p0[1] = [2999999.9107172964,  4.717259048157249,  0.27608944530859275,  0.4999999999981507, 6e9]
+p0[2] = [2999999.9107172964,  4.717259048157249,  0.27608944530859275,  0.4999999999981507, 5.8e9]
+p0[3] = [2999999.9107172964,  4.717259048157249,  0.27608944530859275,  0.4999999999981507, 5.9e9]
+p0[4] = [2999999.9107172964,  4.717259048157249,  0.27608944530859275,  0.4999999999981507, 6.11e9]
 # Final value
 p1 = [[],[],[],[],[]]
 p1[0] = [2.99999985e+06, 4.63740337e+00, 2.87575166e-01, 3.37430408e-01, 5.73279474e+09]
 p1[1] = [3.00000000e+06, 4.56771904e+00, 1.44636142e-01, 3.02362805e-01, 6.02213301e+09]
-p1[2] = [2.22397609e+06, 4.47370446e+00, 2.20718217e-01, 3.12854012e-01, 5.84462834e+09]
-p1[3] = [2.99955170e+06, 4.41605661e+00, 1.04071182e-01, 3.18745430e-01, 6.10991916e+09]
-p1[4] = [2999999.9107172964,  4.717259048157249,  0.27608944530859275,  0.4999999999981507, 6.11e9]
+p1[2] = [6.20348242e+05, 4.58797293e+00, 1.00989049e+00, 3.88074851e-01, 5.84590432e+09]
+p1[3] = [2.97585161e+06, 4.26565302e+00, 9.52911885e-02, 3.56194180e-01, 6.11003429e+09]
+p1[4] = [2.97658113e+06, 4.55657910e+00, 8.12816539e-01, 3.35075856e-01, 5.92236351e+09]
+
+# Resonator frequency versus flux fit parameters according to cosine_func
+# Initial value
+g0 = [[],[],[],[],[]]
+g0[0] = [0.4045e6, 1.5, 3, 5.8464515e9]
+g0[1] = [0.4045e6, 1.5, 3, 6e9]
+g0[2] = [0.4045e6, 1.5, 3, 5.8e9]
+g0[3] = [0.4045e6, 1.5, 3, 5.9e9]
+g0[4] = [0.4045e6, 1.5, 3, 6.11e9]
+# Final value
+g1 = [[],[],[],[],[]]
+g1[0] = []
+g1[1] = [3.81148191e+05, 1.45523615e+00, 2.72982631e+00, 6.02477792e+09]
+g1[2] = [3.77931879e+05, 1.47902758e+00, 2.63682667e+00, 5.84613138e+09]
+g1[3] = [3.99999991e+06, 3.79006707e-01, 8.11582702e-01, 6.10906045e+09]
+g1[4] = [1.42510392e+06, 1.46039739e+00, 3.08277727e+00, 5.92422529e+09]
 
 const_flux_len = 200
 const_flux_amp = 0.45
@@ -249,11 +259,10 @@ resonator_LO = 5.95 * u.GHz
 # Resonators IF
 resonator_IF = np.zeros(5)
 resonator_IF[0] = int((-214.21) * u.MHz)
-resonator_IF[1] = int((75.133) * u.MHz)
+resonator_IF[1] = int((75.159) * u.MHz)
 resonator_IF[2] = int((-103.15) * u.MHz) 
-resonator_IF[3] = int((162.94) * u.MHz)
-# resonator_IF[3] = int((-24.9) * u.MHz)
-resonator_IF[4] = int((-27.8) * u.MHz)
+resonator_IF[3] = int((163.06) * u.MHz)
+resonator_IF[4] = int((-25.8) * u.MHz)
 # Above is for verifying wide-sweep results: -156, -38, 39, 137, 231
 
 # Readout pulse parameters (optimal input for IQ-mixer: 125mV)
@@ -595,7 +604,7 @@ config = {
         },
         "q5_z": {
             "singleInput": {
-                "port": ("con1", 10),
+                "port": ("con1", 5),
             },
             "operations": {
                 "const": "const_flux_pulse",

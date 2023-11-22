@@ -7,19 +7,23 @@ from qualang_tools.plot import interrupt_on_close
 from qualang_tools.loops import from_array
 from macros import qua_declaration, multiplexed_readout
 import matplotlib.pyplot as plt
+from scipy import signal
 import warnings
 from common_fitting_func import *
 warnings.filterwarnings("ignore")
 
-def flux_twotone_qubit(q_id, Qi, simulate,qmm):
-    res_num = len(q_id)
+def flux_twotone_qubit(q_id, Qi, flux_Qi, plot_index, simulate,qmm):
+    res_F = cosine_func( flux + operation_flux_point[Qi-1], *g1[Qi-1])
+    res_IF = (res_F - resonator_LO)/1e6
+    res_IF_list = []
+    for IF in res_IF:
+        res_IF_list.append(int(IF * u.MHz))  
     with program() as multi_qubit_spec_vs_flux:
-        I, I_st, Q, Q_st, n, n_st = qua_declaration(nb_of_qubits=res_num)
+        I, I_st, Q, Q_st, n, n_st = qua_declaration(nb_of_qubits=len(q_id))
         df = declare(int)  
         dc = declare(fixed)  
-        resonator_freq1 = declare(int, value=res_IF_list)  
+        resonator_freq = declare(int, value=res_IF_list)  
         index = declare(int, value=0) 
-
         with for_(n, 0, n < n_avg, n + 1):
             for i in q_id:
                 set_dc_offset(f"q{i+1}_z", "single", operation_flux_point[i])
@@ -27,18 +31,18 @@ def flux_twotone_qubit(q_id, Qi, simulate,qmm):
                 update_frequency(f"q{Qi}_xy", df + qubit_IF[Qi-1])
                 assign(index, 0)
                 with for_(*from_array(dc, flux)):
-                    set_dc_offset(f"q{Qi}_z", "single", dc + operation_flux_point[Qi-1])
+                    set_dc_offset(f"q{flux_Qi}_z", "single", dc + operation_flux_point[flux_Qi-1])
                     wait(flux_settle_time * u.ns) 
-                    update_frequency(f"rr{Qi}", resonator_freq1[index])
+                    update_frequency(f"rr{Qi}", resonator_freq[index])
                     play("saturation" * amp(saturation_amp), f"q{Qi}_xy", duration=saturation_len * u.ns)
-                    multiplexed_readout(I, I_st, Q, Q_st, resonators=[1, 2, 3, 4], amplitude=0.9)
+                    multiplexed_readout(I, I_st, Q, Q_st, resonators=[x+1 for x in q_id], amplitude=0.9)
                     assign(index, index + 1)
             save(n, n_st)
         with stream_processing():
             n_st.save("n")
-            for i in range(res_num):
-                I_st[i].buffer(len(flux)).buffer(len(dfs)).average().save(f"I{i+1}")
-                Q_st[i].buffer(len(flux)).buffer(len(dfs)).average().save(f"Q{i+1}")
+            for i in q_id:
+                I_st[q_id.index(i)].buffer(len(flux)).buffer(len(dfs)).average().save(f"I{i+1}")
+                Q_st[q_id.index(i)].buffer(len(flux)).buffer(len(dfs)).average().save(f"Q{i+1}")
     if simulate:
         simulation_config = SimulationConfig(duration=10_000)  # In clock cycles = 4ns
         job = qmm.simulate(config, multi_qubit_spec_vs_flux, simulation_config)
@@ -49,38 +53,42 @@ def flux_twotone_qubit(q_id, Qi, simulate,qmm):
         job = qm.execute(multi_qubit_spec_vs_flux)
         fig = plt.figure()
         interrupt_on_close(fig, job)
-        I_list, Q_list = [f"I{i+1}" for i in range(res_num)], [f"Q{i+1}" for i in range(res_num)]
+        I_list, Q_list = [f"I{i+1}" for i in q_id], [f"Q{i+1}" for i in q_id]
         results = fetching_tool(job, I_list + Q_list + ["n"], mode="live")
         while results.is_processing():
             all_results = results.fetch_all()
             n = all_results[-1]
-            I, Q = all_results[0:res_num], all_results[res_num:res_num*2] 
+            I, Q = all_results[0:len(q_id)], all_results[len(q_id):len(q_id)*2]
             R = []
             phase = []
-            for i in range(res_num):
-                I[i] = u.demod2volts(I[i], readout_len)
-                Q[i] = u.demod2volts(Q[i], readout_len)
-                S = u.demod2volts(I[i] + 1j * Q[i], readout_len)
-                R.append(np.abs(S))
-                phase.append(np.angle(S))
+            for i in q_id:
+                I[q_id.index(i)] = u.demod2volts(I[q_id.index(i)], readout_len)
+                Q[q_id.index(i)] = u.demod2volts(Q[q_id.index(i)], readout_len)
+                S = u.demod2volts(I[q_id.index(i)] + 1j * Q[q_id.index(i)], readout_len)
+                R = np.abs(S)
+                phase = np.angle(S)
+                Flux[q_id.index(i)] = flux
+                Frequency[q_id.index(i)] = dfs + resonator_IF[i] + resonator_LO
+                Amplitude[q_id.index(i)] = R
+                Phase[q_id.index(i)] = signal.detrend(np.unwrap(phase))
             progress_counter(n, n_avg, start_time=results.start_time)
-            live_plotting(R,phase,Qi)
+            live_plotting(Amplitude,Phase,plot_index)
         qm.close()
         plt.show()
         return I, Q
     
-def live_plotting(R,phase,Qi):
+def live_plotting(Amplitude,Phase,plot_index):
     plt.suptitle("Qubit spectroscopy")
     plt.subplot(121)
     plt.cla()
-    plt.pcolor(flux, (qubit_IF[Qi-1] + dfs) / u.MHz, R[Qi-1])
+    plt.pcolor(flux, (qubit_IF[Qi-1] + dfs) / u.MHz, Amplitude[plot_index])
     plt.colorbar()
     plt.xlabel("Flux bias [V]")
     plt.ylabel(f"q{Qi} IF [MHz]")
     plt.title(f"q{Qi} amp. (f: {(qubit_LO[Qi-1] + qubit_IF[Qi-1]) / u.MHz} MHz)")
     plt.subplot(122)
     plt.cla()
-    plt.pcolor(flux, (qubit_IF[Qi-1] + dfs) / u.MHz, phase[Qi-1])
+    plt.pcolor(flux, (qubit_IF[Qi-1] + dfs) / u.MHz, Phase[plot_index])
     plt.colorbar()
     plt.xlabel("Flux bias [V]")
     plt.ylabel(f"q{Qi} IF [MHz]")
@@ -88,61 +96,86 @@ def live_plotting(R,phase,Qi):
     plt.tight_layout()
     plt.pause(0.1)
 
-def qubit_flux_fitting(I,Q,Qi):
+def qubit_flux_fitting(I,Q,plot_index,fitting):
     R = []
     phase = []
-    Flux = np.zeros((len(q_id), len(flux)))
-    Frequency = np.zeros((len(q_id), len(dfs)))
     min_index = [[] for _ in q_id]
     max_index = [[] for _ in q_id]
     res_F = [[] for _ in q_id]
     resonator_flux_params, resonator_flux_covariance = [], []   
     for i in q_id:
-        Flux[i] = flux
-        Frequency[i] = dfs + qubit_IF[i] + qubit_LO[i]
-        S = I[i] + 1j * Q[i]
+        Flux[q_id.index(i)] = flux
+        Frequency[q_id.index(i)] = dfs + qubit_IF[i] + qubit_LO[i]
+        S = I[q_id.index(i)] + 1j * Q[q_id.index(i)]
         R.append(np.abs(S))
         phase.append(np.angle(S))
-        for j in range(len(Flux[i])):
-            min_index[i].append(np.argmax(R[i][:,j])) 
-            max_index[i].append(np.argmax(phase[i][:,j])) 
+        for j in range(len(Flux[q_id.index(i)])):
+            min_index[q_id.index(i)].append(np.argmax(R[q_id.index(i)][:,j])) 
+            max_index[q_id.index(i)].append(np.argmax(phase[q_id.index(i)][:,j])) 
+    amp_max_qubit_freq = max(Frequency[plot_index][min_index[plot_index]])
+    amp_min_qubit_freq = min(Frequency[plot_index][min_index[plot_index]])
+    amp_max_qubit_flux = Flux[plot_index][np.argmax(Frequency[plot_index][min_index[plot_index]])]
+    amp_min_qubit_flux = Flux[plot_index][np.argmin(Frequency[plot_index][min_index[plot_index]])]
 
+    phase_max_qubit_freq = max(Frequency[plot_index][max_index[plot_index]])
+    phase_min_qubit_freq = min(Frequency[plot_index][max_index[plot_index]])
+    phase_max_qubit_flux = Flux[plot_index][np.argmax(Frequency[plot_index][max_index[plot_index]])]
+    phase_min_qubit_flux = Flux[plot_index][np.argmin(Frequency[plot_index][max_index[plot_index]])]
+    v_period = np.abs(max_frequency_point[Qi-1] - min_frequency_point[Qi-1]) * 2
     plt.subplot(1, 2, 1)
     plt.cla()
     plt.title(f"q{Qi}:")
-    plt.pcolor(Flux[Qi-1], Frequency[Qi-1], R[Qi-1])        
-    plt.plot(Flux[Qi-1], Frequency[Qi-1][min_index[Qi-1]])
+    plt.pcolor(Flux[plot_index], Frequency[plot_index], R[plot_index])        
+    plt.plot(Flux[plot_index], Frequency[plot_index][min_index[plot_index]])
+    print(f'amp_max qubit_freq: {amp_max_qubit_freq}')
+    print(f'amp_max qubit_freq_flux: {amp_max_qubit_flux}')
+    if fitting: plt.plot(flux,flux_qubit_spec(
+        flux,
+        v_period,
+        max_freq = amp_max_qubit_freq,
+        max_flux=amp_max_qubit_flux,
+        idle_freq=amp_min_qubit_freq,
+        idle_flux=amp_min_qubit_flux,
+        Ec=0.196e9))
     plt.subplot(1, 2, 2)
     plt.cla()
     plt.title(f"q{Qi}:")
-    plt.pcolor(Flux[Qi-1], Frequency[Qi-1], phase[Qi-1])        
-    plt.plot(Flux[Qi-1], Frequency[Qi-1][max_index[Qi-1]])
-
-    plt.plot(flux,flux_qubit_spec(flux,v_period=0.72,max_freq=(3.8497e9),max_flux=-0.0289,idle_freq=(3.7497e9),idle_flux=0.05,Ec=0.196e9))
-
+    plt.pcolor(Flux[plot_index], Frequency[plot_index], phase[plot_index])        
+    plt.plot(Flux[plot_index], Frequency[plot_index][max_index[plot_index]])
+    print(f'phase_max qubit_freq: {phase_max_qubit_freq}')
+    print(f'phase_max qubit_freq_flux: {phase_max_qubit_flux}')
+    if fitting: plt.plot(flux,flux_qubit_spec(
+        flux,
+        v_period,
+        max_freq=phase_max_qubit_freq,
+        max_flux=phase_max_qubit_flux,
+        idle_freq=phase_min_qubit_freq,
+        idle_flux=phase_min_qubit_flux,
+        Ec=0.196e9))
     plt.tight_layout()
     plt.show()
 
-n_avg = 500  
+n_avg = 100  
 saturation_len = 12 * u.us  
-saturation_amp =  0.01 
-dfs = np.arange(-350e6, +100e6, 0.1e6)
-flux = np.arange(-0.1, 0.1, 0.01)
+saturation_amp =  0.015
+q_id = [1,2,3,4]
 Qi = 3
-operation_flux_point = [0, 4.000e-02, -3.100e-01, -3.200e-01] 
-res_F = resonator_flux( flux + operation_flux_point[Qi-1], *p1[Qi-1])
-res_IF = (res_F - resonator_LO)/1e6
-res_IF_list = []
+flux_Qi = 4
+fitting = False
+for i in q_id: 
+    if i == Qi-1: plot_index = q_id.index(i)  
+dfs = np.arange(-170e6, -20e6, 0.02e6)
+flux = np.arange(0.12, 0.17, 0.001)
+Flux = np.zeros((len(q_id), len(flux)))
+Frequency = np.zeros((len(q_id), len(dfs)))
+Amplitude = np.zeros((len(q_id), len(dfs), len(flux)))
+Phase = np.zeros((len(q_id), len(dfs), len(flux)))
 
-for IF in res_IF:
-    res_IF_list.append(int(IF * u.MHz))  
-
-q_id = [0,1,2,3]
+operation_flux_point = [0, -3.000e-01, -0.2525, -0.3433, -3.400e-01] 
 simulate = False
-
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-I, Q = flux_twotone_qubit(q_id,Qi,simulate,qmm)
-qubit_flux_fitting(I,Q,Qi)
+I, Q = flux_twotone_qubit(q_id,Qi,flux_Qi,plot_index,simulate,qmm)
+qubit_flux_fitting(I,Q,plot_index,fitting)
 
 ### Q3
 # plt.plot(flux,flux_qubit_spec(flux,v_period=0.7,max_freq=(3.5235e9),max_flux=0.004,idle_freq=(3.2252e9),idle_flux=0.146,Ec=0.2e9))

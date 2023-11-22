@@ -38,14 +38,14 @@ warnings.filterwarnings("ignore")
 # The QUA program #
 ###################
 t_min = 4
-t_max = 100
+t_max = 200
 dt = 1
 times = np.arange(t_min, t_max, dt)  # In clock cycles = 4ns
 cooldown_time = 1 * u.us
 n_avg = 5000
 q_id = [0,1,2,3]
-Qi = 4
-operation_flux_point = [0, 4.000e-02, 4.000e-02, -3.200e-01] 
+Qi = 3
+operation_flux_point = [0, 4.000e-02, -0.2545, -0.3914, -3.400e-01] 
 res_F = resonator_flux( operation_flux_point[Qi-1], *p1[Qi-1])
 res_IF = (res_F - resonator_LO)/1e6
 res_IF = int(res_IF * u.MHz)
@@ -63,8 +63,8 @@ with program() as rabi:
             # Play the qubit pulses
             # play("x180", "q1_xy", duration=t)
             # play("x180", "q2_xy", duration=t)
-            # play("x180", "q3_xy", duration=t)
-            play("x180", "q4_xy", duration=t)
+            play("x180", "q3_xy", duration=t)
+            # play("x180", "q4_xy", duration=t)
             # Align the elements to measure after playing the qubit pulses.
             align()
             # Start using Rotated integration weights (cf. IQ_blobs.py)
@@ -188,23 +188,26 @@ else:
         # plt.title("Qubit 2")
         # plt.subplot(143)
 
-        # fit.rabi(4 * times, I3, plot=True)
-        # plt.xlabel("Qubit pulse duration [ns]")
-        # plt.ylabel("I quadrature [V]")
-        # plt.title("Qubit 3")
-
-        fit.rabi(4 * times, I4, plot=True)
+        fit.rabi(4 * times, I3, plot=True)
         plt.xlabel("Qubit pulse duration [ns]")
         plt.ylabel("I quadrature [V]")
-        plt.title("Qubit 4")
-        plt.tight_layout()
-
-        plt.figure()
-        fit.rabi(4 * times, Q4, plot=True)
+        plt.title("Qubit 3")
+        fit.rabi(4 * times, Q3, plot=True)
         plt.xlabel("Qubit pulse duration [ns]")
         plt.ylabel("Q quadrature [V]")
-        plt.title("Qubit 4")
-        plt.tight_layout()
+        plt.title("Qubit 3")
+
+        # fit.rabi(4 * times, I4, plot=True)
+        # plt.xlabel("Qubit pulse duration [ns]")
+        # plt.ylabel("I quadrature [V]")
+        # plt.title("Qubit 4")
+        # plt.tight_layout()
+        # plt.figure()
+        # fit.rabi(4 * times, Q4, plot=True)
+        # plt.xlabel("Qubit pulse duration [ns]")
+        # plt.ylabel("Q quadrature [V]")
+        # plt.title("Qubit 4")
+        # plt.tight_layout()
     
     except (Exception,):
         pass

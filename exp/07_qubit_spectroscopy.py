@@ -54,12 +54,12 @@ q_id = [2]
 Qi = 3
 focus = False
 n_avg = 1000  # The number of averages
-operation_flux_point = [0, 4.000e-02, -3.100e-01-0.0407, -3.200e-01] 
+operation_flux_point = [0, 4.000e-02, -0.2542, -0.3914, -3.400e-01] 
 
 # Adjust the pulse duration and amplitude to drive the qubit into a mixed state
 saturation_len = 20 * u.us  # In ns (should be < FFT of df)
 if focus: saturation_amp = 0.0007  # pre-factor to the value defined in the config - restricted to [-2; 2)
-else: saturation_amp = 0.03  # pre-factor to the value defined in the config - restricted to [-2; 2)
+else: saturation_amp = 0.1  # pre-factor to the value defined in the config - restricted to [-2; 2)
 
 # Qubit detuning sweep with respect to qubit_IF
 if focus:
