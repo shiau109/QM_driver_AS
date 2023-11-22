@@ -77,15 +77,7 @@ def search_resonators( frequencies, config, ro_element, n_avg, qmm:QuantumMachin
     # Get results from QUA program
     
     results = fetching_tool(job, data_list=[f"{ro_element}_I", f"{ro_element}_Q", "iteration"], mode="wait_for_all")
-    # while results.is_processing():
-    #     # Fetch results
-    #     I, Q, iteration = results.fetch_all()
-    #     # Convert results into Volts
-    #     # S = u.demod2volts(I + 1j * Q, readout_len)
-    #     # R = np.abs(S)  # Amplitude
-    #     # phase = np.angle(S)  # Phase
-    #     # Progress bar
-    #     progress_counter(iteration, n_avg, start_time=results.get_start_time())
+
     output_data = results.fetch_all()
     # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
     qm.close()

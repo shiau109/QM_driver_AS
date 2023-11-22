@@ -41,7 +41,7 @@ import sys
 ###################
 
 
-def mRO_power_dep_resonator( freq_IF_center:list, df_array, amp_ratio, cd_time, n_avg, config, ro_element, qmm:QuantumMachinesManager)->dict:
+def mRO_power_dep_resonator( freq_IF_center:list, df_array, amp_ratio, cd_time, n_avg, config, ro_element:list, qmm:QuantumMachinesManager)->dict:
     """
 
     """
@@ -101,35 +101,31 @@ def mRO_power_dep_resonator( freq_IF_center:list, df_array, amp_ratio, cd_time, 
     qm.close()
     return output_data
 
+def myplot( data ):
+    """
+    data shape ( 2, N, M )
+    2 is I,Q
+    N is freq
+    M is RO amp
+    """
+    idata = data[0]
+    qdata = data[1]
+    zdata = idata +1j*qdata
+    s21 = zdata/amp_ratio[:,None]
+
+    fig, ax = plt.subplots()
+    c = ax.pcolormesh(dfs, amp_log_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    ax.set_title('pcolormesh')
+    fig.show()
+
+    return fig
+    
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
-    from QM_config_dynamic import QM_config
-    myConfig = QM_config()
-    myConfig.set_wiring("con1")
-    mRO_common = {
-            "I":("con1",1),
-            "Q":("con1",2),
-            "freq_LO": 6, # GHz
-            "mixer": "octave_octave1_1",
-            "time_of_flight": 200, # ns
-            "integration_time": 2000, # ns
-        }
-    mRO_individual = [
-        {
-            "name":"rr1", 
-            "freq_RO": 6.11, # GHz
-            "amp": 0.008, # V
-        },
-        {
-            "name":"rr2", 
-            "freq_RO": 5.91, # GHz
-            "amp": 0.0125, # V
-        }
-    ]
+    
     n_avg = 100  # The number of averages
     # The frequency sweep around the resonators' frequency "resonator_IF_q"
 
-    myConfig.update_multiplex_readout_channel(mRO_common, mRO_individual )
     span = 10 * u.MHz
     df = 0.1 * u.MHz
     dfs = np.arange(-span, +span + 0.1, df)
@@ -143,34 +139,12 @@ if __name__ == '__main__':
     amp_log_ratio = np.log10(amp_ratio)
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
     
-    test_config = myConfig.get_config()
 
     output_data = mRO_power_dep_resonator(freq_IF, dfs, amp_ratio,1000,n_avg,config,["rr1","rr2"],qmm)  
 
 
-    def myplot( data):
-        idata = data["rr1"][0]
-        qdata = data["rr1"][1]
-        zdata = idata +1j*qdata
-        s21 = zdata/amp_ratio[:,None]
 
-        fig, ax = plt.subplots()
-        c = ax.pcolormesh(dfs, amp_log_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
-        ax.set_title('pcolormesh')
-        fig.show()
-
-        return fig
     
     mfg = myplot(output_data)
     mfg.show()
-
-    output_data = mRO_power_dep_resonator(freq_IF, dfs, amp_ratio,1000,n_avg,test_config,["rr1","rr2"],qmm)  
-    idata = output_data["rr1"][0]
-    qdata = output_data["rr1"][1]
-    zdata = idata +1j*qdata
-    s21 = zdata/amp_ratio[:,None]
-    fig, ax = plt.subplots()
-    c = ax.pcolormesh(dfs, amp_log_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
-    ax.set_title('pcolormesh')
-    fig.show()
     plt.show()
