@@ -31,6 +31,7 @@ from qm import SimulationConfig
 from configuration import *
 from qualang_tools.loops import from_array
 from macros import qua_declaration, multiplexed_readout, live_plotting
+from common_fitting_func import *
 import matplotlib.pyplot as plt
 import warnings
 
@@ -49,10 +50,11 @@ save_path = f"{save_dir}\{save_time}_{save_progam_name}"
 ###################
 # The QUA program #
 ###################
-q_id = [3]
+q_id = [2]
+Qi = 3
 focus = False
-n_avg = 10000  # The number of averages
-operation_flux_point = [-0.177, -0.132, -0.009, -3.300e-01] 
+n_avg = 1000  # The number of averages
+operation_flux_point = [0, 4.000e-02, -0.2542, -0.3914, -3.400e-01] 
 
 # Adjust the pulse duration and amplitude to drive the qubit into a mixed state
 saturation_len = 20 * u.us  # In ns (should be < FFT of df)
@@ -66,18 +68,22 @@ if focus:
     df = 1 * u.kHz
 else:
     # 2. Wide-scan, Find 02/2:
-    span = 100 * u.MHz
-    df = 100 * u.kHz
+    span = 400 * u.MHz
+    df = 200 * u.kHz
 dfs = np.arange(-span, +span + 0.1, df)
+res_F = resonator_flux( operation_flux_point[Qi-1], *p1[Qi-1])
+res_IF = (res_F - resonator_LO)/1e6
+res_IF = int(res_IF * u.MHz)
 
 with program() as multi_qubit_spec:
     I, I_st, Q, Q_st, n, n_st = qua_declaration(nb_of_qubits=len(q_id))
     df = declare(int)  # QUA variable for the readout frequency
-    
+    resonator_freq1 = declare(int, value=res_IF)  
     # Adjust the flux line biases to check whether you are actually measuring the qubit
     for i in range(4):
         set_dc_offset("q%s_z"%(i+1), "single", operation_flux_point[i])
-
+    update_frequency(f"rr{Qi}", resonator_freq1)  
+    # update_frequency(f"rr{Qi}", int((-103.3362)*u.MHz)) 
     with for_(n, 0, n < n_avg, n + 1):
         with for_(*from_array(df, dfs)):
             for i in q_id:

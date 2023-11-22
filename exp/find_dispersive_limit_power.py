@@ -41,15 +41,14 @@ import sys
 ###################
 
 
-def mRO_power_dep_resonator( freq_IF_center:list, df_array, amp_ratio, cd_time, n_avg, config, ro_element, qmm:QuantumMachinesManager)->dict:
+def mRO_power_dep_resonator( ro_element, df_array, amp_ratio, cd_time, n_avg, config, qmm:QuantumMachinesManager)->dict:
     """
 
     """
-    trans_freq_IF_center = []
-    for cif in freq_IF_center:
-        trans_freq_IF_center.append(cif * u.MHz)
-    ro_channel_num = len(ro_element)
-    freq_len = df_array.shape[-1]
+    center_IF = {}
+    for r in ro_element:
+        center_IF[r] = config["elements"][r]["intermediate_frequency"]
+    freq_len = dfs.shape[-1]
     
     amp_ratio_len = amp_ratio.shape[-1]
     with program() as multi_res_spec_vs_amp:
@@ -66,8 +65,8 @@ def mRO_power_dep_resonator( freq_IF_center:list, df_array, amp_ratio, cd_time, 
                 
                 with for_(*from_array(df, df_array)):
                         
-                    for i in range(ro_channel_num):
-                        update_frequency(ro_element[i], trans_freq_IF_center[i]+df)
+                    for r in ro_element:
+                        update_frequency( r, center_IF[r]+df)
 
                     multiRO_measurement( iqdata_stream, ro_element, amp_modify=a )
 
@@ -80,9 +79,7 @@ def mRO_power_dep_resonator( freq_IF_center:list, df_array, amp_ratio, cd_time, 
             # Cast the data into a 2D matrix, average the 2D matrices together and store the results on the OPX processor
             # NOTE that the buffering goes from the most inner loop (left) to the most outer one (right)
             multiRO_pre_save( iqdata_stream, ro_element, (amp_ratio_len, freq_len))
-    #######################
-    # Simulate or execute #
-    #######################
+
 
     qm = qmm.open_qm(config)
     job = qm.execute(multi_res_spec_vs_amp)
@@ -101,76 +98,40 @@ def mRO_power_dep_resonator( freq_IF_center:list, df_array, amp_ratio, cd_time, 
     qm.close()
     return output_data
 
-if __name__ == '__main__':
-    import matplotlib.pyplot as plt
-    from QM_config_dynamic import QM_config
-    myConfig = QM_config()
-    myConfig.set_wiring("con1")
-    mRO_common = {
-            "I":("con1",1),
-            "Q":("con1",2),
-            "freq_LO": 6, # GHz
-            "mixer": "octave_octave1_1",
-            "time_of_flight": 200, # ns
-            "integration_time": 2000, # ns
-        }
-    mRO_individual = [
-        {
-            "name":"rr1", 
-            "freq_RO": 6.11, # GHz
-            "amp": 0.008, # V
-        },
-        {
-            "name":"rr2", 
-            "freq_RO": 5.91, # GHz
-            "amp": 0.0125, # V
-        }
-    ]
-    n_avg = 100  # The number of averages
-    # The frequency sweep around the resonators' frequency "resonator_IF_q"
-
-    myConfig.update_multiplex_readout_channel(mRO_common, mRO_individual )
-    span = 10 * u.MHz
-    df = 0.1 * u.MHz
-    dfs = np.arange(-span, +span + 0.1, df)
-    freq_IF = [ -215.5, 74 ]
-
-    # The readout amplitude sweep (as a pre-factor of the readout amplitude) - must be within [-2; 2)
-    a_min = 0.05
-    a_max = 1.99
-    da = 0.05
-    amp_ratio = np.logspace(-2, 0, 10)  # The amplitude vector +da/2 to add a_max to the scan
-    amp_log_ratio = np.log10(amp_ratio)
-    qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-    
-    test_config = myConfig.get_config()
-
-    output_data = mRO_power_dep_resonator(freq_IF, dfs, amp_ratio,1000,n_avg,config,["rr1","rr2"],qmm)  
-
-
-    def myplot( data):
-        idata = data["rr1"][0]
-        qdata = data["rr1"][1]
-        zdata = idata +1j*qdata
-        s21 = zdata/amp_ratio[:,None]
-
-        fig, ax = plt.subplots()
-        c = ax.pcolormesh(dfs, amp_log_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
-        ax.set_title('pcolormesh')
-        fig.show()
-
-        return fig
-    
-    mfg = myplot(output_data)
-    mfg.show()
-
-    output_data = mRO_power_dep_resonator(freq_IF, dfs, amp_ratio,1000,n_avg,test_config,["rr1","rr2"],qmm)  
-    idata = output_data["rr1"][0]
-    qdata = output_data["rr1"][1]
+def plot_power_dep_resonator( dfs, amp_log_ratio, data, ax=None ):
+    idata = data[0]
+    qdata = data[1]
     zdata = idata +1j*qdata
     s21 = zdata/amp_ratio[:,None]
-    fig, ax = plt.subplots()
-    c = ax.pcolormesh(dfs, amp_log_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
-    ax.set_title('pcolormesh')
-    fig.show()
+
+    if ax==None:
+        fig, ax = plt.subplots()
+        ax.set_title('pcolormesh')
+        fig.show()
+    ax.pcolormesh(dfs, amp_log_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+
+
+if __name__ == '__main__':
+    import matplotlib.pyplot as plt
+    n_avg = 200  # The number of averages
+    # The frequency sweep around the resonators' frequency "resonator_IF_q"
+
+    span = 5 * u.MHz
+    df = 0.1 * u.MHz
+    dfs = np.arange(-span, +span + 0.1, df)
+
+
+    # The readout amplitude sweep (as a pre-factor of the readout amplitude) - must be within [-2; 2)
+    amp_ratio = np.linspace( 0.05, 1.5, 30)    # Linear
+    # amp_ratio = np.logspace(-1, 0, 10)  # Log
+    # amp_log_ratio = np.log10(amp_ratio)*10
+    qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
+    
+    resonators = ["rr1","rr2","rr3","rr4"]
+    output_data = mRO_power_dep_resonator( resonators ,dfs, amp_ratio,1000,n_avg,config,qmm)  
+    for r in resonators:
+        fig, ax = plt.subplots()
+        plot_power_dep_resonator(dfs, amp_ratio, output_data[r], ax)
+        ax.set_title(r)
     plt.show()
+ 
