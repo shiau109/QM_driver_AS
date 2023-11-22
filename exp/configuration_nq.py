@@ -106,7 +106,7 @@ pi_amp_q5 = 0.5
 drag_coef_q1 = 0.68
 drag_coef_q2 = 1.3
 drag_coef_q3 = 0.5
-drag_coef_q4 = 0
+drag_coef_q4 = 1.0
 drag_coef_q5 = 0
 anharmonicity_q1 = -(450.2-344.2)*2 * u.MHz
 anharmonicity_q2 = -(470.7-369.2)*2 * u.MHz
@@ -339,7 +339,7 @@ rotation_angle_q5 = (0 / 180) * np.pi
 ge_threshold_q1 = 0.000909
 ge_threshold_q2 = 0.000229
 ge_threshold_q3 = 0
-ge_threshold_q4 = 0
+ge_threshold_q4 = 2.419e-04
 ge_threshold_q5 = 0
 
 #############################################

@@ -106,7 +106,7 @@ def pi_length_fitting(I,Q,plot_index):
 times = np.arange(4, 200, 1)  
 n_avg = 1000
 q_id = [1,2,3,4]
-Qi = 3
+Qi = 4
 simulate = False 
 operation_flux_point = [0, -3.000e-01, -0.2525, -0.3433, -3.400e-01] 
 for i in q_id: 
