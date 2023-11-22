@@ -64,16 +64,16 @@ octave_config = octave_declaration(octaves)
 qubit_LO = np.zeros(5)
 qubit_LO[0] = (4.055) * u.GHz
 qubit_LO[1] = (4.4) * u.GHz
-qubit_LO[2] = (3.4) * u.GHz
-qubit_LO[3] = (3.8) * u.GHz
+qubit_LO[2] = (3.5) * u.GHz
+qubit_LO[3] = (3.95) * u.GHz
 qubit_LO[4] = (4.75) * u.GHz
 
 # Qubits IF
 qubit_IF = np.zeros(5)
 qubit_IF[0] = (-116.8+0.245) * u.MHz       # Q1
 qubit_IF[1] = (-203.57-1.054) * u.MHz      # Q2
-qubit_IF[2] = (-211.15-2.54+1-0.25) * u.MHz
-qubit_IF[3] = (-89.8071-0.036) * u.MHz     # Q4
+qubit_IF[2] = (-212.94+1.49+100-200) * u.MHz
+qubit_IF[3] = (-83.5531-0.13-5-1.08) * u.MHz     # Q4
 qubit_IF[4] = (-92) * u.MHz                # Q5
 # For comparing 2q:
 # qubit_IF[1] = qubit_IF[0]

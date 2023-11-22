@@ -141,16 +141,16 @@ def T2_hist(data, T2_max, signal_name):
         print(f"An error occurred: {e}")
 
 n_avg = 750
-idle_times = np.arange(4, 2200, 10)  
+idle_times = np.arange(4, 200, 1)  
 detuning = 1e6  
-operation_flux_point = [0, 4.000e-02, 4.000e-02, -3.200e-01] 
+operation_flux_point = [0, -3.000e-01, -0.2525, -0.3433, -3.400e-01] 
 q_id = [0,1,2,3]
-Qi = 4
+Qi = 3
 
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-# I,Q = T2_exp(Qi,n_avg,idle_times,operation_flux_point,q_id,qmm)
-# T2_plot(I, Q, Qi, True)
-m = 100
-T2_I, T2_Q = multi_T2_exp(m, Qi, n_avg,idle_times,operation_flux_point,q_id,qmm)
-T2_hist(T2_I,15,'I')
-T2_hist(T2_Q,15,'Q')
+I,Q = T2_exp(Qi,n_avg,idle_times,operation_flux_point,q_id,qmm)
+T2_plot(I, Q, Qi, True)
+# m = 3
+# T2_I, T2_Q = multi_T2_exp(m, Qi, n_avg,idle_times,operation_flux_point,q_id,qmm)
+# T2_hist(T2_I,15,'I')
+# T2_hist(T2_Q,15,'Q')

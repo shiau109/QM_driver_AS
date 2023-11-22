@@ -50,7 +50,7 @@ Qi = 4
 n_avg = 100  # The number of averages
 ts = np.arange(4, 60, 1)  # The flux pulse durations in clock cycles (4ns) - Must be larger than 4 clock cycles.
 operation_flux_point = [0, -3.000e-01, -0.2525, -0.3433, -3.400e-01] 
-amps = (np.arange(0, 0.35, 0.001)) 
+amps = (np.arange(0.11, 0.56, 0.003)) 
 q_id = [1,2,3,4]
 
 res_F3 = cosine_func( operation_flux_point[2], *g1[2])
@@ -69,13 +69,14 @@ with program() as cz:
     resonator_freq4 = declare(int, value=res_IF4)
     for i in q_id:
         set_dc_offset("q%s_z"%(i+1), "single", operation_flux_point[i])
+    wait(flux_settle_time * u.ns)
     update_frequency(f"rr{3}", resonator_freq3)
     update_frequency(f"rr{4}", resonator_freq4)
     with for_(n, 0, n < n_avg, n + 1):
         with for_(*from_array(t, ts)):
             with for_(*from_array(a, amps)):
                 # Put the two qubits in their excited states
-                play("x180", "q3_xy")
+                # play("x180", "q3_xy")
                 play("x180", "q4_xy")
                 align()
                 # Wait some time to ensure that the flux pulse will arrive after the x90 pulse
