@@ -25,23 +25,11 @@ from configuration import *
 import matplotlib.pyplot as plt
 from qualang_tools.results import fetching_tool
 from qualang_tools.analysis import two_state_discriminator
-from macros import qua_declaration, multiplexed_readout
+from macros import qua_declaration, multiplexed_readout, reset_qubit
 from QM_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save_singleShot
 
 
-###################
-# The QUA program #
-###################
-n_runs = 10000  # Number of runs
-amp_scalar = 1
-
-# Tune flux and neighboring qubits
-flux_id = 0
-flux_offset = np.zeros(5)
-flux_offset[flux_id] = max_frequency_point[flux_id]
-detune_neighbor = True
-
-def state_distinguishability( q_id:list, ro_element, shot_num, config, qmm:QuantumMachinesManager):
+def state_distinguishability( q_id:list, ro_element, shot_num, reset:str, config, qmm:QuantumMachinesManager):
 
     with program() as iq_blobs:
         iqdata_stream_g = multiRO_declare( ro_element )
@@ -50,20 +38,21 @@ def state_distinguishability( q_id:list, ro_element, shot_num, config, qmm:Quant
         n = declare(int)
         n_st = declare_stream()
 
-        # for i in [0,1,2,3]:
-        #     set_dc_offset(f"q{i+1}_z", "single", flux_offset[i])
+        for i in [0,1,2,3]:
+            set_dc_offset(f"q{i+1}_z", "single", max_frequency_point[i])
 
         with for_(n, 0, n < shot_num, n + 1):
-            # ground iq blobs for both qubits
-            wait(thermalization_time * u.ns)
+            
+            # wait(thermalization_time * u.ns)
+            for i in q_id:
+                reset_qubit(reset, f"q{i+1}_xy", f"rr{i+1}", cooldown_time=thermalization_time,  threshold=ge_threshold[i], max_tries=10, Ig=iqdata_stream_g[0])
             align()
-            # play("x180", "q2_xy")
             multiRO_measurement(iqdata_stream_g, ro_element, weights="rotated_")
             align()
-            # Wait for the qubit to decay to the ground state in the case of measurement induced transitions
-            wait(thermalization_time * u.ns)
-            # excited iq blobs for both qubits
-            # Play the qubit pi pulses
+
+            # wait(thermalization_time * u.ns)
+            for i in q_id:
+                reset_qubit(reset, f"q{i+1}_xy", f"rr{i+1}", cooldown_time=thermalization_time,  threshold=ge_threshold[i], max_tries=10, Ig=iqdata_stream_e[0])
             for i in q_id:
                 play("x180", f"q{i+1}_xy")
             align()
@@ -79,16 +68,13 @@ def state_distinguishability( q_id:list, ro_element, shot_num, config, qmm:Quant
     #####################################
 
     qm = qmm.open_qm(config)
-    # Send the QUA program to the OPX, which compiles and executes it
     job = qm.execute(iq_blobs)
-    # fetch data
     data_list = []
     for r in ro_element:
         data_list.append(f"{r}_I_g")
         data_list.append(f"{r}_Q_g")
         data_list.append(f"{r}_I_e")
-        data_list.append(f"{r}_Q_e")
-
+        data_list.append(f"{r}_Q_e")   
     
     results = fetching_tool(job, data_list=data_list, mode="wait_for_all")
     fetch_data = results.fetch_all()
@@ -97,25 +83,19 @@ def state_distinguishability( q_id:list, ro_element, shot_num, config, qmm:Quant
         output_data[r_name] = np.array(
             [[fetch_data[r_idx*4], fetch_data[r_idx*4+1]],
              [fetch_data[r_idx*4+2], fetch_data[r_idx*4+3]]])
-        # Plot the IQ blobs, rotate them to get the separation along the 'I' quadrature, estimate a threshold between them
-        # for state discrimination and derive the fidelity matrix
-        # two_state_discriminator(I_g_q1, Q_g_q1, I_e_q1, Q_e_q1, True, True)
-        # plt.suptitle(f"qubit 1 \n readout power = {readout_amp[0]}V, readout length = {readout_len}ns")
-
-        # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
+    
     qm.close()
     return output_data
 
-
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
+    import time
 
     ###################
     #   Data Saving   #
     ###################
     from datetime import datetime
     import sys
-
     # save_data = True  # Default = False in configuration file
     save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
     save_time = str(datetime.now().strftime("%Y%m%d-%H%M%S"))
@@ -123,9 +103,23 @@ if __name__ == '__main__':
 
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
     resonators = ["rr1","rr2"]
-    output_data = state_distinguishability( [0,1], resonators,10000, config, qmm)  
+    n_runs = 10000
+    reset = "cooldown"  # can be set to "cooldown" or "active"
+
+    start_time = time.time()
+    output_data = state_distinguishability( [0,1], resonators, n_runs, reset, config, qmm)  
+    end_time = time.time()
+    elapsed_time = np.round(end_time-start_time, 1)
 
     for r in resonators:
         two_state_discriminator(output_data[r][0][0], output_data[r][0][1], output_data[r][1][0], output_data[r][1][1], True, True)
+        plt.suptitle(r + "\n reset = " + reset + f"\n {n_runs} runs, elapsed time = {elapsed_time}s \n readout power = {readout_amp[resonators.index(r)]}V, readout length = {readout_len}ns")
+        
+        if save_data == True:
+            figure = plt.gcf() # get current figure
+            figure.set_size_inches(12, 10)
+            plt.tight_layout()
+            plt.pause(0.1)
+            plt.savefig(f"{save_path}-{r}.png", dpi = 500)
 
-    
+    plt.show()

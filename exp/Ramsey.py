@@ -32,7 +32,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-def detune_ramsey( dfs, times, q_name:list, ro_element:list, n_avg, config, qmm:QuantumMachinesManager)
+def detune_ramsey( dfs, times, q_name:list, ro_element:list, n_avg, config, qmm:QuantumMachinesManager):
     """
     Output shape (N,M) 2D data
     N is evolution time ( unit in tick )
