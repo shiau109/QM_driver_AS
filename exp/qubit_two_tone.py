@@ -24,7 +24,8 @@ def qubit_two_tone(q_id,Qi,saturation_amp,simulate,qmm):
         resonator_freq = declare(int, value=res_IF)  
         for i in q_id:
             set_dc_offset(f"q{i+1}_z", "single", operation_flux_point[i])
-        update_frequency(f"rr{Qi}", resonator_freq)  
+        update_frequency(f"rr{Qi}", resonator_freq)
+        wait(flux_settle_time * u.ns)   
         with for_(n, 0, n < n_avg, n + 1):
             with for_(*from_array(df, dfs)):
                 update_frequency(f"q{Qi}_xy", df + qubit_IF[Qi-1])
@@ -89,12 +90,12 @@ def live_plotting(Amplitude,Phase,plot_index):
     plt.pause(0.1)
 
 q_id = [1,2,3,4]
-Qi = 4
+Qi = 3
 n_avg = 1000 
-operation_flux_point = [0, -3.000e-01, -0.2525, -0.3433, -3.400e-01] 
-saturation_amp = 0.005
+operation_flux_point = [0, -3.000e-01, -0.2525, -0.3433 + 0.12 , -3.400e-01] 
+saturation_amp = 0.01
 saturation_len = 20 * u.us  
-dfs = np.arange(-100e6, 100e6, 0.1e6)
+dfs = np.arange(-40e6, 150e6, 0.05e6)
 res_F = cosine_func( operation_flux_point[Qi-1], *g1[Qi-1])
 res_IF = (res_F - resonator_LO)/1e6
 res_IF = int(res_IF * u.MHz)

@@ -47,7 +47,7 @@ scale_reference = const_flux_amp # for const # 0.45
 # scale_reference = cz_point_1_2_q2-idle_q2 # for gaussian-like cz
 
 Qi = 4
-n_avg = 130  # The number of averages
+n_avg = 100  # The number of averages
 ts = np.arange(4, 60, 1)  # The flux pulse durations in clock cycles (4ns) - Must be larger than 4 clock cycles.
 operation_flux_point = [0, -3.000e-01, -0.2525, -0.3433, -3.400e-01] 
 amps = (np.arange(0, 0.35, 0.001)) 
