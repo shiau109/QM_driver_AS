@@ -127,18 +127,21 @@ def state_tomo_measurement( iqdata_stream, process, q_name, resonators, thermali
     if type(q_name) is list:
         q_name = q_name[0]    
     ro_channel_num = len(resonators)
-    proj = declare(int)
+    basis = declare(int)
     
 
-    with for_each_(proj, [1, 2, 3]):
+    with for_each_(basis, [0, 1, 2]):
         wait(thermalization_time * u.us)
 
         process()
         align()
-        with if_(proj==1):
-            play("y90", f"{q_name}")
-        with elif_(proj==2):
-            play("-x90", f"{q_name}")
+        with switch_(basis, unsafe=True):
+            with case_(0):
+                pass
+            with case_(1):
+                play("y90", q_name)
+            with case_(2):
+                play("-x90", q_name)
         # Measure resonator state after the sequence
         align()
         for idx, res in enumerate(resonators):
@@ -196,7 +199,7 @@ def state_tomo_NQ_measurement( QV, iqdata_stream, process, q_name, resonators, t
                 play("-x90", f"{q}")
     # Measure resonator state after the sequence
     align()
-    multiRO_measurement( iqdata_stream, resonators )
+    multiRO_measurement( iqdata_stream, resonators, weights=weights )
         # with else_(layer_idx==1):
         #     state_tomo_measurement( iqdata_stream, process, q_next, resonators, thermalization_time=200, sequential=False, amp_modify=1.0, weights="" )
 
@@ -214,7 +217,7 @@ def tomo_NQ_proj( iqdata_stream, process, q_name, resonators, thermalization_tim
             tomo_NQ_proj( iqdata_stream, process, q_next, resonators, thermalization_time=thermalization_time, sequential=sequential, weights=weights, q_proj=q_proj_next )
         else:
             # print( q_proj_next, "deepest" )
-            state_tomo_NQ_measurement( q_proj_next, iqdata_stream, process, q_name, resonators, thermalization_time=thermalization_time, sequential=False, amp_modify=1.0, weights="" )
+            state_tomo_NQ_measurement( q_proj_next, iqdata_stream, process, q_name, resonators, thermalization_time=thermalization_time, weights=weights )
             # all_q_proj.append(q_proj_next)
             # print(all_q_proj)
         # q_proj.pop()

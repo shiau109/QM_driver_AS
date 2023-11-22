@@ -47,7 +47,7 @@ def state_tomography( q_name, ro_element, prepare_state, n_avg, config, qmm:Quan
 
         with for_(n, 0, n < n_avg, n + 1):
 
-            state_tomo_measurement( iqdata_stream, prepare_state, q_name, ro_element, weights="rotated_", thermalization_time= 1)
+            state_tomo_measurement( iqdata_stream, prepare_state, q_name, ro_element, weights="rotated_", thermalization_time= 200)
 
             # Wait for the qubit to decay to the ground state
             # Save the averaging iteration to get the progress bar
@@ -104,7 +104,7 @@ def state_tomography_NQ( q_name, ro_element, prepare_state, n_avg, config, qmm:Q
 
         with for_(n, 0, n < n_avg, n + 1):
 
-            tomo_NQ_proj( iqdata_stream, prepare_state, q_name, ro_element, weights="rotated_", thermalization_time= 1)
+            tomo_NQ_proj( iqdata_stream, prepare_state, q_name, ro_element, weights="rotated_", thermalization_time=200)
 
             # Wait for the qubit to decay to the ground state
             # Save the averaging iteration to get the progress bar
@@ -152,11 +152,32 @@ def state_tomography_NQ( q_name, ro_element, prepare_state, n_avg, config, qmm:Q
         qm.close()
         return output_data
 
+def calculate_block_vector( data, threshold ):
+    vect_dis = []
+    dirction = ["z", "x", "y"]
+    total_count = data.shape[-1]
+    for idx, dir in enumerate(dirction):
+        count_0 = np.count_nonzero(data[idx] < threshold)
+        pop_0 = count_0/total_count
+        print(f"{dir} g count {total_count}, {pop_0}")
+
+        pop_1 = 1-pop_0
+        vect_dis.append(pop_0-pop_1)
+    vect_dis = [vect_dis[1],vect_dis[2],vect_dis[0]]
+    return vect_dis
+
+def plot_block_vector( vect_dis, fig=None ):
+    from qutip import Bloch
+    if fig == None:
+        fig = Bloch()
+    fig.add_vectors(vect_dis)
+    return fig
+
 if __name__ == '__main__':
-    ro_element = ["rr1", "rr2"]
+    ro_element = ["rr1"]
     n_avg = 10000
-    q_name = ["q1_xy", "q2_xy"]
-    threshold = ge_threshold_q2
+    q_name = ["q1_xy"]
+    threshold = ge_threshold_q1
 
     #####################################
     #  Open Communication with the QOP  #
@@ -164,42 +185,35 @@ if __name__ == '__main__':
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
 
     def prepare_state():
+
         play("x90", "q1_xy" )
-        # play("y180", q_name )
+        # play("x180", "q2_xy" )
 
-        # pass
+        pass
 
-    # data = state_tomography(q_name, ro_element, prepare_state, n_avg, config, qmm, True)
+    # data = state_tomography(q_name, ro_element, prepare_state, n_avg, config, qmm, False)
     # print(data)
-    data = state_tomography_NQ(q_name, ro_element, prepare_state, n_avg, config, qmm, True)
-    print(data)
 
+    data = state_tomography_NQ(q_name, ro_element, prepare_state, n_avg, config, qmm, False)
+    print(type(data),data.keys())
 
+    # np.savez("11.npz",**data)
+    # data = np.load("00.npz")
+    # for label in data.keys():
+    #     print(data[label].shape)
     # Plot Bloch Sphere
+
     # data = data[ro_element[0]]
     # print(data.shape)
 
     # total_count = n_avg
     # print(f"total count {total_count}")
     # dirction = ["x","y","z"]
+    data_i = data[ro_element[0]][0].transpose()
+    data_q = data[ro_element[0]][1].transpose()
+    # plt.plot(data_i[0],data_q[0],'o')
 
-    # vect_dis = []
-    # data_i = data[0].transpose()
-    # data_q = data[1].transpose()
-
-    # idx_p = 1
-    # # plt.plot( data_i[idx_p], data_q[idx_p], 'o')
-    # # plt.show()
-    # for idx, dir in enumerate(dirction):
-    #     count_0 = np.count_nonzero(data_i[idx] < threshold)
-    #     pop_0 = count_0/total_count
-    #     print(f"{dir} g count {total_count}, {pop_0}")
-
-    #     pop_1 = 1-pop_0
-    #     vect_dis.append(pop_0-pop_1)
-    # print(vect_dis)
-    # from qutip import Bloch
-    # b= Bloch()
-    # b.add_vectors(vect_dis)
-    # b.show()
-    # plt.show()
+    vect_dis = calculate_block_vector(data_i, threshold)
+    block_plot = plot_block_vector(vect_dis)
+    block_plot.show()
+    plt.show()
