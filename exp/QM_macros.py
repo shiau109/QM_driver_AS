@@ -206,26 +206,12 @@ def state_tomo_NQ_measurement( QV, iqdata_stream, process, q_name, resonators, t
 def tomo_NQ_proj( iqdata_stream, process, q_name, resonators, thermalization_time=200, sequential=False, weights="", q_proj=[] )->list:
 
     q_current = q_name[-1]
-    # print(q_current, q_proj)
     proj = declare(int)
     with for_each_(proj, [0, 1, 2]):
-        # print(len(q_name), "layer", q_current, proj)
         q_proj_next = q_proj +[(q_current,proj)]
-        # q_proj += [(q_current,proj)]
         if len(q_name) > 1:
             q_next = q_name[:-1]
             tomo_NQ_proj( iqdata_stream, process, q_next, resonators, thermalization_time=thermalization_time, sequential=sequential, weights=weights, q_proj=q_proj_next )
         else:
-            # print( q_proj_next, "deepest" )
             state_tomo_NQ_measurement( q_proj_next, iqdata_stream, process, q_name, resonators, thermalization_time=thermalization_time, weights=weights )
-            # all_q_proj.append(q_proj_next)
-            # print(all_q_proj)
-        # q_proj.pop()
-    # return all_q_proj
 
-    # for idx, res in enumerate(resonators):    
-    #     for proj_idx in range(3):
-    #         if I_st is not None:
-    #             save(I[idx][proj_idx], I_st[idx][proj_idx])
-    #         if Q_st is not None:
-    #             save(Q[idx][proj_idx], Q_st[idx][proj_idx])

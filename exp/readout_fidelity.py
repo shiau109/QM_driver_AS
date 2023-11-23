@@ -87,10 +87,13 @@ def state_distinguishability( q_id:list, ro_element, shot_num, reset:str, config
     qm.close()
     return output_data
 
+
+
+
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import time
-
+    from analysis.state_distribution import train_model, create_img
     ###################
     #   Data Saving   #
     ###################
@@ -112,9 +115,14 @@ if __name__ == '__main__':
     elapsed_time = np.round(end_time-start_time, 1)
 
     for r in resonators:
+        
+        gmm_model = train_model(output_data[r]*1000)
+        fig = plt.figure(constrained_layout=True)
+        create_img(output_data[r]*1000, gmm_model)
+        # fig.show()
+        # plt.show()
         two_state_discriminator(output_data[r][0][0], output_data[r][0][1], output_data[r][1][0], output_data[r][1][1], True, True)
         plt.suptitle(r + "\n reset = " + reset + f"\n {n_runs} runs, elapsed time = {elapsed_time}s \n readout power = {readout_amp[resonators.index(r)]}V, readout length = {readout_len}ns")
-        
         if save_data == True:
             figure = plt.gcf() # get current figure
             figure.set_size_inches(12, 10)
