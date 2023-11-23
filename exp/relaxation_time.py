@@ -11,7 +11,7 @@ from qualang_tools.plot.fitting import Fit
 from common_fitting_func import gaussian
 from scipy.optimize import curve_fit
 import warnings
-from QM_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
+from RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 
 warnings.filterwarnings("ignore")
 
