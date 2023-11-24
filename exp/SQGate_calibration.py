@@ -176,6 +176,7 @@ def amp_calibration( amp_modify_range, q_name, ro_element, config, qmm:QuantumMa
                     # Init
                     wait(thermalization_time * u.ns)
                     # wait(100)
+
                     # Operation
                     with switch_(r_idx, unsafe=True):
                         with case_(0):
@@ -261,24 +262,24 @@ if __name__ == '__main__':
     # assert drag_coef != 0, "The DRAG coefficient 'drag_coef' must be different from 0 in the config."
     ro_element = ["rr1"]
     q_name =  ["q1_xy"]
-    amp_modify_range = 0.01
+    amp_modify_range = 0.005
     # DRAG_calibration_Yale( "q4_xy", "rr4", config, qmm, n_avg=n_avg)
-    output_data = amp_calibration( amp_modify_range, q_name, ro_element, config, qmm, n_avg=n_avg, sequence_repeat=40, simulate=False)
+    output_data = amp_calibration( amp_modify_range, q_name, ro_element, config, qmm, n_avg=n_avg, sequence_repeat=50, simulate=False)
 
-    # Plot
-    fig, ax = plt.subplots(2, len(ro_element))
+    # # Plot
+    # fig, ax = plt.subplots(2, len(ro_element))
 
-    fig.suptitle("Amp pre factor calibration (AS)")
-    a_min = 1-amp_modify_range
-    a_max = 1+amp_modify_range
-    da = amp_modify_range/20
+    # fig.suptitle("Amp pre factor calibration (AS)")
+    # a_min = 1-amp_modify_range
+    # a_max = 1+amp_modify_range
+    # da = amp_modify_range/20
 
-    amps = np.arange(a_min, a_max + da / 2, da)
+    # amps = np.arange(a_min, a_max + da / 2, da)
 
-    for r_idx, r_name in enumerate(ro_element):
-        for op_idx, op in enumerate(["x90","x180"]):
-            ax[r_idx*2].plot(amps, output_data[r_name][0].transpose()[op_idx], label=op)
-            ax[r_idx*2+1].plot(amps, output_data[r_name][1].transpose()[op_idx], label=op)
+    # for r_idx, r_name in enumerate(ro_element):
+    #     for op_idx, op in enumerate(["x90","x180"]):
+    #         ax[r_idx*2].plot(amps, output_data[r_name][0].transpose()[op_idx], label=op)
+    #         ax[r_idx*2+1].plot(amps, output_data[r_name][1].transpose()[op_idx], label=op)
 
-    plt.legend()
+    # plt.legend()
     plt.show()
