@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 from pandas import DataFrame
-from numpy import array, cos, random, max, min, arange, where, pi, inf, hstack, unique
+from numpy import array, cos, random, max, min, arange, where, pi, inf, hstack, unique, ndarray
 from scipy.optimize import curve_fit
 
 def cosine(x,k,b,A,c):
@@ -13,7 +13,7 @@ def fake(x,f):
     
     # random parameters
     A = random.randint(1,10)*(-1)**(random.randint(2))/10
-    k = random.randint(500,1800)/16000 
+    k = random.randint(500,1800)/300 
     b = (max(x)+min(x))/2
     c = random.randint(-100,100)/1000
     # noise scale
@@ -47,6 +47,18 @@ def extendX(x,ratio=1.5):
     new_x = arange(min(x)-extension,max(x)+extension,steps)
     return new_x
 
+# Call this to analysis amp exp data
+def analysis_amp(x:ndarray,amp_array:ndarray):
+    """
+        expect an amp exp result array with a amp x axis array to fit cosine function.\n
+        return array contains peak amp ratio.
+    """
+    popt,_ = curve_fit(cosine,x,amp_array,maxfev=1000000)
+    peaks_loca = theJudge(x,popt)
+    while 0 in peaks_loca:
+        x = extendX(x)
+        peaks_loca = theJudge(x,popt)
+    return peaks_loca, popt
 
 # initialize with 0.7*amp to 1.3*amp, range ~ 0.16π*amp. when k < 10, probabily can't fit cosine wave well.
 
@@ -56,15 +68,12 @@ if __name__ == '__main__':
         x = arange(start=0.95, stop=1.105, step=0.005)
         y = fake(x,cosine)
         plt.plot(x,y,label='Fake')
-        popt,_ = curve_fit(cosine,x,y,maxfev=1000000)
+        peaks_loca, popt = analysis_amp(x,y)
         if abs(popt[0]) < 10 :
             print("Yes")
         plt.plot(x,cosine(x,*popt),label='fitted',c='green')
         print(popt)
-        peaks_loca = theJudge(x,popt)
-        while 0 in peaks_loca:
-            x = extendX(x)
-            peaks_loca = theJudge(x,popt)
+        
         plt.title(f"figure_{i},peaks={peaks_loca}")
         if abs(popt[0])>=1:
             for j in peaks_loca:
