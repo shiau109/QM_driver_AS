@@ -36,16 +36,16 @@ warnings.filterwarnings("ignore")
 ###################
 
 
-def DRAG_calibration_Yale( drag_coef, q_name:str, ro_element:str, config, qmm:QuantumMachinesManager, n_avg=100 ):
+def DRAG_calibration_Yale( drag_coef, q_name:str, ro_element:list, config, qmm:QuantumMachinesManager, n_avg=100 ):
     """
      "The DRAG coefficient 'drag_coef' must be different from 0 in the config."
     """
-    assert drag_coef != 0, "The DRAG coefficient 'drag_coef' must be different from 0 in the config."
     a_min = 0
     a_max = 1.5
     da = 0.02
     amps = np.arange(a_min, a_max + da / 2, da)  # + da/2 to add a_max to amplitudes
     amp_len = len(amps)
+    print("excute DRAG_calibration_Yale")
     with program() as drag:
         n = declare(int)  # QUA variable for the averaging loop
         a = declare(fixed)  # QUA variable for the DRAG coefficient pre-factor
@@ -72,10 +72,10 @@ def DRAG_calibration_Yale( drag_coef, q_name:str, ro_element:str, config, qmm:Qu
                             play("y180" * amp(a, 0, 0, 1), q_name)
                             play("x90" * amp(1, 0, 0, a), q_name)
 
-                # Align the two elements to measure after playing the qubit pulses.
-                align()  # Global align between the two sequences
-
-                multiRO_measurement(iqdata_stream, ro_element, weights="rotated_")
+                    # Align the two elements to measure after playing the qubit pulses.
+                    align()  # Global align between the two sequences
+                    # Measurement
+                    multiRO_measurement(iqdata_stream, ro_element, weights="rotated_")
 
             save(n, n_st)
 
@@ -136,7 +136,7 @@ def DRAG_calibration_Yale( drag_coef, q_name:str, ro_element:str, config, qmm:Qu
         # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
         qm.close()
 
-def amp_calibration( amp_modify_range, q_name, ro_element, config, qmm:QuantumMachinesManager, sequence_repeat:int=1, n_avg=100,  simulate:bool=True ):
+def amp_calibration( amp_modify_range, q_name:str, ro_element:list, config, qmm:QuantumMachinesManager, sequence_repeat:int=1, n_avg=100,  simulate:bool=True ):
     a_min = 1-amp_modify_range
     a_max = 1+amp_modify_range
     da = amp_modify_range/20
@@ -162,10 +162,10 @@ def amp_calibration( amp_modify_range, q_name, ro_element, config, qmm:QuantumMa
                     with switch_(r_idx, unsafe=True):
                         with case_(0):
                             for _ in range(n_90):
-                                play("x90" * amp(a), q_name[0])
+                                play("x90" * amp(a), q_name)
                         with case_(1):
                             for _ in range(n_pi):
-                                play("x180" * amp(a), q_name[0])
+                                play("x180" * amp(a), q_name)
 
                     # Align after playing the qubit pulses.
                     align()
@@ -237,14 +237,15 @@ if __name__ == '__main__':
 
     # Scan the DRAG coefficient pre-factor
 
-    drag_coef = drag_coef_q1
+    drag_coef = drag_coef_q2
     # Check that the DRAG coefficient is not 0
-    # 
-    ro_element = ["rr1"]
-    q_name =  ["q1_xy"]
-    amp_modify_range = 0.005
-    # DRAG_calibration_Yale( drag_coef, "q4_xy", "rr4", config, qmm, n_avg=n_avg)
-    output_data = amp_calibration( amp_modify_range, q_name, ro_element, config, qmm, n_avg=n_avg, sequence_repeat=50, simulate=False)
+    assert drag_coef != 0, "The DRAG coefficient 'drag_coef' must be different from 0 in the config."
+    ro_element = ["rr2"]
+    q_name =  "q2_xy"
+    sequence_repeat = 30
+    amp_modify_range = 0.25/float(sequence_repeat)
+    DRAG_calibration_Yale( drag_coef, q_name, ro_element, config, qmm, n_avg=n_avg)
+    # amp_calibration( amp_modify_range, q_name, ro_element, config, qmm, n_avg=n_avg, sequence_repeat=sequence_repeat, simulate=False)
 
     # # Plot
     

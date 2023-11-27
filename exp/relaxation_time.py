@@ -17,7 +17,7 @@ warnings.filterwarnings("ignore")
 
 # Qi = 1 stands for Q1
 
-def exp_relaxation_time(t_delay, q_name:list, ro_element:list, config, qmm, n_avg=100 ):
+def exp_relaxation_time(t_delay, q_name:list, ro_element:list, config, qmm:QuantumMachinesManager, n_avg=100 ):
 
     evo_time_len = t_delay.shape[-1]
     # QUA program
@@ -32,7 +32,7 @@ def exp_relaxation_time(t_delay, q_name:list, ro_element:list, config, qmm, n_av
                 # Initialize   
                 wait(thermalization_time * u.ns)
                 # Operation   
-                for q in range(q_name):
+                for q in q_name:
                     play("x180", q)
                     wait(t, q)
                 align()
@@ -43,10 +43,12 @@ def exp_relaxation_time(t_delay, q_name:list, ro_element:list, config, qmm, n_av
             save(n, n_st)
 
         with stream_processing():
-            n_st.save("n")
+            n_st.save("iteration")
             multiRO_pre_save(iqdata_stream, ro_element, (evo_time_len,) )
+
     qm = qmm.open_qm(config)
     job = qm.execute(t1)
+
     ro_ch_name = []
     for r_name in ro_element:
         ro_ch_name.append(f"{r_name}_I")
@@ -106,54 +108,61 @@ def statistic_T1_exp( repeat:int, t_delay, q_name, ro_element, config, qmm, n_av
     axis 0 (2) is I, Q
     axis 1 (M) is repeat 
     """
-    statistic_T1 = []
+    statistic_T1 = {}
+    for r in ro_element:
+        statistic_T1[r] = []
     for i in range(repeat):
+        print(f"{i}th T1")
         data = exp_relaxation_time(t_delay, q_name, ro_element, config, qmm, n_avg)
         for r in ro_element:
-            statistic_T1.append( [fit_T1(data[r])[0], fit_T1(data[r])[1]])
+            T1_i = fit_T1(t_delay*4, data[r][0])[0]
+            print(f"{r} T1 = {T1_i}")
+            statistic_T1[r].append( [T1_i, 0])
+
+    for r in ro_element:
+        statistic_T1[r] = np.array(statistic_T1[r]).transpose()
     return statistic_T1
 
 def T1_hist( data, T1_max, fig=None):
 
     if fig == None:
         fig, ax = plt.subplots()
-    new_data = [round(x / 1000) for x in data] # change ns to us
+    new_data = data/1000 # change ns to us
 
     bin_width = 0.5
-    start_value = 0.75
-    end_value = T1_max + 0.25
+    start_value = np.mean(new_data)*0.5
+    end_value = np.mean(new_data)*1.5
     custom_bins = [start_value + i * bin_width for i in range(int((end_value - start_value) / bin_width) + 1)]
     hist_values, bin_edges = np.histogram(new_data, bins=custom_bins, density=True)
     bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
-    params, covariance = curve_fit(gaussian, bin_centers, hist_values)
-    mu, sigma = params
-    plt.cla()
-    ax.hist(new_data, bins=custom_bins, density=True, alpha=0.7, color='blue', label='Histogram')
+    # params, covariance = curve_fit(gaussian, bin_centers, hist_values)
+    # mu, sigma = params
+    ax.hist(new_data, 20, density=False, alpha=0.7, color='blue', label='Histogram')
     xmin, xmax = ax.get_xlim()
     x = np.linspace(xmin, xmax, 100)
-    p = gaussian(x, mu, sigma)
-    ax.plot(x, p, 'k', linewidth=2, label=f'Fit result: $\mu$={mu:.2f}, $\sigma$={sigma:.2f}')
-    ax.legend()
-    fig.title('Gaussian Distribution Fit')
-    print(f'Mean: {mu:.2f}')
-    print(f'Standard Deviation: {sigma:.2f}')
-
+    # p = gaussian(x, mu, sigma)
+    # ax.plot(x, p, 'k', linewidth=2, label=f'Fit result: $\mu$={mu:.2f}, $\sigma$={sigma:.2f}')
+    # ax.legend()
+    fig.suptitle('T1 Distribution')
+    # print(f'Mean: {mu:.2f}')
+    # print(f'Standard Deviation: {sigma:.2f}')
+    return fig
 if __name__ == '__main__':
 
 
-    n_avg = 1000
+    n_avg = 500
     tau_min = 4 // 4 # in clock cycles
-    tau_max = 17_000 // 4  # in clock cycles
-    d_tau = 140 // 4  # in clock cycles
+    tau_max = 40_000 // 4  # in clock cycles
+    d_tau = 400 // 4  # in clock cycles
     t_delay = np.arange(tau_min, tau_max + 0.1, d_tau)  # Linear sweep
 
-    q_name = ["q1_xy"]
-    ro_element = ["rr1"]
+    q_name = ["q3_xy"]
+    ro_element = ["rr3"]
 
-    repeat_T1 = 20
+    repeat_T1 = 100
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-    statistic_T1 = statistic_T1_exp(repeat_T1, t_delay, q_name, ro_element, t_delay, qmm, n_avg)
-    print(statistic_T1)
-    fig = T1_hist(statistic_T1[0],40)
+    statistic_T1 = statistic_T1_exp(repeat_T1, t_delay, q_name, ro_element, config, qmm, n_avg)
+    print(statistic_T1[ro_element[0]].shape)
+    fig = T1_hist(statistic_T1[ro_element[0]][0],40)
     fig.show()
     plt.show()

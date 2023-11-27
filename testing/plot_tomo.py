@@ -1,17 +1,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
-tomo_data = np.load(r'testing/00.npz', allow_pickle=True)# ["arr_0"].item()
+tomo_data = np.load(r'testing/5Q_Bell.npz', allow_pickle=True)# ["arr_0"].item()
 # tomo_data =
-print(tomo_data.keys())
-threshold = [-0.0012, 0.00055]
-q_order = ["rr1","rr2"]
-r1_data = np.moveaxis(tomo_data["rr1"],1,-1)[0:2]
-r2_data = np.moveaxis(tomo_data["rr2"],1,-1)[2:4]
+threshold = [2.007e-04, -5.748e-06]
+q_order = ["rr4","rr5"]
+r1_data = np.moveaxis(tomo_data["rr4"],1,-1)[6:8]
+r2_data = np.moveaxis(tomo_data["rr5"],1,-1)[8:10]
 print(r1_data.shape)
 
 tomo_data = {
-    "rr1":r1_data,
-    "rr2":r2_data
+    "rr4":r1_data,
+    "rr5":r2_data
 }
 bit_string = np.zeros(tomo_data[q_order[0]].shape[1:],dtype=int)
 
@@ -83,14 +82,18 @@ print("\nDensity matrix imaginary part: ")
 print(imDM_gg_view)
 print("Trace Rho: ",np.trace(DM_rho_gg))
 print("Trace Rho square: ",np.trace(np.square(DM_rho_gg)))
-fig, ax = plt.subplots(2,1)
-# ax[0].imshow(reDM_gg_view)
-# ax[1].imshow(imDM_gg_view)
-c = ax[0].pcolormesh(reDM_gg_view, cmap='RdBu', vmin=-1, vmax=1)
-ax[0].set_title('Re')
-fig.colorbar(c, ax=ax[0])
-c = ax[1].pcolormesh(imDM_gg_view, cmap='RdBu', vmin=-1, vmax=1)
-ax[1].set_title('Im')
-fig.colorbar(c, ax=ax[1])
-fig.show()
+
+print(type(DM_gg_view.A))
+from qutip.visualization import matrix_histogram_complex
+matrix_histogram_complex( DM_rho_gg.A )
+# fig, ax = plt.subplots(2,1)
+# # ax[0].imshow(reDM_gg_view)
+# # ax[1].imshow(imDM_gg_view)
+# c = ax[0].pcolormesh(reDM_gg_view, cmap='RdBu', vmin=-1, vmax=1)
+# ax[0].set_title('Re')
+# fig.colorbar(c, ax=ax[0])
+# c = ax[1].pcolormesh(imDM_gg_view, cmap='RdBu', vmin=-1, vmax=1)
+# ax[1].set_title('Im')
+# fig.colorbar(c, ax=ax[1])
+# fig.show()
 plt.show()

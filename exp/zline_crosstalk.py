@@ -124,7 +124,7 @@ if __name__=='__main__':
     u = unit(coerce_to_integer=True)
     n_avg = 100
     q_id = 0
-    crosstalk_q_id = 1
+    crosstalk_q_id = 2
     expect_crosstalk = 0.1
     flux_modify_range = 0.15
     prob_q_name = f"q{q_id+1}_xy"
