@@ -33,6 +33,7 @@ from qualang_tools.results import fetching_tool
 from qualang_tools.plot import interrupt_on_close
 from qualang_tools.results import progress_counter
 import numpy as np
+from common_fitting_func import *
 from macros import qua_declaration, multiplexed_readout
 from qualang_tools.bakery import baking
 import warnings
@@ -63,37 +64,55 @@ def baked_waveform(waveform, pulse_duration, flux_qubit):
 # The QUA program #
 ###################
 qubit_in_e = 2  # Qubit number to put in |e> at the beginning of the sequence
-qubit_to_flux_tune = 1  # Qubit number to flux-tune
+qubit_to_flux_tune = 2  # Qubit number to flux-tune
 
-n_avg = 1300  # The number of averages
-amps = np.arange(-0.015, -0.008, 0.0001) / const_flux_amp  # The flux amplitude pre-factor
-
+n_avg = 100  # The number of averages
+amps = np.arange(0.33, 0.44, 0.001) 
+const_flux_len = 50
 # FLux pulse waveform generation
 # The variable const_flux_len is defined in the configuration
 flux_waveform = np.array([const_flux_amp] * const_flux_len)
 # Baked flux pulse segments
 square_pulse_segments = baked_waveform(flux_waveform, const_flux_len, qubit_to_flux_tune)
 # Flux offset
-flux_bias = config["controllers"]["con1"]["analog_outputs"][
-    config["elements"][f"q{qubit_to_flux_tune}_z"]["singleInput"]["port"][1]
-]["offset"]
+operation_flux_point = [0, -0.3529, -0.3421, -0.3433, -3.400e-01]
 xplot = np.arange(0, const_flux_len + 0.1, 1)
+q_id = [1,2,3,4]
+
+res_F2 = cosine_func( operation_flux_point[1], *g1[1])
+res_IF2 = (res_F2 - resonator_LO)/1e6
+res_IF2 = int(res_IF2 * u.MHz)
+
+res_F3 = cosine_func( operation_flux_point[2], *g1[2])
+res_IF3 = (res_F3 - resonator_LO)/1e6
+res_IF3 = int(res_IF3 * u.MHz)
+
+res_F4 = cosine_func( operation_flux_point[3], *g1[3])
+res_IF4 = (res_F4 - resonator_LO)/1e6
+res_IF4 = int(res_IF4 * u.MHz)
 
 with program() as cz:
-    I, I_st, Q, Q_st, n, n_st = qua_declaration(nb_of_qubits=2)
+    I, I_st, Q, Q_st, n, n_st = qua_declaration(nb_of_qubits=4)
     a = declare(fixed)  # QUA variable for the flux pulse amplitude pre-factor.
     segment = declare(int)  # QUA variable for the flux pulse segment index
-
+    resonator_freq2 = declare(int, value=res_IF2)
+    resonator_freq3 = declare(int, value=res_IF3)
+    resonator_freq4 = declare(int, value=res_IF4)
+    for i in q_id:
+        set_dc_offset("q%s_z"%(i+1), "single", operation_flux_point[i])
+    wait(flux_settle_time * u.ns)
+    update_frequency(f"rr{2}", resonator_freq2)
+    update_frequency(f"rr{3}", resonator_freq3)
+    # update_frequency(f"rr{4}", resonator_freq4)
     with for_(n, 0, n < n_avg, n + 1):
-        save(n, n_st)
         with for_(*from_array(a, amps)):
             with for_(segment, 0, segment <= const_flux_len, segment + 1):
                 # Put the two qubits in their excited states
-                play("x180", "q1_xy")
                 play("x180", "q2_xy")
+                play("x180", "q3_xy")
                 align()
                 # Wait some time to ensure that the flux pulse will arrive after the x90 pulse
-                wait(20 * u.ns)
+                wait(flux_settle_time * u.ns)
                 # Play a flux pulse on the qubit with the highest frequency to bring it close to the excited qubit while
                 # varying its amplitude and duration in order to observe the SWAP chevron with 1ns resolution.
                 with switch_(segment):
@@ -102,11 +121,11 @@ with program() as cz:
                             square_pulse_segments[j].run(amp_array=[(f"q{qubit_to_flux_tune}_z", a)])
                 align()
                 # Wait some time to ensure that the flux pulse will end before the readout pulse
-                wait(20 * u.ns)
+                wait(flux_settle_time * u.ns)
                 # Align the elements to measure after having waited a time "tau" after the qubit pulses.
                 align()
                 # Measure the state of the resonators
-                multiplexed_readout(I, I_st, Q, Q_st, resonators=[1, 2], weights="rotated_")
+                multiplexed_readout(I, I_st, Q, Q_st, resonators=[1, 2, 3, 4], weights="rotated_")
                 # Wait for the qubit to decay to the ground state
                 wait(thermalization_time * u.ns)
         # Save the averaging iteration to get the progress bar
@@ -121,6 +140,13 @@ with program() as cz:
         # resonator 2
         I_st[1].buffer(const_flux_len + 1).buffer(len(amps)).average().save("I2")
         Q_st[1].buffer(const_flux_len + 1).buffer(len(amps)).average().save("Q2")
+        # resonator 3
+        I_st[2].buffer(const_flux_len + 1).buffer(len(amps)).average().save("I3")
+        Q_st[2].buffer(const_flux_len + 1).buffer(len(amps)).average().save("Q3")
+        # resonator 2
+        I_st[3].buffer(const_flux_len + 1).buffer(len(amps)).average().save("I4")
+        Q_st[3].buffer(const_flux_len + 1).buffer(len(amps)).average().save("Q4")
+
 
 #####################################
 #  Open Communication with the QOP  #
@@ -138,6 +164,7 @@ if simulate:
     simulation_config = SimulationConfig(duration=10_000)  # In clock cycles = 4ns
     job = qmm.simulate(config, cz, simulation_config)
     job.get_simulated_samples().con1.plot()
+    plt.show()
 else:
     # Open the quantum machine
     qm = qmm.open_qm(config)
@@ -147,41 +174,43 @@ else:
     fig = plt.figure()
     interrupt_on_close(fig, job)
     # Tool to easily fetch results from the OPX (results_handle used in it)
-    results = fetching_tool(job, ["n", "I1", "Q1", "I2", "Q2"], mode="live")
+    results = fetching_tool(job, ["n", "I1", "Q1", "I2", "Q2", "I3", "Q3", "I4", "Q4"], mode="live")
     # Live plotting
     while results.is_processing():
         # Fetch results
-        n, I1, Q1, I2, Q2 = results.fetch_all()
+        n, I1, Q1, I2, Q2, I3, Q3, I4, Q4 = results.fetch_all()
         # Convert the results into Volts
         I1, Q1 = u.demod2volts(I1, readout_len), u.demod2volts(Q1, readout_len)
         I2, Q2 = u.demod2volts(I2, readout_len), u.demod2volts(Q2, readout_len)
+        I3, Q3 = u.demod2volts(I3, readout_len), u.demod2volts(Q3, readout_len)
+        I4, Q4 = u.demod2volts(I4, readout_len), u.demod2volts(Q4, readout_len)
         # Progress bar
         progress_counter(n, n_avg, start_time=results.start_time)
         # Plot
         plt.suptitle(f"CZ chevron sweeping the flux on qubit {qubit_to_flux_tune}")
         plt.subplot(221)
         plt.cla()
-        plt.pcolor(xplot, amps * const_flux_amp + flux_bias, I1)
-        plt.title("q1 - I [V]")
+        plt.pcolor(amps * const_flux_amp, xplot,  I2.transpose())
+        plt.title("q2 - I [V]")
         plt.ylabel("Interaction time (ns)")
         plt.subplot(223)
         plt.cla()
-        plt.pcolor(xplot, amps * const_flux_amp + flux_bias, Q1)
-        plt.title("q1 - Q [V]")
+        plt.pcolor(amps * const_flux_amp, xplot,  Q2.transpose())
+        plt.title("q2 - Q [V]")
         plt.xlabel("Flux amplitude (V)")
         plt.ylabel("Interaction time (ns)")
         plt.subplot(222)
         plt.cla()
-        plt.pcolor(xplot, amps * const_flux_amp + flux_bias, I2)
-        plt.title("q2 - I [V]")
+        plt.pcolor(amps * const_flux_amp, xplot,  I3.transpose())
+        plt.title("q3 - I [V]")
         plt.subplot(224)
         plt.cla()
-        plt.pcolor(xplot, amps * const_flux_amp + flux_bias, Q2)
-        plt.title("q2 - Q [V]")
+        plt.pcolor(amps * const_flux_amp, xplot,  Q3.transpose())
+        plt.title("q3 - Q [V]")
         plt.xlabel("Flux amplitude (V)")
         plt.tight_layout()
         plt.pause(0.1)
     # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
     qm.close()
-
+    plt.show()
     # np.savez(save_dir/'cz', I1=I1, Q1=Q1, I2=I2, Q2=Q2, ts=ts, amps=amps)

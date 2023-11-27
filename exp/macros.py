@@ -22,13 +22,13 @@ from scipy.optimize import curve_fit
 def cz_gate(type="square"):
     if type == "square":
         wait(5)  # for flux pulse to relax back completely
-        set_dc_offset("q2_z", "single", 0.14519591) # 10cc: 0.1452099
-        wait(48 // 4, "q2_z")
+        set_dc_offset("q2_z", "single", -0.3529 + 0.1757) # 10cc: 0.1452099
+        wait(28 // 4, "q2_z")
         align()
-        set_dc_offset("q2_z", "single", idle_q2)
+        set_dc_offset("q2_z", "single", -0.3529)
         wait(5)  # for flux pulse to relax back completely
     elif type == "ft_gaussian":
-        play("cz_1_2"*amp((0.150-max_frequency_point2)/(cz_point_1_2_q2-idle_q2)), "q2_z", duration=80//4)
+        play("cz_1_2"*amp((0.150-max_frequency_point[1])/(cz_point_1_2_q2-idle_q2)), "q2_z", duration=80//4)
     elif type == "gaussian":
         play("cz_1_2"*amp(1.4), "q2_z", duration=32//4)
 

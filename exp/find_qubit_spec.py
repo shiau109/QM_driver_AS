@@ -138,8 +138,8 @@ def qubit_flux_fitting(I,Q,plot_index,fitting):
         R.append(np.abs(S))
         phase.append(np.angle(S))
         for j in range(len(Flux[q_id.index(i)])):
-            min_index[q_id.index(i)].append(np.argmax(R[q_id.index(i)][:,j])) 
-            max_index[q_id.index(i)].append(np.argmax(phase[q_id.index(i)][:,j])) 
+            min_index[q_id.index(i)].append(np.argmin(R[q_id.index(i)][j,:])) 
+            max_index[q_id.index(i)].append(np.argmax(phase[q_id.index(i)][j,:])) 
     amp_max_qubit_freq = max(Frequency[plot_index][min_index[plot_index]])
     amp_min_qubit_freq = min(Frequency[plot_index][min_index[plot_index]])
     amp_max_qubit_flux = Flux[plot_index][np.argmax(Frequency[plot_index][min_index[plot_index]])]
@@ -183,22 +183,24 @@ def qubit_flux_fitting(I,Q,plot_index,fitting):
     plt.tight_layout()
     plt.show()
 
-n_avg = 100  
+n_avg = 100
 saturation_len = 12 * u.us  
-saturation_amp =  0.05
+saturation_amp =  0.02
 q_id = [1,2,3,4]
-Qi = 4
-flux_Qi = 4
+Qi = 2
+flux_Qi = 2
 fitting = False
 for i in q_id: 
     if i == Qi-1: plot_index = q_id.index(i)  
-dfs = np.arange(-300e6, 50e6, 1e6)
-flux = np.arange(-0.02, 0.25, 0.01)
+dfs = np.arange(-200e6, 50e6, 0.1e6)
+flux = np.arange(-0.1, 0.2, 0.01)
 Flux = np.zeros((len(q_id), len(flux)))
 Frequency = np.zeros((len(q_id), len(dfs)))
 Amplitude = np.zeros((len(q_id), len(flux), len(dfs)))
 Phase = np.zeros((len(q_id), len(flux), len(dfs)))
-operation_flux_point = [0, -3.000e-01, -0.2525, -0.3433, -3.400e-01] 
+operation_flux_point = [0, -0.3529, -0.3421, -0.3433, -3.400e-01] ###  idle point
+# operation_flux_point = [0, -3.000e-01, -3.450e-01, -0.3433, -3.400e-01]   ###  CZ point
+
 simulate = False
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
 I, Q = flux_twotone_qubit(q_id,Qi,flux_Qi,flux,plot_index,simulate,qmm)

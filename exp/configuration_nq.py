@@ -63,17 +63,20 @@ octave_config = octave_declaration(octaves)
 #############################################
 qubit_LO = np.zeros(5)
 qubit_LO[0] = (4.055) * u.GHz
-qubit_LO[1] = (4.4) * u.GHz
-qubit_LO[2] = (3.5) * u.GHz
+qubit_LO[1] = (4.3) * u.GHz
+qubit_LO[2] = (3.6) * u.GHz  ### idle point 
 qubit_LO[3] = (3.95) * u.GHz
 qubit_LO[4] = (4.75) * u.GHz
 
 # Qubits IF
 qubit_IF = np.zeros(5)
 qubit_IF[0] = (-116.8+0.245) * u.MHz       # Q1
-qubit_IF[1] = (-203.57-1.054) * u.MHz      # Q2
-qubit_IF[2] = (-212.94+1.49+100-200) * u.MHz
-qubit_IF[3] = (-83.5531-0.13-5-1.08+0.24) * u.MHz     # Q4
+qubit_IF[1] = (-100+1.116-0.208) * u.MHz      # Q2
+# qubit_IF[2] = (-195.153) * u.MHz
+qubit_IF[2] = (-71.3) * u.MHz
+# qubit_IF[2] = (-211-0.154-0.287) * u.MHz          # idle point Q3 at LO 3.3
+# qubit_IF[2] = (-323.81+0.36) * u.MHz   # idle point Q3 at LO 3.5
+qubit_IF[3] = (-89.5911-0.272) * u.MHz     # Q4
 qubit_IF[4] = (-92) * u.MHz                # Q5
 # For comparing 2q:
 # qubit_IF[1] = qubit_IF[0]
@@ -96,9 +99,9 @@ saturation_amp = 0.1
 pi_len = 40
 pi_sigma = pi_len / 4
 pi_amp_q1 = 0.15*0.872*0.975*0.97
-pi_amp_q2 = 0.15*0.57*0.99 *0.605
-pi_amp_q3 = 0.0343*0.69*0.9875
-pi_amp_q4 = 0.1609*0.95*1.015*0.995*1.035
+pi_amp_q2 = 0.15*0.57*0.99 *0.605*2.935*0.945*1.01
+pi_amp_q3 = 0.02355*1.5*0.9825*1.9325
+pi_amp_q4 = 0.15365
 # pi_amp_q4 = 0.1*1.135*1.005*0.805
 pi_amp_q5 = 0.5
 
@@ -199,15 +202,15 @@ minus_y90_I_wf_q5, minus_y90_Q_wf_q5 = (-1) * minus_y90_der_wf_q5, minus_y90_wf_
 flux_settle_time = 100 * u.ns
 max_frequency_point = np.zeros(5)
 max_frequency_point[0] = -3.400e-01
-max_frequency_point[1] = -3.000e-01
-max_frequency_point[2] = -2.845e-01
+max_frequency_point[1] = -3.500e-01
+max_frequency_point[2] = -3.450e-01
 max_frequency_point[3] = -3.414e-01
 max_frequency_point[4] = -3.350e-01
 
 min_frequency_point = np.zeros(5)
 min_frequency_point[0] = 0
-min_frequency_point[1] = 5.000e-02
-min_frequency_point[2] = 3.500e-02
+min_frequency_point[1] = -1.550e-01
+min_frequency_point[2] = 1.000e-02
 min_frequency_point[3] = -1.914e-01
 min_frequency_point[4] = 5.000e-03
 
@@ -244,8 +247,8 @@ g0[4] = [0.4045e6, 1.5, 3, 6.11e9]
 # Final value
 g1 = [[],[],[],[],[]]
 g1[0] = []
-g1[1] = [3.81148191e+05, 1.45523615e+00, 2.72982631e+00, 6.02477792e+09]
-g1[2] = [3.77931879e+05, 1.47902758e+00, 2.63682667e+00, 5.84613138e+09]
+g1[1] = [5.13843633e+05, 1.43009679e+00, 3.14159254e+00, 6.02463418e+09]
+g1[2] = [4.35703161e+05, 1.48153156e+00, 3.12806104e+00, 5.84636619e+09]
 g1[3] = [3.99999991e+06, 3.79006707e-01, 8.11582702e-01, 6.10906045e+09]
 g1[4] = [1.42510392e+06, 1.46039739e+00, 3.08277727e+00, 5.92422529e+09]
 
@@ -267,7 +270,7 @@ resonator_LO = 5.95 * u.GHz
 resonator_IF = np.zeros(5)
 resonator_IF[0] = int((-214.21) * u.MHz)
 resonator_IF[1] = int((75.159) * u.MHz)
-resonator_IF[2] = int((-103.15) * u.MHz) 
+resonator_IF[2] = int((-103.40) * u.MHz) 
 resonator_IF[3] = int((163.06) * u.MHz)
 resonator_IF[4] = int((-25.8) * u.MHz)
 # Above is for verifying wide-sweep results: -156, -38, 39, 137, 231

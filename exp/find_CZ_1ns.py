@@ -9,18 +9,35 @@ from qualang_tools.plot import interrupt_on_close
 from qualang_tools.results import progress_counter
 from common_fitting_func import *
 import numpy as np
+from common_fitting_func import *
 from macros import qua_declaration, multiplexed_readout
+from qualang_tools.bakery import baking
 import warnings
 
 warnings.filterwarnings("ignore")
 
-def CZ(q_id,Qi_list,flux_Qi,amps,ts,simulate,qmm):
+def baked_waveform(waveform, pulse_duration, flux_qubit):
+    pulse_segments = []  # Stores the baking objects
+    # Create the different baked sequences, each one corresponding to a different truncated duration
+    for i in range(0, pulse_duration + 1):
+        with baking(config, padding_method="right") as b:
+            if i == 0:  # Otherwise, the baking will be empty and will not be created
+                wf = [0.0] * 16
+            else:
+                wf = waveform[:i].tolist()
+            b.add_op("flux_pulse", f"q{flux_qubit}_z", wf)
+            b.play("flux_pulse", f"q{flux_qubit}_z")
+        # Append the baking object in the list to call it from the QUA program
+        pulse_segments.append(b)
+    return pulse_segments
+
+def CZ_1ns(q_id,Qi_list,flux_Qi,amps,const_flux_len,simulate,qmm):
     res_IF = []
     resonator_freq = [[] for _ in q_id]
     with program() as cz:
         I, I_st, Q, Q_st, n, n_st = qua_declaration(nb_of_qubits=len(q_id))
-        t = declare(int)  
         a = declare(fixed)  
+        segment = declare(int)  
         for i in q_id:
             res_F = cosine_func(operation_flux_point[i], *g1[i])
             res_F = (res_F - resonator_LO)/1e6
@@ -31,26 +48,27 @@ def CZ(q_id,Qi_list,flux_Qi,amps,ts,simulate,qmm):
         wait(flux_settle_time * u.ns)
         with for_(n, 0, n < n_avg, n + 1):
             with for_(*from_array(a, amps)):
-                with for_(*from_array(t, ts)):
+                with for_(segment, 0, segment <= const_flux_len, segment + 1):
                     if excited_Qi_list != []: 
                         for excited_Qi in excited_Qi_list:
                             play("x180", f"q{excited_Qi}_xy")
                     align()
                     wait(flux_settle_time * u.ns)
-                    play("const" * amp(a), f"q{flux_Qi}_z", duration=t)
-                    align()               
+                    with switch_(segment):
+                        for j in range(0, const_flux_len + 1):
+                            with case_(j):
+                                square_pulse_segments[j].run(amp_array=[(f"q{flux_Qi}_z", a)])
+                    align()
                     wait(flux_settle_time * u.ns)
                     align()
                     multiplexed_readout(I, I_st, Q, Q_st, resonators=[x+1 for x in q_id], weights="rotated_")
                     wait(thermalization_time * u.ns)
             save(n, n_st)
-
         with stream_processing():
             n_st.save("n")
             for i in q_id:
                 I_st[q_id.index(i)].buffer( len(amps),len(ts) ).average().save(f"I{i+1}")
                 Q_st[q_id.index(i)].buffer( len(amps),len(ts) ).average().save(f"Q{i+1}")
-
     if simulate:
         simulation_config = SimulationConfig(duration=10_000)  # In clock cycles = 4ns
         job = qmm.simulate(config, cz, simulation_config)
@@ -74,7 +92,8 @@ def CZ(q_id,Qi_list,flux_Qi,amps,ts,simulate,qmm):
             live_plotting(I,Q,Qi_list)
         qm.close()
         plt.show()
-        return I, Q 
+        return I, Q
+    
 
 def live_plotting(I,Q,Qi_list):
     plt.suptitle(f"CZ chevron sweeping the flux on qubit {flux_Qi}")
@@ -83,12 +102,14 @@ def live_plotting(I,Q,Qi_list):
             if i == Qi-1: plot_index = q_id.index(i)
         plt.subplot(2,2,Qi_list.index(Qi)+1)
         plt.cla()
-        plt.pcolor(amps * scale_reference, 4 * ts, I[plot_index].transpose())
+        plt.pcolor(amps * scale_reference, ts, I[plot_index].transpose())
         plt.title(f"q{Qi} - I [V]")
+        plt.ylabel("Interaction time (ns)")
         plt.subplot(2,2,Qi_list.index(Qi)+3)
         plt.cla()
-        plt.pcolor(amps * scale_reference, 4 * ts, Q[plot_index].transpose())
+        plt.pcolor(amps * scale_reference, ts, Q[plot_index].transpose())
         plt.title(f"q{Qi} - Q [V]")
+        plt.ylabel("Interaction time (ns)")
         plt.xlabel("Flux amplitude (V)")       
         plt.tight_layout()
         plt.pause(0.1)
@@ -102,8 +123,12 @@ n_avg = 100
 ts = np.arange(4, 60, 1)  
 operation_flux_point = [0, -0.3529, -0.3421, -0.3433, -3.400e-01]
 amps = np.arange(0.33, 0.44, 0.001) 
+const_flux_len = 50
+flux_waveform = np.array([const_flux_amp] * const_flux_len)
+square_pulse_segments = baked_waveform(flux_waveform, const_flux_len, flux_Qi)
+ts = np.arange(0, const_flux_len+0.1, 1)
 simulate = False
 q_id = [1,2,3,4]
 
-qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-I, Q = CZ(q_id,Qi_list,flux_Qi,amps,ts,simulate,qmm)
+qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)      
+I,Q = CZ_1ns(q_id,Qi_list,flux_Qi,amps,const_flux_len,simulate,qmm)

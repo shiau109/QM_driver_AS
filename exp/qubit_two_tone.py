@@ -25,6 +25,7 @@ def qubit_two_tone(q_id,Qi,saturation_amp,simulate,qmm):
         for i in q_id:
             set_dc_offset(f"q{i+1}_z", "single", operation_flux_point[i])
         update_frequency(f"rr{Qi}", resonator_freq)
+        # update_frequency(f"rr2", int((74.626) * u.MHz))
         wait(flux_settle_time * u.ns)   
         with for_(n, 0, n < n_avg, n + 1):
             with for_(*from_array(df, dfs)):
@@ -76,26 +77,26 @@ def live_plotting(Amplitude,Phase,plot_index):
     plt.cla()
     plt.plot(Frequency[plot_index], Amplitude[plot_index])
     plt.axvline(qubit_IF[Qi-1] + qubit_LO[Qi-1], color="k", linewidth=0.37)
-    plt.xlabel("Qubit intermidiate frequency [MHz]")
+    plt.xlabel("Qubit frequency [GHz]")
     plt.ylabel(r"$R=\sqrt{I^2 + Q^2}$ [V]")
     plt.title(f"q{Qi} amp. (f: {(qubit_LO[Qi-1] + qubit_IF[Qi-1]) / u.MHz} MHz)")
     plt.subplot(122)
     plt.cla()
     plt.plot(Frequency[plot_index], Phase[plot_index])
     plt.axvline(qubit_IF[Qi-1] + qubit_LO[Qi-1], color="k", linewidth=0.37)
-    plt.xlabel("Qubit intermidiate frequency [MHz]")
+    plt.xlabel("Qubit frequency [GHz]")
     plt.ylabel("Phase [rad]")
     plt.title(f"q{Qi} phase (f: {(qubit_LO[Qi-1] + qubit_IF[Qi-1]) / u.MHz} MHz)")
     plt.tight_layout()
     plt.pause(0.1)
 
 q_id = [1,2,3,4]
-Qi = 3
-n_avg = 1000 
-operation_flux_point = [0, -3.000e-01, -0.2525, -0.3433 , -3.400e-01] 
-saturation_amp = 0.01
+Qi = 2
+n_avg = 800
+operation_flux_point = [0, -0.3529, -0.3421, -0.3433, -3.400e-01]
+saturation_amp = 0.009
 saturation_len = 20 * u.us  
-dfs = np.arange(-40e6, 150e6, 0.05e6)
+dfs = np.arange(-200e6, 100e6, 0.05e6)
 res_F = cosine_func( operation_flux_point[Qi-1], *g1[Qi-1])
 res_IF = (res_F - resonator_LO)/1e6
 res_IF = int(res_IF * u.MHz)

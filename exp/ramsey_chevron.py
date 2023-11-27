@@ -93,12 +93,12 @@ def live_plotting(I,Q,Qi):
 if __name__ == '__main__':
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
     simulate = False
-    n_avg = 100  
+    n_avg = 60
     q_id = [1,2,3,4]
-    dfs = np.arange(-1e6, 1e6, 0.01e6)  
-    t_delay = np.arange(1, 500, 10) 
-    Qi = 4
+    dfs = np.arange(-2.5e6, 2.5e6, 0.01e6)  
+    t_delay = np.arange(1, 400, 10) 
+    Qi = 2
     for i in q_id: 
         if i == Qi-1: plot_index = q_id.index(i) 
-    operation_flux_point = [0, -3.000e-01, -0.2525, -0.3433, -3.400e-01] 
+    operation_flux_point = [0, -0.3529, -0.3421, -0.3433, -3.400e-01]
     I,Q = ramsey_chevron(n_avg,q_id,Qi,dfs,operation_flux_point,t_delay,simulate)

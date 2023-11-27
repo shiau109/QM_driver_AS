@@ -23,23 +23,23 @@ def mRO_flux_dep_resonator( q_id,Qi_list,n_avg,dfs,flux,depletion_time,simulate,
         df = declare(int) 
         dc = declare(fixed) 
         with for_(n, 0, n < n_avg, n + 1):
-            with for_(*from_array(df, dfs)):
-                for i in q_id:
-                    update_frequency(f"rr{i+1}", df + resonator_IF[i])
-                with for_(*from_array(dc, flux)):
-                    for i in q_id: # set all resonators in operation points
-                        set_dc_offset(f"q{i+1}_z", "single", operation_flux_point[i]) 
-                    for Qi in Qi_list:    
-                        set_dc_offset(f"q{Qi}_z", "single", dc)                   
-                    wait(flux_settle_time * u.ns)  
+            with for_(*from_array(dc, flux)):
+                for i in q_id: # set all resonators in operation points
+                    set_dc_offset(f"q{i+1}_z", "single", operation_flux_point[i]) 
+                for Qi in Qi_list:    
+                    set_dc_offset(f"q{Qi}_z", "single", dc)                   
+                wait(flux_settle_time * u.ns)             
+                with for_(*from_array(df, dfs)):
+                    for i in q_id:
+                        update_frequency(f"rr{i+1}", df + resonator_IF[i])
                     multiplexed_readout(I, I_st, Q, Q_st, resonators=[x+1 for x in q_id], sequential=False)
                     wait(depletion_time * u.ns, [f"rr{i+1}" for i in q_id]) 
             save(n, n_st)
         with stream_processing():
             n_st.save("n")
             for i in q_id:
-                I_st[q_id.index(i)].buffer(len(flux)).buffer(len(dfs)).average().save(f"I{i+1}")
-                Q_st[q_id.index(i)].buffer(len(flux)).buffer(len(dfs)).average().save(f"Q{i+1}")
+                I_st[q_id.index(i)].buffer( len(flux),len(dfs) ).average().save(f"I{i+1}")
+                Q_st[q_id.index(i)].buffer( len(flux),len(dfs) ).average().save(f"Q{i+1}")
     if simulate:
         simulation_config = SimulationConfig(duration=10_000)  # In clock cycles = 4ns
         job = qmm.simulate(config, multi_res_spec_vs_flux, simulation_config)
@@ -84,7 +84,7 @@ def res_flux_live_plot(Amplitude):
         if q_id.index(i)==0: 
             plt.ylabel(y_label)
         plt.xlabel(x_label)
-        plt.pcolor(Flux[q_id.index(i)], Frequency[q_id.index(i)], Amplitude[q_id.index(i)])        
+        plt.pcolor(Flux[q_id.index(i)], (Frequency[q_id.index(i)])/u.GHz, Amplitude[q_id.index(i)].transpose())        
     plt.tight_layout()
     plt.pause(0.1)
 
@@ -95,7 +95,7 @@ def res_flux_fitting(signal):
     res_LO = resonator_LO
     for i in q_id:
         for j in range(len(Flux[q_id.index(i)])):
-            resonance_index[q_id.index(i)].append(np.argmin(signal[q_id.index(i)][:,j]))
+            resonance_index[q_id.index(i)].append(np.argmin(signal[q_id.index(i)][j,:]))
         temp_params, temp_covariance = curve_fit(
             f = cosine_func, 
             xdata = Flux[q_id.index(i)],
@@ -151,7 +151,7 @@ def res_flux_plot(Flux,Frequency,signal,fitting):
             plt.title("q%s:"%(i+1))
             if q_id.index(i)==0: 
                 plt.ylabel(y_label)
-            plt.pcolor(Flux[q_id.index(i)], Frequency[q_id.index(i)], signal[q_id.index(i)])        
+            plt.pcolor(Flux[q_id.index(i)], Frequency[q_id.index(i)], signal[q_id.index(i)].transpose())        
             plt.plot(Flux[q_id.index(i)], Frequency[q_id.index(i)][resonance_index[q_id.index(i)]])
             # BOTTOM figure
             plt.subplot(2, len(q_id), len(q_id)+q_id.index(i)+1)
@@ -179,16 +179,16 @@ qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_na
 # Flux, Frequency, Amplitude, Phase, I, Q = mRO_flux_dep_resonator(q_id,n_avg,dfs,flux,depletion_time,simulate,'live',qmm) 
 # fig = res_flux_plot(Flux,Frequency,Amplitude,True)
 q_id = [1,2,3,4] # q_id = [1] means rr2
-Qi_list = [3] # Qi = 1 means Q1
+Qi_list = [2] # Qi = 1 means Q1
 n_avg = 500
-dfs = np.arange(-3e6, 3e6, 0.01e6)
-flux = np.arange(-0.2545 - 0.1, -0.2545 + 0.2, 0.01)
+dfs = np.arange(-3e6, 3e6, 0.05e6)
+flux = np.arange(-3.000e-01-0.15, -3.000e-01+0.15, 0.005)
 Flux = np.zeros((len(q_id), len(flux)))
 Frequency = np.zeros((len(q_id), len(dfs)))
-Amplitude = np.zeros((len(q_id), len(dfs), len(flux)))
-Phase = np.zeros((len(q_id), len(dfs), len(flux)))
+Amplitude = np.zeros((len(q_id), len(flux),len(dfs)))
+Phase = np.zeros((len(q_id), len(flux), len(dfs)))
 depletion_time = 10 * u.us
 simulate = False
-operation_flux_point = [0, -3.000e-01, -0.2545, -0.3914, -3.400e-01] 
+operation_flux_point = [0, -0.3529, -0.3421, -0.3433, -3.400e-01]
 Flux, Frequency, Amplitude, Phase, I, Q = mRO_flux_dep_resonator(q_id,Qi_list,n_avg,dfs,flux,depletion_time,simulate,qmm) 
 fig = res_flux_plot(Flux,Frequency,Amplitude,True)
