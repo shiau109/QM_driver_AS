@@ -5,22 +5,27 @@ from scipy.optimize import curve_fit
 from sympy.solvers import solve
 from sympy import Symbol, sympify
 
-def cosine(x,A,c,k,b):
-    '''
-        return Acos(kx+b)
-    '''
-    return A*cos(2*pi*(k*array(x)+b))+c
+class math_eqns:
 
-def linear(x,a,b,*args):
-    '''
-        return ax+b
-    '''
-    return a*x+b
+    def __init__(self):
+        pass
+
+    def cosine(x,A,c,k,b):
+        '''
+            return Acos(kx+b)
+        '''
+        return A*cos(2*pi*(k*array(x)+b))+c
+
+    def linear(x,a,b,*args):
+        '''
+            return ax+b
+        '''
+        return a*x+b
 
 def fake(x,f):
     
     # random parameters
-    A = random.randint(700)*(-1)**(random.randint(2))/10000
+    A = random.randint(70)*(-1)**(random.randint(2))/1000 # -0.07~0.07
     k = random.randint(10,40)/10 
     b = random.randint(0.8*min(x)*100,0.8*max(x)*100)/100
     c = random.randint(-100,100)/1000
@@ -36,7 +41,7 @@ def theJudge(x,fit_paras):
     '''
         return the x value which has the minimal y.
     '''
-    candi = where(cosine(x,*fit_paras) == min(cosine(x,*fit_paras)))[0][0]
+    candi = where(math_eqns.cosine(x,*fit_paras) == min(math_eqns.cosine(x,*fit_paras)))[0][0]
     peaks = round(x[candi],3)
 
     return peaks
@@ -76,7 +81,7 @@ def find_amp_minima(x:ndarray,amp_array:ndarray,mode:str='continuous'):
             boundaries = ()
         case _:
             boundaries = ()
-    popt,_ = curve_fit(cosine,x,amp_array,maxfev=10000000)#
+    popt,_ = curve_fit(math_eqns.cosine,x,amp_array,maxfev=10000000)#
     peaks_loca = theJudge(x,popt)
     
     return peaks_loca, popt
@@ -94,16 +99,16 @@ def analysis_amp(x:ndarray,y1:ndarray,y2:ndarray):
 
 # Call this to analyze DRAG ratio alpha exp data
 def analysis_drag_a(x:ndarray,y1:ndarray,y2:ndarray,*args):
-    popt1,_ = curve_fit(linear,x,y1,maxfev=1000000)
-    popt2,_ = curve_fit(linear,x,y2,maxfev=1000000)
+    popt1,_ = curve_fit(math_eqns.linear,x,y1,maxfev=1000000)
+    popt2,_ = curve_fit(math_eqns.linear,x,y2,maxfev=1000000)
     ans = crossPoint_solver(popt1,popt2)
 
     if len(args) != 0:
         plt.plot(x,y1)
-        plt.plot(x,linear(x,*popt1))
+        plt.plot(x,math_eqns.linear(x,*popt1))
         plt.plot(x,y2)
-        plt.plot(x,linear(x,*popt2))
-        plt.scatter(ans,linear(ans,*popt1),marker='X',s=80)
+        plt.plot(x,math_eqns.linear(x,*popt2))
+        plt.scatter(ans,math_eqns.linear(ans,*popt1),marker='X',s=80)
         plt.title(f"alpha = {round(ans,3)}")
         plt.show()
 
@@ -111,27 +116,30 @@ def analysis_drag_a(x:ndarray,y1:ndarray,y2:ndarray,*args):
 
 
 if __name__ == '__main__':
-    ### amp test
-    # for i in range(20):
-    #     x = arange(start=0.95, stop=1.105, step=0.005)
-    #     y = fake(x,cosine)
-    #     plt.plot(x,y,label='Fake')
-    #     peaks_loca, popt = find_amp_minima(x,y)
+    test = input("test for: ")
 
-    #     plt.plot(x,cosine(x,*popt),label='fitted',c='green')
-        
-    #     plt.title(f"figure_{i},peaks={peaks_loca}")
-    #     plt.scatter(peaks_loca,cosine(peaks_loca,*popt),c='red',marker='x',s=100)
-    #     plt.xlabel('XYL ratio (π)')
-    #     plt.legend()
-    #     plt.show()
+    if test.lower() in ['amp','amplitude']:
+        ### amp test
+        for i in range(20):
+            x = arange(start=0.95, stop=1.105, step=0.005)
+            y = fake(x,math_eqns.cosine)
+            plt.plot(x,y,label='Fake')
+            peaks_loca, popt = find_amp_minima(x,y)
 
-    ### drag alpha test
-    for i in range(20):
-        x = arange(start=-1.5, stop=1.5, step=0.1)
-        y1 = fake(x,linear)
-        y2 = fake(x,linear)
-        analysis_drag_a(x,y1,y2,'hi')
+            plt.plot(x,math_eqns.cosine(x,*popt),label='fitted',c='green')
+            
+            plt.title(f"figure_{i},peaks={peaks_loca}")
+            plt.scatter(peaks_loca,math_eqns.cosine(peaks_loca,*popt),c='red',marker='x',s=100)
+            plt.xlabel('XYL ratio (π)')
+            plt.legend()
+            plt.show()
+    else:
+        ### drag alpha test
+        for i in range(20):
+            x = arange(start=-1.5, stop=1.5, step=0.1)
+            y1 = fake(x,math_eqns.linear)
+            y2 = fake(x,math_eqns.linear)
+            analysis_drag_a(x,y1,y2,'plot')
     
     
     
