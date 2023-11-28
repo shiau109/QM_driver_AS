@@ -295,5 +295,7 @@ if __name__ == '__main__':
     assert drag_coef != 0, "The DRAG coefficient 'drag_coef' must be different from 0 in the config."
 
     # DRAG_calibration_Yale( "q4_xy", "rr4", config, qmm, n_avg=n_avg)
-    amp_calibration( 0.02, "q4_xy", "rr4", config, qmm, n_avg=n_avg, sequence_repeat=4)
+    sequence_repeat = 30
+    amp_window = 0.25/float(sequence_repeat)
+    amp_calibration( amp_window, "q2_xy", "rr2", config, qmm, n_avg=n_avg, sequence_repeat=sequence_repeat)
     # plt.show()

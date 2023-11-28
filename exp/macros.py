@@ -22,7 +22,7 @@ from scipy.optimize import curve_fit
 def cz_gate(type="square"):
     if type == "square":
         wait(5)  # for flux pulse to relax back completely
-        set_dc_offset("q2_z", "single", -0.3529 + 0.1757) # 10cc: 0.1452099
+        set_dc_offset("q2_z", "single", -0.3529 + 0.175) # 10cc: 0.1452099
         wait(28 // 4, "q2_z")
         align()
         set_dc_offset("q2_z", "single", -0.3529)

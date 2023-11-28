@@ -93,10 +93,10 @@ def live_plotting(I,Q,Qi):
 if __name__ == '__main__':
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
     simulate = False
-    n_avg = 60
+    n_avg = 25
     q_id = [1,2,3,4]
     dfs = np.arange(-2.5e6, 2.5e6, 0.01e6)  
-    t_delay = np.arange(1, 400, 10) 
+    t_delay = np.arange(1, 1000, 10) 
     Qi = 2
     for i in q_id: 
         if i == Qi-1: plot_index = q_id.index(i) 

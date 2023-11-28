@@ -99,14 +99,14 @@ saturation_amp = 0.1
 pi_len = 40
 pi_sigma = pi_len / 4
 pi_amp_q1 = 0.15*0.872*0.975*0.97
-pi_amp_q2 = 0.15*0.57*0.99 *0.605*2.935*0.945*1.01
+pi_amp_q2 = 0.13987*1.05*1.01*1.005*0.9996
 pi_amp_q3 = 0.02355*1.5*0.9825*1.9325
 pi_amp_q4 = 0.15365
 # pi_amp_q4 = 0.1*1.135*1.005*0.805
 pi_amp_q5 = 0.5
 
-r90_amp_q1 = pi_amp_q1/2
-r90_amp_q2 = pi_amp_q2/2
+r90_amp_q1 = pi_amp_q1/2 
+r90_amp_q2 = pi_amp_q2/2*1.05*0.995*1.0008
 r90_amp_q3 = pi_amp_q3/2
 r90_amp_q4 = pi_amp_q4/2 *1.104*0.99
 # pi_amp_q4 = 0.1*1.135*1.005*0.805

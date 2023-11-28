@@ -62,13 +62,13 @@ def CZ_1ns(q_id,Qi_list,flux_Qi,amps,const_flux_len,simulate,qmm):
                     wait(flux_settle_time * u.ns)
                     align()
                     multiplexed_readout(I, I_st, Q, Q_st, resonators=[x+1 for x in q_id], weights="rotated_")
-                    wait(thermalization_time * u.ns)
+                    # wait(thermalization_time * u.ns)
             save(n, n_st)
         with stream_processing():
             n_st.save("n")
             for i in q_id:
-                I_st[q_id.index(i)].buffer( len(amps),len(ts) ).average().save(f"I{i+1}")
-                Q_st[q_id.index(i)].buffer( len(amps),len(ts) ).average().save(f"Q{i+1}")
+                I_st[q_id.index(i)].buffer( len(amps),const_flux_len+1 ).average().save(f"I{i+1}")
+                Q_st[q_id.index(i)].buffer( len(amps),const_flux_len+1 ).average().save(f"Q{i+1}")
     if simulate:
         simulation_config = SimulationConfig(duration=10_000)  # In clock cycles = 4ns
         job = qmm.simulate(config, cz, simulation_config)
@@ -120,15 +120,17 @@ scale_reference = const_flux_amp
 Qi_list = [2,3]
 excited_Qi_list = [2,3]
 n_avg = 100  
-ts = np.arange(4, 60, 1)  
 operation_flux_point = [0, -0.3529, -0.3421, -0.3433, -3.400e-01]
 amps = np.arange(0.33, 0.44, 0.001) 
 const_flux_len = 50
 flux_waveform = np.array([const_flux_amp] * const_flux_len)
 square_pulse_segments = baked_waveform(flux_waveform, const_flux_len, flux_Qi)
-ts = np.arange(0, const_flux_len+0.1, 1)
+for list in square_pulse_segments:
+    print('-'*20)
+    print(list.get_waveforms_dict())
+
 simulate = False
 q_id = [1,2,3,4]
-
+ts = np.arange(0,const_flux_len+0.1,1)
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)      
 I,Q = CZ_1ns(q_id,Qi_list,flux_Qi,amps,const_flux_len,simulate,qmm)
