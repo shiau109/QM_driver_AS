@@ -1,5 +1,5 @@
 from qualang_tools.units import unit
-from numpy import array
+from numpy import array, cos, sin
 
 
 #######################
@@ -23,22 +23,48 @@ class Circuit_info:
         self.init_WireInfo()
     
     ### Below about RO information ###
-    ''' To do '''
+    
     def init_RoInfo(self):
         self.RoInfo = {}
         self.RoInfo["register"] = []
         for idx in range(1,self.q_num+1):
-            for info in ['resonator_IF_q','readout_amp_q']:
+            for info in ['resonator_IF_q','readout_amp_q','ge_threshold_q']:
                 self.RoInfo[info+str(idx)] = 0.0
+            self.RoInfo[f"RO_weights_q{idx}"]={}
+            # RO weights paras includes default, rotated and optimal for a qubit
+            for weights_cata in ["origin","rotated","optimal"]:
+                if weights_cata != "optimal":
+                    self.RoInfo[f"RO_weights_q{idx}"][weights_cata] = 0
+                else:
+                    for branch in ["cos", "sin", "minus_sin"]:
+                        for direc in ['cosine','sine']:
+                            self.RoInfo[f"RO_weights_q{idx}"][weights_cata][branch][direc] = []
             self.RoInfo["register"].append("q"+str(idx))
         self.RoInfo['readout_len'] = 0
         self.RoInfo['time_of_flight'] = 0
         self.RoInfo['resonator_LO'] = 0
 
+    def optimal_ROweights_generator(self, npz_file_path:str):
+        from qualang_tools.config.integration_weights_tools import convert_integration_weights
+        from numpy import load
+        weights = load(npz_file_path)
+        real = convert_integration_weights(weights["weights_real"])
+        minus_imag = convert_integration_weights(weights["weights_minus_imag"])
+        imag = convert_integration_weights(weights["weights_imag"])
+        minus_real = convert_integration_weights(weights["weights_minus_real"])
+
+        cosine_weight = {"cosine":real,"sine":minus_imag}
+        sine_weight = {"cosine":imag,"sine":real}
+        minus_sine_weight = {"cosine":minus_imag,"sine":minus_real}
+
+        return {"cos":cosine_weight,"sin":sine_weight,"minus_sin":minus_sine_weight}
+        
+
     def update_RoInfo_for(self, target_q:str, **kwargs):
         """
             target_q: "q4"\n
-            kwargs: LO=6, IF=150, amp=0.08, len=2000, time(time_of_flight)= 280, 
+            kwargs: LO=6, IF=150, amp=0.08, len=2000, time(time_of_flight)= 280, ge_hold(ge_threshold)=0.05,
+            origin(ROweights) = 0.02, rotated(ROweights) = 0.02, optimal(ROweights) = from self.optimal_ROweights_generator()
         """
         if kwargs != {}:
             for info in kwargs:
@@ -53,6 +79,14 @@ class Circuit_info:
                         self.RoInfo['readout_len'] = kwargs[info]
                     case "time":
                         self.RoInfo['time_of_flight'] = kwargs[info]
+                    case "ge_hold":
+                        self.RoInfo[f'ge_threshold_{target_q}'] = kwargs[info]
+                    case "origin":
+                        self.RoInfo[f"RO_weights_{target_q}"]["origin"] = kwargs[info]
+                    case "rotated":
+                        self.RoInfo[f"RO_weights_{target_q}"]["rotated"] = kwargs[info]
+                    case "optimal":
+                        self.RoInfo[f"RO_weights_{target_q}"]["optimal"] = kwargs[info]    
                     case _:
                         raise KeyError("kwargs key goes wrong!")
         else:
@@ -449,6 +483,35 @@ class QM_config():
                 "sine": None
             }
         self.__config["integration_weights"][name]=setting
+
+    def update_integrationWeight(self, target_q:str, updated_RO_spec:dict, from_which_value:str):
+        '''
+            update the integration weights from the updated_RO_spec by the given value key name.\n
+            target_q: "q2",\n
+            updated_RO_spec: RO_info from the Circuit_info,\n
+            from_which_value: update by which value('origin', 'rotated' or 'optimal')
+        '''
+        weights_first_name = f"{target_q}_rotated_weight_"
+        weights_catalog = ["cos", "sin", "minus_sin"]
+        RO_len = updated_RO_spec['readout_len']
+        for cata_name in weights_catalog:
+            if from_which_value != 'optimal':
+                match cata_name:
+                    case "cos":
+                        self.__config["integration_weights"][weights_first_name+cata_name]['cosine'] = [(cos(updated_RO_spec[f"RO_weights_{target_q}"][from_which_value]), RO_len)]
+                        self.__config["integration_weights"][weights_first_name+cata_name]['sine'] = [(sin(updated_RO_spec[f"RO_weights_{target_q}"][from_which_value]), RO_len)]
+                    case "sin":
+                        self.__config["integration_weights"][weights_first_name+cata_name]['cosine'] = [(-sin(updated_RO_spec[f"RO_weights_{target_q}"][from_which_value]), RO_len)]
+                        self.__config["integration_weights"][weights_first_name+cata_name]['sine'] = [(cos(updated_RO_spec[f"RO_weights_{target_q}"][from_which_value]), RO_len)]
+                    case "minus_sin":
+                        self.__config["integration_weights"][weights_first_name+cata_name]['cosine'] = [(sin(updated_RO_spec[f"RO_weights_{target_q}"][from_which_value]), RO_len)]
+                        self.__config["integration_weights"][weights_first_name+cata_name]['sine'] = [(-cos(updated_RO_spec[f"RO_weights_{target_q}"][from_which_value]), RO_len)]
+                    case _:
+                        pass
+            else:
+                self.__config["integration_weights"][weights_first_name+cata_name]['cosine'] = updated_RO_spec[f"RO_weights_{target_q}"][from_which_value][cata_name]['cosine']
+                self.__config["integration_weights"][weights_first_name+cata_name]['sine'] = updated_RO_spec[f"RO_weights_{target_q}"][from_which_value][cata_name]['sine']
+
 
     def add_mixer( self, name, setting:dict = None ):
         """
