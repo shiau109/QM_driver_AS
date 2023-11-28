@@ -99,9 +99,17 @@ def analysis_amp(x:ndarray,y1:ndarray,y2:ndarray):
 
 # Call this to analyze DRAG ratio alpha exp data
 def analysis_drag_a(x:ndarray,y1:ndarray,y2:ndarray,*args):
+    '''
+        give 2 drag result arrays and a x axis,\n
+        return 
+    '''
     popt1,_ = curve_fit(math_eqns.linear,x,y1,maxfev=1000000)
     popt2,_ = curve_fit(math_eqns.linear,x,y2,maxfev=1000000)
     ans = crossPoint_solver(popt1,popt2)
+    if abs(ans) > 2.5:
+        warning = '|a|>2.5'
+    else:
+        warning = 'pass'
 
     if len(args) != 0:
         plt.plot(x,y1)
@@ -112,7 +120,7 @@ def analysis_drag_a(x:ndarray,y1:ndarray,y2:ndarray,*args):
         plt.title(f"alpha = {round(ans,3)}")
         plt.show()
 
-    return ans
+    return ans, warning
 
 
 if __name__ == '__main__':
@@ -139,7 +147,7 @@ if __name__ == '__main__':
             x = arange(start=-1.5, stop=1.5, step=0.1)
             y1 = fake(x,math_eqns.linear)
             y2 = fake(x,math_eqns.linear)
-            analysis_drag_a(x,y1,y2,'plot')
+            ans, warning = analysis_drag_a(x,y1,y2,'plot')
     
     
     
