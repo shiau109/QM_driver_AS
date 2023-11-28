@@ -917,11 +917,16 @@ class QM_config():
                     for waveform_basis in self.__config["pulses"][f"{waveform}_pulse_{q}"]["waveforms"]:
                         ''' waveform_basis is "I" or "Q" '''
                         waveform_name = self.__config["pulses"][f"{waveform}_pulse_{q}"]["waveforms"][waveform_basis]
-                        posit_minus= "-" if waveform_name.split("_")[0]=='minus' else ""
-                        axis = waveform_name.split("_")[1] if waveform_name.split("_")[0]=='minus' else waveform_name.split("_")[0]
-                        scale = "/2" if axis[1:] == "90" else ""
+                        match waveform_name:
+                            case "x180": a = "x"
+                            case "y180": a = "y"
+                            case "x90": a = "x/2"
+                            case "-x90": a = "-x/2"
+                            case "y90": a = "y/2"
+                            case "-y90": a = "-y/2"
+                            case _: a = None
 
-                        wf = waveform_remaker.build_XYwaveform(target_q=q,axis=posit_minus+axis[0]+scale)
+                        wf = waveform_remaker.build_XYwaveform(target_q=q,axis=a)
                         
                         self.__config["waveforms"][waveform_name] = {"type": "arbitrary", "samples":wf[waveform_basis].tolist()}
 
