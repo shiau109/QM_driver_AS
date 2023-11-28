@@ -28,7 +28,7 @@ from qualang_tools.loops import from_array
 from qualang_tools.results import fetching_tool
 from qualang_tools.plot import interrupt_on_close
 from qualang_tools.results import progress_counter
-from QM_macros import state_tomo_singleRO_declare, tomo_pre_save_singleShot, state_tomo_measurement, tomo_NQ_proj
+from RO_macros import state_tomo_singleRO_declare, tomo_pre_save_singleShot, state_tomo_measurement, tomo_NQ_proj
 import warnings
 
 warnings.filterwarnings("ignore")
