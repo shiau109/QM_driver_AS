@@ -26,7 +26,7 @@ import matplotlib.pyplot as plt
 from qualang_tools.results import fetching_tool
 from qualang_tools.analysis import two_state_discriminator
 from macros import qua_declaration, multiplexed_readout, reset_qubit
-from QM_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save_singleShot
+from RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save_singleShot
 
 
 def state_distinguishability( q_id:list, ro_element, shot_num, reset:str, config, qmm:QuantumMachinesManager):
@@ -101,7 +101,7 @@ if __name__ == '__main__':
     reset = "cooldown"  # can be set to "cooldown" or "active"
 
     start_time = time.time()
-    output_data = state_distinguishability( [1], resonators, n_runs, reset, config, qmm)  
+    output_data = state_distinguishability( [0,1], resonators, n_runs, reset, config, qmm)  
     end_time = time.time()
     elapsed_time = np.round(end_time-start_time, 1)
 
@@ -114,13 +114,14 @@ if __name__ == '__main__':
         #     figure.set_size_inches(12, 10)
         #     plt.tight_layout()
         #     plt.savefig(f"{save_path}-{r}.png", dpi = 500)
-    
+
+    plt.show()
+
     #   Data Saving   # 
-    #  save_data   
+    save_data == True
     if save_data == True:
         from save_data import save_npz
         import sys
         save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
         save_npz(save_dir, save_progam_name, output_data)
 
-    plt.show()

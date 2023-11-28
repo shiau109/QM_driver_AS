@@ -3,14 +3,14 @@ import matplotlib.pyplot as plt
 tomo_data = np.load(r'testing/5Q_Bell.npz', allow_pickle=True)# ["arr_0"].item()
 # tomo_data =
 threshold = [2.007e-04, -5.748e-06]
-q_order = ["rr4","rr5"]
-r1_data = np.moveaxis(tomo_data["rr4"],1,-1)[6:8]
-r2_data = np.moveaxis(tomo_data["rr5"],1,-1)[8:10]
+q_order = ["rr5","rr4"]
+r1_data = np.moveaxis(tomo_data["rr5"],1,-1)[6:8]
+r2_data = np.moveaxis(tomo_data["rr4"],1,-1)[8:10]
 print(r1_data.shape)
 
 tomo_data = {
-    "rr4":r1_data,
-    "rr5":r2_data
+    "rr5":r1_data,
+    "rr4":r2_data
 }
 bit_string = np.zeros(tomo_data[q_order[0]].shape[1:],dtype=int)
 

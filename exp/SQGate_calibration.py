@@ -135,6 +135,8 @@ def DRAG_calibration_Yale( drag_coef, q_name:str, ro_element:list, config, qmm:Q
             plt.pause(1)
         # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
         qm.close()
+    
+    return output_data
 
 def amp_calibration( amp_modify_range, q_name:str, ro_element:list, config, qmm:QuantumMachinesManager, sequence_repeat:int=1, n_avg=100,  simulate:bool=True ):
     a_min = 1-amp_modify_range
@@ -233,7 +235,7 @@ def amp_calibration( amp_modify_range, q_name:str, ro_element:list, config, qmm:
         return output_data
 if __name__ == '__main__':
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-    n_avg = 2000
+    n_avg = 4000
 
     # Scan the DRAG coefficient pre-factor
 
@@ -242,11 +244,18 @@ if __name__ == '__main__':
     assert drag_coef != 0, "The DRAG coefficient 'drag_coef' must be different from 0 in the config."
     ro_element = ["rr2"]
     q_name =  "q2_xy"
-    sequence_repeat = 30
+    sequence_repeat = 3
     amp_modify_range = 0.25/float(sequence_repeat)
-    DRAG_calibration_Yale( drag_coef, q_name, ro_element, config, qmm, n_avg=n_avg)
-    # amp_calibration( amp_modify_range, q_name, ro_element, config, qmm, n_avg=n_avg, sequence_repeat=sequence_repeat, simulate=False)
+    output_data = DRAG_calibration_Yale( drag_coef, q_name, ro_element, config, qmm, n_avg=n_avg)
+    # output_data =  amp_calibration( amp_modify_range, q_name, ro_element, config, qmm, n_avg=n_avg, sequence_repeat=sequence_repeat, simulate=False)
 
-    # # Plot
+        #   Data Saving   # 
+    save_data = True
+    if save_data == True:
+        from save_data import save_npz
+        import sys
+        save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
+        save_npz(save_dir, save_progam_name, output_data)
     
+    # # Plot
     plt.show()

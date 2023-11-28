@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 from qualang_tools.loops import from_array
 from qualang_tools.results import fetching_tool, progress_counter
 from macros import multiplexed_readout, qua_declaration
-from QM_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
+from RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 
 import warnings
 
@@ -223,8 +223,8 @@ if __name__ == '__main__':
 
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
 
-    operate_qubit = ["q3_xy","q2_xy"]
-    ro_element = ["rr3","rr2"]
+    operate_qubit = ["q1_xy","q2_xy"]
+    ro_element = ["rr1","rr2"]
 
     # The frequency sweep around the resonators' frequency "resonator_IF_q"
     dfs = np.arange(-1e6, 1e6, 0.02e6)

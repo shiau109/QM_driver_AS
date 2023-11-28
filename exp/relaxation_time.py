@@ -18,6 +18,10 @@ warnings.filterwarnings("ignore")
 # Qi = 1 stands for Q1
 
 def exp_relaxation_time(t_delay, q_name:list, ro_element:list, config, qmm:QuantumMachinesManager, n_avg=100 ):
+    """
+    Return ductionary with value 2*N array
+    N is t_delay length
+    """
 
     evo_time_len = t_delay.shape[-1]
     # QUA program
@@ -109,8 +113,10 @@ def statistic_T1_exp( repeat:int, t_delay, q_name, ro_element, config, qmm, n_av
     axis 1 (M) is repeat 
     """
     statistic_T1 = {}
+    raw_data = {}
     for r in ro_element:
         statistic_T1[r] = []
+        raw_data[r] = []
     for i in range(repeat):
         print(f"{i}th T1")
         data = exp_relaxation_time(t_delay, q_name, ro_element, config, qmm, n_avg)
@@ -118,10 +124,13 @@ def statistic_T1_exp( repeat:int, t_delay, q_name, ro_element, config, qmm, n_av
             T1_i = fit_T1(t_delay*4, data[r][0])[0]
             print(f"{r} T1 = {T1_i}")
             statistic_T1[r].append( [T1_i, 0])
+            raw_data[r].append(data[r])
 
     for r in ro_element:
         statistic_T1[r] = np.array(statistic_T1[r]).transpose()
-    return statistic_T1
+        raw_data[r] = np.array(raw_data[r])
+
+    return statistic_T1, raw_data
 
 def T1_hist( data, T1_max, fig=None):
 
@@ -156,13 +165,22 @@ if __name__ == '__main__':
     d_tau = 400 // 4  # in clock cycles
     t_delay = np.arange(tau_min, tau_max + 0.1, d_tau)  # Linear sweep
 
-    q_name = ["q3_xy"]
-    ro_element = ["rr3"]
+    q_name = ["q2_xy"]
+    ro_element = ["rr2"]
 
-    repeat_T1 = 100
+    repeat_T1 = 1000
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-    statistic_T1 = statistic_T1_exp(repeat_T1, t_delay, q_name, ro_element, config, qmm, n_avg)
+    statistic_T1, raw_data = statistic_T1_exp(repeat_T1, t_delay, q_name, ro_element, config, qmm, n_avg)
     print(statistic_T1[ro_element[0]].shape)
     fig = T1_hist(statistic_T1[ro_element[0]][0],40)
     fig.show()
     plt.show()
+
+    #   Data Saving   # 
+    save_data = True
+    if save_data == True:
+        from save_data import save_npz
+        import sys
+        save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
+        save_npz(save_dir, save_progam_name+"_raw", raw_data)
+        save_npz(save_dir, save_progam_name+"_ana", statistic_T1)
