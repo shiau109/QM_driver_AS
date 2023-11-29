@@ -34,9 +34,9 @@ if choose == 0:
 
     # Update RO info
     the_spec.update_RoInfo_for("q1",LO=5.9,IF= -158.112,amp=0.006,time=288,len=2000, ge_hold=0.000909, rotated=(148.6 / 180)*pi)
-    the_spec.update_RoInfo_for("q2",IF= 129.397,amp=0.0095, ge_hold=0.000229, rotated=(45.9 / 180)*pi)
-    the_spec.update_RoInfo_for("q3",IF= -45.468,amp=0.015, ge_hold=0, rotated=(0 / 180)*pi)
-    the_spec.update_RoInfo_for("q4",IF= 225.425,amp=0.012, ge_hold=2.419e-04, rotated=(0 / 180)*pi)
+    the_spec.update_RoInfo_for("q2",LO=5.9,IF= 129.397,amp=0.0095, ge_hold=0.000229, rotated=(45.9 / 180)*pi)
+    the_spec.update_RoInfo_for("q3",LO=6.4,IF= -45.468,amp=0.015, ge_hold=0, rotated=(0 / 180)*pi)
+    the_spec.update_RoInfo_for("q4",LO=6.4,IF= 225.425,amp=0.012, ge_hold=2.419e-04, rotated=(0 / 180)*pi)
 
     # Update the wiring info
     the_spec.update_WireInfo_for("q1",ro_mixer='octave_octave1_1',xy_mixer='octave_octave1_2',up_I=("con1", 1),up_Q=("con1", 2),down_I=("con1", 1),down_Q=("con1", 2),xy_I=("con1", 3),xy_Q=("con1", 4))
@@ -71,22 +71,36 @@ if choose == 0:
     myConfig.export_config("TESTconfig_1128")
 
 else:
-    # the_spec.import_spec("TESTspec_1128")
-    # myConfig.import_config("TESTconfig_1128")
+    the_spec.import_spec("TESTspec_1128")
+    myConfig.import_config("TESTconfig_1128")
 
-    # # print(myConfig.get_config()['pulses'])
-    # ### for some useful update
+    # print(myConfig.get_config()['pulses'])
+    ### for some useful update
 
-    # # Update the controll mixer corections
-    # myConfig.update_control_mixer_correction(target_q='q1',correct=(0.995,0.002,0.015,0.989))
+    # Update the controll mixer corections
+    myConfig.update_mixer_correction(target_q='q1',correct=(0.995,0.002,0.015,0.989),mode='xy')
 
-    # # Update the control frequency like IF or LO
-    # myConfig.update_controlFreq(the_spec.update_aXyInfo_for("q2",LO=5.5,IF=2000))
+    # Update the control frequency like IF or LO
+    myConfig.update_controlFreq(the_spec.update_aXyInfo_for("q2",LO=5.5,IF=2000))
 
-    # # Update the pi pulse amp or len...
-    # the_spec.update_aXyInfo_for("q1",amp=0.34,len=33)
-    # myConfig.update_controlWaveform(the_spec.XyInfo)
+    # Update the pi pulse amp or len...
+    the_spec.update_aXyInfo_for("q1",amp=0.34,len=33)
+    myConfig.update_controlWaveform(the_spec.XyInfo)
 
-    x = ["q1_ro","q2_ro","q1_xy","q2_xy"]
-    y = [a.split("_")[0] for a in x if a.split("_")[-1] == 'ro']
-    print(y)
+    # Update the RO frequency
+    myConfig.update_ReadoutFreqs(the_spec.update_RoInfo_for(target_q='q2',IF=280))
+    myConfig.update_ReadoutFreqs(the_spec.update_RoInfo_for(target_q='q2',LO=7))
+
+    # Update the RO amp or others
+    the_spec.update_RoInfo_for(target_q='q2',amp=0.01,ge_hold=0.02)
+    the_spec.update_RoInfo_for(target_q='q1',rotated=0.087)
+    the_spec.update_RoInfo_for(target_q='AnyQ',len=2500,time=700)
+    myConfig.update_Readout(RoInfo=the_spec.RoInfo,integration_weights_from='rotated')
+    
+    # Update the RO mixer corections
+    myConfig.update_mixer_correction(target_q='q2',correct=(0.995,0.002,0.015,0.989),mode='ro')
+
+    # Update the RO wiring channels
+    myConfig.update_wiring_channels(target_q="q1",mode="ro",I=("con1",100),Q=("con1",999))
+
+    print(myConfig.get_config())

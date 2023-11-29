@@ -25,10 +25,15 @@ class Circuit_info:
     ### Below about RO information ###
     
     def init_RoInfo(self):
+        '''
+            keys in self.RoInfo: "resonator_LO_q1","resonator_IF_q2","readout_amp_q3","ge_threshold_q4",\n
+            "RO_weights_q5","readout_len","time_of_flight","register".\n
+            ### *** readout_len and time_of_flight are the same for all the qubits ***
+        '''
         self.RoInfo = {}
         self.RoInfo["register"] = []
         for idx in range(1,self.q_num+1):
-            for info in ['resonator_IF_q','readout_amp_q','ge_threshold_q']:
+            for info in ['resonator_LO_q','resonator_IF_q','readout_amp_q','ge_threshold_q']:
                 self.RoInfo[info+str(idx)] = 0.0
             self.RoInfo[f"RO_weights_q{idx}"]={}
             # RO weights paras includes default, rotated and optimal for a qubit
@@ -41,7 +46,7 @@ class Circuit_info:
             self.RoInfo["register"].append("q"+str(idx))
         self.RoInfo['readout_len'] = 0
         self.RoInfo['time_of_flight'] = 0
-        self.RoInfo['resonator_LO'] = 0
+        
 
     def optimal_ROweights_generator(self, npz_file_path:str):
         from qualang_tools.config.integration_weights_tools import convert_integration_weights
@@ -64,7 +69,7 @@ class Circuit_info:
             target_q: "q4"\n
             kwargs: LO=6, IF=150, amp=0.08, len=2000, time(time_of_flight)= 280, ge_hold(ge_threshold)=0.05,
             origin(ROweights) = 0.02, rotated(ROweights) = 0.02, optimal(ROweights) = from `self.optimal_ROweights_generator()`.\n
-            *** LO, time_of_flight and len are shared with each qubits. *** 
+            ### *** time_of_flight and len are shared with each qubits. *** 
         """
         few_freq = {}
         if kwargs != {}:
@@ -76,8 +81,8 @@ class Circuit_info:
                     case "amp":
                         self.RoInfo[f'readout_amp_{target_q}'] = kwargs[info]
                     case "lo":
-                        self.RoInfo['resonator_LO'] = kwargs[info]*u.GHz
-                        few_freq['resonator_LO'] = kwargs[info]*u.GHz
+                        self.RoInfo[f'resonator_LO_{target_q}'] = kwargs[info]*u.GHz
+                        few_freq[f'resonator_LO_{target_q}'] = kwargs[info]*u.GHz
                     case "len":
                         self.RoInfo['readout_len'] = kwargs[info]
                     case "time":
@@ -696,7 +701,7 @@ class QM_config():
         ro_element = self.get_element_template(mode='ro')
         ro_element["mixInputs"]["I"] = WireInfo[name]["up_I"]
         ro_element["mixInputs"]["Q"] = WireInfo[name]["up_Q"]
-        ro_element["mixInputs"]["lo_frequency"] = ROinfo["resonator_LO"]
+        ro_element["mixInputs"]["lo_frequency"] = ROinfo[f"resonator_LO_{name}"]
         ro_element["mixInputs"]["mixer"] = WireInfo[name]["ro_mixer"]
         ro_element["intermediate_frequency"] = ROinfo[f"resonator_IF_{name}"]
         ro_element["outputs"]["out1"] = WireInfo[name]["down_I"]
@@ -841,31 +846,37 @@ class QM_config():
 
     # Control related shows below
     
-    def update_control_channels( self, target_q:str,**kwargs):
+    def update_wiring_channels( self, target_q:str,mode:str,**kwargs):
         """
-            modify the control wiring channel for target qubit \n
+            modify the wiring channel for target qubit \n
             target_q : "q1"...\n
+            mode: "xy" or "ro"\n
             The keyname in kwargs must be "I" and "Q":\n
             I=("con1", 3), Q=("con1", 4)
         """
 
-        if kwargs != {}:
+        if (kwargs != {}) and (mode.lower() in ['xy','ro']):
             try:
                 for channel in kwargs:
-                    self.__config['elements'][f"{target_q}_xy"]["mixInputs"][channel] = kwargs[channel]
+                    self.__config['elements'][f"{target_q}_{mode.lower()}"]["mixInputs"][channel] = kwargs[channel]
             except:
                 raise KeyError("The keyname for a channel must be 'I' and 'Q'!")
         else:
             raise ValueError("New wiring channel should be given.")
 
-    def update_control_mixer_correction(self,target_q:str,correct:tuple):
+    def update_mixer_correction(self,target_q:str,correct:tuple,mode:str):
         """
-            modify the corrections for a given target qubit control mixer:\n
-            target_q : "q1"...\n
-            correct : (1,0,0,1)
+            modify the corrections for a given target qubit mixer control or readout:\n
+            target_q: "q1"...\n
+            correct: (1,0,0,1),\n
+            mode: "xy" or "ro".
         """
-        mixer_name = self.__config['elements'][f"{target_q}_xy"]["mixInputs"]["mixer"]
-        self.__config["mixers"][mixer_name][0]["correction"] = correct
+        mixer_name = self.__config['elements'][f"{target_q}_{mode.lower()}"]["mixInputs"]["mixer"]
+        if mode.lower() == 'xy':    
+            self.__config["mixers"][mixer_name][0]["correction"] = correct
+        elif mode.lower() == 'ro':
+            self.__config["mixers"][mixer_name][int(target_q[-1])-1]["correction"] = correct
+
         print(f"Correction for {mixer_name} had been modified!")
 
     def create_xyChannel(self, name, element, XYinfo:dict):
@@ -1022,27 +1033,27 @@ class QM_config():
         '''
 
         for info in updatedInfo:
-            if info.split("_")[1].lower() == 'if':
-                target_q = info.split("_")[-1]
-                elements = self.__config['elements'][f'{target_q}_ro']
-                mixer_name = elements["mixInputs"]["mixer"]
-                elements["intermediate_frequency"] = updatedInfo[info]
-                self.__config['mixers'][mixer_name][0]["intermediate_frequency"] = updatedInfo[info]
-            else:
-                qs = [ele_name.split("_")[0] for ele_name in list(self.__config['elements'].keys()) if ele_name.split("_")[-1].lower()=='ro']
-                for target_q in qs:
-                    elements = self.__config['elements'][f'{target_q}_ro']
-                    mixer_name = elements["mixInputs"]["mixer"]
+            target_q = info.split("_")[-1]
+            elements = self.__config['elements'][f'{target_q}_ro']
+            mixer_name = elements["mixInputs"]["mixer"]
+            match info.split("_")[1].lower():
+                case 'if':
+                    elements["intermediate_frequency"] = updatedInfo[info]
+                    self.__config['mixers'][mixer_name][int(target_q[-1])-1]["intermediate_frequency"] = updatedInfo[info]
+                case 'lo' :
                     elements["mixInputs"]["lo_frequency"] = updatedInfo[info]
-                    self.__config['mixers'][mixer_name][0]["lo_frequency"] = updatedInfo[info]
+                    self.__config['mixers'][mixer_name][int(target_q[-1])-1]["lo_frequency"] = updatedInfo[info]
+                case _:
+                    raise KeyError(f"RO update keyname goes wrong: {info.split('_')[1].lower()}")
+            
 
-    def update_Readout(self,target_q:str='all',RoInfo:dict={},integration_weights_from:str='rotated'):
+    def update_Readout(self,target_q:str='all',RoInfo:dict={},integration_weights_from:str='deny'):
         """
             Beside frequency, other info will need to update the waveform or integration weights,\n
             update the other info for dynamic configuration like amp, len.... for the specific qubit\n
             target_q: "q3", default for all the qubits,\n
             updatedInfo: from `Circuit_info.RoInfo`,\n
-            integration_weights_from: which weights should be accepted 'origin', 'rotated'(default) or 'optimal'
+            integration_weights_from: which weights should be accepted 'origin', 'rotated' or 'optimal'
         """
         # Check readout pulse leneth is changed or not
         # Check time_of_flights is change or not
@@ -1074,13 +1085,14 @@ class QM_config():
                 # time_of_flights
                 self.__config['elements'][f'{q}_ro']['time_of_flight'] = RoInfo['time_of_flight']
 
-        qs = [target_q] if target_q == 'all' else RoInfo["register"] 
+        qs = [target_q] if target_q != 'all' else RoInfo["register"] 
         for q in qs:
-            # integration Weight
-            self.update_integrationWeight(target_q=q,updated_RO_spec=RoInfo,from_which_value=integration_weights_from)
+            if integration_weights_from.lower() in ['origin', 'rotated', 'optimal']:
+                # integration Weight
+                self.update_integrationWeight(target_q=q,updated_RO_spec=RoInfo,from_which_value=integration_weights_from)
             # waveforms values
             self.__config['waveforms'][f'readout_wf_{q}']['sample'] = RoInfo[f'readout_amp_{q}']
-
+        print('RO dynamic config secessfully updated!')
 
 
     def export_config( self, path ):
