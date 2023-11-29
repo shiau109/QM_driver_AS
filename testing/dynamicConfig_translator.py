@@ -1,4 +1,4 @@
-from QM_config_dynamic import QM_config, Circuit_info
+from dynamic.QM_config_dynamic import QM_config, Circuit_info
 from qualang_tools.units import unit
 from numpy import pi
 
