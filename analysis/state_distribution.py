@@ -269,7 +269,7 @@ def get_proj_distance( proj_pts, iq_data ):
     return projectedDistance[0]
 
 if __name__=='__main__':
-    data = np.load(r'analysis/IQ_Blobs.npz')# , allow_pickle=True)["arr_0"].item()
+    data = np.load(r'testing/data/state_distinguishability_20231129-084303.npz')# , allow_pickle=True)["arr_0"].item()
     
     for r in data.keys():
         
