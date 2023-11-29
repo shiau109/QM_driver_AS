@@ -138,7 +138,7 @@ def DRAG_calibration_Yale( drag_coef, q_name:str, ro_element:list, config, qmm:Q
     
     return output_data
 
-def amp_calibration( amp_modify_range, q_name:str, ro_element:list, config, qmm:QuantumMachinesManager, sequence_repeat:int=1, n_avg=100,  simulate:bool=True ):
+def amp_calibration( amp_modify_range, q_name:str, ro_element:list, config, qmm:QuantumMachinesManager, sequence_repeat:int=1, n_avg=100,  simulate:bool=True , mode:str='live'):
     a_min = 1-amp_modify_range
     a_max = 1+amp_modify_range
     da = amp_modify_range/20
@@ -202,34 +202,40 @@ def amp_calibration( amp_modify_range, q_name:str, ro_element:list, config, qmm:
             ro_ch_name.append(f"{r_name}_I")
             ro_ch_name.append(f"{r_name}_Q")
         data_list = ro_ch_name + ["iteration"]   
-        results = fetching_tool(job, data_list=data_list, mode="live")
+        results = fetching_tool(job, data_list=data_list, mode=mode)
         # Live plotting
-        fig, ax = plt.subplots(2, len(ro_element))
-        interrupt_on_close(fig, job)  # Interrupts the job when closing the figure
+        if mode == 'live':
+            fig, ax = plt.subplots(2, len(ro_element))
+            interrupt_on_close(fig, job)  # Interrupts the job when closing the figure
 
-        fig.suptitle("Amp pre factor calibration (AS)")
-        while results.is_processing():
-            # Fetch results
+            fig.suptitle("Amp pre factor calibration (AS)")
+            while results.is_processing():
+                # Fetch results
+                fetch_data = results.fetch_all()
+                output_data = {}
+                for r_idx, r_name in enumerate(ro_element):
+                    ax[r_idx*2].cla()
+                    ax[r_idx*2+1].cla()
+                    output_data[r_name] = np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]])
+
+                    for op_idx, op in enumerate(["x90","x180"]):
+                        ax[r_idx*2].plot(amps, output_data[r_name][0].transpose()[op_idx], label=op)
+                        ax[r_idx*2+1].plot(amps, output_data[r_name][1].transpose()[op_idx], label=op)
+                
+
+                iteration = fetch_data[-1]
+                # Progress bar
+                progress_counter(iteration, n_avg, start_time=results.get_start_time())      
+
+                plt.legend()
+                plt.tight_layout()
+                plt.pause(1)
+        else:
             fetch_data = results.fetch_all()
             output_data = {}
             for r_idx, r_name in enumerate(ro_element):
-                ax[r_idx*2].cla()
-                ax[r_idx*2+1].cla()
                 output_data[r_name] = np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]])
-
-                for op_idx, op in enumerate(["x90","x180"]):
-                    ax[r_idx*2].plot(amps, output_data[r_name][0].transpose()[op_idx], label=op)
-                    ax[r_idx*2+1].plot(amps, output_data[r_name][1].transpose()[op_idx], label=op)
-            
-
-            iteration = fetch_data[-1]
-            # Progress bar
-            progress_counter(iteration, n_avg, start_time=results.get_start_time())      
-
-            plt.legend()
-            plt.tight_layout()
-            plt.pause(1)
-
+            output_data['x'] = amps
         # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
         qm.close()
         return output_data
@@ -247,7 +253,7 @@ if __name__ == '__main__':
     sequence_repeat = 3
     amp_modify_range = 0.25/float(sequence_repeat)
     output_data = DRAG_calibration_Yale( drag_coef, q_name, ro_element, config, qmm, n_avg=n_avg)
-    # output_data =  amp_calibration( amp_modify_range, q_name, ro_element, config, qmm, n_avg=n_avg, sequence_repeat=sequence_repeat, simulate=False)
+    # output_data =  amp_calibration( amp_modify_range, q_name, ro_element, config, qmm, n_avg=n_avg, sequence_repeat=sequence_repeat, simulate=False, mode='live')
 
         #   Data Saving   # 
     save_data = True
