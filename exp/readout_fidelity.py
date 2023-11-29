@@ -26,7 +26,7 @@ import matplotlib.pyplot as plt
 from qualang_tools.results import fetching_tool
 from qualang_tools.analysis import two_state_discriminator
 from macros import qua_declaration, multiplexed_readout, reset_qubit
-from QM_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save_singleShot
+from RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save_singleShot
 
 
 def state_distinguishability( q_id:list, ro_element, shot_num, reset:str, config, qmm:QuantumMachinesManager):
