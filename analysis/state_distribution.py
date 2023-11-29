@@ -106,7 +106,7 @@ def create_img( data, dist_model, fig=None ):
     make_distribution( pos, sigma, get_proj_distance(centers,prepare_1_data), 1, ax_hist_1)
 
     snr = dis/sigma
-    fig.text(0.05,0.35,f"Readout Fidelity={1-prepare_0_dist[1]-prepare_1_dist[0]:.3f}", fontsize = 20)
+    fig.text(0.05,0.35,f"Readout Fidelity={1-(prepare_0_dist[1]+prepare_1_dist[0])/2:.3f}", fontsize = 20)
     fig.text(0.05,0.3,f"IQ distance/STD={dis:.2f}/{sigma:.2f}", fontsize = 20)
     fig.text(0.05,0.25,f"Voltage SNR={snr:.2f}", fontsize = 20)
     fig.text(0.05,0.20,f"Power SNR={np.log10(snr)*20:.2f} dB", fontsize = 20)
@@ -269,10 +269,11 @@ def get_proj_distance( proj_pts, iq_data ):
     return projectedDistance[0]
 
 if __name__=='__main__':
-    data = np.load(r'testing/00.npz')# , allow_pickle=True)["arr_0"].item()
+    data = np.load(r'analysis/IQ_Blobs.npz')# , allow_pickle=True)["arr_0"].item()
     
     for r in data.keys():
         
         gmm_model = train_model(data[r]*1000)
         fig = plt.figure(constrained_layout=True)
         create_img(data[r]*1000, gmm_model)
+    plt.show()

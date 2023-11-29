@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 from qualang_tools.loops import from_array
 from qualang_tools.results import fetching_tool, progress_counter
 from macros import multiplexed_readout, qua_declaration
-from QM_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
+from RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 
 import warnings
 
@@ -162,28 +162,35 @@ def power_dep_signal( amp_ratio, q_name:list, ro_element:list, n_avg, config, qm
     qm.close()
     return output_data
 
-def plot_freq_signal( x, data, label ):
+def plot_freq_signal( x, data, label:str, ax ):
     sig = get_signal_amplitude(data)
-    plt.suptitle("Readout frequency optimization")
-    plt.cla()
-    plt.plot( x, sig, ".-")
-    plt.title(f"{label} RO frequency")
-    plt.xlabel("Readout frequency detuning [MHz]")
-    plt.ylabel("SNR")
-    plt.grid("on")
+    ax.plot( x, sig, ".-")
+    ax.set_title(f"{label} RO frequency")
+    ax.set_xlabel("Readout frequency detuning [MHz]")
+    ax.set_ylabel("Distance")
+    ax.grid("on")
     # print(f"The optimal readout frequency is {dfs[np.argmax(SNR1)] + resonator_IF_q1} Hz (SNR={max(SNR1)})")
+    return ax
 
-def plot_amp_signal( x, data, label ):
+def plot_amp_signal( x, data, label:str, ax ):
     sig = get_signal_amplitude(data)
-    plt.suptitle("Readout amplitude optimization")
-    plt.cla()
-    plt.plot( x, sig, ".-")
-    plt.title(f"{label} RO amplitude")
-    plt.xlabel("Readout amplitude ")
-    plt.ylabel("SNR")
-    plt.grid("on")
+    ax.plot( x, sig, ".-")
+    ax.set_xlabel("Readout amplitude ")
+    ax.set_ylabel("Distance")
+    ax.grid("on")
     # print(f"The optimal readout frequency is {dfs[np.argmax(SNR1)] + resonator_IF_q1} Hz (SNR={max(SNR1)})")
+    return ax
 
+def plot_amp_signal_phase( x, data, label:str, ax ):
+    phase_g, phase_e = get_signal_phase(data)
+    ax.plot( x, phase_g, ".-", label="phase_g")
+    ax.plot( x, phase_e, ".-", label="phase_e")
+    ax.set_xlabel("Readout amplitude ")
+    ax.set_ylabel("Phase")
+    ax.grid("on")
+    ax.legend()
+    # print(f"The optimal readout frequency is {dfs[np.argmax(SNR1)] + resonator_IF_q1} Hz (SNR={max(SNR1)})")
+    return ax
 
 def get_signal_amplitude( data ):
     """
@@ -197,20 +204,44 @@ def get_signal_amplitude( data ):
     signal = np.abs(s21_g -s21_e)
     return signal
 
+def get_signal_phase( data ):
+    """
+    data shape (2,2,N)
+    axis 0 g,e
+    axis 1 I,Q
+    axis 2 N frequency
+    """
+    s21_g = data[0][0] +1j*data[0][1] 
+    s21_e = data[1][0] +1j*data[1][1]
+    phase_g = np.angle(s21_g)
+    phase_e = np.angle(s21_e)
+    return (phase_g, phase_e)
+
 if __name__ == '__main__':
+
+    n_avg = 1000
+
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
 
-    n_avg = 200
+    operate_qubit = ["q1_xy","q2_xy"]
+    ro_element = ["rr1","rr2"]
+
     # The frequency sweep around the resonators' frequency "resonator_IF_q"
-    dfs = np.arange(-5e6, 5e6, 0.1e6)
-    operate_qubit = [ "q4_xy"]
-    ro_element = ["rr4"]
+    dfs = np.arange(-1e6, 1e6, 0.02e6)
     data = freq_dep_signal( dfs, operate_qubit, ro_element, n_avg, config, qmm)
     for r in ro_element:
-        plot_freq_signal( dfs, data[r], r )
-    plt.show()
+        fig = plt.figure()
+        ax = fig.subplots()
+        plot_freq_signal( dfs, data[r], r, ax )
+        plt.show()
+    
     amps = np.linspace(0, 1.8, 180)
     data = power_dep_signal( amps, operate_qubit, ro_element, n_avg, config, qmm)
     for r in ro_element:
-        plot_amp_signal( amps, data[r], r )
-    plt.show()
+        fig = plt.figure()
+        ax = fig.subplots(1,2)
+        plot_amp_signal( amps, data[r], r, ax[0] )
+        plot_amp_signal_phase( amps, data[r], r, ax[1] )
+
+        fig.suptitle(f"{r} RO amplitude")
+        plt.show()
