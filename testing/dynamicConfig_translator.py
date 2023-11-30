@@ -1,5 +1,7 @@
 
-from dynamic.QM_config_dynamic import QM_config, Circuit_info
+import sys
+sys.path.append('./dynamic')
+from QM_config_dynamic import QM_config, Circuit_info
 from qualang_tools.units import unit
 from numpy import pi
 
@@ -104,4 +106,4 @@ else:
     # Update the RO wiring channels
     myConfig.update_wiring_channels(target_q="q1",mode="ro",I=("con1",100),Q=("con1",999))
 
-    print(myConfig.get_config())
+    print(True or False)
