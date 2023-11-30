@@ -17,11 +17,13 @@ Prerequisites:
 Next steps before going to the next node:
     - Update the DRAG coefficient (drag_coef) in the configuration.
 """
-
+import sys
+sys.path.append('./dynamic')
 from qm.qua import *
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm import SimulationConfig
 from configuration import *
+# from configuration_AmpTest import *
 from qualang_tools.results import progress_counter, fetching_tool
 from qualang_tools.plot import interrupt_on_close
 from qualang_tools.loops import from_array
@@ -157,7 +159,8 @@ def amp_calibration( amp_modify_range, q_name:str, ro_element:list, config, qmm:
             with for_(*from_array(a, amps)):
                 with for_each_( r_idx, [0, 1]):                      
                     # Init
-                    wait(thermalization_time * u.ns)
+                    # wait(thermalization_time * u.ns)
+                    wait(100 * u.ns)
                     # wait(100)
 
                     # Operation
@@ -202,7 +205,7 @@ def amp_calibration( amp_modify_range, q_name:str, ro_element:list, config, qmm:
             ro_ch_name.append(f"{r_name}_I")
             ro_ch_name.append(f"{r_name}_Q")
         data_list = ro_ch_name + ["iteration"]   
-        results = fetching_tool(job, data_list=data_list, mode=mode)
+        results = fetching_tool(job, data_list=data_list, mode='live')
         # Live plotting
         if mode == 'live':
             fig, ax = plt.subplots(2, len(ro_element))
@@ -231,7 +234,13 @@ def amp_calibration( amp_modify_range, q_name:str, ro_element:list, config, qmm:
                 plt.tight_layout()
                 plt.pause(1)
         else:
-            fetch_data = results.fetch_all()
+            while results.is_processing():
+                fetch_data = results.fetch_all()
+                iteration = fetch_data[-1]
+                # Progress bar
+                progress_counter(iteration, n_avg, start_time=results.get_start_time())      
+
+
             output_data = {}
             for r_idx, r_name in enumerate(ro_element):
                 output_data[r_name] = np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]])
@@ -245,18 +254,18 @@ if __name__ == '__main__':
 
     # Scan the DRAG coefficient pre-factor
 
-    drag_coef = drag_coef_q2
+    drag_coef = drag_coef_q1
     # Check that the DRAG coefficient is not 0
     assert drag_coef != 0, "The DRAG coefficient 'drag_coef' must be different from 0 in the config."
-    ro_element = ["rr2"]
-    q_name =  "q2_xy"
+    ro_element = ["rr1"]
+    q_name =  "q1_xy"
     sequence_repeat = 3
     amp_modify_range = 0.25/float(sequence_repeat)
-    output_data = DRAG_calibration_Yale( drag_coef, q_name, ro_element, config, qmm, n_avg=n_avg)
-    # output_data =  amp_calibration( amp_modify_range, q_name, ro_element, config, qmm, n_avg=n_avg, sequence_repeat=sequence_repeat, simulate=False, mode='live')
+    # output_data = DRAG_calibration_Yale( drag_coef, q_name, ro_element, config, qmm, n_avg=n_avg)
+    output_data =  amp_calibration( amp_modify_range, q_name, ro_element, config, qmm, n_avg=n_avg, sequence_repeat=sequence_repeat, simulate=False, mode='live')
 
         #   Data Saving   # 
-    save_data = True
+    save_data = False
     if save_data == True:
         from save_data import save_npz
         import sys

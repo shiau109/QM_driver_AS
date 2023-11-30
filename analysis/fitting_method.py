@@ -81,7 +81,7 @@ def find_amp_minima(x:ndarray,amp_array:ndarray,mode:str='continuous'):
             boundaries = ()
         case _:
             boundaries = ()
-    popt,_ = curve_fit(math_eqns.cosine,x,amp_array,maxfev=10000000)#
+    popt,_ = curve_fit(math_eqns.cosine,x,amp_array,maxfev=10000000,bounds=boundaries)#
     peaks_loca = theJudge(x,popt)
     
     return peaks_loca, popt
