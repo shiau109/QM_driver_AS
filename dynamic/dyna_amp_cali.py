@@ -70,6 +70,7 @@ max_iteration = 15
 
 # Workflow start
 while (precision_N_idx <= len(N_candidate)-1) and (iterations < max_iteration):
+    print(f"Iteration: {iterations}")
     sequence_repeat = N_candidate[precision_N_idx]
     amp_modify_range = 0.25/float(sequence_repeat)
 
