@@ -70,4 +70,6 @@ while (precision_N_idx <= len(N_candidate)-1) and (iterations < max_iteration):
     the_specs,dyna_config = refresh_amp(the_specs,dyna_config,amp_scale)
     iterations += 1
 
+the_specs.export_spec('spec_after_ampCali')
+dyna_config.export_config('config_after_ampCali')
 
