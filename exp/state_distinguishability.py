@@ -96,18 +96,18 @@ if __name__ == '__main__':
 
 
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-    resonators = ["rr1","rr2"]
+    resonators = ["rr1"]
     n_runs = 10000
     reset = "cooldown"  # can be set to "cooldown" or "active"
 
     start_time = time.time()
-    output_data = state_distinguishability( [0,1], resonators, n_runs, reset, config, qmm)  
+    output_data = state_distinguishability( [0], resonators, n_runs, reset, config, qmm)  
     end_time = time.time()
     elapsed_time = np.round(end_time-start_time, 1)
 
     for r in resonators:
         two_state_discriminator(output_data[r][0][0], output_data[r][0][1], output_data[r][1][0], output_data[r][1][1], True, True)
-        plt.suptitle(r + "\n reset = " + reset + f"\n {n_runs} runs, elapsed time = {elapsed_time}s \n readout power = {readout_amp[resonators.index(r)]}V, readout length = {readout_len}ns")
+        # plt.suptitle(r + "\n reset = " + reset + f"\n {n_runs} runs, elapsed time = {elapsed_time}s \n readout power = {readout_amp[resonators.index(r)]}V, readout length = {readout_len}ns")
         
         # if save_data == True:
         #     figure = plt.gcf() # get current figure
@@ -115,13 +115,13 @@ if __name__ == '__main__':
         #     plt.tight_layout()
         #     plt.savefig(f"{save_path}-{r}.png", dpi = 500)
 
-    plt.show()
 
     #   Data Saving   # 
-    save_data == True
+    save_data = True
     if save_data == True:
         from save_data import save_npz
         import sys
         save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
         save_npz(save_dir, save_progam_name, output_data)
 
+    plt.show()

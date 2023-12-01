@@ -163,17 +163,38 @@ def power_dep_signal( amp_ratio, q_name:list, ro_element:list, n_avg, config, qm
     return output_data
 
 def plot_freq_signal( x, data, label:str, ax ):
-    sig = get_signal_amplitude(data)
-    ax.plot( x, sig, ".-")
-    ax.set_title(f"{label} RO frequency")
-    ax.set_xlabel("Readout frequency detuning [MHz]")
-    ax.set_ylabel("Distance")
-    ax.grid("on")
+    sig = get_signal_distance(data)
+    ax[0].plot( x, sig, ".-")
+    ax[0].set_title(f"{label} RO frequency")
+    ax[0].set_xlabel("Readout frequency detuning [MHz]")
+    ax[0].set_ylabel("Distance")
+    ax[0].grid("on")
+
+    sig = get_signal_amp(data)
+    ax[1].plot( x, sig[0], ".-", label="0")
+
+    ax[1].plot( x, sig[1], ".-", label="1")
+
+    # ax[1].set_title(f"{label} RO frequency")
+    ax[1].set_xlabel("Readout frequency detuning [MHz]")
+    ax[1].set_ylabel("Amplitude")
+    ax[1].legend()
+    ax[1].grid("on")
+
+    sig = get_signal_phase(data)
+    ax[2].plot( x, sig[0], ".-", label="0")
+    ax[2].plot( x, sig[1], ".-", label="1")
+
+    # ax[2].set_title(f"{label} RO frequency")
+    ax[2].set_xlabel("Readout frequency detuning [MHz]")
+    ax[2].set_ylabel("Phase")
+    ax[2].legend()
+    ax[2].grid("on")
     # print(f"The optimal readout frequency is {dfs[np.argmax(SNR1)] + resonator_IF_q1} Hz (SNR={max(SNR1)})")
     return ax
 
 def plot_amp_signal( x, data, label:str, ax ):
-    sig = get_signal_amplitude(data)
+    sig = get_signal_distance(data)
     ax.plot( x, sig, ".-")
     ax.set_xlabel("Readout amplitude ")
     ax.set_ylabel("Distance")
@@ -192,7 +213,7 @@ def plot_amp_signal_phase( x, data, label:str, ax ):
     # print(f"The optimal readout frequency is {dfs[np.argmax(SNR1)] + resonator_IF_q1} Hz (SNR={max(SNR1)})")
     return ax
 
-def get_signal_amplitude( data ):
+def get_signal_distance( data ):
     """
     data shape (2,2,N)
     axis 0 g,e
@@ -213,8 +234,21 @@ def get_signal_phase( data ):
     """
     s21_g = data[0][0] +1j*data[0][1] 
     s21_e = data[1][0] +1j*data[1][1]
-    phase_g = np.angle(s21_g)
-    phase_e = np.angle(s21_e)
+    phase_g = np.unwrap(np.angle(s21_g))
+    phase_e = np.unwrap(np.angle(s21_e))
+    return (phase_g, phase_e)
+
+def get_signal_amp( data ):
+    """
+    data shape (2,2,N)
+    axis 0 g,e
+    axis 1 I,Q
+    axis 2 N frequency
+    """
+    s21_g = data[0][0] +1j*data[0][1] 
+    s21_e = data[1][0] +1j*data[1][1]
+    phase_g = np.abs(s21_g)
+    phase_e = np.abs(s21_e)
     return (phase_g, phase_e)
 
 if __name__ == '__main__':
@@ -227,11 +261,11 @@ if __name__ == '__main__':
     ro_element = ["rr1","rr2"]
 
     # The frequency sweep around the resonators' frequency "resonator_IF_q"
-    dfs = np.arange(-1e6, 1e6, 0.02e6)
+    dfs = np.arange(-2e6, 2e6, 0.05e6)
     data = freq_dep_signal( dfs, operate_qubit, ro_element, n_avg, config, qmm)
     for r in ro_element:
         fig = plt.figure()
-        ax = fig.subplots()
+        ax = fig.subplots(3,1)
         plot_freq_signal( dfs, data[r], r, ax )
         plt.show()
     
@@ -239,7 +273,7 @@ if __name__ == '__main__':
     data = power_dep_signal( amps, operate_qubit, ro_element, n_avg, config, qmm)
     for r in ro_element:
         fig = plt.figure()
-        ax = fig.subplots(1,2)
+        ax = fig.subplots(1,2,sharex=True)
         plot_amp_signal( amps, data[r], r, ax[0] )
         plot_amp_signal_phase( amps, data[r], r, ax[1] )
 
