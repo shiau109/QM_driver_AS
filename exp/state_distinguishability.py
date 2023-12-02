@@ -80,6 +80,7 @@ def state_distinguishability( q_id:list, ro_element, shot_num, reset:str, config
     fetch_data = results.fetch_all()
     output_data = {}
     for r_idx, r_name in enumerate(ro_element):
+        fetch_data = np.moveaxis( fetch_data, )
         output_data[r_name] = np.array(
             [[fetch_data[r_idx*4], fetch_data[r_idx*4+1]],
              [fetch_data[r_idx*4+2], fetch_data[r_idx*4+3]]])

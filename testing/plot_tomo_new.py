@@ -1,3 +1,4 @@
+
 import numpy as np
 import matplotlib.pyplot as plt
 tomo_raw_data = np.load(r'testing/5Q_Bell.npz', allow_pickle=True)# ["arr_0"].item()
@@ -48,13 +49,14 @@ for i in range(3):
         count_arr = np.bincount(bit_string[i][j])
         print(count_arr, total_count, np.sum(count_arr) )
         probability_tomo[ii][jj] = count_arr/float(total_count)
-print(probability_tomo)
+# print(probability_tomo)
 print(probability_tomo.shape)
 from scipy.io import savemat
 savemat('2Q_tomo.mat',{"data":probability_tomo})
 
 
 
+"""
 x_mtx = np.matrix([[0,1],[1,0]])
 y_mtx = np.matrix([[0,-1j],[1j,0]])
 z_mtx = np.matrix([[1,0],[0,-1]])
@@ -103,16 +105,83 @@ print("Trace Rho square: ",np.trace(np.square(DM_rho_gg)))
 print(type(DM_gg_view.A))
 from qutip.visualization import matrix_histogram_complex
 matrix_histogram_complex( DM_rho_gg.A )
+"""
 
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.io import loadmat
 
-# fig, ax = plt.subplots(2,1)
-# # ax[0].imshow(reDM_gg_view)
-# # ax[1].imshow(imDM_gg_view)
-# c = ax[0].pcolormesh(reDM_gg_view, cmap='RdBu', vmin=-1, vmax=1)
-# ax[0].set_title('Re')
-# fig.colorbar(c, ax=ax[0])
-# c = ax[1].pcolormesh(imDM_gg_view, cmap='RdBu', vmin=-1, vmax=1)
-# ax[1].set_title('Im')
-# fig.colorbar(c, ax=ax[1])
-# fig.show()
+# Load data from the mat file
+data = loadmat('2Q_tomo.mat')
+QSTd = data['data']
+print(QSTd)
+# QSTd = np.ones((3, 3, 4)) / 4  # Uncomment if needed
+
+# Initialize QSTd_ext
+QSTd_ext = np.zeros((4, 4, 4))
+print(QSTd_ext)
+
+# Copy values from QSTd to QSTd_ext
+QSTd_ext[0:3, 0:3, :] = QSTd
+print(QSTd_ext)
+
+# Generate additional data
+QSTd_ext[3, 0:3, :] = QSTd[0, 0:3, :]
+
+QSTd_ext[0:3, 3, :] = QSTd[0:3, 0, :]
+
+QSTd_ext[3, 3, :] = QSTd[0, 0, :]
+
+# Bit stream and tables
+bit_stream = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+
+XYZ_table = np.zeros((2, 2, 3), dtype=complex)
+XYZ_table[:, :, 0] = [[0, 1], [1, 0]]  # X
+# print(XYZ_table)
+XYZ_table[:, :, 1] = [[0, 1j], [-1j, 0]]  # Y
+XYZ_table[:, :, 2] = [[-1, 0], [0, 1]]  # Z
+
+I = np.array([[1, 0], [0, 1]], dtype=complex)
+
+# Initialize density matrix
+lo = np.zeros((4, 4), dtype=complex)
+
+# Loop over q1, q2, and bs
+for q1 in range(4):
+    for q2 in range(4):
+        for bs in range(4):
+            # Measurement matrices and eigenvalues
+            if q1 == 3:
+                q1_M = I 
+                eig_q1_M = 1
+            else:
+                q1_M = XYZ_table[:, :, q1]
+                eig_q1_M = (-1) ** (1 - bit_stream[bs, 0])
+
+            if q2 == 3:
+                q2_M = I
+                eig_q2_M = 1
+            else:
+                q2_M = XYZ_table[:, :, q2]
+                eig_q2_M = (-1) ** (1 - bit_stream[bs, 1])
+            # print(f"q2 {q2}",q2_M)
+
+            # Tensor product and update density matrix
+            q1q2_M = np.kron(q1_M, q2_M)
+            # print(q1q2_M)
+
+            eig_q1q2_M = eig_q1_M * eig_q2_M
+            lo += eig_q1q2_M * QSTd_ext[q1, q2, bs] * q1q2_M
+            print(f"{q1}, {q1}, {bs}", eig_q1q2_M, QSTd_ext[q1, q2, bs])
+
+# Normalize density matrix
+lo /= 2**2
+
+# Plot the result
+# fig = plt.figure()
+# ax = fig.add_subplot(111, projection='3d')
+# ax.bar3d(np.arange(4), np.arange(4), np.zeros(4), 0.8, 0.8, np.abs(lo).flatten())
+from qutip.visualization import matrix_histogram_complex
+
+matrix_histogram_complex( lo,["|00>","|01>","|10>","|11>"],["|00>","|01>","|10>","|11>"], limits=[0,0.5], threshold=0.05 )
 plt.show()
