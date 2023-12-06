@@ -146,6 +146,7 @@ def amp_calibration( amp_modify_range, q_name:str, ro_element:list, config, qmm:
     n_90 = sequence_repeat *4
     amps = np.arange(a_min, a_max + da / 2, da)  # + da/2 to add a_max to amplitudes
     amp_len = len(amps)
+
     with program() as drag:
         n = declare(int)  # QUA variable for the averaging loop
         a = declare(fixed)  # QUA variable for the DRAG coefficient pre-factor
@@ -261,7 +262,7 @@ if __name__ == '__main__':
     sequence_repeat = 1
     amp_modify_range = 0.25/float(sequence_repeat)
     # output_data = DRAG_calibration_Yale( drag_coef, q_name, ro_element, config, qmm, n_avg=n_avg)
-    output_data =  amp_calibration( amp_modify_range, q_name, ro_element, config, qmm, n_avg=n_avg, sequence_repeat=sequence_repeat, simulate=False)
+    output_data =  amp_calibration( amp_modify_range, q_name, ro_element, config, qmm, n_avg=n_avg, sequence_repeat=sequence_repeat, simulate=False, mode='live')
 
         #   Data Saving   # 
     save_data = False

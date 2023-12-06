@@ -122,7 +122,7 @@ def allXY(pulses, qb, res, xyw):
 ###################
 # The QUA program #
 ###################
-def AllXY_executor(qb,res,xyw,configuration,qm_mache,mode):
+def AllXY_executor(qb,res,xyw,n_avg,configuration,qm_mache,mode):
     with program() as ALL_XY:
         n = declare(int)
         n_st = declare_stream()
@@ -227,17 +227,21 @@ def AllXY_executor(qb,res,xyw,configuration,qm_mache,mode):
                     plt.pause(0.1)
                     plt.savefig(f"{save_path}.png", dpi = 500)   
                 plt.show()
+            qm.close()
+            return {}
         else:
-             while results.is_processing():
+            while results.is_processing():
                 # Fetch results
                 res = results.fetch_all()
                 n = res[0]
+                signal_avg = np.mean(-np.array(res[1::2]))
                 # Progress bar
                 progress_counter(n, n_avg, start_time=results.start_time)
+            qm.close()
+            return {"I":-np.array(res[1::2]),"Q":-np.array(res[2::2]),"amp_error":(-np.array(res[1::2])[-7]-np.array(res[1::2])[-8])/2-signal_avg}
 
         # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
-        qm.close()
-        return {"I":-np.array(res[1::2]),"Q":-np.array(res[2::2])}
+        
 
 
 if __name__ == '__main__':

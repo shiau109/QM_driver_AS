@@ -56,6 +56,8 @@ def Ramsey_freq_calibration( virtial_detune_freq, q_name:list, ro_element:list, 
         evo_time_tick = np.arange( 4, evo_time_tick_max, tick_resolution)
         evo_time = evo_time_tick*4
     time_len = len(evo_time)
+
+    print( "IF from config", config["elements"][q_name[0]]["intermediate_frequency"])
     with program() as ramsey:
         iqdata_stream = multiRO_declare( ro_element )
         n = declare(int)
@@ -64,7 +66,7 @@ def Ramsey_freq_calibration( virtial_detune_freq, q_name:list, ro_element:list, 
         phi = declare(fixed)  # Phase to apply the virtual Z-rotation
         phi_idx = declare(int)
         with for_(n, 0, n < n_avg, n + 1):
-            with for_each_( phi_idx, [-1, 1]):
+            with for_each_( phi_idx, [0, 1]):
                 with for_(*from_array(t, evo_time_tick)):
 
                     # Rotate the frame of the second x90 gate to implement a virtual Z-rotation
@@ -79,9 +81,9 @@ def Ramsey_freq_calibration( virtial_detune_freq, q_name:list, ro_element:list, 
                     align()
                     # Operation
                     with switch_(phi_idx, unsafe=True):
-                        with case_(1):
+                        with case_(0):
                             assign(phi, Cast.mul_fixed_by_int(virtial_detune_freq * 1e-3, 4 * t))
-                        with case_(-1):
+                        with case_(1):
                             assign(phi, Cast.mul_fixed_by_int(-virtial_detune_freq * 1e-3, 4 * t))
 
                     for q in q_name:
@@ -131,12 +133,14 @@ def Ramsey_freq_calibration( virtial_detune_freq, q_name:list, ro_element:list, 
             ro_ch_name.append(f"{r_name}_I")
             ro_ch_name.append(f"{r_name}_Q")
         data_list = ro_ch_name + ["iteration"]   
-        results = fetching_tool(job, data_list=data_list, mode=mode)
+        results = fetching_tool(job, data_list=data_list, mode='live')
         # Live plotting
         if mode == 'live':
         # Live plotting
             fig, ax = plt.subplots(2, len(ro_element))
+
             interrupt_on_close(fig, job)  # Interrupts the job when closing the figure
+
             fig.suptitle("Frequency calibration")
             while results.is_processing():
                 # Fetch results
@@ -154,21 +158,31 @@ def Ramsey_freq_calibration( virtial_detune_freq, q_name:list, ro_element:list, 
                     ax[r_idx*2+1].set_ylabel("Q quadrature [V]")
                     plot_dual_Ramsey_oscillation(evo_time, output_data[r_name][1], ax[r_idx*2+1])
 
-        
+                # Progress bar
+                iteration = fetch_data[-1]
+                
+                progress_counter(iteration, n_avg, start_time=results.start_time)
+                # Plot
+                try:
+                    fig.show()
+                except:
+                    plt.tight_layout()
+                    print("fig.show() didn't work!")
+                    plt.pause(0.1)
+                plt.pause(0.1)
+
+                # 
+                # plt.close()
+        else:
+
+            while results.is_processing():
+                # Fetch results
+                fetch_data = results.fetch_all()
+
                 # Progress bar
                 iteration = fetch_data[-1]
                 progress_counter(iteration, n_avg, start_time=results.start_time)
-                # Plot
-                plt.tight_layout()
-                plt.show()
-                plt.close()
-        else:
-            fetch_data = results.fetch_all()
-            # while results.is_processing():
-            #     # Fetch results
-            #     fetch_data = results.fetch_all()
-            #     iteration = fetch_data[-1]
-            #     progress_counter(iteration, n_avg, start_time=results.start_time)
+                
             output_data = {}
             for r_idx, r_name in enumerate(ro_element):
                 output_data[r_name] = np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]])
@@ -176,43 +190,7 @@ def Ramsey_freq_calibration( virtial_detune_freq, q_name:list, ro_element:list, 
         # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
         qm.close()
         return output_data, evo_time
-        # try:
-        #     fit = Fit()
-        #     plt.figure()
-        #     plt.suptitle(f"ZZ-Ramsey measurement with detuning={detuning} Hz")
-        #     plt.subplot(221)
-        #     fit.ramsey(evo_time, I1, plot=True)
-        #     plt.xlabel("Idle times [ns]")
-        #     plt.ylabel("I quadrature [V]")
-        #     plt.title("Control-I")
-        #     plt.subplot(223)
-        #     fit.ramsey(evo_time, Q1, plot=True)
-        #     plt.xlabel("Idle times [ns]")
-        #     plt.ylabel("I quadrature [V]")
-        #     plt.title("Control-Q")
-        #     plt.subplot(222)
-        #     fitting_results = fit.ramsey(evo_time, I2, plot=True)
-        #     plt.xlabel("Idle times [ns]")
-        #     plt.ylabel("I quadrature [V]")
-        #     plt.subplot(224)
-        #     fit.ramsey(4 * idle_times, Q2, plot=True)
-        #     plt.xlabel("Idle times [ns]")
-        #     plt.ylabel("I quadrature [V]")
-        #     plt.tight_layout()
-        #     print("Detuned: %s" %(fitting_results['f'][0]*1e9*u.MHz - detuning))
-        # except (Exception,) as e:
-        #     print(e)
         
-        # if save_data == True:
-        #     ###################
-        #     #  Figure Saving  #
-        #     ################### 
-        #     figure = plt.gcf() # get current figure
-        #     figure.set_size_inches(16, 8)
-        #     plt.tight_layout()
-        #     plt.pause(0.1)
-        #     plt.savefig(f"{save_path}.png", dpi = 500)
-        # plt.show()
 def plot_dual_Ramsey_oscillation( x, y, ax=None ):
     """
     y in shape (2,N)
@@ -236,9 +214,10 @@ def plot_ana_result( evo_time, data, detuning, ax=None ):
     N is evo_time_point
     return freq_modified in MHz
     """
+    fit = Fit()
+
     # if ax == None:
     #     fig, ax = plt.subplots()
-    fit = Fit()
     # plot_dual_Ramsey_oscillation(evo_time, data, ax)
     # ax.set_title(f"Ramsey measurement")
 
@@ -252,7 +231,7 @@ def plot_ana_result( evo_time, data, detuning, ax=None ):
     # ax.plot(evo_time, ana_dict_pos["fit_func"](evo_time), label=f"Positive freq: {freq_pos:.3f} MHz")
     # ax.plot(evo_time, ana_dict_neg["fit_func"](evo_time), label=f"Negative freq: {freq_neg:.3f} MHz")
     # ax.text(0.1, 0.15, f"virtual detuning : {detuning} MHz", fontsize=10, transform=ax.transAxes)
-    # ax.text(0.1, 0.1, f"Estimate Detuning freq : {(freq_pos-freq_neg)/2:.3f} MHz", fontsize=10, transform=ax.transAxes)
+    # ax.text(0.1, 0.1, f"Estimate Detuning freq : {(freq_pos-freq_neg)/2:.4f} MHz", fontsize=10, transform=ax.transAxes)
 
     # ax.legend()
     # plt.tight_layout()
@@ -263,21 +242,39 @@ def plot_ana_result( evo_time, data, detuning, ax=None ):
 
 if __name__ == '__main__':
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-    n_avg = 1000  # Number of averages
+    n_avg = 500  # Number of averages
 
     ro_element = ["rr1"]
     q_name =  ["q1_xy"]
     virtual_detune = 2 # Unit in MHz
-    output_data, evo_time = Ramsey_freq_calibration( virtual_detune, q_name, ro_element, config, qmm, n_avg=n_avg, simulate=False)
+    ans_rec = []
+    for i in range(100):
+        output_data, evo_time = Ramsey_freq_calibration( virtual_detune, q_name, ro_element, config, qmm, n_avg=n_avg, simulate=False, mode="live")
     #   Data Saving   # 
-    save_data = False
-    if save_data:
-        from save_data import save_npz
-        import sys
-        save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
-        save_npz(save_dir, save_progam_name, output_data)
+    # save_data = False
+    # if save_data:
+    #     from save_data import save_npz
+    #     import sys
+    #     save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
+    #     save_npz(save_dir, save_progam_name, output_data)
 
-    ans = plot_ana_result(evo_time,output_data[ro_element[0]][0],virtual_detune)
+        ans = plot_ana_result(evo_time,output_data[ro_element[0]][0],virtual_detune)
+        ans_rec.append(ans)
+
     # # Plot
+    from numpy import array, std, mean
+    std_i = []
+    avg_i = []
+    for i in ans_rec:
+        std_i.append(std(array(ans_rec)))
+        avg_i.append(mean(array(ans_rec)))
+    plt.plot(ans_rec,label='exp')
+    plt.plot(array(avg_i)+array(std_i),label='+1std')
+    plt.plot(array(avg_i)-array(std_i),label='-1std')
+    plt.plot(avg_i,label='mean')
+    plt.title(f'100Ramsey, mean={mean(array(ans_rec))}, std~{round(std(array(ans_rec))*100/mean(array(ans_rec)),2)}% mean')
+    plt.legend()
     plt.show()
-
+    plt.pause(0.2)
+    plt.close()
+    
