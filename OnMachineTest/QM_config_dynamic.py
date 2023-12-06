@@ -114,7 +114,7 @@ class Circuit_info:
             for info in ["pi_amp","pi_len","qubit_LO","qubit_IF","drag_coef","anharmonicity","AC_stark_detuning","waveform_func"]:
                 self.__XyInfo[f'q{idx}'][info] = 0 
             for info in ["half_pi_ampScale"]:
-                self.__XyInfo[f'q{idx}'][info] = {"180":1}
+                self.__XyInfo[f'q{idx}'][info] = {"180":1,"90":1}
             self.__XyInfo["register"].append("q"+str(idx))
         # CW pulse info
         self.__XyInfo["const_len"] = 1000
@@ -316,17 +316,18 @@ class Circuit_info:
             'ro' for RoInfo,\n
             'xy' for XyInfo.
         """
+        from copy import deepcopy
         match whichSpec.lower():
             case 'xy':
-                return self.__XyInfo
+                return deepcopy(self.__XyInfo)
             case 'ro':
-                return self.__RoInfo
+                return deepcopy(self.__RoInfo)
             case 'z':
-                return self.__ZInfo
+                return deepcopy(self.__ZInfo)
             case 'deco':
-                return self.__DecoInfo
+                return deepcopy(self.__DecoInfo)
             case 'wire':
-                return self.__WireInfo
+                return deepcopy(self.__WireInfo)
             case _:
                 raise KeyError(f"I don't know which info you need with the given info name: {whichSpec}")
 
@@ -1068,10 +1069,10 @@ class QM_config():
                 # update LO or IF in elements and mixers
                 if info.split("_")[1] == "LO":
                     elements["mixInputs"]["lo_frequency"] = updatedInfo[info]
-                    mixers[mixer_name][-1]["lo_frequency"] = updatedInfo[info]
+                    mixers[mixer_name][0]["lo_frequency"] = updatedInfo[info]
                 else: 
                     elements["intermediate_frequency"] = updatedInfo[info]
-                    mixers[mixer_name][-1]["intermediate_frequency"] = updatedInfo[info]
+                    mixers[mixer_name][0]["intermediate_frequency"] = updatedInfo[info]
                 
             else: 
                 raise KeyError("Only surpport update frequenct related info to config!")
