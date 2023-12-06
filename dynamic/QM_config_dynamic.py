@@ -26,26 +26,28 @@ class Circuit_info:
     
     def init_RoInfo(self):
         '''
+            ## catagorized with qlabel, start from 1.
             keys in self.RoInfo: "resonator_LO_q1","resonator_IF_q2","readout_amp_q3","ge_threshold_q4",\n
             "RO_weights_q5","readout_len","time_of_flight","register".\n
             ### *** readout_len and time_of_flight are the same for all the qubits ***
         '''
-        self.RoInfo = {}
-        self.RoInfo["register"] = []
-        for idx in range(1,self.q_num+1):
-            for info in ['resonator_LO_q','resonator_IF_q','readout_amp_q','ge_threshold_q']:
-                self.RoInfo[info+str(idx)] = 0.0
-            self.RoInfo[f"RO_weights_q{idx}"]={}
+        self.__RoInfo = {}
+        self.__RoInfo["register"] = []
+        for idx in range(1, self.q_num+1):
+            self.__RoInfo[f"q{idx}"] = {}
+            for info in ['resonator_LO','resonator_IF','readout_amp','ge_threshold']:
+                self.__RoInfo[f"q{idx}"][info] = 0.0
+            self.__RoInfo[f"q{idx}"][f"RO_weights"]={}
             # RO weights paras includes default, rotated and optimal for a qubit
             for weights_cata in ["origin","rotated","optimal"]:
                 if weights_cata != "optimal":
-                    self.RoInfo[f"RO_weights_q{idx}"][weights_cata] = 0
+                    self.__RoInfo[f"q{idx}"][f"RO_weights"][weights_cata] = 0
                 else:
-                    self.RoInfo[f"RO_weights_q{idx}"][weights_cata] = {"cos":{'cosine':[],'sine':[]},"sin":{'cosine':[],'sine':[]},"minus_sine":{'cosine':[],'sine':[]}}
+                    self.__RoInfo[f"q{idx}"][f"RO_weights"][weights_cata] = {"cos":{'cosine':[],'sine':[]},"sin":{'cosine':[],'sine':[]},"minus_sine":{'cosine':[],'sine':[]}}
         
-            self.RoInfo["register"].append("q"+str(idx))
-        self.RoInfo['readout_len'] = 0
-        self.RoInfo['time_of_flight'] = 0
+            self.__RoInfo["register"].append("q"+str(idx))
+        self.__RoInfo['readout_len'] = 0
+        self.__RoInfo['time_of_flight'] = 0
         
 
     def optimal_ROweights_generator(self, npz_file_path:str):
@@ -76,25 +78,25 @@ class Circuit_info:
             for info in kwargs:
                 match info.lower():
                     case "if":
-                        self.RoInfo[f'resonator_IF_{target_q}'] = kwargs[info]*u.MHz
+                        self.__RoInfo[target_q][f'resonator_IF'] = kwargs[info]*u.MHz
                         few_freq[f'resonator_IF_{target_q}'] = kwargs[info]*u.MHz
                     case "amp":
-                        self.RoInfo[f'readout_amp_{target_q}'] = kwargs[info]
+                        self.__RoInfo[target_q][f'readout_amp'] = kwargs[info]
                     case "lo":
-                        self.RoInfo[f'resonator_LO_{target_q}'] = kwargs[info]*u.GHz
+                        self.__RoInfo[target_q][f'resonator_LO'] = kwargs[info]*u.GHz
                         few_freq[f'resonator_LO_{target_q}'] = kwargs[info]*u.GHz
                     case "len":
-                        self.RoInfo['readout_len'] = kwargs[info]
+                        self.__RoInfo['readout_len'] = kwargs[info]
                     case "time":
-                        self.RoInfo['time_of_flight'] = kwargs[info]
+                        self.__RoInfo['time_of_flight'] = kwargs[info]
                     case "ge_hold":
-                        self.RoInfo[f'ge_threshold_{target_q}'] = kwargs[info]
+                        self.__RoInfo[target_q][f'ge_threshold'] = kwargs[info]
                     case "origin":
-                        self.RoInfo[f"RO_weights_{target_q}"]["origin"] = kwargs[info]
+                        self.__RoInfo[target_q][f"RO_weights"]["origin"] = kwargs[info]
                     case "rotated":
-                        self.RoInfo[f"RO_weights_{target_q}"]["rotated"] = kwargs[info]
+                        self.__RoInfo[target_q][f"RO_weights"]["rotated"] = kwargs[info]
                     case "optimal":
-                        self.RoInfo[f"RO_weights_{target_q}"]["optimal"] = kwargs[info]    
+                        self.__RoInfo[target_q][f"RO_weights"]["optimal"] = kwargs[info]    
                     case _:
                         raise KeyError("kwargs key goes wrong!")
         else:
@@ -105,68 +107,80 @@ class Circuit_info:
         '''Info for a pi-pulse should envolve:\n
         1)pi_amp, 2)pi_len, 3)qubit_LO(GHz), 4)qubit_IF(MHz), 5)drag_coef, 6)anharmonicity(MHz), 7)AC_stark_detuning(MHz)
         '''
-        self.XyInfo = {}
-        self.XyInfo["register"] = []
+        self.__XyInfo = {}
+        self.__XyInfo["register"] = []
         for idx in range(1,self.q_num+1):
-            for info in ["pi_amp_q","pi_len_q","qubit_LO_q","qubit_IF_q","drag_coef_q","anharmonicity_q","AC_stark_detuning_q","waveform_func_q"]:
-                self.XyInfo[info+str(idx)] = 0 
-            self.XyInfo["register"].append("q"+str(idx))
+            self.__XyInfo[f'q{idx}'] = {}
+            for info in ["pi_amp","pi_len","qubit_LO","qubit_IF","drag_coef","anharmonicity","AC_stark_detuning","waveform_func"]:
+                self.__XyInfo[f'q{idx}'][info] = 0 
+            for info in ["pi_ampScale"]:
+                self.__XyInfo[f'q{idx}'][info] = {"180":1,"90":1}
+            self.__XyInfo["register"].append("q"+str(idx))
         # CW pulse info
-        self.XyInfo["const_len"] = 1000
-        self.XyInfo["const_amp"] = 300 * u.mV
+        self.__XyInfo["const_len"] = 1000
+        self.__XyInfo["const_amp"] = 300 * u.mV
         # Saturation pulse info
-        self.XyInfo["saturation_len"] = 5 * u.us
-        self.XyInfo["saturation_amp"] = 0.5
+        self.__XyInfo["saturation_len"] = 5 * u.us
+        self.__XyInfo["saturation_amp"] = 0.5
         
     def update_aXyInfo_for(self,target_q,**kwargs):
         '''target_q : "q5"\n
         kwargs :\n
-        amp(pi_amp)=0.2\nlen(pi_len)=20\nLO(qubit_LO, GHz)=4.3\nIF(qubit_IF, MHz)=80\ndraga(drag_coef)=0.5\ndelta or anh or d(anharmonicity, MHz)=-200\n
-        AC(AC_stark_detuning, MHz)=8,func='gauss' or 'drag'\n
-        If update info is related to freq return the dict for updating the config.
+        amp(pi_amp)=0.2,\n 
+        len(pi_len)=20,\n 
+        LO(qubit_LO, GHz)=4.3,\n
+        IF(qubit_IF, MHz)=80,\n
+        draga(drag_coef)=0.5,\n
+        delta or anh or d(anharmonicity, MHz)=-200,\n
+        AC(AC_stark_detuning, MHz)=8,func='gauss' or 'drag',\n
+        half_scale or half(half_pi_ampScale)=0.012.\n
+        ### If update info is related to freq return the dict for updating the config.
         '''
         new_freq = {}
         for name in list(kwargs.keys()):
             if name.lower() == 'amp':
-                self.XyInfo["pi_amp_"+target_q] = kwargs[name] 
+                self.__XyInfo[target_q]["pi_amp"] = kwargs[name] 
             elif name.lower() == 'len':
-                self.XyInfo["pi_len_"+target_q] = kwargs[name]
+                self.__XyInfo[target_q]["pi_len"] = kwargs[name]
             elif name.lower() == 'lo':
-                self.XyInfo["qubit_LO_"+target_q] = kwargs[name]*u.GHz
+                self.__XyInfo[target_q]["qubit_LO"] = kwargs[name]*u.GHz
                 new_freq["qubit_LO_"+target_q] = kwargs[name]*u.GHz
             elif name.lower() == 'if':
-                self.XyInfo["qubit_IF_"+target_q] = kwargs[name]*u.MHz
+                self.__XyInfo[target_q]["qubit_IF"] = kwargs[name]*u.MHz
                 new_freq["qubit_IF_"+target_q] = kwargs[name]*u.MHz
             elif name.lower() in ['draga','drag_coef'] :
-                self.XyInfo["drag_coef_"+target_q] = kwargs[name]
+                self.__XyInfo[target_q]["drag_coef"] = kwargs[name]
             elif name.lower() in ["delta","d","anh","anharmonicity"]:
-                self.XyInfo["anharmonicity_"+target_q] = kwargs[name]*u.MHz
+                self.__XyInfo[target_q]["anharmonicity"] = kwargs[name]*u.MHz
             elif name.lower() in ['ac',"AC_stark_detuning"]:
-                self.XyInfo["AC_stark_detuning_"+target_q] = kwargs[name]*u.MHz
+                self.__XyInfo[target_q]["AC_stark_detuning"] = kwargs[name]*u.MHz
             elif name.lower() in ['waveform',"func",'wf']:
-                self.XyInfo["waveform_func_"+target_q] = kwargs[name]
+                self.__XyInfo[target_q]["waveform_func"] = kwargs[name]
+            elif name.lower() in ['half_scale','half']:
+                self.__XyInfo[target_q]["pi_ampScale"]["90"] = kwargs[name]
             else:
                 print(name.lower())
                 raise KeyError("I don't know what you are talking about!")
         
         return new_freq
     
-    def update_XyInfoS_for(self,target_q:str,InfoS:list):
-        ''' target_q : "q5"\n
-            InfoS : \n
-                if type is list : [pi_amp, pi_len, qubit_LO, qubit_IF(MHz), drag_coef, anharmonicity(MHz), AC_stark_detuning]\n
-        '''
-        if isinstance(InfoS,list):
-            vals = ["pi_amp_", "pi_len_", "qubit_LO_", "qubit_IF_", "drag_coef_", "anharmonicity_", "AC_stark_detuning_"]
-            for idx in range(len(InfoS)):
-                if idx == 2: 
-                    self.XyInfo[vals[idx]+target_q] = InfoS[idx]*u.GHz
-                elif idx in [3,5,6]:
-                    self.XyInfo[vals[idx]+target_q] = InfoS[idx]*u.MHz
-                else:
-                    self.XyInfo[vals[idx]+target_q] = InfoS[idx]
-        else:
-            raise TypeError("InfoS should be a list or dict! For a single value use `update_aPiInfo_for()`")
+    ### Abandon
+    # def update_XyInfoS_for(self,target_q:str,InfoS:list):
+    #     ''' target_q : "q5"\n
+    #         InfoS : \n
+    #             if type is list : [pi_amp, pi_len, qubit_LO, qubit_IF(MHz), drag_coef, anharmonicity(MHz), AC_stark_detuning]\n
+    #     '''
+    #     if isinstance(InfoS,list):
+    #         vals = ["pi_amp", "pi_len", "qubit_LO", "qubit_IF", "drag_coef", "anharmonicity", "AC_stark_detuning"]
+    #         for idx in range(len(InfoS)):
+    #             if idx == 2: 
+    #                 self.__XyInfo[target_q][vals[idx]] = InfoS[idx]*u.GHz
+    #             elif idx in [3,5,6]:
+    #                 self.__XyInfo[target_q][vals[idx]] = InfoS[idx]*u.MHz
+    #             else:
+    #                 self.__XyInfo[target_q][vals[idx]] = InfoS[idx]
+    #     else:
+    #         raise TypeError("InfoS should be a list or dict! For a single value use `update_aPiInfo_for()`")
 
     def export_spec( self, path ):
         import pickle
@@ -174,7 +188,7 @@ class Circuit_info:
         # create a binary pickle file 
         f = open(path,"wb")
         # write the python object (dict) to pickle file
-        spec = {"RoInfo":self.RoInfo,"XyInfo":self.XyInfo,"ZInfo":self.ZInfo,"DecoInfo":self.DecoInfo,"WireInfo":self.WireInfo}
+        spec = {"RoInfo":self.__RoInfo,"XyInfo":self.__XyInfo,"ZInfo":self.__ZInfo,"DecoInfo":self.__DecoInfo,"WireInfo":self.__WireInfo}
         pickle.dump(spec,f)
         # close file
         f.close()
@@ -185,20 +199,20 @@ class Circuit_info:
         with open(path, 'rb') as fp:
             spec = pickle.load(fp)
         print("XY information loaded successfully!")
-        self.XyInfo = spec["XyInfo"]
-        self.DecoInfo = spec["DecoInfo"]
-        self.ZInfo = spec["ZInfo"]
-        self.WireInfo = spec["WireInfo"]
-        self.RoInfo = spec["RoInfo"]
+        self.__XyInfo = spec["XyInfo"]
+        self.__DecoInfo = spec["DecoInfo"]
+        self.__ZInfo = spec["ZInfo"]
+        self.__WireInfo = spec["WireInfo"]
+        self.__RoInfo = spec["RoInfo"]
 
     ### Below about decoherence time T1 and T2
     def init_DecoInfo(self):
         """
             DecoInfo will be like : {"q1":{"T1":10000000,"T2":20000000},"q2":....}
         """
-        self.DecoInfo = {}
+        self.__DecoInfo = {}
         for idx in range(1,self.q_num+1):
-            self.DecoInfo[f"q{idx}"] = {"T1":0,"T2":0}
+            self.__DecoInfo[f"q{idx}"] = {"T1":0,"T2":0}
 
     def update_DecoInfo_for(self,target_q:str,**kwargs):
         '''
@@ -209,7 +223,7 @@ class Circuit_info:
         if kwargs != {}:
             for info in kwargs:
                 if info.lower() in ["t1","t2"]:
-                   self.DecoInfo[target_q][info.upper()] = kwargs[info] * u.us  
+                   self.__DecoInfo[target_q][info.upper()] = kwargs[info] * u.us  
                 else:
                     raise KeyError("Only two types are surpported: T1 and T2!")
         else:
@@ -220,9 +234,9 @@ class Circuit_info:
         """
             initialize Zinfo with: {"q1":{"controller":"con1","con_channel":1,"offset":0.0,"OFFbias":0.0,"idle":0.0},"q2":....}
         """
-        self.ZInfo = {}
+        self.__ZInfo = {}
         for idx in range(1,self.q_num+1):
-            self.ZInfo[f"q{idx}"] = {"controller":"con1","con_channel":0,"offset":0.0,"OFFbias":0.0,"idle":0.0}
+            self.__ZInfo[f"q{idx}"] = {"controller":"con1","con_channel":0,"offset":0.0,"OFFbias":0.0,"idle":0.0}
 
     def update_ZInfo_for(self,target_q:str,**kwargs):
         """
@@ -234,18 +248,18 @@ class Circuit_info:
         if kwargs != {}:
             for info in kwargs:
                 if info.lower() in ["controller","con_channel","offset","offbias","idle"]:
-                    self.ZInfo[target_q][info] = kwargs[info]
+                    self.__ZInfo[target_q][info] = kwargs[info]
                 else:
                     raise KeyError("Some variables can't be identified, check the kwargs!")
         else:
             raise ValueError("You should give the info want to update in kwargs!")
-        return self.ZInfo[target_q]
+        return self.__ZInfo[target_q]
 
     ### physical wiring info
     def init_WireInfo(self):
-        self.WireInfo = {}
+        self.__WireInfo = {}
         for idx in range(1,self.q_num+1):
-            self.WireInfo[f"q{idx}"] = {"ro_mixe":'octave', "xy_mixer":'octave',"up_":('con1',1),"up_Q":('con1',2),"down_I":('con1',2),"down_":('con1',2),"xy_I":('con1',3),"xy_Q":('con1',4)}
+            self.__WireInfo[f"q{idx}"] = {"ro_mixe":'octave', "xy_mixer":'octave',"up_":('con1',1),"up_Q":('con1',2),"down_I":('con1',2),"down_":('con1',2),"xy_I":('con1',3),"xy_Q":('con1',4)}
     
     def update_WireInfo_for(self, target_q:str ,**kwargs):
         """
@@ -255,11 +269,68 @@ class Circuit_info:
         if kwargs != {}:
             for info in kwargs:
                 if info.lower() in ['ro_mixer','xy_mixer','up_i','up_q','down_i','down_q','xy_i','xy_q']:
-                    self.WireInfo[target_q][info] = kwargs[info]
+                    self.__WireInfo[target_q][info] = kwargs[info]
                 else:
                     raise KeyError("Check the wiring info key plz!")
         else:
             raise ValueError("You should give the info want to update!")
+        
+    def get_ReadableSpec_fromQ(self, target_q:str, specific:str='all'):
+        """
+            ### Get the spec for target_q includes WireInfo, ZInfo, DecoInfo, RoInfo and XyInfo.\n
+            target_q: "q3",\n
+            specific: get the specific info, default for all.\n
+            'wire' for WireInfo,\n
+            'z' for ZInfo,\n
+            'deco' for DecoInfo,\n
+            'ro' for RoInfo,\n
+            'xy' for XyInfo.
+        """
+        match specific.lower():
+            case 'wire':
+                want_item = {'WireInfo':self.__WireInfo}
+            case 'z':
+                want_item = {'ZInfo':self.__ZInfo}
+            case 'deco':
+                want_item = {'DecoInfo':self.__DecoInfo}
+            case 'ro':
+                want_item = {'RoInfo':self.__RoInfo}
+            case 'xy':
+                want_item = {'XyInfo':self.__XyInfo}
+            case _:
+                want_item = {'XyInfo':self.__XyInfo,'DecoInfo':self.__DecoInfo,'RoInfo':self.__RoInfo,'ZInfo':self.__ZInfo,'WireInfo':self.__WireInfo}
+        
+        request_item = {}
+        for info_name in list(want_item.keys()):
+            request_item[info_name] = want_item[info_name][target_q]
+
+        return request_item
+    
+    def get_spec_forConfig(self,whichSpec:str):
+        """
+            return the spec for dynamic configuration maintenance.\n
+            whichSpec: \n
+            'wire' for WireInfo,\n
+            'z' for ZInfo,\n
+            'deco' for DecoInfo,\n
+            'ro' for RoInfo,\n
+            'xy' for XyInfo.
+        """
+        from copy import deepcopy
+        match whichSpec.lower():
+            case 'xy':
+                return deepcopy(self.__XyInfo)
+            case 'ro':
+                return deepcopy(self.__RoInfo)
+            case 'z':
+                return deepcopy(self.__ZInfo)
+            case 'deco':
+                return deepcopy(self.__DecoInfo)
+            case 'wire':
+                return deepcopy(self.__WireInfo)
+            case _:
+                raise KeyError(f"I don't know which info you need with the given info name: {whichSpec}")
+
 class Waveform:
     def __init__(self,xyInfo:dict):
         self.QsXyInfo = xyInfo
@@ -267,15 +338,18 @@ class Waveform:
     def build_XYwaveform(self,target_q:str,axis:str,**kwargs)->dict:
         ''' Create the pulse waveform for XY control for target qubit\n
             target_q : "q2"\n
-            func : "drag" or "gauss"\n
-            axis : "x" or "y" or "x/2" or "y/2" or "-x/2" or "-y/2"
+            func: "drag" or "gauss"\n
+            axis: "x" or "y" or "x/2" or "y/2" or "-x/2" or "-y/2"\n
+            kwargs: "sfactor" for pi-pulse sigma,\n
+            "given_wf_array"(** not done!) a dict contains key "I" and "Q" for the given array waveform (arbitrary),\n
+            ex. given_wf_array = {"I":array([0.1,0.1,0.1]),"Q":array([0.1,0.8,0.1])}
         '''
         from qualang_tools.config.waveform_tools import drag_gaussian_pulse_waveforms
         # check the info is contained the data about target Q
         if target_q not in self.QsXyInfo["register"]:
             raise KeyError(f"There are not any info in 'QsXyInfo' about target {target_q}")
         # search the waveform function
-        func = 'drag' if self.QsXyInfo[f"waveform_func_{target_q}"] == 0 else self.QsXyInfo[f"waveform_func_{target_q}"]
+        func = 'drag' if self.QsXyInfo[target_q]["waveform_func"] == 0 else self.QsXyInfo[target_q]["waveform_func"]
         if func.lower() in ['drag','dragg','gdrag']:
             def wf_func(amp, width, sigma, *args):
                 return drag_gaussian_pulse_waveforms(amp, width, sigma, args[0], args[1], args[2])
@@ -286,32 +360,54 @@ class Waveform:
             raise ValueError("Only surpport Gaussian or DRAG-gaussian waveform!")
         
         # Create the waveform array for I and Q
-        angle = 1/len(axis.split("/")) # if "X/2" angle = 1/2, other angle = 1 (π)
-        rotation_to = -1 if axis.split("/")[0][0]=="-" else 1
-        scale = rotation_to*angle
+        angle = axis.split("/")[-1] # if "X/2" angle = 2, other angle = 'x'...
+        rota_direction = -1 if axis.split("/")[0][0]=="-" else 1
+
+        if angle in ["2"]:
+            correspond_name = str(int(180/int(angle)))
+            # check the /2 modified scale in the spec
+            if correspond_name in list(self.QsXyInfo[target_q]["pi_ampScale"].keys()):
+                scale_90 = self.QsXyInfo[target_q]["pi_ampScale"][correspond_name]
+            else:
+                scale_90 = 1
+            scale = rota_direction*0.5*scale_90
+        else:
+            scale = rota_direction*1
+
         # check pulse sigma
-        if kwargs != {} and list(kwargs.keys())[0].lower() in ["sigma","s","sfactor","s-factor"]:
-            S_factor = kwargs[list(kwargs.keys())[0]]
+        if kwargs != {} and "sfactor" in list(kwargs.keys()):
+            S_factor = kwargs["sfactor"]
         else:
             S_factor = 4
+        if kwargs != {} and "given_wf_array" in list(kwargs.keys()):
+            use_given_wf = True
+            if "I" in list(kwargs["given_wf_array"].keys()) and "Q" in list(kwargs["given_wf_array"].keys()):
+                given_wf = kwargs["given_wf_array"]
+            else:
+                raise ValueError(f"The keynames in given_wf_array dict should be 'I' and 'Q', but recieved keynames: {kwargs['given_wf_array'].keys()}")
+        else :
+            use_given_wf = False
 
         if 'x' in axis[:2].lower():
             wf, der_wf = array(
-                wf_func(self.QsXyInfo["pi_amp_"+target_q]*scale, self.QsXyInfo["pi_len_"+target_q], self.QsXyInfo["pi_len_"+target_q]/S_factor, self.QsXyInfo["drag_coef_"+target_q], self.QsXyInfo["anharmonicity_"+target_q], self.QsXyInfo["AC_stark_detuning_"+target_q])
+                wf_func(self.QsXyInfo[target_q]["pi_amp"]*scale, self.QsXyInfo[target_q]["pi_len"], self.QsXyInfo[target_q]["pi_len"]/S_factor, self.QsXyInfo[target_q]["drag_coef"], self.QsXyInfo[target_q]["anharmonicity"], self.QsXyInfo[target_q]["AC_stark_detuning"])
             )
             I_wf = wf
             Q_wf = der_wf
         elif 'y' in axis[:2].lower():
             wf, der_wf = array(
-                wf_func(self.QsXyInfo["pi_amp_"+target_q]*scale, self.QsXyInfo["pi_len_"+target_q], self.QsXyInfo["pi_len_"+target_q]/S_factor, self.QsXyInfo["drag_coef_"+target_q], self.QsXyInfo["anharmonicity_"+target_q], self.QsXyInfo["AC_stark_detuning_"+target_q])
+                wf_func(self.QsXyInfo[target_q]["pi_amp"]*scale, self.QsXyInfo[target_q]["pi_len"], self.QsXyInfo[target_q]["pi_len"]/S_factor, self.QsXyInfo[target_q]["drag_coef"], self.QsXyInfo[target_q]["anharmonicity"], self.QsXyInfo[target_q]["AC_stark_detuning"])
             )
             I_wf = (-1)*der_wf
-            Q_wf = wf
+            Q_wf = wf 
         else:
             print(axis[0].lower())
             raise ValueError("Check the given axis, It should start with 'x' or 'y'!")
     
-        return {"I":I_wf, "Q":Q_wf}
+        if use_given_wf:
+            return given_wf
+        else:
+            return {"I":I_wf, "Q":Q_wf}
     
         
 class QM_config():
@@ -376,7 +472,8 @@ class QM_config():
         self.__config["controllers"].update(update_setting)
 
     def get_config(self,*args):
-        return self.__config
+        import copy
+        return copy.deepcopy(self.__config)
 
     def update_downconverter(self, channel:int ,ctrl_name:str='con1', **kwargs):
         """
@@ -509,19 +606,19 @@ class QM_config():
             if from_which_value != 'optimal':
                 match cata_name:
                     case "cos":
-                        self.__config["integration_weights"][weights_first_name+cata_name]['cosine'] = [(cos(updated_RO_spec[f"RO_weights_{target_q}"][from_which_value]), RO_len)]
-                        self.__config["integration_weights"][weights_first_name+cata_name]['sine'] = [(sin(updated_RO_spec[f"RO_weights_{target_q}"][from_which_value]), RO_len)]
+                        self.__config["integration_weights"][weights_first_name+cata_name]['cosine'] = [(cos(updated_RO_spec[target_q]["RO_weights"][from_which_value]), RO_len)]
+                        self.__config["integration_weights"][weights_first_name+cata_name]['sine'] = [(sin(updated_RO_spec[target_q]["RO_weights"][from_which_value]), RO_len)]
                     case "sin":
-                        self.__config["integration_weights"][weights_first_name+cata_name]['cosine'] = [(-sin(updated_RO_spec[f"RO_weights_{target_q}"][from_which_value]), RO_len)]
-                        self.__config["integration_weights"][weights_first_name+cata_name]['sine'] = [(cos(updated_RO_spec[f"RO_weights_{target_q}"][from_which_value]), RO_len)]
+                        self.__config["integration_weights"][weights_first_name+cata_name]['cosine'] = [(-sin(updated_RO_spec[target_q]["RO_weights"][from_which_value]), RO_len)]
+                        self.__config["integration_weights"][weights_first_name+cata_name]['sine'] = [(cos(updated_RO_spec[target_q]["RO_weights"][from_which_value]), RO_len)]
                     case "minus_sin":
-                        self.__config["integration_weights"][weights_first_name+cata_name]['cosine'] = [(sin(updated_RO_spec[f"RO_weights_{target_q}"][from_which_value]), RO_len)]
-                        self.__config["integration_weights"][weights_first_name+cata_name]['sine'] = [(-cos(updated_RO_spec[f"RO_weights_{target_q}"][from_which_value]), RO_len)]
+                        self.__config["integration_weights"][weights_first_name+cata_name]['cosine'] = [(sin(updated_RO_spec[target_q]["RO_weights"][from_which_value]), RO_len)]
+                        self.__config["integration_weights"][weights_first_name+cata_name]['sine'] = [(-cos(updated_RO_spec[target_q]["RO_weights"][from_which_value]), RO_len)]
                     case _:
                         pass
             else:
-                self.__config["integration_weights"][weights_first_name+cata_name]['cosine'] = updated_RO_spec[f"RO_weights_{target_q}"][from_which_value][cata_name]['cosine']
-                self.__config["integration_weights"][weights_first_name+cata_name]['sine'] = updated_RO_spec[f"RO_weights_{target_q}"][from_which_value][cata_name]['sine']
+                self.__config["integration_weights"][weights_first_name+cata_name]['cosine'] = updated_RO_spec[target_q]["RO_weights"][from_which_value][cata_name]['cosine']
+                self.__config["integration_weights"][weights_first_name+cata_name]['sine'] = updated_RO_spec[target_q]["RO_weights"][from_which_value][cata_name]['sine']
 
 
     def add_mixer( self, name, setting:dict = None ):
@@ -701,9 +798,9 @@ class QM_config():
         ro_element = self.get_element_template(mode='ro')
         ro_element["mixInputs"]["I"] = WireInfo[name]["up_I"]
         ro_element["mixInputs"]["Q"] = WireInfo[name]["up_Q"]
-        ro_element["mixInputs"]["lo_frequency"] = ROinfo[f"resonator_LO_{name}"]
+        ro_element["mixInputs"]["lo_frequency"] = ROinfo[name]["resonator_LO"]
         ro_element["mixInputs"]["mixer"] = WireInfo[name]["ro_mixer"]
-        ro_element["intermediate_frequency"] = ROinfo[f"resonator_IF_{name}"]
+        ro_element["intermediate_frequency"] = ROinfo[name]["resonator_IF"]
         ro_element["outputs"]["out1"] = WireInfo[name]["down_I"]
         ro_element["outputs"]["out2"] = WireInfo[name]["down_Q"]
         ro_element["time_of_flight"] = ROinfo["time_of_flight"]
@@ -718,7 +815,7 @@ class QM_config():
         }   
         ro_wf = {
            "type": "constant",
-           "sample": ROinfo[f"readout_amp_{name}"]
+           "sample": ROinfo[name][f"readout_amp"]
         } 
         self.create_roChannel( name, ro_element, ro_pulse, ro_wf)
 
@@ -726,9 +823,9 @@ class QM_config():
         xy_element = self.get_element_template(mode='xy')
         xy_element["mixInputs"]["I"] = WireInfo[name]["xy_I"]
         xy_element["mixInputs"]["Q"] = WireInfo[name]["xy_Q"]
-        xy_element["mixInputs"]["lo_frequency"] = XYinfo[f"qubit_LO_{name}"]
+        xy_element["mixInputs"]["lo_frequency"] = XYinfo[name]["qubit_LO"]
         xy_element["mixInputs"]["mixer"] = WireInfo[name]["xy_mixer"]
-        xy_element["intermediate_frequency"] = XYinfo[f"qubit_IF_{name}"]
+        xy_element["intermediate_frequency"] = XYinfo[name]["qubit_IF"]
 
         self.create_xyChannel( name, xy_element, XYinfo)
 
@@ -934,7 +1031,7 @@ class QM_config():
             waveform_name = f"{gate_name}_wf_{name}"
             self.__config["pulses"][pulse_name] = {
                 "operation": "control",
-                "length": XYinfo[f"pi_len_{name}"],
+                "length": XYinfo[name][f"pi_len"],
                 "waveforms": {
                     "I": f"{waveform_name}_I",
                     "Q": f"{waveform_name}_Q",
@@ -965,6 +1062,7 @@ class QM_config():
         for info in updatedInfo:
             if info.split("_")[1].lower() in ["lo","if"]: # this should be update in both elements and mixers
                 target_q = info.split("_")[-1]
+                print(target_q)
                 elements = self.__config['elements'][f"{target_q}_xy"]
                 mixers = self.__config['mixers']
                 mixer_name = elements["mixInputs"]["mixer"]
@@ -1077,11 +1175,13 @@ class QM_config():
                         TOF_rewrite = False
 
         if len_rewrite:
-            for q in RoInfo["register"]:
+            q_in_config = [q.split("_")[0] for q in self.__config['elements'].keys() if q.split("_")[-1]=='ro']
+            for q in q_in_config:
                 # pulses length
-                self.__config['pulses'][f'readout_pulse_{q}']['length']
+                self.__config['pulses'][f'readout_pulse_{q}']['length'] = RoInfo['readout_len']
         if TOF_rewrite:
-            for q in RoInfo["register"]:
+            q_in_config = [q.split("_")[0] for q in self.__config['elements'].keys() if q.split("_")[-1]=='ro']
+            for q in q_in_config:
                 # time_of_flights
                 self.__config['elements'][f'{q}_ro']['time_of_flight'] = RoInfo['time_of_flight']
 
@@ -1091,7 +1191,7 @@ class QM_config():
                 # integration Weight
                 self.update_integrationWeight(target_q=q,updated_RO_spec=RoInfo,from_which_value=integration_weights_from)
             # waveforms values
-            self.__config['waveforms'][f'readout_wf_{q}']['sample'] = RoInfo[f'readout_amp_{q}']
+            self.__config['waveforms'][f'readout_wf_{q}']['sample'] = RoInfo[q]['readout_amp']
         print('RO dynamic config secessfully updated!')
 
 

@@ -113,7 +113,7 @@ class Circuit_info:
             self.__XyInfo[f'q{idx}'] = {}
             for info in ["pi_amp","pi_len","qubit_LO","qubit_IF","drag_coef","anharmonicity","AC_stark_detuning","waveform_func"]:
                 self.__XyInfo[f'q{idx}'][info] = 0 
-            for info in ["half_pi_ampScale"]:
+            for info in ["pi_ampScale"]:
                 self.__XyInfo[f'q{idx}'][info] = {"180":1,"90":1}
             self.__XyInfo["register"].append("q"+str(idx))
         # CW pulse info
@@ -157,7 +157,7 @@ class Circuit_info:
             elif name.lower() in ['waveform',"func",'wf']:
                 self.__XyInfo[target_q]["waveform_func"] = kwargs[name]
             elif name.lower() in ['half_scale','half']:
-                self.__XyInfo[target_q]["half_pi_ampScale"]["90"] = kwargs[name]
+                self.__XyInfo[target_q]["pi_ampScale"]["90"] = kwargs[name]
             else:
                 print(name.lower())
                 raise KeyError("I don't know what you are talking about!")
@@ -366,8 +366,8 @@ class Waveform:
         if angle in ["2"]:
             correspond_name = str(int(180/int(angle)))
             # check the /2 modified scale in the spec
-            if correspond_name in list(self.QsXyInfo[target_q]["half_pi_ampScale"].keys()):
-                scale_90 = self.QsXyInfo[target_q]["half_pi_ampScale"][correspond_name]
+            if correspond_name in list(self.QsXyInfo[target_q]["pi_ampScale"].keys()):
+                scale_90 = self.QsXyInfo[target_q]["pi_ampScale"][correspond_name]
             else:
                 scale_90 = 1
             scale = rota_direction*0.5*scale_90
