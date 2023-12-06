@@ -1,7 +1,7 @@
 # import sys
 # sys.path.append('./exp')
 # sys.path.append('./analysis')
-from QM_config_dynamic import QM_config, Circuit_info
+from QM_config_dynamic import QM_config, Circuit_info, initializer
 from qm.QuantumMachinesManager import QuantumMachinesManager
 
 from SQGate_calibration_dConfig import amp_calibration
@@ -13,6 +13,11 @@ from numpy import mean, ndarray, arange
 import matplotlib.pyplot as plt
 from set_octave import OctaveUnit, octave_declaration
 import time
+
+# thermalization by 5*T1
+ 
+
+
 
 # Update a new amp
 def refresh_amp(target_q:str,specs:Circuit_info,config:QM_config,amp_modi_scale:float,mode:str='180'):
@@ -53,10 +58,10 @@ def new_N_condition(x:ndarray,amp_scale:float,sweetspot:int=12):
     else:
         return False
     
-def amp_cali_examine(config:QM_config,qm_machine:QuantumMachinesManager):
+def amp_cali_examine(config:QM_config,qm_machine:QuantumMachinesManager, init_macro:tuple):
     sequence_repeat = 30
     amp_modify_range = 0.25/float(sequence_repeat)
-    results = amp_calibration(amp_modify_range, q_name, ro_element, config.get_config(), qm_machine, n_avg=500, sequence_repeat=sequence_repeat, simulate=False, mode='wait')
+    results = amp_calibration(amp_modify_range, q_name, ro_element, config.get_config(), qm_machine, n_avg=500, sequence_repeat=sequence_repeat, simulate=False, mode='wait', init_macro)
     x = results['x']
     y_90 = results[ro_element[0]][0].transpose()[0] 
     y_180 = results[ro_element[0]][0].transpose()[1]
@@ -76,7 +81,7 @@ def amp_cali_examine(config:QM_config,qm_machine:QuantumMachinesManager):
 
 
 
-def amp_CaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:QuantumMachinesManager,request:str='basic'):
+def amp_CaliFlow(target_q:str, spec:Circuit_info, config:QM_config, qm_machine:QuantumMachinesManager, request:str='basic', init_macro:tuple=None):
     '''
         operations: 180 for X180 operation, 90 for X90 operation.\n
         request: 'basic' for max(N) = 10, 'medium' for max(N) = 30, 'tough' for max(N) = 60
@@ -104,7 +109,7 @@ def amp_CaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
 
         print("@@@@@@@@@Before Cali amp:")
         print(spec.get_spec_forConfig('xy')[target_q][f'pi_amp'])
-        results = amp_calibration(amp_modify_range, q_name, ro_element, config.get_config(), qm_machine, n_avg=500, sequence_repeat=sequence_repeat, simulate=False, mode='wait')
+        results = amp_calibration(amp_modify_range, q_name, ro_element, config.get_config(), qm_machine, 500, sequence_repeat, False, 'wait', init_macro)
         # fig, ax = plt.subplots(2, len(ro_element))
         x = results['x']
         # for r_idx, r_name in enumerate(ro_element):
@@ -158,7 +163,7 @@ def amp_CaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
     
     # plot and check 
     print("Exam:")
-    amp_cali_examine(config,qm_machine)
+    amp_cali_examine(config,qm_machine,init_macro)
     
     return spec, config
 
@@ -183,7 +188,7 @@ def break_optimize_condition(new_ans, ans_rec_list, threshold=0.05):
             return False
         
 
-def AutoCaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:QuantumMachinesManager):
+def AutoCaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:QuantumMachinesManager, init_macro:tuple=None):
         xyw = spec.get_spec_forConfig('xy')[target_q]['pi_len']
         # ret = AllXY_executor(q_name,ro_element[0],xyw,dyna_config.get_config(),qmm,mode='wait')
 
@@ -201,7 +206,7 @@ def AutoCaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
         while True:
             amp_rec.append(float(spec.get_spec_forConfig('xy')[target_q][f'pi_amp']))
             freq_rec.append(float(spec.get_spec_forConfig('xy')[target_q][f'qubit_IF']))
-            spec,config = amp_CaliFlow(target_q,spec,config,qm_machine,level)
+            spec,config = amp_CaliFlow(target_q,spec,config,qm_machine,level, init_macro)
             # allXY_ret = AllXY_executor(q_name,ro_element[0],xyw,10000,dyna_config.get_config(),qmm,mode='wait')
             amp_ans.append(float(spec.get_spec_forConfig('xy')[target_q][f'pi_amp']))
 
@@ -215,7 +220,7 @@ def AutoCaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
 
             n_avg = 1000  # Number of averages
             
-            output_data, evo_time = Ramsey_freq_calibration( virtual_detune, [q_name], ro_element,config.get_config(), qm_machine, n_avg=n_avg, simulate=False, mode='live')
+            output_data, evo_time = Ramsey_freq_calibration( virtual_detune, [q_name], ro_element,config.get_config(), qm_machine, n_avg=n_avg, simulate=False, mode='live', initializer=init_macro)
             ans = plot_ana_result(evo_time,output_data[ro_element[0]][0],virtual_detune)
 
             spec,config = refresh_Q_IF(target_q,spec,config,ans)
@@ -286,11 +291,11 @@ if __name__ == '__main__':
     dyna_config.import_config(path=r'.\TEST\BETAsite\QM\OPXPlus\3_5q Tune up\Standard Configuration\Config_Allidle_1205')
     the_specs = Circuit_info(q_num=5)
     the_specs.import_spec(path=r'.\TEST\BETAsite\QM\OPXPlus\3_5q Tune up\Standard Configuration\Spec_Allidle_1205')
-
-    the_specs, dyna_config = AutoCaliFlow(target_q,the_specs,dyna_config,qmm)
+    initial_macro = initializer((the_specs.give_WaitTime_with_q(target_q,5),),mode='wait')
+    the_specs, dyna_config = AutoCaliFlow(target_q,the_specs,dyna_config,qmm,initial_macro)
     
     the_specs.export_spec(path=r'.\TEST\BETAsite\QM\OPXPlus\3_5q Tune up\Standard Configuration\Spec_1205_Calied')
     dyna_config.export_config(path=r'.\TEST\BETAsite\QM\OPXPlus\3_5q Tune up\Standard Configuration\Config_1205_Calied')
     print(the_specs.get_ReadableSpec_fromQ(target_q,'xy'))
     xyw = the_specs.get_spec_forConfig('xy')[target_q]['pi_len']
-    ret = AllXY_executor(q_name,ro_element[0],xyw,10000,dyna_config.get_config(),qmm,mode='live')
+    ret = AllXY_executor(q_name,ro_element[0],xyw,10000,dyna_config.get_config(),qmm,mode='live',initializer=initial_macro)

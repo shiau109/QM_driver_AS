@@ -27,7 +27,8 @@ from qualang_tools.results import progress_counter
 import warnings
 
 warnings.filterwarnings("ignore")
-
+from qualang_tools.units import unit
+u = unit(coerce_to_integer=True)
 ###################
 #   Data Saving   #
 ###################
@@ -122,7 +123,7 @@ def allXY(pulses, qb, res, xyw):
 ###################
 # The QUA program #
 ###################
-def AllXY_executor(qb,res,xyw,n_avg,configuration,qm_mache,mode):
+def AllXY_executor(qb,res,xyw,n_avg,configuration,qm_mache,mode,initializer:tuple=None):
     with program() as ALL_XY:
         n = declare(int)
         n_st = declare_stream()
@@ -140,8 +141,15 @@ def AllXY_executor(qb,res,xyw,n_avg,configuration,qm_mache,mode):
             # Get a value from the pseudo-random number generator on the OPX FPGA
             assign(r_, r.rand_int(21))
             # # Wait for the qubit to decay to the ground state - Can be replaced by active reset
-            # wait(thermalization_time * u.ns, qb)
-            wait(100 * u.us, qb)
+            if initializer is None:
+                # wait(thermalization_time * u.ns, qb)
+                wait(100 * u.us, qb)
+            else:
+                try:
+                    initializer[0](*initializer[1])
+                except:
+                    print("Initializer didn't work!")
+                    wait(100*u.us)
             # Plays a random XY sequence
             # The switch/case method allows to map a python index (here "i") to a QUA number (here "r_") in order to switch
             # between elements in a python list (here "sequence") that cannot be converted into a QUA array (here because it

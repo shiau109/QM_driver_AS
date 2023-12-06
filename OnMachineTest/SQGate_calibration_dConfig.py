@@ -27,16 +27,18 @@ from qualang_tools.plot import interrupt_on_close
 from qualang_tools.loops import from_array
 import matplotlib.pyplot as plt
 import warnings
+
 from RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 
 warnings.filterwarnings("ignore")
-
+from qualang_tools.units import unit
+u = unit(coerce_to_integer=True)
 ###################
 # The QUA program #
 ###################
 
 
-def DRAG_calibration_Yale( drag_coef, q_name:str, ro_element:list, config, qmm:QuantumMachinesManager, n_avg=100 ):
+def DRAG_calibration_Yale( drag_coef, q_name:str, ro_element:list, config, qmm:QuantumMachinesManager, n_avg=100, mode:str='live', initializer:tuple=None):
     """
      "The DRAG coefficient 'drag_coef' must be different from 0 in the config."
     """
@@ -58,8 +60,16 @@ def DRAG_calibration_Yale( drag_coef, q_name:str, ro_element:list, config, qmm:Q
                 # Play the 1st sequence with varying DRAG coefficient
                 with for_each_( op_idx, [0, 1]):                      
                     # Init
-                    wait(thermalization_time * u.ns)
-                    # wait(100)
+                    if initializer is None:
+                        wait(100*u.us)
+                        #wait(thermalization_time * u.ns)
+                    else:
+                        try:
+                            initializer[0](*initializer[1])
+                        except:
+                            print("Initializer didn't work!")
+                            wait(100*u.us)
+
 
                     # Operation
                     with switch_(op_idx, unsafe=True):
@@ -138,7 +148,10 @@ def DRAG_calibration_Yale( drag_coef, q_name:str, ro_element:list, config, qmm:Q
     
     return output_data
 
-def amp_calibration( amp_modify_range, q_name:str, ro_element:list, config, qmm:QuantumMachinesManager, sequence_repeat:int=1, n_avg=100,  simulate:bool=True, mode:str='live'):
+def amp_calibration( amp_modify_range, q_name:str, ro_element:list, config, qmm:QuantumMachinesManager, sequence_repeat:int=1, n_avg=100,  simulate:bool=True, mode:str='live', initializer:tuple=None):
+    '''
+        initializer from `QM_config_dynamic.initializer()`
+    '''
     a_min = 1-amp_modify_range
     a_max = 1+amp_modify_range
     da = amp_modify_range/20
@@ -158,10 +171,16 @@ def amp_calibration( amp_modify_range, q_name:str, ro_element:list, config, qmm:
             with for_(*from_array(a, amps)):
                 with for_each_( r_idx, [0, 1]):                      
                     # Init
-                    # wait(thermalization_time * u.ns)
-                    wait(100 * u.us)
-                    # wait(100)
-
+                    if initializer is None:
+                        # wait(thermalization_time * u.ns)
+                        wait(100 * u.us)
+                    else:
+                        try:
+                            initializer[0](*initializer[1])
+                        except:
+                            print("Initializer didn't work!")
+                            wait(100*u.us)
+                   
                     # Operation
                     with switch_(r_idx, unsafe=True):
                         with case_(0):

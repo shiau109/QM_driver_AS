@@ -8,6 +8,27 @@ from numpy import array, cos, sin
 u = unit(coerce_to_integer=True)
 
 
+
+def initializer(Paras:tuple,mode:str):
+    '''
+        initialize the measurement basic mode is wait for thermalization.\n
+        Paras: (parameters ex.30*u.us,),\n
+        mode: "wait" for wait a given time, "active" for active reset.
+        return: (func,(parmeters))
+    '''
+    if mode == 'wait':
+        from qm.qua import wait
+        if isinstance(Paras,int) or isinstance(Paras,float):
+            return (wait,(Paras,))
+        elif isinstance(Paras,tuple) :
+            return (wait,Paras)
+        else:
+            raise TypeError("function `wait()` should get the argument with type int, float or tuple!")
+    else:
+        from qm.qua import wait
+        return (wait,(100*u.us,))
+
+
 ############################################
 #            control_spec class            #
 ############################################
@@ -212,17 +233,17 @@ class Circuit_info:
         """
         self.__DecoInfo = {}
         for idx in range(1,self.q_num+1):
-            self.__DecoInfo[f"q{idx}"] = {"T1":0,"T2":0}
+            self.__DecoInfo[f"q{idx}"] = {"T1":0,"T2":0,"T2e":0,"T2s":0}
 
     def update_DecoInfo_for(self,target_q:str,**kwargs):
         '''
             update the decoherence info for target qubit like T1 and T2.\n
             target_q : "q1"\n
-            kwargs : "T1"= us, "T2"= us. Both or one of them are surpported.
+            kwargs : "T1"= us, "T2"= us, "T2e"=us,  "T2s"(T2*)=us one of them or all are surpported.
         '''
         if kwargs != {}:
             for info in kwargs:
-                if info.lower() in ["t1","t2"]:
+                if info.lower() in ["t1","t2","t2e","t2s"]:
                    self.__DecoInfo[target_q][info.upper()] = kwargs[info] * u.us  
                 else:
                     raise KeyError("Only two types are surpported: T1 and T2!")
@@ -330,6 +351,39 @@ class Circuit_info:
                 return deepcopy(self.__WireInfo)
             case _:
                 raise KeyError(f"I don't know which info you need with the given info name: {whichSpec}")
+
+    def give_WaitTime_with_q(self,target_q:str='all',wait_scale:float=5):
+        '''
+            return the T1 based on the given target_q multiplied the waiting scale: scale*T1\n
+            target_q: "q3",\n
+            wait_scale: 5.5
+        '''
+        if target_q=='all':
+            qs = list(self.__DecoInfo.keys())
+            if len(qs)>0:
+                T1s = []
+                for q in qs:
+                    T1s.append(self.__DecoInfo[q]["T1"])
+                from numpy import array, max
+                target_T1 = max(array(T1s)) 
+            else:
+                wait_scale = 1
+                target_T1 = 100 * u.us
+        else:
+            try:
+                target_T1 = float(self.__DecoInfo[target_q]["T1"])  
+                if target_T1 == 0:
+                    print(f"the decoherence info haven't been registered by {target_q}, i'll give u 100 us!")
+                    target_T1 = 100 * u.us
+                    wait_scale = 1
+                
+            except:
+                print(f"the decoherence info haven't been registered by {target_q}, i'll give u 100 us!")
+                target_T1 = 100 * u.us
+                wait_scale = 1
+        return wait_scale*target_T1
+
+
 
 class Waveform:
     def __init__(self,xyInfo:dict):

@@ -148,14 +148,16 @@ def play_sequence(sequence_list, depth, q_name):
                 play("-x90", q_name)
 
 def single_qubit_RB( max_circuit_depth, delta_clifford, q_name:str, ro_element:list, config, qmm:QuantumMachinesManager, sequence_repeat:int=1, n_avg=100, state_discrimination:list=None, initialization_macro=None, simulate:bool=True ):
-    
+    '''
+        initialization_macro from `QM_config_dynamic.initializer()`
+    '''
     
     is_discriminated = False
     if state_discrimination is not None:
         is_discriminated = True
 
     is_const_init = False
-    if initialization_macro is not None:
+    if initialization_macro is None:
         is_const_init = True  
 
     gate_step = max_circuit_depth / delta_clifford + 1
@@ -197,7 +199,12 @@ def single_qubit_RB( max_circuit_depth, delta_clifford, q_name:str, ro_element:l
                         if is_const_init:
                             wait(100 * u.us)
                         else:
-                            initialization_macro()
+                            try:
+                                initialization_macro[0](*initialization_macro[1])
+                            except:
+                                print("initialization_macro didn't work!")
+                                wait(100 * u.us)
+                            
                         align()
 
                         # Operation
@@ -343,7 +350,7 @@ def ana_SQRB( x, y ):
         f"Gate infidelity: r_g = {np.format_float_scientific(r_g, precision=2)}  ({r_g_std:.1})"
     )
     
-    return pars
+    return pars, np.format_float_scientific(r_g, precision=2)
 
 def plot_SQRB_live( x, y, ax ):
     ax.plot(x, y, marker=".")
@@ -354,7 +361,7 @@ def plot_SQRB_live( x, y, ax ):
 def plot_SQRB_result( x, y, yerr, fig:Figure=None ):
 
     fig, ax = plt.subplots()
-    par = ana_SQRB( x, y )
+    par,_ = ana_SQRB( x, y )
     ax.errorbar(x, y, yerr=yerr, marker=".")
     ax.plot(x, power_law(x, *par), linestyle="--", linewidth=2)
     ax.set_xlabel("Number of Clifford gates")
@@ -393,4 +400,7 @@ if __name__ == '__main__':
     state_discrimination = [1e-3]
     x, value_avg, error_avg = single_qubit_RB( max_circuit_depth, delta_clifford, q_name, ro_element, config, qmm )
     
+    # plot
     plot_SQRB_result( x, value_avg, error_avg )
+    # get gate infidelity only
+    _, gate_infidelity = ana_SQRB( x, value_avg )
