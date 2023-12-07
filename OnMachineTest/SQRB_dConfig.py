@@ -209,9 +209,9 @@ def single_qubit_RB( max_circuit_depth, delta_clifford, q_name:str, ro_element:l
 
                         # Operation
                         # The strict_timing ensures that the sequence will be played without gaps
-                        with strict_timing_():
+                        #with strict_timing_():
                             # Play the random sequence of desired depth
-                            play_sequence(sequence_list, depth, q_name)
+                        play_sequence(sequence_list, depth, q_name)
                         # Align the two elements to measure after playing the circuit.
                         align()
 
