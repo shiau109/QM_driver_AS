@@ -402,7 +402,7 @@ if __name__ == '__main__':
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
     
     warnings.filterwarnings("ignore")
-    from QM_config_dynamic_v1 import QM_config, Circuit_info, initializer
+    from QM_config_dynamic import QM_config, Circuit_info, initializer
     dyna_config = QM_config()
     dyna_config.import_config(path=r'.\TEST\BETAsite\QM\OPXPlus\3_5q Tune up\Standard Configuration\Config_1207_Calied')
     the_specs = Circuit_info(q_num=5)
