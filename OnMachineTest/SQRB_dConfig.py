@@ -53,7 +53,7 @@ def power_law(power, a, b, p):
 
 # List of recovery gates from the lookup table
 inv_gates = [int(np.where(c1_table[i, :] == 0)[0][0]) for i in range(24)]
-def generate_sequence():
+def generate_sequence(max_circuit_depth,seed=345324):
     cayley = declare(int, value=c1_table.flatten().tolist())
     inv_list = declare(int, value=inv_gates)
     current_state = declare(int)
@@ -73,7 +73,7 @@ def generate_sequence():
     return sequence, inv_gate
 
 
-def play_sequence(sequence_list, depth, q_name):
+def play_sequence(sequence_list, depth, q_name, pi_len):
     i = declare(int)
     with for_(i, 0, i <= depth, i + 1):
         with switch_(sequence_list[i], unsafe=True):
@@ -147,7 +147,7 @@ def play_sequence(sequence_list, depth, q_name):
                 play("y90", q_name)
                 play("-x90", q_name)
 
-def single_qubit_RB( max_circuit_depth, delta_clifford, q_name:str, ro_element:list, config, qmm:QuantumMachinesManager, sequence_repeat:int=1, n_avg=100, state_discrimination:list=None, initialization_macro=None, simulate:bool=True ):
+def single_qubit_RB( pi_len, max_circuit_depth, delta_clifford, q_name:str, ro_element:list, config, qmm:QuantumMachinesManager, num_of_sequences:int=20, n_avg=100, state_discrimination:list=None, initialization_macro=None, simulate:bool=False ):
     '''
         initialization_macro from `QM_config_dynamic.initializer()`
     '''
@@ -183,7 +183,7 @@ def single_qubit_RB( max_circuit_depth, delta_clifford, q_name:str, ro_element:l
             state_st = declare_stream()
 
         with for_(m, 0, m < num_of_sequences, m + 1):  # QUA for_ loop over the random sequences
-            sequence_list, inv_gate_list = generate_sequence()  # Generate the random sequence of length max_circuit_depth
+            sequence_list, inv_gate_list = generate_sequence(max_circuit_depth)  # Generate the random sequence of length max_circuit_depth
 
             assign(depth_target, 0)  # Initialize the current depth to 0
 
@@ -209,9 +209,9 @@ def single_qubit_RB( max_circuit_depth, delta_clifford, q_name:str, ro_element:l
 
                         # Operation
                         # The strict_timing ensures that the sequence will be played without gaps
-                        with strict_timing_():
+                        # with strict_timing_():
                             # Play the random sequence of desired depth
-                            play_sequence(sequence_list, depth, q_name)
+                        play_sequence(sequence_list, depth, q_name, pi_len)
                         # Align the two elements to measure after playing the circuit.
                         align()
 
@@ -243,16 +243,16 @@ def single_qubit_RB( max_circuit_depth, delta_clifford, q_name:str, ro_element:l
                 ).average().save("state_avg")
             else:
                 # multiRO_pre_save(iqdata_stream, ro_element, (gate_step,2) )
-                iqdata_stream[0][0].buffer(n_avg).map(FUNCTIONS.average()).buffer(gate_step).buffer(
+                iqdata_stream[1][0].buffer(n_avg).map(FUNCTIONS.average()).buffer(gate_step).buffer(
                     num_of_sequences
                 ).save("I")
-                iqdata_stream[0][2].buffer(n_avg).map(FUNCTIONS.average()).buffer(gate_step).buffer(
+                iqdata_stream[3][0].buffer(n_avg).map(FUNCTIONS.average()).buffer(gate_step).buffer(
                     num_of_sequences
                 ).save("Q")
-                iqdata_stream[0][1].buffer(n_avg).map(FUNCTIONS.average()).buffer(gate_step).average().save(
+                iqdata_stream[1][0].buffer(n_avg).map(FUNCTIONS.average()).buffer(gate_step).average().save(
                     "I_avg"
                 )
-                iqdata_stream[0][3].buffer(n_avg).map(FUNCTIONS.average()).buffer(gate_step).average().save(
+                iqdata_stream[3][0].buffer(n_avg).map(FUNCTIONS.average()).buffer(gate_step).average().save(
                     "Q_avg"
                 )
 
@@ -354,53 +354,85 @@ def ana_SQRB( x, y ):
 
 def plot_SQRB_live( x, y, ax ):
     ax.plot(x, y, marker=".")
-    ax.xlabel("Number of Clifford gates")
-    ax.ylabel("Sequence Fidelity")
-    ax.title("Single qubit RB")
+    ax.set_xlabel("Number of Clifford gates")
+    ax.set_ylabel("Sequence Fidelity")
+    ax.set_title("Single qubit RB")
+    
 
 def plot_SQRB_result( x, y, yerr, fig:Figure=None ):
 
     fig, ax = plt.subplots()
-    par,_ = ana_SQRB( x, y )
+    par,epg = ana_SQRB( x, y )
     ax.errorbar(x, y, yerr=yerr, marker=".")
     ax.plot(x, power_law(x, *par), linestyle="--", linewidth=2)
     ax.set_xlabel("Number of Clifford gates")
     ax.set_ylabel("Sequence Fidelity")
-    ax.set_title("Single qubit RB")
+    ax.set_title(f"Single qubit RB, gate_error={epg}")
+    plt.show()
+
 
 
 
 if __name__ == '__main__':
+    from set_octave import OctaveUnit, octave_declaration
+    qop_ip = '192.168.1.105'
+    qop_port = None
+    cluster_name = 'QPX_2'
+    target_q = 'q1'
+
+    port_mapping = {
+        ("con1", 1): ("octave1", "I1"),
+        ("con1", 2): ("octave1", "Q1"),
+        ("con1", 3): ("octave1", "I2"),
+        ("con1", 4): ("octave1", "Q2"),
+        ("con1", 5): ("octave1", "I3"),
+        ("con1", 6): ("octave1", "Q3"),
+        ("con1", 7): ("octave1", "I4"),
+        ("con1", 8): ("octave1", "Q4"),
+        ("con1", 9): ("octave1", "I5"),
+        ("con1", 10): ("octave1", "Q5"),
+    }
+
+    octave_1 = OctaveUnit("octave1", qop_ip, port=11250, con="con1", clock="Internal", port_mapping=port_mapping)
+    # Add the octaves
+    octaves = [octave_1]
+    # Configure the Octaves
+    octave_config = octave_declaration(octaves)
+
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
     
     warnings.filterwarnings("ignore")
-    from QM_config_dynamic import QM_config, Circuit_info
+    from QM_config_dynamic_v1 import QM_config, Circuit_info, initializer
     dyna_config = QM_config()
-    dyna_config.import_config(path=r'.\TEST\BETAsite\QM\OPXPlus\3_5q Tune up\Standard Configuration\Config_1205_Calied')
+    dyna_config.import_config(path=r'.\TEST\BETAsite\QM\OPXPlus\3_5q Tune up\Standard Configuration\Config_1207_Calied')
     the_specs = Circuit_info(q_num=5)
-    the_specs.import_spec(path=r'.\TEST\BETAsite\QM\OPXPlus\3_5q Tune up\Standard Configuration\Spec_1205_Calied')
+    the_specs.import_spec(path=r'.\TEST\BETAsite\QM\OPXPlus\3_5q Tune up\Standard Configuration\Spec_1207_Calied')
     
     config = dyna_config.get_config()
-    pi_len = the_specs.get_spec_forConfig('xy')['q1']['pi_len']
+    
     ##############################
     # Program-specific variables #
     ##############################
-    q_name = "q1_xy"
-    ro_element = ["rr1","rr2","rr3","rr4"]
-    threshold = the_specs.get_spec_forConfig('ro')[q_name]['ge_threshold']
+
+    target_q = 'q1'
 
 
-    num_of_sequences = 350  # Number of random sequences
-    n_avg = 20  # Number of averaging loops for each random sequence
+    q_name = f"{target_q}_xy"
+    ro_element = [f"{target_q}_ro"]
+    threshold = the_specs.get_spec_forConfig('ro')[target_q]['ge_threshold']
+    pi_len = the_specs.get_spec_forConfig('xy')[target_q]['pi_len']
+
+    num_of_sequences = 20  # Number of random sequences
+    n_avg = 100  # Number of averaging loops for each random sequence
     max_circuit_depth = 500  # Maximum circuit depth
     delta_clifford = 10  #  Play each sequence with a depth step equals to 'delta_clifford - Must be > 1
     assert (max_circuit_depth / delta_clifford).is_integer(), "max_circuit_depth / delta_clifford must be an integer."
     seed = 345324  # Pseudo-random number generator seed
     # Flag to enable state discrimination if the readout has been calibrated (rotated blobs and threshold)
     state_discrimination = [1e-3]
-    x, value_avg, error_avg = single_qubit_RB( max_circuit_depth, delta_clifford, q_name, ro_element, config, qmm )
+    x, value_avg, error_avg = single_qubit_RB( pi_len, max_circuit_depth, delta_clifford, q_name, ro_element, dyna_config.get_config(), qmm, num_of_sequences, n_avg )
     
     # plot
     plot_SQRB_result( x, value_avg, error_avg )
     # get gate infidelity only
-    _, gate_infidelity = ana_SQRB( x, value_avg )
+    #_, gate_infidelity = ana_SQRB( x, value_avg )
