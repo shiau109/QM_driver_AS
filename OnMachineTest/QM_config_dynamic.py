@@ -19,9 +19,9 @@ def initializer(Paras:tuple,mode:str):
     if mode == 'wait':
         from qm.qua import wait
         if isinstance(Paras,int) or isinstance(Paras,float):
-            return (wait,(Paras,))
+            return (wait,(Paras//4,))
         elif isinstance(Paras,tuple) :
-            return (wait,Paras)
+            return (wait,(Paras[0]//4,))
         else:
             raise TypeError("function `wait()` should get the argument with type int, float or tuple!")
     else:
@@ -381,9 +381,7 @@ class Circuit_info:
                 print(f"the decoherence info haven't been registered by {target_q}, i'll give u 100 us!")
                 target_T1 = 100 * u.us
                 wait_scale = 1
-        return wait_scale*target_T1
-
-
+        return int(wait_scale*target_T1)
 
 class Waveform:
     def __init__(self,xyInfo:dict):

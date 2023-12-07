@@ -317,10 +317,10 @@ if __name__ == '__main__':
     the_specs = Circuit_info(q_num=5)
     the_specs.import_spec(path=r'.\TEST\BETAsite\QM\OPXPlus\3_5q Tune up\Standard Configuration\Spec_Alloffset_1207')
     xyw = the_specs.get_spec_forConfig('xy')[target_q]['pi_len']
-    init_macro = None #initializer((the_specs.give_WaitTime_with_q(target_q,wait_scale=5),),'wait')
+    init_macro = initializer((the_specs.give_WaitTime_with_q(target_q,wait_scale=5),),'wait')
 
     # RB before Calibrations
-    x, value_avg, error_avg = single_qubit_RB( xyw, max_circuit_depth, delta_clifford, f"{target_q}_xy", [f"{target_q}_ro"], dyna_config.get_config(), qmm, 30, 300, initialization_macro=init_macro )
+    x, value_avg, error_avg = single_qubit_RB( xyw, max_circuit_depth, delta_clifford, f"{target_q}_xy", [f"{target_q}_ro"], dyna_config.get_config(), qmm, 10, 300, initialization_macro=init_macro )
     # plot
     plot_SQRB_result( x, value_avg, error_avg )
     # get gate infidelity only
@@ -332,9 +332,9 @@ if __name__ == '__main__':
     dyna_config.export_config(path=r'.\TEST\BETAsite\QM\OPXPlus\3_5q Tune up\Standard Configuration\Config_1207_Calied')
     print(the_specs.get_ReadableSpec_fromQ(target_q,'xy'))
     
-    ret = AllXY_executor(f"{target_q}_xy",f"{target_q}_ro",xyw,10000,dyna_config.get_config(),qmm,mode='live')
-    # RB before Calibrations
-    x, value_avg, error_avg = single_qubit_RB( xyw, max_circuit_depth, delta_clifford, f"{target_q}_xy", [f"{target_q}_ro"], dyna_config.get_config(), qmm, 30, 300, initialization_macro=init_macro )
-    # plot
+    # ret = AllXY_executor(f"{target_q}_xy",f"{target_q}_ro",xyw,10000,dyna_config.get_config(),qmm,mode='live')
+    # # RB before Calibrations
+    x, value_avg, error_avg = single_qubit_RB( xyw, max_circuit_depth, delta_clifford, f"{target_q}_xy", [f"{target_q}_ro"], dyna_config.get_config(), qmm, 10, 300, initialization_macro=init_macro )
+    # # plot
     plot_SQRB_result( x, value_avg, error_avg )
 
