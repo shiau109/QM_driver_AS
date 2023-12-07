@@ -17,7 +17,8 @@ Prerequisites:
 Next steps before going to the next node:
     - Update the DRAG coefficient (drag_coef) in the configuration.
 """
-
+import sys, os
+sys.path.append(os.getcwd()+"/exp")
 from qm.qua import *
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm import SimulationConfig
@@ -28,7 +29,7 @@ from qualang_tools.loops import from_array
 import matplotlib.pyplot as plt
 import warnings
 
-from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
+from RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 
 warnings.filterwarnings("ignore")
 from qualang_tools.units import unit

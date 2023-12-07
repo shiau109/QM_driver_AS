@@ -16,7 +16,9 @@ Prerequisites:
 Next steps before going to the next node:
     - Update the qubit frequency (qubit_IF_q) in the configuration.
 """
-
+# import error solver
+import sys, os
+sys.path.append(os.getcwd()+"/exp")
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.qua import *
 from qm import SimulationConfig
@@ -25,7 +27,7 @@ import matplotlib.pyplot as plt
 from qualang_tools.loops import from_array
 from qualang_tools.results import fetching_tool, progress_counter
 from qualang_tools.plot import interrupt_on_close
-from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
+from RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 from qualang_tools.plot.fitting import Fit
 import warnings
 
@@ -247,40 +249,41 @@ def plot_ana_result( evo_time, data, detuning, ax=None ):
     return (freq_pos-freq_neg)/2
 
 if __name__ == '__main__':
-    qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-    n_avg = 500  # Number of averages
+    # qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
+    # n_avg = 500  # Number of averages
 
-    ro_element = ["rr1"]
-    q_name =  ["q1_xy"]
-    virtual_detune = 2 # Unit in MHz
-    ans_rec = []
-    for i in range(100):
-        output_data, evo_time = Ramsey_freq_calibration( virtual_detune, q_name, ro_element, config, qmm, n_avg=n_avg, simulate=False, mode="live")
-    #   Data Saving   # 
-    # save_data = False
-    # if save_data:
-    #     from save_data import save_npz
-    #     import sys
-    #     save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
-    #     save_npz(save_dir, save_progam_name, output_data)
+    # ro_element = ["rr1"]
+    # q_name =  ["q1_xy"]
+    # virtual_detune = 2 # Unit in MHz
+    # ans_rec = []
+    # for i in range(100):
+    #     output_data, evo_time = Ramsey_freq_calibration( virtual_detune, q_name, ro_element, config, qmm, n_avg=n_avg, simulate=False, mode="live")
+    # #   Data Saving   # 
+    # # save_data = False
+    # # if save_data:
+    # #     from save_data import save_npz
+    # #     import sys
+    # #     save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
+    # #     save_npz(save_dir, save_progam_name, output_data)
 
-        ans = plot_ana_result(evo_time,output_data[ro_element[0]][0],virtual_detune)
-        ans_rec.append(ans)
+    #     ans = plot_ana_result(evo_time,output_data[ro_element[0]][0],virtual_detune)
+    #     ans_rec.append(ans)
 
-    # # Plot
-    from numpy import array, std, mean
-    std_i = []
-    avg_i = []
-    for i in ans_rec:
-        std_i.append(std(array(ans_rec)))
-        avg_i.append(mean(array(ans_rec)))
-    plt.plot(ans_rec,label='exp')
-    plt.plot(array(avg_i)+array(std_i),label='+1std')
-    plt.plot(array(avg_i)-array(std_i),label='-1std')
-    plt.plot(avg_i,label='mean')
-    plt.title(f'100Ramsey, mean={mean(array(ans_rec))}, std~{round(std(array(ans_rec))*100/mean(array(ans_rec)),2)}% mean')
-    plt.legend()
-    plt.show()
-    plt.pause(0.2)
-    plt.close()
+    # # # Plot
+    # from numpy import array, std, mean
+    # std_i = []
+    # avg_i = []
+    # for i in ans_rec:
+    #     std_i.append(std(array(ans_rec)))
+    #     avg_i.append(mean(array(ans_rec)))
+    # plt.plot(ans_rec,label='exp')
+    # plt.plot(array(avg_i)+array(std_i),label='+1std')
+    # plt.plot(array(avg_i)-array(std_i),label='-1std')
+    # plt.plot(avg_i,label='mean')
+    # plt.title(f'100Ramsey, mean={mean(array(ans_rec))}, std~{round(std(array(ans_rec))*100/mean(array(ans_rec)),2)}% mean')
+    # plt.legend()
+    # plt.show()
+    # plt.pause(0.2)
+    # plt.close()
+    print('yes')
     

@@ -17,7 +17,7 @@ Prerequisites:
 
 from qm.qua import *
 from qm.QuantumMachinesManager import QuantumMachinesManager
-from configuration import *
+# from configuration import *
 import matplotlib.pyplot as plt
 import numpy as np
 from qm import SimulationConfig
@@ -35,9 +35,9 @@ u = unit(coerce_to_integer=True)
 from datetime import datetime
 import sys
 # save_data = True  # Default = False in configuration file
-save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
-save_time = str(datetime.now().strftime("%Y%m%d-%H%M%S"))
-save_path = f"{save_dir}\{save_time}_{save_progam_name}"
+# save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
+# save_time = str(datetime.now().strftime("%Y%m%d-%H%M%S"))
+# save_path = f"{save_dir}\{save_time}_{save_progam_name}"
 
 ##############################
 # Program-specific variables #
@@ -225,15 +225,15 @@ def AllXY_executor(qb,res,xyw,n_avg,configuration,qm_mache,mode,initializer:tupl
                 plt.legend()
                 plt.tight_layout()
                 plt.pause(0.1)
-                if save_data == True:
-                    ###################
-                    #  Figure Saving  #
-                    ################### 
-                    figure = plt.gcf() # get current figure
-                    figure.set_size_inches(9, 5)
-                    plt.tight_layout()
-                    plt.pause(0.1)
-                    plt.savefig(f"{save_path}.png", dpi = 500)   
+                # if save_data == True:
+                #     ###################
+                #     #  Figure Saving  #
+                #     ################### 
+                #     figure = plt.gcf() # get current figure
+                #     figure.set_size_inches(9, 5)
+                #     plt.tight_layout()
+                #     plt.pause(0.1)
+                #     plt.savefig(f"{save_path}.png", dpi = 500)   
                 plt.show()
             qm.close()
             return {}

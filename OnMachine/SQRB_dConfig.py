@@ -18,7 +18,8 @@ Prerequisites:
     - (optional) Having calibrated the readout (readout_frequency, amplitude, duration_optimization IQ_blobs) for better SNR.
     - Set the desired flux bias.
 """
-
+import os, sys
+sys.path.append(os.getcwd()+'/exp')
 from qm.qua import *
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm import SimulationConfig
