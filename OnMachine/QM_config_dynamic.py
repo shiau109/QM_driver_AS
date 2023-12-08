@@ -1038,7 +1038,7 @@ class QM_config():
         Native gates ["x180","y180","x90","-x90","y90","-y90"]
         """
 
-        default_native_gates = [ "x180","y180","x90","-x90","y90","-y90" ]
+        default_native_gates = [ "x180","-x180","y180","x90","-x90","y90","-y90" ]
 
         element["operations"] = {
             "cw": f"const_pulse",
@@ -1091,6 +1091,7 @@ class QM_config():
             }
             match gate_name:
                 case "x180": a = "x"
+                case "-x180": a = "-x"
                 case "y180": a = "y"
                 case "x90": a = "x/2"
                 case "-x90": a = "-x/2"
@@ -1149,6 +1150,7 @@ class QM_config():
                         waveform_name = self.__config["pulses"][f"{waveform}_pulse_{q}"]["waveforms"][waveform_basis]
                         match waveform_name.split('_')[0]:
                             case "x180": a = "x"
+                            case "-x180": a = "-x"
                             case "y180": a = "y"
                             case "x90": a = "x/2"
                             case "-x90": a = "-x/2"

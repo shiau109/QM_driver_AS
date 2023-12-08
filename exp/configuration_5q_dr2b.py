@@ -62,7 +62,7 @@ octave_config = octave_declaration(octaves)
 #                  Qubits                   #
 #############################################
 qubit_frequency = np.zeros(5)
-qubit_frequency[0] = (3.78915+0.0005-0.001) * u.GHz
+qubit_frequency[0] = 3.78715 * u.GHz#(3.78915+0.0005-0.001) * u.GHz
 qubit_frequency[1] = (4.24498) * u.GHz
 qubit_frequency[2] = (3.2334) * u.GHz
 qubit_frequency[3] = (3.5729) * u.GHz
@@ -107,14 +107,14 @@ saturation_amp = 0.5
 pi_len = 24 #24
 pi_sigma = pi_len / 4
 pi_amp = np.zeros(5)
-pi_amp[0] = 0.1023681613115015*0.999*0.9975*0.8*1.07
+pi_amp[0] = 0.102#0.1023681613115015*0.999*0.9975*0.8*1.07
 pi_amp[1] = 0.105406217017*0.998
 pi_amp[2] = 0.173*1.007
 pi_amp[3] = 0.175
 pi_amp[4] = 0.42
 
 r90_amp = np.zeros(5)
-r90_amp[0] = pi_amp[0]/2*1.0705562870200880443
+r90_amp[0] = pi_amp[0]/2*1*1.0705562870200880443
 r90_amp[1] = pi_amp[1]/2 *1.0014855*1.007*1.005
 r90_amp[2] = pi_amp[2]/2*1.02
 r90_amp[3] = pi_amp[3]/2
