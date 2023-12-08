@@ -51,7 +51,7 @@ def Ramsey_freq_calibration( virtial_detune_freq, q_name:list, ro_element:list, 
     point_per_period = 20
     Ramsey_period = (1e3/virtial_detune_freq)* u.ns
     tick_resolution = (Ramsey_period//(4*point_per_period))
-    evo_time_tick_max = tick_resolution *point_per_period*5
+    evo_time_tick_max = tick_resolution *point_per_period*6
     evo_time_tick = np.arange( 4, evo_time_tick_max, tick_resolution)
     evo_time = evo_time_tick*4
     time_len = len(evo_time)
@@ -250,8 +250,8 @@ if __name__ == '__main__':
     virtual_detune = 1 # Unit in MHz
     output_data, evo_time = Ramsey_freq_calibration( virtual_detune, q_name, ro_element, config, qmm, n_avg=n_avg, simulate=False)
     #   Data Saving   # 
-    save_data = True
-    if save_data == True:
+    save_data = False
+    if save_data:
         from save_data import save_npz
         import sys
         save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program

@@ -312,9 +312,9 @@ if __name__ == '__main__':
     # load config file
     dyna_config = QM_config()
     
-    dyna_config.import_config(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachineTest/Config_Alloffset_1207')
+    dyna_config.import_config(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Config_Alloffset_1207')
     the_specs = Circuit_info(q_num=5)
-    the_specs.import_spec(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachineTest/Spec_Alloffset_1207')
+    the_specs.import_spec(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Spec_Alloffset_1207')
     xyw = the_specs.get_spec_forConfig('xy')[target_q]['pi_len']
     init_macro = initializer((the_specs.give_WaitTime_with_q(target_q,wait_scale=5),),'wait')
 
@@ -327,8 +327,8 @@ if __name__ == '__main__':
 
     the_specs, dyna_config = AutoCaliFlow(target_q,the_specs,dyna_config,qmm,1.0,init_macro)
     
-    the_specs.export_spec(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachineTest/Spec_1207_Calied')
-    dyna_config.export_config(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachineTest/Config_1207_Calied')
+    the_specs.export_spec(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Spec_1207_Calied')
+    dyna_config.export_config(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Config_1207_Calied')
     print(the_specs.get_ReadableSpec_fromQ(target_q,'xy'))
     
     # ret = AllXY_executor(f"{target_q}_xy",f"{target_q}_ro",xyw,10000,dyna_config.get_config(),qmm,mode='live')
