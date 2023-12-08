@@ -15,14 +15,14 @@ warnings.filterwarnings("ignore")
 def flux_twotone_qubit(q_id, Qi, flux_Qi, flux, plot_index, simulate,qmm):
     ### The resonator freq will vary with flux
     if Qi == flux_Qi:
-        res_F = cosine_func( flux + operation_flux_point[Qi-1], *g1[Qi-1])
+        res_F = cosine_func( flux + idle_flux_point[Qi-1], *g1[Qi-1])
         res_IF = (res_F - resonator_LO)/1e6
         res_IF_list = []
         for IF in res_IF:
             res_IF_list.append(int(IF * u.MHz)) 
     ### Assume the crosstalk too weak to influence other resonator freq
     else: 
-        res_F = cosine_func( operation_flux_point[Qi-1], *g1[Qi-1])
+        res_F = cosine_func( idle_flux_point[Qi-1], *g1[Qi-1])
         res_IF = (res_F - resonator_LO)/1e6
         res_IF = int(res_IF * u.MHz)
     with program() as multi_qubit_spec_vs_flux:
@@ -37,10 +37,10 @@ def flux_twotone_qubit(q_id, Qi, flux_Qi, flux, plot_index, simulate,qmm):
         index = declare(int, value=0) 
         with for_(n, 0, n < n_avg, n + 1):
             for i in q_id:
-                set_dc_offset(f"q{i+1}_z", "single", operation_flux_point[i])
+                set_dc_offset(f"q{i+1}_z", "single", idle_flux_point[i])
             assign(index, 0)     
             with for_(*from_array(dc, flux)):
-                set_dc_offset(f"q{flux_Qi}_z", "single", dc + operation_flux_point[flux_Qi-1])  
+                set_dc_offset(f"q{flux_Qi}_z", "single", dc + idle_flux_point[flux_Qi-1])  
                 ### Constantly varying resonator freq corresponding to the flux
                 if Qi==flux_Qi: update_frequency(f"rr{Qi}", resonator_freq[index])                
                 with for_(*from_array(df, dfs)):
@@ -198,9 +198,6 @@ Flux = np.zeros((len(q_id), len(flux)))
 Frequency = np.zeros((len(q_id), len(dfs)))
 Amplitude = np.zeros((len(q_id), len(flux), len(dfs)))
 Phase = np.zeros((len(q_id), len(flux), len(dfs)))
-operation_flux_point = [0, -0.3529, -0.3421, -0.3433, -3.400e-01] ###  idle point
-# operation_flux_point = [0, -3.000e-01, -3.450e-01, -0.3433, -3.400e-01]   ###  CZ point
-
 simulate = False
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
 I, Q = flux_twotone_qubit(q_id,Qi,flux_Qi,flux,plot_index,simulate,qmm)

@@ -110,7 +110,7 @@ def Ramsey_freq_calibration( virtial_detune_freq, q_name:list, ro_element:list, 
 
     if simulate:
         # Simulates the QUA program for the specified duration
-        simulation_config = SimulationConfig(duration=20_000)  # In clock cycles = 4ns
+        simulation_config = SimulationConfig(duration=10_000)  # In clock cycles = 4ns
         job = qmm.simulate(config, ramsey, simulation_config)
         job.get_simulated_samples().con1.plot()
         job.get_simulated_samples().con2.plot()
@@ -250,7 +250,7 @@ if __name__ == '__main__':
     virtual_detune = 1 # Unit in MHz
     output_data, evo_time = Ramsey_freq_calibration( virtual_detune, q_name, ro_element, config, qmm, n_avg=n_avg, simulate=False)
     #   Data Saving   # 
-    save_data = True
+    save_data = False
     if save_data == True:
         from save_data import save_npz
         import sys

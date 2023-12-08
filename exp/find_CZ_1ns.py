@@ -39,11 +39,11 @@ def CZ_1ns(q_id,Qi_list,flux_Qi,amps,const_flux_len,simulate,qmm):
         a = declare(fixed)  
         segment = declare(int)  
         for i in q_id:
-            res_F = cosine_func(operation_flux_point[i], *g1[i])
+            res_F = cosine_func(idle_flux_point[i], *g1[i])
             res_F = (res_F - resonator_LO)/1e6
             res_IF.append(int(res_F * u.MHz))
             resonator_freq[q_id.index(i)] = declare(int, value=res_IF[q_id.index(i)])
-            set_dc_offset(f"q{i+1}_z", "single", operation_flux_point[i])
+            set_dc_offset(f"q{i+1}_z", "single", idle_flux_point[i])
             update_frequency(f"rr{i+1}", resonator_freq[q_id.index(i)])
         wait(flux_settle_time * u.ns)
         with for_(n, 0, n < n_avg, n + 1):
@@ -53,16 +53,16 @@ def CZ_1ns(q_id,Qi_list,flux_Qi,amps,const_flux_len,simulate,qmm):
                         for excited_Qi in excited_Qi_list:
                             play("x180", f"q{excited_Qi}_xy")
                     align()
-                    wait(flux_settle_time * u.ns)
+                    wait(5)
                     with switch_(segment):
                         for j in range(0, const_flux_len + 1):
                             with case_(j):
                                 square_pulse_segments[j].run(amp_array=[(f"q{flux_Qi}_z", a)])
                     align()
-                    wait(flux_settle_time * u.ns)
+                    wait(5)
                     align()
                     multiplexed_readout(I, I_st, Q, Q_st, resonators=[x+1 for x in q_id], weights="rotated_")
-                    # wait(thermalization_time * u.ns)
+                    wait(thermalization_time * u.ns)
             save(n, n_st)
         with stream_processing():
             n_st.save("n")
@@ -119,15 +119,14 @@ flux_Qi = 2
 scale_reference = const_flux_amp 
 Qi_list = [2,3]
 excited_Qi_list = [2,3]
-n_avg = 100  
-operation_flux_point = [0, -0.3529, -0.3421, -0.3433, -3.400e-01]
+n_avg = 500  
 amps = np.arange(0.33, 0.44, 0.001) 
 const_flux_len = 50
 flux_waveform = np.array([const_flux_amp] * const_flux_len)
 square_pulse_segments = baked_waveform(flux_waveform, const_flux_len, flux_Qi)
-for list in square_pulse_segments:
-    print('-'*20)
-    print(list.get_waveforms_dict())
+# for list in square_pulse_segments:
+#     print('-'*20)
+#     print(list.get_waveforms_dict())
 
 simulate = False
 q_id = [1,2,3,4]

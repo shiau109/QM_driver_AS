@@ -15,9 +15,9 @@ u = unit(coerce_to_integer=True)
 ######################
 # Either using Cluster or Port:
 cluster_name = "QPX_3"  # Write your cluster_name if version >= QOP220
-qop_ip = "qum.phys.sinica.edu.tw"  #"192.168.1.146"  # Write the QM router IP address
+# qop_ip = "192.168.1.146"  # Write the QM router IP address
 qop_port = 9803  # Write the QOP port if version < QOP220
-# qop_ip = "qum.phys.sinica.edu.tw"  # Write the QM router IP address
+qop_ip = "qum.phys.sinica.edu.tw"  # Write the QM router IP address
 # qop_port = 9800  # Write the QOP port if version < QOP220
 
 ###################
@@ -64,16 +64,16 @@ octave_config = octave_declaration(octaves)
 qubit_LO = np.zeros(5)
 qubit_LO[0] = (4.055) * u.GHz
 qubit_LO[1] = (4.3) * u.GHz
-qubit_LO[2] = (3.6) * u.GHz  ### idle point 
+qubit_LO[2] = (3.85) * u.GHz  ### idle point 
 qubit_LO[3] = (3.95) * u.GHz
 qubit_LO[4] = (4.75) * u.GHz
 
 # Qubits IF
 qubit_IF = np.zeros(5)
 qubit_IF[0] = (-116.8+0.245) * u.MHz       # Q1
-qubit_IF[1] = (-100+1.116-0.208) * u.MHz      # Q2
+qubit_IF[1] = (-99.153+0.345-0.263-1.4) * u.MHz      # Q2
 # qubit_IF[2] = (-195.153) * u.MHz
-qubit_IF[2] = (-71.3) * u.MHz
+qubit_IF[2] = (-317.056-0.45) * u.MHz
 # qubit_IF[2] = (-211-0.154-0.287) * u.MHz          # idle point Q3 at LO 3.3
 # qubit_IF[2] = (-323.81+0.36) * u.MHz   # idle point Q3 at LO 3.5
 qubit_IF[3] = (-89.5911-0.272) * u.MHz     # Q4
@@ -98,33 +98,32 @@ saturation_amp = 0.1
 # Pi pulse parameters
 pi_len = 40
 pi_sigma = pi_len / 4
-pi_amp_q1 = 0.15*0.872*0.975*0.97
-pi_amp_q2 = 0.13987*1.05*1.01*1.005*0.9996
-pi_amp_q3 = 0.02355*1.5*0.9825*1.9325
+pi_amp_q1 = 0.15*0.872*0.975*0.97/3
+pi_amp_q2 = 0.14913/3*0.98*1.0007
+pi_amp_q3 = 0.07726*0.98768*0.9988
 pi_amp_q4 = 0.15365
-# pi_amp_q4 = 0.1*1.135*1.005*0.805
 pi_amp_q5 = 0.5
 
 r90_amp_q1 = pi_amp_q1/2 
-r90_amp_q2 = pi_amp_q2/2*1.05*0.995*1.0008
-r90_amp_q3 = pi_amp_q3/2
+r90_amp_q2 = pi_amp_q2/2*0.9894*1.013*0.998*0.999
+r90_amp_q3 = pi_amp_q3/2*0.98884*1.02*1.00207
 r90_amp_q4 = pi_amp_q4/2 *1.104*0.99
 # pi_amp_q4 = 0.1*1.135*1.005*0.805
 r90_amp_q5 = pi_amp_q5/2
 
 # DRAG coefficients (# No DRAG when drag_coef_qi=0, it's just a gaussian.)
 drag_coef_q1 = 0.68
-drag_coef_q2 = 1.3
-drag_coef_q3 = 0.5
+drag_coef_q2 = -0.07
+drag_coef_q3 = 0.7
 drag_coef_q4 = 1.0
 drag_coef_q5 = 0
-anharmonicity_q1 = -(450.2-344.2)*2 * u.MHz
-anharmonicity_q2 = -(470.7-369.2)*2 * u.MHz
+anharmonicity_q1 = -(220.8) * u.MHz
+anharmonicity_q2 = -(200) * u.MHz
 anharmonicity_q3 = -(200) * u.MHz
-anharmonicity_q4 = -(200) * u.MHz
-anharmonicity_q5 = -(200) * u.MHz
-AC_stark_detuning_q1 = -0.2 * u.MHz
-AC_stark_detuning_q2 = 2.1 * u.MHz
+anharmonicity_q4 = -(196) * u.MHz
+anharmonicity_q5 = -(208) * u.MHz
+AC_stark_detuning_q1 = 0 * u.MHz
+AC_stark_detuning_q2 = 0 * u.MHz
 AC_stark_detuning_q3 = 0 * u.MHz
 AC_stark_detuning_q4 = 0 * u.MHz
 AC_stark_detuning_q5 = 0 * u.MHz
@@ -200,17 +199,18 @@ minus_y90_I_wf_q5, minus_y90_Q_wf_q5 = (-1) * minus_y90_der_wf_q5, minus_y90_wf_
 #               Flux line                #
 ##########################################
 flux_settle_time = 100 * u.ns
+idle_flux_point = [0, -0.3529, -0.3421, -0.3433, -3.400e-01]
 max_frequency_point = np.zeros(5)
 max_frequency_point[0] = -3.400e-01
-max_frequency_point[1] = -3.500e-01
-max_frequency_point[2] = -3.450e-01
+max_frequency_point[1] = -3.429e-01
+max_frequency_point[2] = -3.421e-01
 max_frequency_point[3] = -3.414e-01
 max_frequency_point[4] = -3.350e-01
 
 min_frequency_point = np.zeros(5)
 min_frequency_point[0] = 0
-min_frequency_point[1] = -1.550e-01
-min_frequency_point[2] = 1.000e-02
+min_frequency_point[1] = -0.05
+min_frequency_point[2] = 1.290e-02
 min_frequency_point[3] = -1.914e-01
 min_frequency_point[4] = 5.000e-03
 
@@ -247,8 +247,8 @@ g0[4] = [0.4045e6, 1.5, 3, 6.11e9]
 # Final value
 g1 = [[],[],[],[],[]]
 g1[0] = []
-g1[1] = [5.13843633e+05, 1.43009679e+00, 3.14159254e+00, 6.02463418e+09]
-g1[2] = [4.35703161e+05, 1.48153156e+00, 3.12806104e+00, 5.84636619e+09]
+g1[1] = [4.58486660e+05, 1.44852667e+00, 3.14159265e+00, 6.02469755e+09]
+g1[2] = [4.25051438e+05, 1.43541579e+00, 3.07592411e+00, 5.84640091e+09]
 g1[3] = [3.99999991e+06, 3.79006707e-01, 8.11582702e-01, 6.10906045e+09]
 g1[4] = [1.42510392e+06, 1.46039739e+00, 3.08277727e+00, 5.92422529e+09]
 
@@ -269,8 +269,8 @@ resonator_LO = 5.95 * u.GHz
 # Resonators IF
 resonator_IF = np.zeros(5)
 resonator_IF[0] = int((-214.21) * u.MHz)
-resonator_IF[1] = int((75.159) * u.MHz)
-resonator_IF[2] = int((-103.40) * u.MHz) 
+resonator_IF[1] = int((75.159-0.08) * u.MHz)
+resonator_IF[2] = int((-103.17) * u.MHz) 
 resonator_IF[3] = int((163.06) * u.MHz)
 resonator_IF[4] = int((-25.8) * u.MHz)
 # Above is for verifying wide-sweep results: -156, -38, 39, 137, 231
@@ -279,8 +279,8 @@ resonator_IF[4] = int((-25.8) * u.MHz)
 readout_len = 2000
 readout_amp = np.zeros(5)
 readout_amp[0] = 0.03
-readout_amp[1] = 0.03
-readout_amp[2] = 0.03
+readout_amp[1] = 0.03*0.3*1.5*0.95*1.2
+readout_amp[2] = 0.03*0.3*1.5
 readout_amp[3] = 0.03
 # readout_amp[3] = 0.02
 readout_amp[4] = 0.02
@@ -342,8 +342,8 @@ else:
 
 # state discrimination
 rotation_angle_q1 = (148.6 / 180) * np.pi
-rotation_angle_q2 = (45.9 / 180) * np.pi
-rotation_angle_q3 = (0 / 180) * np.pi
+rotation_angle_q2 = ((18+1.1) / 180) * np.pi
+rotation_angle_q3 = ((252.3+357.5+1.5) / 180) * np.pi
 rotation_angle_q4 = (0 / 180) * np.pi
 rotation_angle_q5 = (0 / 180) * np.pi
 ge_threshold_q1 = 0.000909
@@ -364,12 +364,12 @@ config = {
                 2: {"offset": 0.0},  # Q readout line
                 3: {"offset": 0.0},  # I qubit1 XY
                 4: {"offset": 0.0},  # Q qubit1 XY
-                5: {"offset": max_frequency_point[0]},  # qubit1 Z
-                6: {"offset": max_frequency_point[1]},  # qubit2 Z
+                5: {"offset": idle_flux_point[4]},  # qubit1 Z
+                6: {"offset": idle_flux_point[1]},  # qubit2 Z
                 7: {"offset": 0.0},  # I qubit2 XY
                 8: {"offset": 0.0},  # Q qubit2 XY
-                9: {"offset": max_frequency_point[2]},  # qubit3 Z
-                10: {"offset": max_frequency_point[3]},  # qubit4 Z
+                9: {"offset": idle_flux_point[2]},  # qubit3 Z
+                10: {"offset": idle_flux_point[3]},  # qubit4 Z
             },
             "digital_outputs": {
                 1: {},

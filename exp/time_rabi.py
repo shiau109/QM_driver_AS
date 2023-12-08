@@ -18,7 +18,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 def time_rabi(q_id,Qi,simulate,qmm):
-    res_F = cosine_func( operation_flux_point[Qi-1], *g1[Qi-1])
+    res_F = cosine_func( idle_flux_point[Qi-1], *g1[Qi-1])
     res_IF = (res_F - resonator_LO)/1e6
     res_IF = int(res_IF * u.MHz)
     with program() as rabi:
@@ -26,7 +26,7 @@ def time_rabi(q_id,Qi,simulate,qmm):
         t = declare(int)  
         resonator_freq = declare(int, value=res_IF)
         for i in q_id:
-            set_dc_offset(f"q{i+1}_z", "single", operation_flux_point[i])
+            set_dc_offset(f"q{i+1}_z", "single", idle_flux_point[i])
         update_frequency(f"rr{Qi}", resonator_freq)
         with for_(n, 0, n < n_avg, n + 1):
             with for_(*from_array(t, times)):
@@ -106,9 +106,8 @@ def pi_length_fitting(I,Q,plot_index):
 times = np.arange(4, 200, 1)  
 n_avg = 1000
 q_id = [1,2,3,4]
-Qi = 2
+Qi = 3
 simulate = False 
-operation_flux_point = [0, -0.3529, -0.3421, -0.3433, -3.400e-01]
 for i in q_id: 
     if i == Qi-1: plot_index = q_id.index(i)  
 

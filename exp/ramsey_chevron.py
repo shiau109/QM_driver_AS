@@ -17,7 +17,7 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-def ramsey_chevron(n_avg,q_id,Qi,dfs,operation_flux_point,t_delay,simulate):
+def ramsey_chevron(n_avg,q_id,Qi,dfs,idle_flux_point,t_delay,simulate):
     res_IF = []
     resonator_freq = [[] for _ in q_id]
     with program() as ramsey:
@@ -25,11 +25,11 @@ def ramsey_chevron(n_avg,q_id,Qi,dfs,operation_flux_point,t_delay,simulate):
         t = declare(int)  
         df = declare(int)        
         for i in q_id:
-            res_F = cosine_func( operation_flux_point[i], *g1[i])
+            res_F = cosine_func( idle_flux_point[i], *g1[i])
             res_F = (res_F - resonator_LO)/1e6
             res_IF.append(int(res_F * u.MHz))
             resonator_freq[q_id.index(i)] = declare(int, value=res_IF[q_id.index(i)])
-            set_dc_offset(f"q{i+1}_z", "single", operation_flux_point[i])
+            set_dc_offset(f"q{i+1}_z", "single", idle_flux_point[i])
             update_frequency(f"rr{i+1}", resonator_freq[q_id.index(i)])
         with for_(n, 0, n < n_avg, n + 1):
             with for_(*from_array(df, dfs)):
@@ -100,5 +100,4 @@ if __name__ == '__main__':
     Qi = 2
     for i in q_id: 
         if i == Qi-1: plot_index = q_id.index(i) 
-    operation_flux_point = [0, -0.3529, -0.3421, -0.3433, -3.400e-01]
-    I,Q = ramsey_chevron(n_avg,q_id,Qi,dfs,operation_flux_point,t_delay,simulate)
+    I,Q = ramsey_chevron(n_avg,q_id,Qi,dfs,idle_flux_point,t_delay,simulate)

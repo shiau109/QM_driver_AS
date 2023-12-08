@@ -17,7 +17,7 @@ from qualang_tools.bakery import baking
 from macros import multiplexed_readout
 from cosine import Cosine
 
-def cz_gate(type, operation_flux_point, flux_Qi, segment, a):
+def cz_gate(type, idle_flux_point, flux_Qi, segment, a):
     if type == "square":
         flux_waveform = np.array([const_flux_amp] * const_flux_len)
         square_pulse_segments = baked_waveform(flux_waveform, const_flux_len, flux_Qi)
@@ -27,7 +27,7 @@ def cz_gate(type, operation_flux_point, flux_Qi, segment, a):
                 with case_(j):
                     square_pulse_segments[j].run(amp_array=[(f"q{flux_Qi}_z", a)])    
         align()
-        set_dc_offset(f"q{flux_Qi}_z", "single", operation_flux_point[flux_Qi-1])
+        set_dc_offset(f"q{flux_Qi}_z", "single", idle_flux_point[flux_Qi-1])
         wait(5)
 
 def baked_waveform(waveform, pulse_duration, flux_qubit):
@@ -45,7 +45,7 @@ def baked_waveform(waveform, pulse_duration, flux_qubit):
         pulse_segments.append(b)
     return pulse_segments
 
-def CZ_phase_diff(q_id,flux_Qi,control_Qi,ramsey_Qi,operation_flux_point,signal,simulate,qmm):
+def CZ_phase_diff(q_id,flux_Qi,control_Qi,ramsey_Qi,idle_flux_point,signal_mode,simulate,qmm):
     res_IF = []
     resonator_freq = [[] for _ in q_id]
     with program() as cz_ops:
@@ -63,22 +63,23 @@ def CZ_phase_diff(q_id,flux_Qi,control_Qi,ramsey_Qi,operation_flux_point,signal,
         a = declare(fixed)  
         segment = declare(int)
         for i in q_id:
-            res_F = cosine_func( operation_flux_point[i], *g1[i])
+            res_F = cosine_func( idle_flux_point[i], *g1[i])
             res_F = (res_F - resonator_LO)/1e6
             res_IF.append(int(res_F * u.MHz))
             resonator_freq[q_id.index(i)] = declare(int, value=res_IF[q_id.index(i)])
-            set_dc_offset(f"q{i+1}_z", "single", operation_flux_point[i])
+            set_dc_offset(f"q{i+1}_z", "single", idle_flux_point[i])
             update_frequency(f"rr{i+1}", resonator_freq[q_id.index(i)])
         wait(flux_settle_time * u.ns)
         with for_(n, 0, n < n_avg, n+1):
             with for_(*from_array(a, amps)):
-                with for_(segment, t_min, segment <= t_max, segment + 1):
+                ## This +1 is inserted because of making segment equal to actual pulse duration
+                with for_(segment, t_min+1, segment <= t_max+1, segment + 1): 
                     with for_(*from_array(phi, Phi)):
                         wait(thermalization_time * u.ns, f"q{control_Qi}_z")
                         align()
                         play("x90", f"q{ramsey_Qi}_xy")
                         align()
-                        cz_gate(cz_type,operation_flux_point,flux_Qi,segment,a)
+                        cz_gate(cz_type,idle_flux_point,flux_Qi,segment,a)
                         align()
                         frame_rotation_2pi(phi, f"q{ramsey_Qi}_xy")
                         play("x90", f"q{ramsey_Qi}_xy")
@@ -93,7 +94,7 @@ def CZ_phase_diff(q_id,flux_Qi,control_Qi,ramsey_Qi,operation_flux_point,signal,
                         play("x180", f"q{control_Qi}_xy")
                         play("x90", f"q{ramsey_Qi}_xy")
                         align()
-                        cz_gate(cz_type,operation_flux_point,flux_Qi,segment,a)
+                        cz_gate(cz_type,idle_flux_point,flux_Qi,segment,a)
                         align()
                         frame_rotation_2pi(phi, f"q{ramsey_Qi}_xy")
                         play("x90", f"q{ramsey_Qi}_xy")
@@ -117,7 +118,7 @@ def CZ_phase_diff(q_id,flux_Qi,control_Qi,ramsey_Qi,operation_flux_point,signal,
         job = qm.execute(cz_ops)
         row,col = len(amps),len(t_delay)
         fig, ax = plt.subplots(row,col)
-        fig.suptitle(f"q{ramsey_Qi} "+signal+" CZ phase diff. \n Number of average = " + str(n_avg)) 
+        fig.suptitle(f"q{ramsey_Qi} "+signal_mode+" CZ phase diff. \n Number of average = " + str(n_avg)) 
         Ig_list, Qg_list, Ie_list, Qe_list = [f"I{i+1}g" for i in q_id], [f"Q{i+1}g" for i in q_id], [f"I{i+1}e" for i in q_id], [f"Q{i+1}e" for i in q_id]
         results = fetching_tool(job, Ig_list + Qg_list + Ie_list + Qe_list + ["n"], mode='live')   
         while results.is_processing(): 
@@ -130,7 +131,7 @@ def CZ_phase_diff(q_id,flux_Qi,control_Qi,ramsey_Qi,operation_flux_point,signal,
                 Ie[q_id.index(i)] = u.demod2volts(Ie[q_id.index(i)], readout_len)
                 Qe[q_id.index(i)] = u.demod2volts(Qe[q_id.index(i)], readout_len)
             progress_counter(n, n_avg, start_time=results.start_time)
-            match signal:
+            match signal_mode:
                 case 'I':
                     signal_g = Ig
                     signal_e = Ie
@@ -159,7 +160,10 @@ def live_plotting(signal_g, signal_e, control_Qi, ramsey_Qi,row,col,ax):
                 ax[i,j].plot(fit.x_data, fit.fit_type(fit.x, fit.popt) * fit.y_normal, '-r', alpha=0.5)
                 dphase = (phase_g-phase_e)/np.pi*180     
             except Exception as e: print(e)
-            ax[i,j].set_title(f"pha_diff {dphase:.1f}, ZW {t_delay[j]:.0f}, ZL {amps[i]*const_flux_amp:.4f}")
+            ax[i,j].set_title(f"pha_diff {dphase:.1f}, ZW {t_delay[j]:.0f}, ZL {amps[i]*const_flux_amp:.5f}",fontsize = 8)
+            ax[i,j].set_xlabel('Phase cycle',fontsize = 8)
+            ax[i,j].set_ylabel('Voltage [V]',fontsize = 8)
+            ax[i, j].tick_params(axis='both', labelsize=8)
     plt.tight_layout()
     plt.pause(1.0)
 
@@ -168,13 +172,13 @@ simulate = False
 Phi = np.arange(0, 5, 0.05) # 5 rotations
 n_avg = 1300
 q_id = [1,2,3,4]
-operation_flux_point = [0, -0.3529, -0.3421, -0.3433, -3.400e-01]
-control_Qi = 3
-ramsey_Qi = 2
+control_Qi = 2
+ramsey_Qi = 3
 flux_Qi = 2
-t_min, t_max = 27, 30
+t_min, t_max = 22, 27
 t_delay = np.arange(t_min, t_max + 0.1, 1) 
-amps = np.arange(0.388, 0.392, 0.002) 
-signal = 'I'
+
+amps = np.arange(0.3888, 0.39, 0.0004) 
+signal_mode = 'I'
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-CZ_phase_diff(q_id,flux_Qi,control_Qi,ramsey_Qi,operation_flux_point,signal,simulate,qmm)
+CZ_phase_diff(q_id,flux_Qi,control_Qi,ramsey_Qi,idle_flux_point,signal_mode,simulate,qmm)

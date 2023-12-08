@@ -244,13 +244,13 @@ if __name__ == '__main__':
     assert drag_coef != 0, "The DRAG coefficient 'drag_coef' must be different from 0 in the config."
     ro_element = ["rr2"]
     q_name =  "q2_xy"
-    sequence_repeat = 3
+    sequence_repeat = 30
     amp_modify_range = 0.25/float(sequence_repeat)
-    output_data = DRAG_calibration_Yale( drag_coef, q_name, ro_element, config, qmm, n_avg=n_avg)
-    # output_data =  amp_calibration( amp_modify_range, q_name, ro_element, config, qmm, n_avg=n_avg, sequence_repeat=sequence_repeat, simulate=False)
+    # output_data = DRAG_calibration_Yale( drag_coef, q_name, ro_element, config, qmm, n_avg=n_avg)
+    output_data =  amp_calibration( amp_modify_range, q_name, ro_element, config, qmm, n_avg=n_avg, sequence_repeat=sequence_repeat, simulate=False)
 
         #   Data Saving   # 
-    save_data = True
+    save_data = False
     if save_data == True:
         from save_data import save_npz
         import sys

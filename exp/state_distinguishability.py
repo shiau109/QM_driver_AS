@@ -43,16 +43,16 @@ def state_distinguishability( q_id:list, ro_element, shot_num, reset:str, config
 
         with for_(n, 0, n < shot_num, n + 1):
             
-            # wait(thermalization_time * u.ns)
-            for i in q_id:
-                reset_qubit(reset, f"q{i+1}_xy", f"rr{i+1}", cooldown_time=thermalization_time,  threshold=ge_threshold[i], max_tries=2, Ig=iqdata_stream_g[0])
-            align()
+            wait(thermalization_time * u.ns)
+            # for i in q_id:
+            #     reset_qubit(reset, f"q{i+1}_xy", f"rr{i+1}", cooldown_time=thermalization_time,  threshold=ge_threshold[i], max_tries=2, Ig=iqdata_stream_g[0])
+            # align()
             multiRO_measurement(iqdata_stream_g, ro_element, weights="rotated_")
             align()
 
-            # wait(thermalization_time * u.ns)
-            for i in q_id:
-                reset_qubit(reset, f"q{i+1}_xy", f"rr{i+1}", cooldown_time=thermalization_time,  threshold=ge_threshold[i], max_tries=2, Ig=iqdata_stream_e[0])
+            wait(thermalization_time * u.ns)
+            # for i in q_id:
+            #     reset_qubit(reset, f"q{i+1}_xy", f"rr{i+1}", cooldown_time=thermalization_time,  threshold=ge_threshold[i], max_tries=2, Ig=iqdata_stream_e[0])
             for i in q_id:
                 play("x180", f"q{i+1}_xy")
             align()
@@ -96,12 +96,12 @@ if __name__ == '__main__':
 
 
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-    resonators = ["rr1"]
+    resonators = ["rr2","rr3"]
     n_runs = 10000
     reset = "cooldown"  # can be set to "cooldown" or "active"
 
     start_time = time.time()
-    output_data = state_distinguishability( [0], resonators, n_runs, reset, config, qmm)  
+    output_data = state_distinguishability( [1,2], resonators, n_runs, reset, config, qmm)  
     end_time = time.time()
     elapsed_time = np.round(end_time-start_time, 1)
 
@@ -117,7 +117,7 @@ if __name__ == '__main__':
 
 
     #   Data Saving   # 
-    save_data = True
+    save_data = False
     if save_data == True:
         from save_data import save_npz
         import sys

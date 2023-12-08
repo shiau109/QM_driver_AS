@@ -22,11 +22,11 @@ def CZ(q_id,Qi_list,flux_Qi,amps,ts,simulate,qmm):
         t = declare(int)  
         a = declare(fixed)  
         for i in q_id:
-            res_F = cosine_func(operation_flux_point[i], *g1[i])
+            res_F = cosine_func(idle_flux_point[i], *g1[i])
             res_F = (res_F - resonator_LO)/1e6
             res_IF.append(int(res_F * u.MHz))
             resonator_freq[q_id.index(i)] = declare(int, value=res_IF[q_id.index(i)])
-            set_dc_offset(f"q{i+1}_z", "single", operation_flux_point[i])
+            set_dc_offset(f"q{i+1}_z", "single", idle_flux_point[i])
             update_frequency(f"rr{i+1}", resonator_freq[q_id.index(i)])
         wait(flux_settle_time * u.ns)
         with for_(n, 0, n < n_avg, n + 1):
@@ -100,7 +100,6 @@ Qi_list = [2,3]
 excited_Qi_list = [2,3]
 n_avg = 100  
 ts = np.arange(4, 60, 1)  
-operation_flux_point = [0, -0.3529, -0.3421, -0.3433, -3.400e-01]
 amps = np.arange(0.33, 0.44, 0.001) 
 simulate = False
 q_id = [1,2,3,4]

@@ -14,10 +14,10 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-def T2_exp(Qi,n_avg,idle_times,operation_flux_point,q_id,qmm):
+def T2_exp(Qi,n_avg,idle_times,idle_flux_point,q_id,qmm):
     resonators = [i+1 for i in q_id]
     res_num = len(resonators)
-    res_F = resonator_flux( operation_flux_point[Qi-1], *p1[Qi-1])
+    res_F = resonator_flux( idle_flux_point[Qi-1], *p1[Qi-1])
     res_IF = (res_F - resonator_LO)/1e6
     res_IF = int(res_IF * u.MHz)
     with program() as ramsey:
@@ -25,7 +25,7 @@ def T2_exp(Qi,n_avg,idle_times,operation_flux_point,q_id,qmm):
         t = declare(int)  
         resonator_freq = declare(int, value=res_IF)
         for i in q_id:
-            set_dc_offset(f"q{i+1}_z", "single", operation_flux_point[i])
+            set_dc_offset(f"q{i+1}_z", "single", idle_flux_point[i])
         update_frequency(f"q{Qi}_xy", detuning + qubit_IF[Qi-1])
         update_frequency(f"rr{Qi}", resonator_freq)
         wait(flux_settle_time * u.ns)
@@ -106,10 +106,10 @@ def T2_fitting(signal):
         qubit_T2 = 0
     return qubit_T2
 
-def multi_T2_exp(m, Qi, n_avg,idle_times,operation_flux_point,q_id,qmm):
+def multi_T2_exp(m, Qi, n_avg,idle_times,idle_flux_point,q_id,qmm):
     T2_I, T2_Q = [], []
     for i in range(m):
-        I, Q = T2_exp(Qi,n_avg,idle_times,operation_flux_point,q_id,qmm)
+        I, Q = T2_exp(Qi,n_avg,idle_times,idle_flux_point,q_id,qmm)
         T2_I.append(T2_fitting(I))
         T2_Q.append(T2_fitting(Q))
         print(f'iteration: {i+1}')
@@ -143,14 +143,13 @@ def T2_hist(data, T2_max, signal_name):
 n_avg = 750
 idle_times = np.arange(4, 200, 1)  
 detuning = 1e6  
-operation_flux_point = [0, -3.000e-01, -0.2525, -0.3433, -3.400e-01] 
 q_id = [0,1,2,3]
 Qi = 3
 
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-I,Q = T2_exp(Qi,n_avg,idle_times,operation_flux_point,q_id,qmm)
+I,Q = T2_exp(Qi,n_avg,idle_times,idle_flux_point,q_id,qmm)
 T2_plot(I, Q, Qi, True)
 # m = 3
-# T2_I, T2_Q = multi_T2_exp(m, Qi, n_avg,idle_times,operation_flux_point,q_id,qmm)
+# T2_I, T2_Q = multi_T2_exp(m, Qi, n_avg,idle_times,idle_flux_point,q_id,qmm)
 # T2_hist(T2_I,15,'I')
 # T2_hist(T2_Q,15,'Q')

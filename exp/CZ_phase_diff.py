@@ -17,20 +17,20 @@ import os, fnmatch
 from macros import multiplexed_readout
 from cosine import Cosine
 
-def cz_gate(type, operation_flux_point, flux_Qi):
+def cz_gate(type, idle_flux_point, flux_Qi):
     if type == "square":
         wait(5)  # for flux pulse to relax back completely
-        set_dc_offset(f"q{flux_Qi}_z", "single", operation_flux_point[flux_Qi-1] + 0.175) 
+        set_dc_offset(f"q{flux_Qi}_z", "single", idle_flux_point[flux_Qi-1] + 0.1753) 
         wait(28 // 4, f"q{flux_Qi}_z")
         align()
-        set_dc_offset(f"q{flux_Qi}_z", "single", operation_flux_point[flux_Qi-1])
+        set_dc_offset(f"q{flux_Qi}_z", "single", idle_flux_point[flux_Qi-1])
         wait(5)  # for flux pulse to relax back completely
     elif type == "ft_gaussian":
         play("cz_1_2"*amp((0.150-max_frequency_point[1])/(cz_point_1_2_q2-idle_q2)), "q2_z", duration=80//4)
     elif type == "gaussian":
         play("cz_1_2"*amp(1.4), "q2_z", duration=32//4)
 
-def CZ_phase_diff(q_id,flux_Qi,control_Qi,ramsey_Qi,operation_flux_point,simulate,qmm):
+def CZ_phase_diff(q_id,flux_Qi,control_Qi,ramsey_Qi,idle_flux_point,simulate,qmm):
     res_IF = []
     resonator_freq = [[] for _ in q_id]
     with program() as cz_ops:
@@ -46,11 +46,11 @@ def CZ_phase_diff(q_id,flux_Qi,control_Qi,ramsey_Qi,operation_flux_point,simulat
         n_st = declare_stream()
         phi = declare(fixed)
         for i in q_id:
-            res_F = cosine_func( operation_flux_point[i], *g1[i])
+            res_F = cosine_func( idle_flux_point[i], *g1[i])
             res_F = (res_F - resonator_LO)/1e6
             res_IF.append(int(res_F * u.MHz))
             resonator_freq[q_id.index(i)] = declare(int, value=res_IF[q_id.index(i)])
-            set_dc_offset(f"q{i+1}_z", "single", operation_flux_point[i])
+            set_dc_offset(f"q{i+1}_z", "single", idle_flux_point[i])
             update_frequency(f"rr{i+1}", resonator_freq[q_id.index(i)])
         wait(flux_settle_time * u.ns)
         with for_(n, 0, n < n_avg, n+1):
@@ -59,7 +59,7 @@ def CZ_phase_diff(q_id,flux_Qi,control_Qi,ramsey_Qi,operation_flux_point,simulat
                 align()
                 play("x90", f"q{ramsey_Qi}_xy")
                 align()
-                cz_gate(cz_type,operation_flux_point,flux_Qi)
+                cz_gate(cz_type,idle_flux_point,flux_Qi)
                 align()
                 frame_rotation_2pi(phi, f"q{ramsey_Qi}_xy")
                 play("x90", f"q{ramsey_Qi}_xy")
@@ -73,7 +73,7 @@ def CZ_phase_diff(q_id,flux_Qi,control_Qi,ramsey_Qi,operation_flux_point,simulat
                 play("x180", f"q{control_Qi}_xy")
                 play("x90", f"q{ramsey_Qi}_xy")
                 align()
-                cz_gate(cz_type,operation_flux_point,flux_Qi)
+                cz_gate(cz_type,idle_flux_point,flux_Qi)
                 align()
                 frame_rotation_2pi(phi, f"q{ramsey_Qi}_xy")
                 play("x90", f"q{ramsey_Qi}_xy")
@@ -152,16 +152,15 @@ def live_plotting(Ig, Qg, Ie, Qe, control_Qi, ramsey_Qi):
     plt.pause(0.1)
 
 cz_type = "square"
-simulate = True
+simulate = False
 Phi = np.arange(0, 5, 0.05) # 5 rotations
-n_avg = 1300
+n_avg = 2000
 q_id = [1,2,3,4]
-operation_flux_point = [0, -0.3529, -0.3421, -0.3433, -3.400e-01]
 control_Qi = 3
 ramsey_Qi = 2
 flux_Qi = 2
 
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-CZ_phase_diff(q_id,flux_Qi,control_Qi,ramsey_Qi,operation_flux_point,simulate,qmm)
+CZ_phase_diff(q_id,flux_Qi,control_Qi,ramsey_Qi,idle_flux_point,simulate,qmm)
 
         

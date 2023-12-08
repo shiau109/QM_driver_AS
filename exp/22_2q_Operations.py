@@ -29,16 +29,15 @@ mode = 'new'
 Phi = np.arange(0, 5, 0.05) # 5 rotations
 n_avg = 130000
 q_id = [1,2,3,4]
-operation_flux_point = [0, -0.3529, -0.3421, -0.3433, -3.400e-01]
-res_F2 = cosine_func( operation_flux_point[1], *g1[1])
+res_F2 = cosine_func( idle_flux_point[1], *g1[1])
 res_IF2 = (res_F2 - resonator_LO)/1e6
 res_IF2 = int(res_IF2 * u.MHz)
 
-res_F3 = cosine_func( operation_flux_point[2], *g1[2])
+res_F3 = cosine_func( idle_flux_point[2], *g1[2])
 res_IF3 = (res_F3 - resonator_LO)/1e6
 res_IF3 = int(res_IF3 * u.MHz)
 
-res_F4 = cosine_func( operation_flux_point[3], *g1[3])
+res_F4 = cosine_func( idle_flux_point[3], *g1[3])
 res_IF4 = (res_F4 - resonator_LO)/1e6
 res_IF4 = int(res_IF4 * u.MHz)
 
@@ -63,7 +62,7 @@ with program() as cz_ops:
     a = declare(fixed)
     phi = declare(fixed)
     for i in q_id:
-        set_dc_offset("q%s_z"%(i+1), "single", operation_flux_point[i])
+        set_dc_offset("q%s_z"%(i+1), "single", idle_flux_point[i])
     wait(flux_settle_time * u.ns)
     update_frequency(f"rr{2}", resonator_freq2)
     update_frequency(f"rr{3}", resonator_freq3)
