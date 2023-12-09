@@ -99,7 +99,7 @@ def amp_CaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
     if request == 'basic':
         N_candidate = [1, 3]
     elif request == 'medium':
-        N_candidate = [3, 9]
+        N_candidate = [5, 9]
     else:
         N_candidate = [30]
 
@@ -236,6 +236,8 @@ def StarkShift_exp(q_name:str, ro_element:list, repeat_sequ_num:int, spec:Circui
         save=False
         plot_StarkExpResult(ACdetune_range,exp_array, popt, ans_detu_MHz, savefig=save, N=repeat_sequ_num)
 
+    # recover the old settings 
+    spec, config = refresh_Q_StarkShift(target_q,spec,config,old_ACdetuning)
     new_N_instruction = new_N_condition(ans_detu_MHz)
     return ans_detu_MHz, new_N_instruction
 
@@ -260,14 +262,15 @@ def StarkShift_CaliFlow(q_name:str, ro_element:list, spec:Circuit_info, config:Q
     repeat_N = [3, 6, 9]
     max_iter = 5
     aN_max_iter = 5
+    ans_rec = []
     while sequ_N_idx<len(repeat_N):
         print(f"================ Iteration_{6-max_iter} ==================")
         print(f"for N={repeat_N[sequ_N_idx]}:")
+        print(f"Now drive with AC detuning={float(spec.get_spec_forConfig('xy')[target_q]['AC_stark_detuning'])*1e-6} MHz")
         detune_ans_MHz, new_N_instruction = StarkShift_exp(q_name,ro_element,repeat_N[sequ_N_idx],spec,config,qmm,showFig,initializer=initializer)
-        print(f"AC detuning={detune_ans_MHz} MHz")
         print(f"New N or not: {new_N_instruction}")
         spec, config = refresh_Q_StarkShift(q_name.split("_")[0].lower(),spec,config,detune_ans_MHz)
-        
+        print(f"AC detuning had updated with {float(spec.get_spec_forConfig('xy')[target_q]['AC_stark_detuning'])*1e-6} MHz")
         if new_N_instruction or aN_max_iter <= 0:
             sequ_N_idx += 1
             max_iter = 5
@@ -344,8 +347,8 @@ def AutoCaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
     final_spec, final_config = alpha_CaliFlow(old_drag_alpha,f"{target_q}_xy",f"{target_q}_ro",1000,new_spec,new_config,qm_machine,init_macro)
     
     # has exp 24 ns, fidelity almost the same
-    if float(xyw) < 15:
-        final_spec, final_config = StarkShift_CaliFlow(f"{target_q}_xy",[f"{target_q}_ro"],final_spec,final_config,qmm,showFig=False,initializer=init_macro)  
+    #if float(xyw) < 15:
+    final_spec, final_config = StarkShift_CaliFlow(f"{target_q}_xy",[f"{target_q}_ro"],final_spec,final_config,qmm,showFig=False,initializer=init_macro)  
     
     return final_spec, final_config
         
@@ -394,7 +397,12 @@ if __name__ == '__main__':
     dyna_config.import_config(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Config_Alloffset_1208')
     the_specs = Circuit_info(q_num=5)
     the_specs.import_spec(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Spec_Alloffset_1208')
+    the_specs.update_aXyInfo_for(target_q,amp=the_specs.get_spec_forConfig('xy')[target_q]['pi_amp']*2)
+    the_specs.update_aXyInfo_for(target_q,len=the_specs.get_spec_forConfig('xy')[target_q]['pi_len']/2)
+    dyna_config.update_controlWaveform(the_specs.get_spec_forConfig('xy'),target_q)
+
     xyw = the_specs.get_spec_forConfig('xy')[target_q]['pi_len']
+    print(f'pi_len = {xyw}')
     init_macro = initializer((the_specs.give_WaitTime_with_q(target_q,wait_scale=5),),'wait')
     allXY_ret = AllXY_executor(f"{target_q}_xy",f"{target_q}_ro",xyw,20000,dyna_config.get_config(),qmm,mode='live')
     # RB before Calibrations
@@ -406,8 +414,8 @@ if __name__ == '__main__':
 
     the_specs, dyna_config = AutoCaliFlow(target_q,the_specs,dyna_config,qmm,1.0,init_macro)
     
-    the_specs.export_spec(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Spec_BestCalied_1208')
-    dyna_config.export_config(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Config_BestCalied_1208')
+    the_specs.export_spec(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Spec_Calied_1209')
+    dyna_config.export_config(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Config_Calied_1209')
     print(the_specs.get_ReadableSpec_fromQ(target_q,'xy'))
     
     ret = AllXY_executor(f"{target_q}_xy",f"{target_q}_ro",xyw,20000,dyna_config.get_config(),qmm,mode='live')
@@ -415,3 +423,5 @@ if __name__ == '__main__':
     x, value_avg, error_avg = single_qubit_RB( xyw, max_circuit_depth, delta_clifford, f"{target_q}_xy", [f"{target_q}_ro"], dyna_config.get_config(), qmm, 10, 300, initialization_macro=init_macro )
     # # plot
     plot_SQRB_result( x, value_avg, error_avg )
+
+    

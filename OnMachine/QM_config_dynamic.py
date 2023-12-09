@@ -1161,6 +1161,12 @@ class QM_config():
                         wf = waveform_remaker.build_XYwaveform(target_q=q,axis=a)
                         
                         self.__config["waveforms"][waveform_name] = {"type": "arbitrary", "samples":wf[waveform_basis].tolist()}
+            
+                    # pi_len check
+                    old_len = self.__config["pulses"][waveform]['length']
+                    new_len = updatedSpec[q]['pi_len']
+                    if old_len != new_len:
+                        self.__config["pulses"][waveform]['length'] = new_len
 
     def update_z_offset(self,Zinfo:dict,mode:str="offset"):
         '''
