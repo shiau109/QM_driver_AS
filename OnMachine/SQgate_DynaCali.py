@@ -125,7 +125,7 @@ def amp_CaliFlow(target_q:str,same_level_mark:bool,spec:Circuit_info,config:QM_c
         amp_modify_range = 0.25/float(sequence_repeat)
 
         print(spec.get_spec_forConfig('xy')[target_q][f'pi_amp'])
-        results = amp_calibration(amp_modify_range, f"{target_q}_xy", [f"{target_q}_ro"], config.get_config(), qm_machine, n_avg=500, sequence_repeat=sequence_repeat, simulate=False, mode='wait',initializer=init_macro)
+        results = amp_calibration(amp_modify_range, f"{target_q}_xy", [f"{target_q}_ro"], config.get_config(), qm_machine, n_avg=350, sequence_repeat=sequence_repeat, simulate=False, mode='wait',initializer=init_macro)
         # fig, ax = plt.subplots(2, len(ro_element))
         x = results['x']
         # for r_idx, r_name in enumerate(ro_element):
@@ -405,7 +405,7 @@ def AutoCaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
     
     # alpha calibration
     old_drag_alpha = float(spec.get_spec_forConfig('xy')[target_q]["drag_coef"])
-    final_spec, final_config = alpha_CaliFlow(old_drag_alpha,f"{target_q}_xy",f"{target_q}_ro",1000,new_spec,new_config,qm_machine,init_macro)
+    final_spec, final_config = alpha_CaliFlow(old_drag_alpha,f"{target_q}_xy",f"{target_q}_ro",500,new_spec,new_config,qm_machine,init_macro)
     
     return final_spec, final_config
         
@@ -461,11 +461,11 @@ if __name__ == '__main__':
     xyw = the_specs.get_spec_forConfig('xy')[target_q]['pi_len']
     print(f'pi_len = {xyw}')
     init_macro = initializer((the_specs.give_WaitTime_with_q(target_q,wait_scale=5),),'wait')
-    allXY_ret = AllXY_executor(f"{target_q}_xy",f"{target_q}_ro",xyw,20000,dyna_config.get_config(),qmm,mode='live')
+    # allXY_ret = AllXY_executor(f"{target_q}_xy",f"{target_q}_ro",xyw,20000,dyna_config.get_config(),qmm,mode='live')
     # RB before Calibrations
-    x, value_avg, error_avg = single_qubit_RB( xyw, max_circuit_depth, delta_clifford, f"{target_q}_xy", [f"{target_q}_ro"], dyna_config.get_config(), qmm, 10, 300, initialization_macro=init_macro )
+    # x, value_avg, error_avg = single_qubit_RB( xyw, max_circuit_depth, delta_clifford, f"{target_q}_xy", [f"{target_q}_ro"], dyna_config.get_config(), qmm, 10, 300, initialization_macro=init_macro )
     # plot
-    plot_SQRB_result( x, value_avg, error_avg )
+    # plot_SQRB_result( x, value_avg, error_avg )
     # get gate infidelity only
     # _, gate_infidelity = ana_SQRB( x, value_avg )
 
@@ -475,7 +475,7 @@ if __name__ == '__main__':
     dyna_config.export_config(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Config_Calied_1209')
     print(the_specs.get_ReadableSpec_fromQ(target_q,'xy'))
     
-    ret = AllXY_executor(f"{target_q}_xy",f"{target_q}_ro",xyw,20000,dyna_config.get_config(),qmm,mode='live')
+    # ret = AllXY_executor(f"{target_q}_xy",f"{target_q}_ro",xyw,20000,dyna_config.get_config(),qmm,mode='live')
     # # RB after Calibrations
     x, value_avg, error_avg = single_qubit_RB( xyw, max_circuit_depth, delta_clifford, f"{target_q}_xy", [f"{target_q}_ro"], dyna_config.get_config(), qmm, 10, 300, initialization_macro=init_macro )
     # # plot
