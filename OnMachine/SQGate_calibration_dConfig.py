@@ -285,7 +285,7 @@ def amp_calibration( amp_modify_range, q_name:str, ro_element:list, config, qmm:
         return output_data
     
 
-def StarkShift_scout(q_name:str, ro_element:list, config:dict, qmm:QuantumMachinesManager, sequence_repeat:int=1, n_avg=100, simulate:bool=False, initializer:tuple=None):
+def StarkShift_program(q_name:str, ro_element:list, sequence_repeat:int=1, n_avg=100, initializer:tuple=None):
     '''
         initializer from `QM_config_dynamic.initializer()`
     '''
@@ -297,7 +297,6 @@ def StarkShift_scout(q_name:str, ro_element:list, config:dict, qmm:QuantumMachin
 
     with program() as drag:
         n = declare(int)  # QUA variable for the averaging loop
-        r_idx = declare(int)  # QUA variable for the measured 'I' quadrature
         iqdata_stream = multiRO_declare( ro_element )
         n_st = declare_stream()  # Stream for the averaging iteration 'n'
         
@@ -331,21 +330,23 @@ def StarkShift_scout(q_name:str, ro_element:list, config:dict, qmm:QuantumMachin
             multiRO_pre_save(iqdata_stream, ro_element, (1,) )
             n_st.save("iteration")
 
+    return drag
     ###########################
     # Run or Simulate Program #
     ###########################
 
+def StarkShift_scout(program, ro_element:list, config:dict, qmm:QuantumMachinesManager, simulate:bool=False):  
     if simulate:
         # Simulates the QUA program for the specified duration
         simulation_config = SimulationConfig(duration=10_000)  # In clock cycles = 4ns
-        job = qmm.simulate(config, drag, simulation_config)
+        job = qmm.simulate(config, program, simulation_config)
         job.get_simulated_samples().con1.plot()
 
     else:
         # Open the quantum machine
-        qm = qmm.open_qm(config)
+        qm = qmm.open_qm(config,close_other_machines=False)
         # Send the QUA program to the OPX, which compiles and executes it
-        job = qm.execute(drag)
+        job = qm.execute(program)
         # Get results from QUA program
         ro_ch_name = []
         for r_name in ro_element:

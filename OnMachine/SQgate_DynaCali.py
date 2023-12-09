@@ -2,7 +2,7 @@
 from QM_config_dynamic import QM_config, Circuit_info
 from qm.QuantumMachinesManager import QuantumMachinesManager
 
-from SQGate_calibration_dConfig import amp_calibration, DRAG_calibration_Yale, StarkShift_scout
+from SQGate_calibration_dConfig import amp_calibration, DRAG_calibration_Yale, StarkShift_scout, StarkShift_program
 from allxy_dConfig import AllXY_executor
 from Ramsey_freq_calibration_dConfig import Ramsey_freq_calibration, plot_ana_result
 
@@ -53,9 +53,11 @@ def refresh_Q_StarkShift(target_q:str,specs:Circuit_info,config:QM_config,new_AC
 def log_plot(amp_, IF_):
     plt.plot(amp_)
     plt.title('Amp log')
+    plt.ylabel("Amplitude (V)")
     plt.show()
     plt.plot(IF_)
     plt.title('Freq log')
+    plt.ylabel("detuning (MHz)")
     plt.show()
     
 
@@ -100,12 +102,14 @@ def amp_CaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
         N_candidate = [1, 3]
     elif request == 'medium':
         N_candidate = [5, 9]
-    else:
+    elif request == 'tough':
         N_candidate = [30]
+    else:
+        N_candidate = [60]
 
     iterations = 0
     max_iteration = 15
-    aN_max_iter = 5
+    aN_max_iter = 6
 
 
     # Workflow start
@@ -223,12 +227,14 @@ def StarkShift_exp(q_name:str, ro_element:list, repeat_sequ_num:int, spec:Circui
         else:
             return False
 
+    exp_circuit = StarkShift_program(q_name,ro_element,repeat_sequ_num,1000,initializer)
     I_rec = []
+
     for detu_MHz in ACdetune_range:
         # modify spec and config to exp
         spec, config = refresh_Q_StarkShift(target_q,spec,config,detu_MHz)
         # start exp
-        measured_data = StarkShift_scout(q_name,ro_element,config.get_config(),qmm,repeat_sequ_num,1000,initializer=initializer)
+        measured_data = StarkShift_scout(exp_circuit,ro_element,config.get_config(),qmm)
         I_rec.append(measured_data[ro_element[0]][0])
     exp_array = array(I_rec)[:,0]
     ans_detu_MHz, popt = find_AC_minima(ACdetune_range,exp_array)
@@ -262,7 +268,7 @@ def StarkShift_CaliFlow(q_name:str, ro_element:list, spec:Circuit_info, config:Q
     repeat_N = [3, 6, 9]
     max_iter = 5
     aN_max_iter = 5
-    ans_rec = []
+
     while sequ_N_idx<len(repeat_N):
         print(f"================ Iteration_{6-max_iter} ==================")
         print(f"for N={repeat_N[sequ_N_idx]}:")
@@ -296,7 +302,13 @@ def AutoCaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
     amp_ans = []
     # maximum iterations
     iter = 6
+    # some helpful marks
     jump_out = False
+    AC_cali = False
+    converge_manager = False
+    break_mark = True
+
+    # work flows here
     while True:
         amp_rec.append(float(spec.get_spec_forConfig('xy')[target_q][f'pi_amp']))
         
@@ -304,8 +316,12 @@ def AutoCaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
         
         amp_ans.append(float(spec.get_spec_forConfig('xy')[target_q][f'pi_amp']))
 
+        if AC_cali:
+            spec, config = StarkShift_CaliFlow(f"{target_q}_xy",[f"{target_q}_ro"],spec,config,qmm,showFig=False,initializer=init_macro)  
+            converge_manager = True
+        
         if jump_out:
-            print("detuning < 1kHz, and amp is calibrated, move onto next step: alpha calibration!")
+            print("Jump out and amp is calibrated, move onto next step: alpha calibration!")
             new_spec, new_config = spec, config
             break
 
@@ -315,12 +331,17 @@ def AutoCaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
         freq_rec.append(ans)
         spec,config = refresh_Q_IF(target_q,spec,config,ans)
         print(f"detune={-ans} MHz")
+
+        # level for amp cali switch
         if abs(float(ans)) < 0.5: # 500 kHz
             level = 'medium'
-            
         
         if abs(float(ans)) < 0.01: # 10 kHz
             level = 'tough'
+            if float(xyw) <= 16: 
+                AC_cali = True
+            else:
+                converge_manager = True
         
         if abs(float(ans)) < 0.001: # 1kHz
             jump_out = True
@@ -328,11 +349,18 @@ def AutoCaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
 
         detu_ans.append(ans)
 
-        if break_optimize_condition(ans,detu_ans) and break_optimize_condition(float(spec.get_spec_forConfig('xy')[target_q][f'pi_amp']),amp_ans) and abs(float(ans)) < 0.01:
+        # Once the break condition had been satisfied, turn on break_mark, ready to break the loop 
+        if break_optimize_condition(ans,detu_ans) and break_optimize_condition(float(spec.get_spec_forConfig('xy')[target_q][f'pi_amp']),amp_ans):
+            break_mark = True
+            level = 'final'
+
+        if break_mark and converge_manager:
             print('Break conditions satisfied!')
-            new_spec, new_config = spec, config
-            break
+            jump_out = True
+            iter += 1
+            
         if iter <= 0:
+            print("Max Optimize iteration break!")
             new_spec, new_config = spec, config
             break
 
@@ -345,10 +373,6 @@ def AutoCaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
     old_drag_alpha = float(spec.get_spec_forConfig('xy')[target_q]["drag_coef"])
     # 
     final_spec, final_config = alpha_CaliFlow(old_drag_alpha,f"{target_q}_xy",f"{target_q}_ro",1000,new_spec,new_config,qm_machine,init_macro)
-    
-    # has exp 24 ns, fidelity almost the same
-    #if float(xyw) < 15:
-    final_spec, final_config = StarkShift_CaliFlow(f"{target_q}_xy",[f"{target_q}_ro"],final_spec,final_config,qmm,showFig=False,initializer=init_macro)  
     
     return final_spec, final_config
         
@@ -385,7 +409,7 @@ if __name__ == '__main__':
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
 
 
-    max_circuit_depth = 500  # Maximum circuit depth
+    max_circuit_depth = 700  # Maximum circuit depth
     delta_clifford = 10  #  Play each sequence with a depth step equals to 'delta_clifford - Must be > 1
     assert (max_circuit_depth / delta_clifford).is_integer(), "max_circuit_depth / delta_clifford must be an integer."
     seed = 345324  # Pseudo-random number generator seed
@@ -397,9 +421,9 @@ if __name__ == '__main__':
     dyna_config.import_config(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Config_Alloffset_1208')
     the_specs = Circuit_info(q_num=5)
     the_specs.import_spec(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Spec_Alloffset_1208')
-    the_specs.update_aXyInfo_for(target_q,amp=the_specs.get_spec_forConfig('xy')[target_q]['pi_amp']*2)
-    the_specs.update_aXyInfo_for(target_q,len=the_specs.get_spec_forConfig('xy')[target_q]['pi_len']/2)
-    dyna_config.update_controlWaveform(the_specs.get_spec_forConfig('xy'),target_q)
+    # # the_specs.update_aXyInfo_for(target_q,amp=the_specs.get_spec_forConfig('xy')[target_q]['pi_amp']*2)
+    # # the_specs.update_aXyInfo_for(target_q,len=the_specs.get_spec_forConfig('xy')[target_q]['pi_len']/2)
+    # # dyna_config.update_controlWaveform(the_specs.get_spec_forConfig('xy'),target_q)
 
     xyw = the_specs.get_spec_forConfig('xy')[target_q]['pi_len']
     print(f'pi_len = {xyw}')
@@ -423,5 +447,3 @@ if __name__ == '__main__':
     x, value_avg, error_avg = single_qubit_RB( xyw, max_circuit_depth, delta_clifford, f"{target_q}_xy", [f"{target_q}_ro"], dyna_config.get_config(), qmm, 10, 300, initialization_macro=init_macro )
     # # plot
     plot_SQRB_result( x, value_avg, error_avg )
-
-    
