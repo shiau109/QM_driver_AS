@@ -91,7 +91,7 @@ def amp_cali_examine(target_q:str,config:QM_config,qm_machine:QuantumMachinesMan
 
 
 
-def amp_CaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:QuantumMachinesManager,request:str='basic',init_macro:tuple=None):
+def amp_CaliFlow(target_q:str,same_level_mark:bool,spec:Circuit_info,config:QM_config,qm_machine:QuantumMachinesManager,request:str='basic',init_macro:tuple=None):
     '''
         operations: 180 for X180 operation, 90 for X90 operation.\n
         request: 'basic' for max(N) = 10, 'medium' for max(N) = 30, 'tough' for max(N) = 60
@@ -99,17 +99,23 @@ def amp_CaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
     # initialize
     precision_N_idx = 0
     if request == 'basic':
-        N_candidate = [1, 3]
+        if not same_level_mark:
+            N_candidate = [1, 3]
+        else:
+            N_candidate = [3]
     elif request == 'medium':
-        N_candidate = [5, 9]
+        if not same_level_mark:
+            N_candidate = [5, 9]
+        else:
+            N_candidate = [9]
     elif request == 'tough':
         N_candidate = [30]
     else:
-        N_candidate = [60]
+        N_candidate = [45]
 
     iterations = 0
     max_iteration = 15
-    aN_max_iter = 6
+    aN_max_iter = 3
 
 
     # Workflow start
@@ -175,13 +181,16 @@ def amp_CaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
     return spec, config
 
 
-def break_optimize_condition(new_ans, ans_rec_list, threshold=1):
+def break_optimize_condition(new_ans:float, ans_rec_list:list, threshold:float=1.0):
+    """
+        With nearest 3 events before calc std. If the new answer in the interval\n
+        [avg-theshold*std, avg+theshold*std], return True. Other case return False.
+        
+    """
     if len(ans_rec_list)<= 3:
         return False
     else:
         counted = ans_rec_list[-3:]
-        # old_dif = abs(counted[0]-counted[-1])
-        # new_dif = abs(new_ans-counted[-1])
         from numpy import std, array
         up_limit = sum(counted)/3+threshold*abs(std(array(counted)))
         buttom_limit = sum(counted)/3-threshold*abs(std(array(counted)))
@@ -189,10 +198,7 @@ def break_optimize_condition(new_ans, ans_rec_list, threshold=1):
             return True
         else:
             return False
-        # if new_dif < threshold*old_dif:
-        #     return True
-        # else:
-        #     return False
+
 
 
 def alpha_CaliFlow(drag_coef,q_name:str,ro_element:str,n_avg:int,spec:Circuit_info,config:QM_config,qm_machine:QuantumMachinesManager,init_macro:tuple=None):
@@ -290,10 +296,9 @@ def StarkShift_CaliFlow(q_name:str, ro_element:list, spec:Circuit_info, config:Q
 def AutoCaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:QuantumMachinesManager,virtual_detune:float=2.0,init_macro:tuple=None):
         
     xyw = spec.get_spec_forConfig('xy')[target_q]['pi_len']
-    # ret = AllXY_executor(q_name,ro_element[0],xyw,dyna_config.get_config(),qmm,mode='wait')
-
-    # start_time = time.time()
-    level = 'basic'
+    # amp cali N level. rough -> tough
+    level_instructions = ['basic','medium','tough','final']
+    level = level_instructions[0]
     # optimize log
     amp_rec = []
     freq_rec = []
@@ -307,44 +312,59 @@ def AutoCaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
     AC_cali = False
     converge_manager = False
     break_mark = True
+    last_level = ['']
+    # avg times for Ramsey
+    avg_n_ramsey = 600 #450
 
     # work flows here
     while True:
+        print(f"level rec is: {last_level}")
         amp_rec.append(float(spec.get_spec_forConfig('xy')[target_q][f'pi_amp']))
         
-        spec,config = amp_CaliFlow(target_q,spec,config,qm_machine,level,init_macro)
-        
+        # First do the amplitude calibration.
+        spec,config = amp_CaliFlow(target_q,last_level[-1]==level,spec,config,qm_machine,level,init_macro)
+        # note old level 
+        last_level.append(level)
         amp_ans.append(float(spec.get_spec_forConfig('xy')[target_q][f'pi_amp']))
 
+        # Stark-shift calibrate after amp 
         if AC_cali:
             spec, config = StarkShift_CaliFlow(f"{target_q}_xy",[f"{target_q}_ro"],spec,config,qmm,showFig=False,initializer=init_macro)  
             converge_manager = True
         
+        # if conditions were satisfied, break here.
         if jump_out:
             print("Jump out and amp is calibrated, move onto next step: alpha calibration!")
             new_spec, new_config = spec, config
             break
 
-        n_avg = 600  # Number of averages
-        output_data, evo_time = Ramsey_freq_calibration( virtual_detune, [f"{target_q}_xy"], [f"{target_q}_ro"],config.get_config(), qm_machine, n_avg=n_avg, simulate=False, mode='live', initializer=init_macro)
+        output_data, evo_time = Ramsey_freq_calibration( virtual_detune, [f"{target_q}_xy"], [f"{target_q}_ro"],config.get_config(), qm_machine, n_avg=avg_n_ramsey, simulate=False, mode='live', initializer=init_macro)
         ans = plot_ana_result(evo_time,output_data[f"{target_q}_ro"][0],virtual_detune)
+        
+        # try to save some time from Ramsey exp
+        if abs(float(ans)) < 0.2:
+            avg_n_ramsey = 200
+
         freq_rec.append(ans)
         spec,config = refresh_Q_IF(target_q,spec,config,ans)
         print(f"detune={-ans} MHz")
 
+
         # level for amp cali switch
-        if abs(float(ans)) < 0.5: # 500 kHz
-            level = 'medium'
-        
-        if abs(float(ans)) < 0.01: # 10 kHz
-            level = 'tough'
+        if 0.01 <= abs(float(ans)) and abs(float(ans)) < 0.5: # 500 kHz
+            level = level_instructions[1]
+        elif 0.001 < abs(float(ans)) and abs(float(ans)) < 0.01: # 10 kHz
+            level = level_instructions[2]
+            # if pi_len <= 16 (so far the minimal len on QM), do Stark-shift calibration
             if float(xyw) <= 16: 
                 AC_cali = True
             else:
                 converge_manager = True
-        
-        if abs(float(ans)) < 0.001: # 1kHz
+        # detuning are very good, break after calibrate the Stark-shift (if needed) and Amp
+        elif abs(float(ans)) <= 0.001: # 1kHz
             jump_out = True
+        else:
+            pass
 
 
         detu_ans.append(ans)
@@ -352,26 +372,39 @@ def AutoCaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
         # Once the break condition had been satisfied, turn on break_mark, ready to break the loop 
         if break_optimize_condition(ans,detu_ans) and break_optimize_condition(float(spec.get_spec_forConfig('xy')[target_q][f'pi_amp']),amp_ans):
             break_mark = True
-            level = 'final'
+            # do tough level first
+            if 'tough' in last_level: 
+                level = level_instructions[-1]
+            else:
+                level = level_instructions[-2]
 
         if break_mark and converge_manager:
-            print('Break conditions satisfied!')
-            jump_out = True
-            iter += 1
+            # if it had been checked with the final level, go break !
+            if last_level[-1] == 'fianl':
+                print('Break conditions satisfied, BREAK!')
+                break
+            # if not, go next iteration and check with the final level  
+            else:
+                print('Break conditions satisfied, step into final check!')
+                if 'tough' in last_level:
+                    level = level = level_instructions[-1]
+                else:
+                    level = level = level_instructions[-2]
+                jump_out = True
+                iter += 1
             
+        # if it touch the max iterations setting, break no matter what! 
         if iter <= 0:
             print("Max Optimize iteration break!")
             new_spec, new_config = spec, config
             break
 
         iter -= 1
-        
-    # end_time = time.time()
-    #print(f"Optimization completed! Time cost: {end_time-start_time}s")
 
     log_plot(amp_rec, freq_rec)
+    
+    # alpha calibration
     old_drag_alpha = float(spec.get_spec_forConfig('xy')[target_q]["drag_coef"])
-    # 
     final_spec, final_config = alpha_CaliFlow(old_drag_alpha,f"{target_q}_xy",f"{target_q}_ro",1000,new_spec,new_config,qm_machine,init_macro)
     
     return final_spec, final_config
