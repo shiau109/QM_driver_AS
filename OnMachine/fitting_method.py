@@ -21,6 +21,12 @@ class math_eqns:
             return ax+b
         '''
         return a*x+b
+    
+    def pora(x,a,b,c):
+        '''
+            return ax^2+bx+c
+        '''
+        return a*x**2+b*x+c
 
 def fake(x,f):
     
@@ -37,12 +43,17 @@ def fake(x,f):
         noised.append(f(i,A,c,k,b) + (random.randint(0,60)/10)*noise*(-1)**(random.randint(2)))
     return array(noised)
 
-def theJudge(x,fit_paras):
+def theJudge(x,fit_paras,mode='cosine'):
     '''
         return the x value which has the minimal y.
     '''
-    candi = where(math_eqns.cosine(x,*fit_paras) == min(math_eqns.cosine(x,*fit_paras)))[0][0]
-    peaks = round(x[candi],3)
+    if mode == 'cosine':
+        candi = where(math_eqns.cosine(x,*fit_paras) == min(math_eqns.cosine(x,*fit_paras)))[0][0]
+        peaks = round(x[candi],3)
+    else:
+        ext_x = arange(min(x),max(x)+(max(x)-min(x))/1000,(max(x)-min(x))/1000)
+        candi = where(math_eqns.cosine(ext_x,*fit_paras) == min(math_eqns.cosine(ext_x,*fit_paras)))[0][0]
+        peaks = round(ext_x[candi],6)
 
     return peaks
 
@@ -82,10 +93,21 @@ def find_amp_minima(x:ndarray,amp_array:ndarray,mode:str='continuous'):
         case _:
             boundaries = ()
     popt,_ = curve_fit(math_eqns.cosine,x,amp_array,maxfev=10000000,bounds=boundaries)#
-    peaks_loca = theJudge(x,popt)
+    peaks_loca = theJudge(x,popt,'cosine')
     
     return peaks_loca, popt
 
+# call this to fine minima
+def find_AC_minima(x,y):
+    width = max(x)-min(y)
+    # expect there are 0~1.5T in width
+    min_k = 0
+    max_k = 1/(width/1.5) 
+    
+    popt,_ = curve_fit(math_eqns.cosine,x,y,maxfev=10000000,bounds=((-0.02,-0.1,min_k,min(x)),(0.02,0.1,max_k,max(x))))
+    peaks_loca = theJudge(x,popt,'extended')
+    
+    return peaks_loca, popt
 # Call this to analyze amp exp data
 def analysis_amp(x:ndarray,y1:ndarray,y2:ndarray):
     '''
