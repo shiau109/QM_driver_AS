@@ -1,6 +1,8 @@
 from qualang_tools.units import unit
 from numpy import array, cos, sin
-
+from qm.octave import QmOctaveConfig
+from qm.QuantumMachinesManager import QuantumMachinesManager
+from set_octave import OctaveUnit, octave_declaration
 
 #######################
 # AUXILIARY FUNCTIONS #
@@ -42,9 +44,62 @@ class Circuit_info:
         self.init_ZInfo()
         self.init_DecoInfo()
         self.init_WireInfo()
-    
+        self.init_HardwareInfo()
+
+    # for hardware infomation
+    def init_HardwareInfo(self):
+        self.__HardwareInfo = {}
+        self.__HardwareInfo["qop_ip"] = ""
+        self.__HardwareInfo["qop_port"] = None
+        self.__HardwareInfo["octave_port"] = 0
+        self.__HardwareInfo["cluster_name"] = ''
+        self.__HardwareInfo["controller_name"] = ("","")
+        self.__HardwareInfo["port_mapping"] = {}
+        self.__HardwareInfo["clock"] = ""
+
+    def update_HardwareInfo(self,**kwargs):
+        """
+            Update the hardware information for this chip.\n
+            **kwargs are the following:\n
+            ip(qop_ip):str, qop_port: for QMmanager, octave_port:int=port for octave, cluster_name:str="QPX_2",
+            ctrl_name:tuple=("octave1","con1"), port_map:dict, clock:str="Internal"
+        """
+        if not hasattr(self,'__HardwareInfo'):
+            self.init_HardwareInfo()
+        if kwargs != {}:
+            for info in list(kwargs.keys()):
+                if info.lower() in ['ip', 'qop_ip']:
+                    self.__HardwareInfo["qop_ip"] = kwargs[info]
+                elif info.lower() in ["qop_port"]:
+                    self.__HardwareInfo["qop_port"] = kwargs[info]
+                elif info.lower() in ["octave_port"]:
+                    self.__HardwareInfo["octave_port"] = kwargs[info]
+                elif info.lower() in ["cluster_name"]:
+                    self.__HardwareInfo["cluster_name"] = kwargs[info]
+                elif info.lower() in ["ctrl_name"]:
+                    self.__HardwareInfo["controller_name"] = kwargs[info]
+                elif info.lower() in ["port_map"]:
+                    self.__HardwareInfo["port_mapping"] = kwargs[info]
+                elif info.lower() in ["clock"]:
+                    self.__HardwareInfo["clock"] = kwargs[info]
+                else:
+                    raise KeyError(f"Can't recognize the key with name='{info}'")
+
+    def buildup_qmm(self):
+        '''
+            Build up the QuantumMachinesManager by the HardwareInfo.\n
+            return QuantumMachinesManager -> for program executing, [OctaveUnit]-> for octave calibration
+        '''
+        octave_1 = OctaveUnit(self.__HardwareInfo["controller_name"][0], self.__HardwareInfo["qop_ip"], port=self.__HardwareInfo["octave_port"], con=self.__HardwareInfo["controller_name"][1], clock=self.__HardwareInfo["clock"], port_mapping=self.__HardwareInfo["port_mapping"])
+        # Add the octaves
+        octaves = [octave_1]
+        # Configure the Octaves
+        octave_config = octave_declaration(octaves)
+        qmm = QuantumMachinesManager(host=self.__HardwareInfo["qop_ip"], port=self.__HardwareInfo["qop_port"], cluster_name=self.__HardwareInfo["cluster_name"], octave=octave_config)
+        
+        return qmm, octaves
+
     ### Below about RO information ###
-    
     def init_RoInfo(self):
         '''
             ## catagorized with qlabel, start from 1.
@@ -209,7 +264,7 @@ class Circuit_info:
         # create a binary pickle file 
         f = open(path,"wb")
         # write the python object (dict) to pickle file
-        spec = {"RoInfo":self.__RoInfo,"XyInfo":self.__XyInfo,"ZInfo":self.__ZInfo,"DecoInfo":self.__DecoInfo,"WireInfo":self.__WireInfo}
+        spec = {"RoInfo":self.__RoInfo,"XyInfo":self.__XyInfo,"ZInfo":self.__ZInfo,"DecoInfo":self.__DecoInfo,"WireInfo":self.__WireInfo, "HardwareInfo":self.__HardwareInfo}
         pickle.dump(spec,f)
         # close file
         f.close()
@@ -225,6 +280,8 @@ class Circuit_info:
         self.__ZInfo = spec["ZInfo"]
         self.__WireInfo = spec["WireInfo"]
         self.__RoInfo = spec["RoInfo"]
+        self.__HardwareInfo = spec["HardwareInfo"]
+
 
     ### Below about decoherence time T1 and T2
     def init_DecoInfo(self):
@@ -382,6 +439,9 @@ class Circuit_info:
                 target_T1 = 100 * u.us
                 wait_scale = 1
         return int(wait_scale*target_T1)
+
+    def get_HardwareInfo(self):
+        return self.__HardwareInfo
 
 class Waveform:
     def __init__(self,xyInfo:dict):
@@ -1271,3 +1331,4 @@ class QM_config():
         # Read dictionary pkl file
         with open(path, 'rb') as fp:
             self.__config = pickle.load(fp)
+

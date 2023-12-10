@@ -6,7 +6,7 @@ from SQGate_calibration_dConfig import amp_calibration, DRAG_calibration_Yale, S
 from allxy_dConfig import AllXY_executor
 from Ramsey_freq_calibration_dConfig import Ramsey_freq_calibration, plot_ana_result
 
-from fitting_method import find_amp_minima, math_eqns, analysis_drag_a, find_AC_minima
+from AutoCali_analyzer import find_amp_minima, math_eqns, analysis_drag_a, find_AC_minima
 from numpy import mean, ndarray, arange, array
 import matplotlib.pyplot as plt
 
@@ -126,17 +126,8 @@ def amp_CaliFlow(target_q:str,same_level_mark:bool,spec:Circuit_info,config:QM_c
 
         print(spec.get_spec_forConfig('xy')[target_q][f'pi_amp'])
         results = amp_calibration(amp_modify_range, f"{target_q}_xy", [f"{target_q}_ro"], config.get_config(), qm_machine, n_avg=350, sequence_repeat=sequence_repeat, simulate=False, mode='wait',initializer=init_macro)
-        # fig, ax = plt.subplots(2, len(ro_element))
         x = results['x']
-        # for r_idx, r_name in enumerate(ro_element):
-        #     ax[r_idx*2].cla()
-        #     ax[r_idx*2+1].cla()
-        #     for op_idx, op in enumerate(["x90","x180"]):
-        #         ax[r_idx*2].plot(x, results[r_name][0].transpose()[op_idx], label=op)
-        #         ax[r_idx*2+1].plot(x, results[r_name][1].transpose()[op_idx], label=op)
-        #     plt.show()
-        
-        
+    
         y_90 = results[f"{target_q}_ro"][0].transpose()[0] 
         y_180 = results[f"{target_q}_ro"][0].transpose()[1]
         amp_scale_180,fit_paras_180 = find_amp_minima(x,y_180,'continuous')
@@ -144,9 +135,9 @@ def amp_CaliFlow(target_q:str,same_level_mark:bool,spec:Circuit_info,config:QM_c
 
         print(f"**** N={ sequence_repeat}, scale180={amp_scale_180:.5f}, scalse90={amp_scale_90:.5f} ****")
         
-        # plot and check 
-        # plt.plot(x,y_180,label='exp')
-        # plt.plot(x,y_90,label='exp')
+        # # plot and check 
+        # plt.plot(x,y_180,label='exp-180')
+        # plt.plot(x,y_90,label='exp-90')
         # plt.plot(x, math_eqns.cosine(x,*fit_paras_180))
         # plt.plot(x, math_eqns.cosine(x,*fit_paras_90))
         # plt.scatter(amp_scale_180, math_eqns.cosine(amp_scale_180,*fit_paras_180),c='red',marker='X',s=80)
@@ -233,7 +224,7 @@ def StarkShift_exp(q_name:str, ro_element:list, repeat_sequ_num:int, spec:Circui
         else:
             return False
 
-    exp_circuit = StarkShift_program(q_name,ro_element,repeat_sequ_num,1000,initializer)
+    exp_circuit = StarkShift_program(q_name,ro_element,repeat_sequ_num,500,initializer)
     I_rec = []
 
     for detu_MHz in ACdetune_range:
@@ -309,12 +300,13 @@ def AutoCaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
     iter = 6
     # some helpful marks
     jump_out = False
-    AC_cali = False
+    AC_cali = 0
     converge_manager = False
-    break_mark = True
+    break_mark = False
     last_level = ['']
     # avg times for Ramsey
     avg_n_ramsey = 600 #450
+    
 
     # work flows here
     while True:
@@ -328,14 +320,15 @@ def AutoCaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
         amp_ans.append(float(spec.get_spec_forConfig('xy')[target_q][f'pi_amp']))
 
         # Stark-shift calibrate after amp 
-        if AC_cali:
+        if AC_cali==1:
             spec, config = StarkShift_CaliFlow(f"{target_q}_xy",[f"{target_q}_ro"],spec,config,qmm,showFig=False,initializer=init_macro)  
+            print("Converge_manager had been turn on!")
             converge_manager = True
+            AC_cali = 2
         
         # if conditions were satisfied, break here.
         if jump_out:
             print("Jump out and amp is calibrated, move onto next step: alpha calibration!")
-            new_spec, new_config = spec, config
             break
 
         output_data, evo_time = Ramsey_freq_calibration( virtual_detune, [f"{target_q}_xy"], [f"{target_q}_ro"],config.get_config(), qm_machine, n_avg=avg_n_ramsey, simulate=False, mode='live', initializer=init_macro)
@@ -357,7 +350,9 @@ def AutoCaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
             level = level_instructions[2]
             # if pi_len <= 16 (so far the minimal len on QM), do Stark-shift calibration
             if float(xyw) <= 16: 
-                AC_cali = True
+                if AC_cali<1:
+                    print("Do Stark Shift calibration:")
+                    AC_cali = 1
             else:
                 converge_manager = True
         # detuning are very good, break after calibrate the Stark-shift (if needed) and Amp
@@ -371,6 +366,7 @@ def AutoCaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
 
         # Once the break condition had been satisfied, turn on break_mark, ready to break the loop 
         if break_optimize_condition(ans,detu_ans) and break_optimize_condition(float(spec.get_spec_forConfig('xy')[target_q][f'pi_amp']),amp_ans):
+            print("break_mark had been turn on!")
             break_mark = True
             # do tough level first
             if 'tough' in last_level: 
@@ -396,7 +392,6 @@ def AutoCaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
         # if it touch the max iterations setting, break no matter what! 
         if iter <= 0:
             print("Max Optimize iteration break!")
-            new_spec, new_config = spec, config
             break
 
         iter -= 1
@@ -405,7 +400,7 @@ def AutoCaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
     
     # alpha calibration
     old_drag_alpha = float(spec.get_spec_forConfig('xy')[target_q]["drag_coef"])
-    final_spec, final_config = alpha_CaliFlow(old_drag_alpha,f"{target_q}_xy",f"{target_q}_ro",500,new_spec,new_config,qm_machine,init_macro)
+    final_spec, final_config = alpha_CaliFlow(old_drag_alpha,f"{target_q}_xy",f"{target_q}_ro",1000,spec,config,qm_machine,init_macro)
     
     return final_spec, final_config
         
@@ -414,34 +409,10 @@ if __name__ == '__main__':
     from set_octave import OctaveUnit, octave_declaration
     from SQRB_dConfig import single_qubit_RB, plot_SQRB_result, ana_SQRB
     from QM_config_dynamic import QM_config, Circuit_info, initializer
-    qop_ip = '192.168.1.105'
-    qop_port = None
-    cluster_name = 'QPX_2'
+    dyna_config = QM_config()
+    the_specs = Circuit_info(q_num=5)
     target_q = 'q1'
     
-
-    port_mapping = {
-        ("con1", 1): ("octave1", "I1"),
-        ("con1", 2): ("octave1", "Q1"),
-        ("con1", 3): ("octave1", "I2"),
-        ("con1", 4): ("octave1", "Q2"),
-        ("con1", 5): ("octave1", "I3"),
-        ("con1", 6): ("octave1", "Q3"),
-        ("con1", 7): ("octave1", "I4"),
-        ("con1", 8): ("octave1", "Q4"),
-        ("con1", 9): ("octave1", "I5"),
-        ("con1", 10): ("octave1", "Q5"),
-    }
-
-    octave_1 = OctaveUnit("octave1", qop_ip, port=11250, con="con1", clock="Internal", port_mapping=port_mapping)
-    # Add the octaves
-    octaves = [octave_1]
-    # Configure the Octaves
-    octave_config = octave_declaration(octaves)
-
-    qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-
-
     max_circuit_depth = 700  # Maximum circuit depth
     delta_clifford = 10  #  Play each sequence with a depth step equals to 'delta_clifford - Must be > 1
     assert (max_circuit_depth / delta_clifford).is_integer(), "max_circuit_depth / delta_clifford must be an integer."
@@ -450,31 +421,26 @@ if __name__ == '__main__':
     state_discrimination = [1e-3]
 
     # load config file
-    dyna_config = QM_config()
-    dyna_config.import_config(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Config_Alloffset_1208')
-    the_specs = Circuit_info(q_num=5)
-    the_specs.import_spec(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Spec_Alloffset_1208')
-    # # the_specs.update_aXyInfo_for(target_q,amp=the_specs.get_spec_forConfig('xy')[target_q]['pi_amp']*2)
-    # # the_specs.update_aXyInfo_for(target_q,len=the_specs.get_spec_forConfig('xy')[target_q]['pi_len']/2)
-    # # dyna_config.update_controlWaveform(the_specs.get_spec_forConfig('xy'),target_q)
+    dyna_config.import_config(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Config_Calied_1209')
+    the_specs.import_spec(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Spec_Calied_1209')
+    qmm,_ = the_specs.buildup_qmm()
+    # the_specs.update_aXyInfo_for(target_q,amp=the_specs.get_spec_forConfig('xy')[target_q]['pi_amp']/(16/24))
+    # the_specs.update_aXyInfo_for(target_q,len=16)
+    # dyna_config.update_controlWaveform(the_specs.get_spec_forConfig('xy'),target_q)
 
     xyw = the_specs.get_spec_forConfig('xy')[target_q]['pi_len']
     print(f'pi_len = {xyw}')
     init_macro = initializer((the_specs.give_WaitTime_with_q(target_q,wait_scale=5),),'wait')
     # allXY_ret = AllXY_executor(f"{target_q}_xy",f"{target_q}_ro",xyw,20000,dyna_config.get_config(),qmm,mode='live')
     # RB before Calibrations
-    # x, value_avg, error_avg = single_qubit_RB( xyw, max_circuit_depth, delta_clifford, f"{target_q}_xy", [f"{target_q}_ro"], dyna_config.get_config(), qmm, 10, 300, initialization_macro=init_macro )
-    # plot
-    # plot_SQRB_result( x, value_avg, error_avg )
-    # get gate infidelity only
-    # _, gate_infidelity = ana_SQRB( x, value_avg )
+    x, value_avg, error_avg = single_qubit_RB( xyw, max_circuit_depth, delta_clifford, f"{target_q}_xy", [f"{target_q}_ro"], dyna_config.get_config(), qmm, 10, 300, initialization_macro=init_macro )
+    plot_SQRB_result( x, value_avg, error_avg )
 
     the_specs, dyna_config = AutoCaliFlow(target_q,the_specs,dyna_config,qmm,1.0,init_macro)
     
     the_specs.export_spec(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Spec_Calied_1209')
     dyna_config.export_config(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Config_Calied_1209')
     print(the_specs.get_ReadableSpec_fromQ(target_q,'xy'))
-    
     # ret = AllXY_executor(f"{target_q}_xy",f"{target_q}_ro",xyw,20000,dyna_config.get_config(),qmm,mode='live')
     # # RB after Calibrations
     x, value_avg, error_avg = single_qubit_RB( xyw, max_circuit_depth, delta_clifford, f"{target_q}_xy", [f"{target_q}_ro"], dyna_config.get_config(), qmm, 10, 300, initialization_macro=init_macro )

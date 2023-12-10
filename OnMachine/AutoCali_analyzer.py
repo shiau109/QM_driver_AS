@@ -43,17 +43,14 @@ def fake(x,f):
         noised.append(f(i,A,c,k,b) + (random.randint(0,60)/10)*noise*(-1)**(random.randint(2)))
     return array(noised)
 
-def theJudge(x,fit_paras,mode='cosine'):
+def theJudge(x,fit_paras):
     '''
         return the x value which has the minimal y.
     '''
-    if mode == 'cosine':
-        candi = where(math_eqns.cosine(x,*fit_paras) == min(math_eqns.cosine(x,*fit_paras)))[0][0]
-        peaks = round(x[candi],3)
-    else:
-        ext_x = arange(min(x),max(x)+(max(x)-min(x))/1000,(max(x)-min(x))/1000)
-        candi = where(math_eqns.cosine(ext_x,*fit_paras) == min(math_eqns.cosine(ext_x,*fit_paras)))[0][0]
-        peaks = round(ext_x[candi],6)
+    ext_x = arange(min(x),max(x)+(max(x)-min(x))/1000,(max(x)-min(x))/1000)
+    candi = where(math_eqns.cosine(ext_x,*fit_paras) == min(math_eqns.cosine(ext_x,*fit_paras)))[0][0]
+    peaks = round(ext_x[candi],6)
+
 
     return peaks
 
@@ -85,27 +82,41 @@ def find_amp_minima(x:ndarray,amp_array:ndarray,mode:str='continuous'):
         expect an amp exp result array with a amp x axis array to fit cosine function.\n
         return peak amp ratio in float.
     """
+    # A, c, k, b -> Acos(2pi(kx+b))+c
+    window_width = max(x)-min(x)
+    window_height = max(amp_array)-min(amp_array)
+
     match mode.lower():
         case 'continuous':
-            boundaries = ((-0.1,-0.1,1,min(x)),(0.1,0.1,4,max(x)))
+            # assume there are 0 to 1.5 periods in the window
+            max_k = 1/(window_width/1.5)
+            min_k = 0
+            max_A = 2*window_height
+            min_A = 0
+            max_c = max(amp_array)+1*window_height
+            min_c = min(amp_array)-1*window_height
+            max_b = max(x)+2*window_width
+            min_b = min(x)-2*window_width
+            boundaries = ((min_A,min_c,min_k,min_b),(max_A,max_c,max_k,max_b))
+
         case 'oneshot':
             boundaries = ()
         case _:
             boundaries = ()
     popt,_ = curve_fit(math_eqns.cosine,x,amp_array,maxfev=10000000,bounds=boundaries)#
-    peaks_loca = theJudge(x,popt,'cosine')
+    peaks_loca = theJudge(x,popt)
     
     return peaks_loca, popt
 
 # call this to fine minima
 def find_AC_minima(x,y):
-    width = max(x)-min(y)
+    width = max(x)-min(x)
     # expect there are 0~1.5T in width
     min_k = 0
     max_k = 1/(width/1.5) 
     
     popt,_ = curve_fit(math_eqns.cosine,x,y,maxfev=10000000,bounds=((-0.02,-0.1,min_k,min(x)),(0.02,0.1,max_k,max(x))))
-    peaks_loca = theJudge(x,popt,'extended')
+    peaks_loca = theJudge(x,popt)
     
     return peaks_loca, popt
 # Call this to analyze amp exp data
@@ -151,7 +162,7 @@ if __name__ == '__main__':
     if test.lower() in ['amp','amplitude']:
         ### amp test
         for i in range(20):
-            x = arange(start=0.95, stop=1.105, step=0.005)
+            x = arange(start=0.8, stop=1.2, step=0.005)
             y = fake(x,math_eqns.cosine)
             plt.plot(x,y,label='Fake')
             peaks_loca, popt = find_amp_minima(x,y)
@@ -163,6 +174,7 @@ if __name__ == '__main__':
             plt.xlabel('XYL ratio (π)')
             plt.legend()
             plt.show()
+            plt.close()
     else:
         ### drag alpha test
         for i in range(20):
