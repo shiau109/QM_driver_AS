@@ -71,11 +71,8 @@ qubit_LO[4] = (4.75) * u.GHz
 # Qubits IF
 qubit_IF = np.zeros(5)
 qubit_IF[0] = (-116.8+0.245) * u.MHz       # Q1
-qubit_IF[1] = (-99.153+0.345-0.263-1.4) * u.MHz      # Q2
-# qubit_IF[2] = (-195.153) * u.MHz
-qubit_IF[2] = (-317.056-0.45) * u.MHz
-# qubit_IF[2] = (-211-0.154-0.287) * u.MHz          # idle point Q3 at LO 3.3
-# qubit_IF[2] = (-323.81+0.36) * u.MHz   # idle point Q3 at LO 3.5
+qubit_IF[1] = (-100.227-1.56+0.203) * u.MHz      # Q2
+qubit_IF[2] = (-317.056-0.45-0.071-0.044) * u.MHz
 qubit_IF[3] = (-89.5911-0.272) * u.MHz     # Q4
 qubit_IF[4] = (-92) * u.MHz                # Q5
 # For comparing 2q:
@@ -99,21 +96,21 @@ saturation_amp = 0.1
 pi_len = 40
 pi_sigma = pi_len / 4
 pi_amp_q1 = 0.15*0.872*0.975*0.97/3
-pi_amp_q2 = 0.14913/3*0.98*1.0007
-pi_amp_q3 = 0.07726*0.98768*0.9988
+pi_amp_q2 = 0.14913/3*0.98*1.0007*1.04*0.9975*0.997
+pi_amp_q3 = 0.07635
 pi_amp_q4 = 0.15365
 pi_amp_q5 = 0.5
 
 r90_amp_q1 = pi_amp_q1/2 
-r90_amp_q2 = pi_amp_q2/2*0.9894*1.013*0.998*0.999
-r90_amp_q3 = pi_amp_q3/2*0.98884*1.02*1.00207
+r90_amp_q2 = pi_amp_q2/2*0.9894*1.013*0.998*0.999*1.001
+r90_amp_q3 = pi_amp_q3/2*1.0105
 r90_amp_q4 = pi_amp_q4/2 *1.104*0.99
 # pi_amp_q4 = 0.1*1.135*1.005*0.805
 r90_amp_q5 = pi_amp_q5/2
 
 # DRAG coefficients (# No DRAG when drag_coef_qi=0, it's just a gaussian.)
 drag_coef_q1 = 0.68
-drag_coef_q2 = -0.07
+drag_coef_q2 = -0.65
 drag_coef_q3 = 0.7
 drag_coef_q4 = 1.0
 drag_coef_q5 = 0
@@ -261,7 +258,8 @@ const_flux_amp = 0.45
 cz_point_1_2_q2 = 0.14519591 # q1 - q2 = Ec
 gft_cz_1_2_q2 = flattop_gaussian_waveform(cz_point_1_2_q2-idle_q2, 8 * u.ns, 8 * u.ns)
 g_cz_1_2_q2 = 0.5 * abs(0.5-idle_q2) * gaussian(16, 16/4)
-
+cz_len = 24
+cz_amp = 0.17532
 #############################################
 #                Resonators                 #
 #############################################
@@ -592,6 +590,7 @@ config = {
                 "const": "const_flux_pulse",
                 # options: gft_cz_pulse_1_2_q2, g_cz_pulse_1_2_q2
                 "cz_1_2": "gft_cz_pulse_1_2_q2",
+                "cz": "cz_flux_pulse",
             },
         },
         "q3_z": {
@@ -648,7 +647,13 @@ config = {
                 "Q": "zero_wf",
             },
         },
-        
+        "cz_flux_pulse": {
+            "operation": "control",
+            "length": cz_len,
+            "waveforms": {
+                "single": "cz_wf",
+            },
+        },
         # Qubit-1:
         "x90_pulse_q1": {
             "operation": "control",
@@ -1018,7 +1023,7 @@ config = {
         "saturation_wf": {"type": "constant", "sample": saturation_amp},
         "const_flux_wf": {"type": "constant", "sample": const_flux_amp},
         "zero_wf": {"type": "constant", "sample": 0.0},
-
+        "cz_wf": {"type": "constant", "sample": cz_amp},
         # Qubit-1:
         "x90_I_wf_q1": {"type": "arbitrary", "samples": x90_I_wf_q1.tolist()},
         "x90_Q_wf_q1": {"type": "arbitrary", "samples": x90_Q_wf_q1.tolist()},

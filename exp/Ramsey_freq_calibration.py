@@ -245,8 +245,8 @@ if __name__ == '__main__':
     n_avg = 1000  # Number of averages
 
 
-    ro_element = ["rr2"]
-    q_name =  ["q2_xy"]
+    ro_element = ["rr3"]
+    q_name =  ["q3_xy"]
     virtual_detune = 1 # Unit in MHz
     output_data, evo_time = Ramsey_freq_calibration( virtual_detune, q_name, ro_element, config, qmm, n_avg=n_avg, simulate=False)
     #   Data Saving   # 

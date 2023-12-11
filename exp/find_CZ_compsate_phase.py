@@ -155,7 +155,7 @@ def live_plotting(signal,signal_c,ramsey_Qi):
     plt.pause(0.1)
 
 flux_Qi = 2  
-ramsey_Qi = 2
+ramsey_Qi = 3
 a = 0.3896
 type = 'square'
 signal_mode = 'I'
