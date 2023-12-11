@@ -371,7 +371,7 @@ def AutoCaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
                 level_idx = 2
             level = level_instructions[level_idx]
             # if pi_len <= 16 (so far the minimal len on QM), do Stark-shift calibration
-            if float(xyw) <= 16: 
+            if float(xyw) <= 20: 
                 if AC_cali<1:
                     print("Do Stark Shift calibration:")
                     AC_cali = 1
@@ -436,6 +436,7 @@ def AutoCaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
         
 
 if __name__ == '__main__':
+    # from RB20ns_dConfig import RB_executor, plot_SQRB_result
     from SQRB_dConfig import single_qubit_RB, plot_SQRB_result
     from QM_config_dynamic import QM_config, Circuit_info, initializer
     dyna_config = QM_config()
@@ -450,11 +451,11 @@ if __name__ == '__main__':
     state_discrimination = [1e-3]
 
     # load config file
-    dyna_config.import_config(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Config_Calied_1211_16ns')
-    the_specs.import_spec(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Spec_Calied_1211_16ns')
+    dyna_config.import_config(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Config_Calied_1211_20ns')
+    the_specs.import_spec(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Spec_Calied_1211_20ns')
     qmm,_ = the_specs.buildup_qmm()
-    # the_specs.update_aXyInfo_for(target_q,amp=the_specs.get_spec_forConfig('xy')[target_q]['pi_amp']/(16/24))
-    # the_specs.update_aXyInfo_for(target_q,len=16)
+    # the_specs.update_aXyInfo_for(target_q,amp=the_specs.get_spec_forConfig('xy')[target_q]['pi_amp']/(20/24))
+    # the_specs.update_aXyInfo_for(target_q,len=20)
     # dyna_config.update_controlWaveform(the_specs.get_spec_forConfig('xy'),target_q)
 
     xyw = the_specs.get_spec_forConfig('xy')[target_q]['pi_len']
@@ -462,16 +463,15 @@ if __name__ == '__main__':
     init_macro = initializer((the_specs.give_WaitTime_with_q(target_q,wait_scale=5),),'wait')
     # allXY_ret = AllXY_executor(f"{target_q}_xy",f"{target_q}_ro",xyw,20000,dyna_config.get_config(),qmm,mode='live')
     # RB before Calibrations
-    x, value_avg, error_avg = single_qubit_RB( xyw, max_circuit_depth, delta_clifford, f"{target_q}_xy", [f"{target_q}_ro"], dyna_config.get_config(), qmm, 10, 300, initialization_macro=init_macro )
+    x, value_avg, error_avg = single_qubit_RB( xyw, max_circuit_depth, delta_clifford,f"{target_q}_xy",[f"{target_q}_ro"],dyna_config.get_config(), qmm, 30, 300, initializer=init_macro )
     plot_SQRB_result( x, value_avg, error_avg )
-
     calied_specs, calied_config = AutoCaliFlow(target_q,the_specs,dyna_config,qmm,1.0,init_macro)
     
-    calied_specs.export_spec(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Spec_Calied_1211_16ns')
-    calied_config.export_config(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Config_Calied_1211_16ns')
+    calied_specs.export_spec(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Spec_Calied_1211_20ns')
+    calied_config.export_config(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Config_Calied_1211_20ns')
     print(calied_specs.get_ReadableSpec_fromQ(target_q,'xy'))
     # ret = AllXY_executor(f"{target_q}_xy",f"{target_q}_ro",xyw,20000,dyna_config.get_config(),qmm,mode='live')
     # # RB after Calibrations
-    x, value_avg, error_avg = single_qubit_RB( xyw, max_circuit_depth, delta_clifford, f"{target_q}_xy", [f"{target_q}_ro"], calied_config.get_config(), qmm, 10, 300, initialization_macro=init_macro )
+    x, value_avg, error_avg = single_qubit_RB( xyw, max_circuit_depth, delta_clifford,f"{target_q}_xy",[f"{target_q}_ro"],calied_config.get_config(), qmm, 30, 300, initializer=init_macro )
     # # plot
     plot_SQRB_result( x, value_avg, error_avg )

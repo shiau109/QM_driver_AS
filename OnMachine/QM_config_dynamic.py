@@ -1,4 +1,3 @@
-from qualang_tools.units import unit
 from numpy import array, cos, sin
 from qm.octave import QmOctaveConfig
 from qm.QuantumMachinesManager import QuantumMachinesManager
@@ -7,6 +6,7 @@ from set_octave import OctaveUnit, octave_declaration
 #######################
 # AUXILIARY FUNCTIONS #
 #######################
+from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
 
 
