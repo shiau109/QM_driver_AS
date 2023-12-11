@@ -47,7 +47,7 @@ def theJudge(x,fit_paras):
     '''
         return the x value which has the minimal y.
     '''
-    ext_x = arange(min(x),max(x)+(max(x)-min(x))/1000,(max(x)-min(x))/1000)
+    ext_x = arange(min(x),max(x)+(max(x)-min(x))/10000,(max(x)-min(x))/10000)
     candi = where(math_eqns.cosine(ext_x,*fit_paras) == min(math_eqns.cosine(ext_x,*fit_paras)))[0][0]
     peaks = round(ext_x[candi],6)
 
