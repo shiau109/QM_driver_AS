@@ -9,8 +9,8 @@ import os
 main_path = os.getcwd()
 
 q_num = 5
-config_file_path = main_path+'/OnMachine/Config_Calied_1209'
-spec_file_path = main_path+'/OnMachine/Spec_Calied_1209'
+config_file_path = main_path+'/OnMachine/Config_Calied_1211'
+spec_file_path = main_path+'/OnMachine/Spec_Calied_1211'
 
 # Configure the Octave parameters for each element
 rr1 = ElementsSettings("q1_ro", gain=0, rf_in_port=["octave1", 1], down_convert_LO_source="Internal")
@@ -37,6 +37,7 @@ the_specs = Circuit_info(q_num)
 the_specs.import_spec(spec_file_path)
 qmm, octaves = the_specs.buildup_qmm()
 
+dyna_config.check_mixerCorrectionPair_for('q1')
 
 octave_settings(
     qmm=qmm,
@@ -46,3 +47,4 @@ octave_settings(
     calibration=True,
 )
 qmm.close()
+

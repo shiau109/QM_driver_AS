@@ -154,13 +154,13 @@ class Circuit_info:
             for info in kwargs:
                 match info.lower():
                     case "if":
-                        self.__RoInfo[target_q][f'resonator_IF'] = kwargs[info]*u.MHz
-                        few_freq[f'resonator_IF_{target_q}'] = kwargs[info]*u.MHz
+                        self.__RoInfo[target_q][f'resonator_IF'] = int(kwargs[info]*u.MHz)
+                        few_freq[f'resonator_IF_{target_q}'] = int(kwargs[info]*u.MHz)
                     case "amp":
                         self.__RoInfo[target_q][f'readout_amp'] = kwargs[info]
                     case "lo":
-                        self.__RoInfo[target_q][f'resonator_LO'] = kwargs[info]*u.GHz
-                        few_freq[f'resonator_LO_{target_q}'] = kwargs[info]*u.GHz
+                        self.__RoInfo[target_q][f'resonator_LO'] = int(kwargs[info]*u.GHz)
+                        few_freq[f'resonator_LO_{target_q}'] = int(kwargs[info]*u.GHz)
                     case "len":
                         self.__RoInfo['readout_len'] = kwargs[info]
                     case "time":
@@ -219,17 +219,17 @@ class Circuit_info:
             elif name.lower() == 'len':
                 self.__XyInfo[target_q]["pi_len"] = kwargs[name]
             elif name.lower() == 'lo':
-                self.__XyInfo[target_q]["qubit_LO"] = kwargs[name]*u.GHz
-                new_freq["qubit_LO_"+target_q] = kwargs[name]*u.GHz
+                self.__XyInfo[target_q]["qubit_LO"] = int(kwargs[name]*u.GHz)
+                new_freq["qubit_LO_"+target_q] = int(kwargs[name]*u.GHz)
             elif name.lower() == 'if':
-                self.__XyInfo[target_q]["qubit_IF"] = kwargs[name]*u.MHz
-                new_freq["qubit_IF_"+target_q] = kwargs[name]*u.MHz
+                self.__XyInfo[target_q]["qubit_IF"] = int(kwargs[name]*u.MHz)
+                new_freq["qubit_IF_"+target_q] = int(kwargs[name]*u.MHz)
             elif name.lower() in ['draga','drag_coef'] :
                 self.__XyInfo[target_q]["drag_coef"] = kwargs[name]
             elif name.lower() in ["delta","d","anh","anharmonicity"]:
-                self.__XyInfo[target_q]["anharmonicity"] = kwargs[name]*u.MHz
+                self.__XyInfo[target_q]["anharmonicity"] = int(kwargs[name]*u.MHz)
             elif name.lower() in ['ac',"AC_stark_detuning"]:
-                self.__XyInfo[target_q]["AC_stark_detuning"] = kwargs[name]*u.MHz
+                self.__XyInfo[target_q]["AC_stark_detuning"] = int(kwargs[name]*u.MHz)
             elif name.lower() in ['waveform',"func",'wf']:
                 self.__XyInfo[target_q]["waveform_func"] = kwargs[name]
             elif name.lower() in ['half_scale','half']:
@@ -1331,4 +1331,17 @@ class QM_config():
         # Read dictionary pkl file
         with open(path, 'rb') as fp:
             self.__config = pickle.load(fp)
+
+    def check_mixerCorrectionPair_for(self,target_q:str):
+        """
+            print out the mixer corrections and the frequencies about target_q both in 'elements' and 'mixers'.
+        """
+        elements = self.__config['elements'][f"{target_q}_xy"]
+        print("=================================================")
+        print(f"Mixer for {target_q} is <<{elements['mixInputs']['mixer']}>>")
+        print(f"LO frequency registerd: {elements['mixInputs']['lo_frequency']} Hz")
+        print(f"IF frequency registerd: {elements['intermediate_frequency']} Hz")
+        print(f"Information in mixer:\n {self.__config['mixers'][elements['mixInputs']['mixer']]}")
+        print("=================================================")
+
 
