@@ -25,7 +25,7 @@ qop_ip = "qum.phys.sinica.edu.tw"  # Write the QM router IP address
 ###################
 # Path to save data
 save_data = False
-save_dir = r"C:\Users\ASUS\Documents\GitHub\QM_fitting\data\20231101_DR3_5XQ_AS1201\05 resonator_vs_flux"
+save_dir = r"D:\Data\5Q_DR3"
 # save_dir = (Path().absolute()/"PYQUM"/"TEST"/"BETAsite"/"QM"/"OPXPlus"/"data")
 
 ############################

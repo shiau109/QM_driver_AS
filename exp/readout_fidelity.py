@@ -114,8 +114,8 @@ if __name__ == '__main__':
 
 
     #   Data Saving   # 
-    save_data = False
-    if save_data == True:
+    save_data = True
+    if save_data:
         from save_data import save_npz
         import sys
         save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
