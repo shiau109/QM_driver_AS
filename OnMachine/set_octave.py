@@ -78,7 +78,6 @@ def octave_declaration(octaves: list = ()):
     """
     octave_config = QmOctaveConfig()
     octave_config.set_calibration_db(os.getcwd())
-    
     for i in range(len(octaves)):
         if octaves[i].name is None:
             raise TypeError(f"Please insert the octave name for the {i}'s octave")

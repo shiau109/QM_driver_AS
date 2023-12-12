@@ -3,8 +3,8 @@ from pathlib import Path
 import sys
 # sys.path.append(str(Path().absolute()/"TEST"/"BETAsite"/"QM"/"OPXPlus"/"Configurations"))
 # sys.path.append(str(Path().absolute()/"PYQUM"/"TEST"/"BETAsite"/"QM"/"OPXPlus"/"Configurations"))
-from configuration_nq import *
-
+# from configuration_nq import *
+from configuration_5q_dr2b import *
 qubit_num = 5
 
 # Initialization:

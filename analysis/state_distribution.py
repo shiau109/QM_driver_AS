@@ -23,7 +23,7 @@ def train_model( data ):
     my_model.relabel_model(data[0])
     return my_model
 
-def create_img( data, dist_model, fig=None ):
+def create_img( data, dist_model, fig=None, label="" ):
 
     """
     data type
@@ -40,7 +40,7 @@ def create_img( data, dist_model, fig=None ):
         fig = plt.figure(constrained_layout=True)
     gs = fig.add_gridspec(2, 3)
     ax_iq_all = plt.subplot(gs[0, 0])
-    ax_iq_all.set_title("Training data", fontsize=20  )
+    ax_iq_all.set_title(f"{label} Training data", fontsize=20  )
     ax_iq_all.tick_params(axis='both', labelsize=15)
     # ax_iq_all.tick_params(axis='y', labelsize=15)
 
@@ -269,11 +269,13 @@ def get_proj_distance( proj_pts, iq_data ):
     return projectedDistance[0]
 
 if __name__=='__main__':
-    data = np.load(r'testing/data/state_distinguishability_20231129-084303.npz')# , allow_pickle=True)["arr_0"].item()
-    
+    file_path = r'C:\Users\shiau\OneDrive\Desktop\multiplexRO interference'
+    file_name = "IQ_Blobs_q1_2_3_4_5_all.npz"
+
+    data = np.load(f"{file_path}\\{file_name}")# , allow_pickle=True)["arr_0"].item()
     for r in data.keys():
         
         gmm_model = train_model(data[r]*1000)
         fig = plt.figure(constrained_layout=True)
-        create_img(data[r]*1000, gmm_model)
+        create_img(data[r]*1000, gmm_model, fig, r)
     plt.show()

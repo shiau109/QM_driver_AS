@@ -29,39 +29,40 @@ from macros import qua_declaration, multiplexed_readout, reset_qubit
 from RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save_singleShot
 
 
-def state_distinguishability( q_id:list, ro_element, shot_num, reset:str, config, qmm:QuantumMachinesManager):
-
+def state_distinguishability( q_name:list, ro_element, shot_num, reset:str, config, qmm:QuantumMachinesManager, init_macro=None):
+    """
+    init_macro is Callable
+    """
     with program() as iq_blobs:
-        iqdata_stream_g = multiRO_declare( ro_element )
-        iqdata_stream_e = multiRO_declare( ro_element )
+
+        iqdata_stream = multiRO_declare( ro_element )
 
         n = declare(int)
         n_st = declare_stream()
-
-        for i in [0,1,2,3]:
-            set_dc_offset(f"q{i+1}_z", "single", max_frequency_point[i])
-
+        p_idx = declare()
         with for_(n, 0, n < shot_num, n + 1):
-            
-            wait(thermalization_time * u.ns)
-            # for i in q_id:
-            #     reset_qubit(reset, f"q{i+1}_xy", f"rr{i+1}", cooldown_time=thermalization_time,  threshold=ge_threshold[i], max_tries=2, Ig=iqdata_stream_g[0])
-            # align()
-            multiRO_measurement(iqdata_stream_g, ro_element, weights="rotated_")
-            align()
 
-            wait(thermalization_time * u.ns)
-            # for i in q_id:
-            #     reset_qubit(reset, f"q{i+1}_xy", f"rr{i+1}", cooldown_time=thermalization_time,  threshold=ge_threshold[i], max_tries=2, Ig=iqdata_stream_e[0])
-            for i in q_id:
-                play("x180", f"q{i+1}_xy")
-            align()
-            multiRO_measurement(iqdata_stream_e, ro_element, weights="rotated_")
+            with for_each_( p_idx, [0, 1]):  
+                # Init
+                if init_macro == None:
+                    wait(thermalization_time * u.ns)
+                else:
+                    init_macro()
+                    
+                # Operation
+                with switch_(p_idx, unsafe=True):
+                    with case_(0):
+                        pass
+                    with case_(1):
+                        for q in q_name:
+                            play("x180", q)
+                align()
+                # Measurement
+                multiRO_measurement(iqdata_stream, ro_element, weights="rotated_")  
 
         with stream_processing():
             # Save all streamed points for plotting the IQ blobs
-            multiRO_pre_save_singleShot(iqdata_stream_g, ro_element, "_g")
-            multiRO_pre_save_singleShot(iqdata_stream_e, ro_element, "_e")
+            multiRO_pre_save_singleShot( iqdata_stream, ro_element, ( shot_num, 2 ) )
 
     #####################################
     #  Open Communication with the QOP  #
@@ -71,10 +72,9 @@ def state_distinguishability( q_id:list, ro_element, shot_num, reset:str, config
     job = qm.execute(iq_blobs)
     data_list = []
     for r in ro_element:
-        data_list.append(f"{r}_I_g")
-        data_list.append(f"{r}_Q_g")
-        data_list.append(f"{r}_I_e")
-        data_list.append(f"{r}_Q_e")   
+        data_list.append(f"{r}_I")
+        data_list.append(f"{r}_Q")
+
     
     results = fetching_tool(job, data_list=data_list, mode="wait_for_all")
     fetch_data = results.fetch_all()
