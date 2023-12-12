@@ -54,7 +54,7 @@ def freq_dep_signal( dfs, q_name:list, ro_element:list, n_avg, config, qmm:Quant
                 # Reset both qubits to ground
                 wait(thermalization_time * u.ns)
                 # Measure the ground IQ blobs
-                multiRO_measurement(iqdata_stream_g, ro_element, weights="rotated_")
+                multiRO_measurement(iqdata_stream_g, ro_element, weights="rotated_",amp_modify=0.5)
                 align()
                 # Reset both qubits to ground
                 wait(thermalization_time * u.ns)
@@ -62,7 +62,7 @@ def freq_dep_signal( dfs, q_name:list, ro_element:list, n_avg, config, qmm:Quant
                 for name in q_name:
                     play("x180", name)
                 align()
-                multiRO_measurement(iqdata_stream_e, ro_element, weights="rotated_")
+                multiRO_measurement(iqdata_stream_e, ro_element, weights="rotated_",amp_modify=0.5)
             # Save the averaging iteration to get the progress bar
             save(n, n_st)
 
@@ -253,7 +253,7 @@ def get_signal_amp( data ):
 
 if __name__ == '__main__':
 
-    n_avg = 1000
+    n_avg = 200
 
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
 
@@ -267,7 +267,7 @@ if __name__ == '__main__':
         fig = plt.figure()
         ax = fig.subplots(3,1)
         plot_freq_signal( dfs, data[r], r, ax )
-        plt.show()
+    plt.show()
     
     amps = np.linspace(0, 1.8, 180)
     data = power_dep_signal( amps, operate_qubit, ro_element, n_avg, config, qmm)
@@ -278,4 +278,4 @@ if __name__ == '__main__':
         plot_amp_signal_phase( amps, data[r], r, ax[1] )
 
         fig.suptitle(f"{r} RO amplitude")
-        plt.show()
+    plt.show()

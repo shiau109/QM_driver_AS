@@ -49,8 +49,8 @@ def bake_phased_xz(baker: Baking, q, x, z, a):
 
 
 # single qubit phase corrections in units of 2pi applied after the CZ gate
-qubit1_frame_update = 18.394 / 360  # example values, should be taken from QPU parameters
-qubit2_frame_update = -327.771 / 360  # example values, should be taken from QPU parameters
+qubit1_frame_update = 16.583 / 360  # example values, should be taken from QPU parameters
+qubit2_frame_update = 28.047 / 360  # example values, should be taken from QPU parameters
 
 
 # defines the CZ gate that realizes the mapping |00> -> |00>, |01> -> |01>, |10> -> |10>, |11> -> -|11>
@@ -74,8 +74,8 @@ def prep():
 
 
 def meas():
-    threshold1 = 0.1e-03  # threshold for state discrimination 0 <-> 1 using the I quadrature
-    threshold2 = 0.1e-03  # threshold for state discrimination 0 <-> 1 using the I quadrature
+    threshold1 = 1.230e-04  # threshold for state discrimination 0 <-> 1 using the I quadrature
+    threshold2 = -4.683e-04  # threshold for state discrimination 0 <-> 1 using the I quadrature
     I1 = declare(fixed)
     I2 = declare(fixed)
     Q1 = declare(fixed)
@@ -99,7 +99,7 @@ rb = TwoQubitRb(
 )  # create RB experiment from configuration and defined functions
 
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name)  # initialize qmm
-res = rb.run(qmm, circuit_depths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10], num_circuits_per_depth=20, num_shots_per_circuit=2000)
+res = rb.run(qmm, circuit_depths=[1, 2, 3, 4, 5], num_circuits_per_depth=20, num_shots_per_circuit=2000)
 # circuit_depths ~ how many consecutive Clifford gates within one executed circuit https://qiskit.org/documentation/apidoc/circuit.html
 # num_circuits_per_depth ~ how many random circuits within one depth
 # num_shots_per_circuit ~ repetitions of the same circuit (averaging)

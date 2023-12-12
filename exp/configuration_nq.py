@@ -259,7 +259,7 @@ cz_point_1_2_q2 = 0.14519591 # q1 - q2 = Ec
 gft_cz_1_2_q2 = flattop_gaussian_waveform(cz_point_1_2_q2-idle_q2, 8 * u.ns, 8 * u.ns)
 g_cz_1_2_q2 = 0.5 * abs(0.5-idle_q2) * gaussian(16, 16/4)
 cz_len = 24
-cz_amp = 0.17532
+cz_amp = 0.39#0.1755
 #############################################
 #                Resonators                 #
 #############################################
@@ -268,7 +268,7 @@ resonator_LO = 5.95 * u.GHz
 resonator_IF = np.zeros(5)
 resonator_IF[0] = int((-214.21) * u.MHz)
 resonator_IF[1] = int((75.159-0.08) * u.MHz)
-resonator_IF[2] = int((-103.17) * u.MHz) 
+resonator_IF[2] = int((-103.17-0.8) * u.MHz) 
 resonator_IF[3] = int((163.06) * u.MHz)
 resonator_IF[4] = int((-25.8) * u.MHz)
 # Above is for verifying wide-sweep results: -156, -38, 39, 137, 231
@@ -277,8 +277,8 @@ resonator_IF[4] = int((-25.8) * u.MHz)
 readout_len = 2000
 readout_amp = np.zeros(5)
 readout_amp[0] = 0.03
-readout_amp[1] = 0.03*0.3*1.5*0.95*1.2
-readout_amp[2] = 0.03*0.3*1.5
+readout_amp[1] = 0.03*0.7
+readout_amp[2] = 0.03*0.45
 readout_amp[3] = 0.03
 # readout_amp[3] = 0.02
 readout_amp[4] = 0.02
@@ -341,12 +341,12 @@ else:
 # state discrimination
 rotation_angle_q1 = (148.6 / 180) * np.pi
 rotation_angle_q2 = ((18+1.1) / 180) * np.pi
-rotation_angle_q3 = ((252.3+357.5+1.5) / 180) * np.pi
+rotation_angle_q3 = ((252.3+357.5+1.5+204.2) / 180) * np.pi
 rotation_angle_q4 = (0 / 180) * np.pi
 rotation_angle_q5 = (0 / 180) * np.pi
 ge_threshold_q1 = 0.000909
-ge_threshold_q2 = 0.000229
-ge_threshold_q3 = 0
+ge_threshold_q2 = 1.230e-04
+ge_threshold_q3 = -4.683e-04
 ge_threshold_q4 = 2.419e-04
 ge_threshold_q5 = 0
 
