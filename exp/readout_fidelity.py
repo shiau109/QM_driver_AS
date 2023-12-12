@@ -29,39 +29,43 @@ from macros import qua_declaration, multiplexed_readout, reset_qubit
 from RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save_singleShot
 
 
-def state_distinguishability( q_id:list, ro_element, shot_num, reset:str, config, qmm:QuantumMachinesManager):
-
+def state_distinguishability( q_name:list, ro_element, shot_num, config, qmm:QuantumMachinesManager, init_macro=None, simulate=False):
+    """
+    init_macro is Callable
+    """
     with program() as iq_blobs:
-        iqdata_stream_g = multiRO_declare( ro_element )
-        iqdata_stream_e = multiRO_declare( ro_element )
+
+        iqdata_stream = multiRO_declare( ro_element )
 
         n = declare(int)
         n_st = declare_stream()
-
-        for i in [0,1,2,3]:
-            set_dc_offset(f"q{i+1}_z", "single", max_frequency_point[i])
-
+        p_idx = declare(int)
         with for_(n, 0, n < shot_num, n + 1):
-            
-            wait(thermalization_time * u.ns)
-            # for i in q_id:
-            #     reset_qubit(reset, f"q{i+1}_xy", f"rr{i+1}", cooldown_time=thermalization_time,  threshold=ge_threshold[i], max_tries=10, Ig=iqdata_stream_g[0])
-            align()
-            multiRO_measurement(iqdata_stream_g, ro_element, weights="rotated_")
-            align()
 
-            wait(thermalization_time * u.ns)
-            # for i in q_id:
-            #     reset_qubit(reset, f"q{i+1}_xy", f"rr{i+1}", cooldown_time=thermalization_time,  threshold=ge_threshold[i], max_tries=10, Ig=iqdata_stream_e[0])
-            for i in q_id:
-                play("x180", f"q{i+1}_xy")
-            align()
-            multiRO_measurement(iqdata_stream_e, ro_element, weights="rotated_")
+            with for_each_( p_idx, [0, 1]):  
+                # Init
+                if simulate:
+                    wait( 100 )
+                else:
+                    if init_macro == None:
+                        wait(thermalization_time * u.ns)
+                    else:
+                        init_macro()
+                    
+                # Operation
+                with switch_(p_idx, unsafe=True):
+                    with case_(0):
+                        pass
+                    with case_(1):
+                        for q in q_name:
+                            play("x180", q)
+                align()
+                # Measurement
+                multiRO_measurement(iqdata_stream, ro_element, weights="rotated_")  
 
         with stream_processing():
             # Save all streamed points for plotting the IQ blobs
-            multiRO_pre_save_singleShot(iqdata_stream_g, ro_element, "_g")
-            multiRO_pre_save_singleShot(iqdata_stream_e, ro_element, "_e")
+            multiRO_pre_save_singleShot( iqdata_stream, ro_element, ( shot_num, 2 ) )
 
     #####################################
     #  Open Communication with the QOP  #
@@ -71,63 +75,50 @@ def state_distinguishability( q_id:list, ro_element, shot_num, reset:str, config
     job = qm.execute(iq_blobs)
     data_list = []
     for r in ro_element:
-        data_list.append(f"{r}_I_g")
-        data_list.append(f"{r}_Q_g")
-        data_list.append(f"{r}_I_e")
-        data_list.append(f"{r}_Q_e")   
+        data_list.append(f"{r}_I")
+        data_list.append(f"{r}_Q")
+
     
     results = fetching_tool(job, data_list=data_list, mode="wait_for_all")
     fetch_data = results.fetch_all()
     output_data = {}
     for r_idx, r_name in enumerate(ro_element):
-        output_data[r_name] = np.array(
-            [[fetch_data[r_idx*4], fetch_data[r_idx*4+1]],
-             [fetch_data[r_idx*4+2], fetch_data[r_idx*4+3]]])
-    
+        i_data = np.moveaxis(np.array(fetch_data[r_idx*2])[0], 0,-1)
+        q_data = np.moveaxis(np.array(fetch_data[r_idx*2+1])[0], 0,-1)
+
+        output_data[r_name] = np.array([i_data,q_data])
     qm.close()
     return output_data
-
-
-
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import time
-    from analysis.state_distribution import train_model, create_img
+
     ###################
-    #   Data Saving   #
     ###################
-    from datetime import datetime
-    import sys
-    save_data = False  # Default = False in configuration file
-    save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
-    save_time = str(datetime.now().strftime("%Y%m%d-%H%M%S"))
-    save_path = f"{save_dir}\{save_time}_{save_progam_name}" 
+
 
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-    resonators = ["rr4"]
+    resonators = ["rr2","rr3"]
+    q_name = ["q2_xy","q3_xy"]
     n_runs = 10000
-    reset = "cooldown"  # can be set to "cooldown" or "active"
+    # reset = "cooldown"  # can be set to "cooldown" or "active"
 
     start_time = time.time()
-    output_data = state_distinguishability( [3], resonators, n_runs, reset, config, qmm)  
+    output_data = state_distinguishability( q_name, resonators, n_runs, config, qmm)  
     end_time = time.time()
     elapsed_time = np.round(end_time-start_time, 1)
 
     for r in resonators:
-        
-        gmm_model = train_model(output_data[r]*1000)
-        fig = plt.figure(constrained_layout=True)
-        create_img(output_data[r]*1000, gmm_model)
-        # fig.show()
-        # plt.show()
-        two_state_discriminator(output_data[r][0][0], output_data[r][0][1], output_data[r][1][0], output_data[r][1][1], True, True)
-        plt.suptitle(r + "\n reset = " + reset + f"\n {n_runs} runs, elapsed time = {elapsed_time}s \n readout power = {readout_amp[resonators.index(r)]}V, readout length = {readout_len}ns")
-        if save_data == True:
-            figure = plt.gcf() # get current figure
-            figure.set_size_inches(12, 10)
-            plt.tight_layout()
-            plt.pause(0.1)
-            plt.savefig(f"{save_path}-{r}.png", dpi = 500)
+        two_state_discriminator(output_data[r][0][0], output_data[r][1][0], output_data[r][0][1], output_data[r][1][1], True, True)
+
+
+    #   Data Saving   # 
+    save_data = False
+    if save_data == True:
+        from save_data import save_npz
+        import sys
+        save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
+        save_npz(save_dir, save_progam_name, output_data)
 
     plt.show()
