@@ -29,7 +29,7 @@ from macros import qua_declaration, multiplexed_readout, reset_qubit
 from RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save_singleShot
 
 
-def state_distinguishability( q_name:list, ro_element, shot_num, reset:str, config, qmm:QuantumMachinesManager, init_macro=None):
+def state_distinguishability( q_name:list, ro_element, shot_num, config, qmm:QuantumMachinesManager, init_macro=None, simulate=False):
     """
     init_macro is Callable
     """
@@ -39,15 +39,18 @@ def state_distinguishability( q_name:list, ro_element, shot_num, reset:str, conf
 
         n = declare(int)
         n_st = declare_stream()
-        p_idx = declare()
+        p_idx = declare(int)
         with for_(n, 0, n < shot_num, n + 1):
 
             with for_each_( p_idx, [0, 1]):  
                 # Init
-                if init_macro == None:
-                    wait(thermalization_time * u.ns)
+                if simulate:
+                    wait( 100 )
                 else:
-                    init_macro()
+                    if init_macro == None:
+                        wait(thermalization_time * u.ns)
+                    else:
+                        init_macro()
                     
                 # Operation
                 with switch_(p_idx, unsafe=True):
@@ -80,10 +83,13 @@ def state_distinguishability( q_name:list, ro_element, shot_num, reset:str, conf
     fetch_data = results.fetch_all()
     output_data = {}
     for r_idx, r_name in enumerate(ro_element):
-        output_data[r_name] = np.array(
-            [[fetch_data[r_idx*4], fetch_data[r_idx*4+1]],
-             [fetch_data[r_idx*4+2], fetch_data[r_idx*4+3]]])
-    
+        i_data = np.moveaxis(np.array(fetch_data[r_idx*2])[0], 0,-1)
+        q_data = np.moveaxis(np.array(fetch_data[r_idx*2+1])[0], 0,-1)
+        print(np.array(fetch_data[r_idx*2])[0].shape)
+        print(i_data.shape)
+
+        output_data[r_name] = np.array([i_data,q_data])
+        print(output_data[r_name].shape)
     qm.close()
     return output_data
 
@@ -97,16 +103,17 @@ if __name__ == '__main__':
 
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
     resonators = ["rr2","rr3"]
+    q_name = ["q2_xy","q3_xy"]
     n_runs = 10000
-    reset = "cooldown"  # can be set to "cooldown" or "active"
+    # reset = "cooldown"  # can be set to "cooldown" or "active"
 
     start_time = time.time()
-    output_data = state_distinguishability( [1,2], resonators, n_runs, reset, config, qmm)  
+    output_data = state_distinguishability( q_name, resonators, n_runs, config, qmm)  
     end_time = time.time()
     elapsed_time = np.round(end_time-start_time, 1)
 
     for r in resonators:
-        two_state_discriminator(output_data[r][0][0], output_data[r][0][1], output_data[r][1][0], output_data[r][1][1], True, True)
+        two_state_discriminator(output_data[r][0][0], output_data[r][1][0], output_data[r][0][1], output_data[r][1][1], True, True)
         # plt.suptitle(r + "\n reset = " + reset + f"\n {n_runs} runs, elapsed time = {elapsed_time}s \n readout power = {readout_amp[resonators.index(r)]}V, readout length = {readout_len}ns")
         
         # if save_data == True:
