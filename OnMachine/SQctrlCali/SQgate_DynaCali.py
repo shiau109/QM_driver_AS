@@ -1,5 +1,5 @@
 
-from QM_config_dynamic import QM_config, Circuit_info
+# from QM_config_dynamic import QM_config, Circuit_info
 from qm.QuantumMachinesManager import QuantumMachinesManager
 
 from SQGate_calibration_dConfig import amp_calibration, DRAG_calibration_Yale, StarkShift_scout, StarkShift_program
