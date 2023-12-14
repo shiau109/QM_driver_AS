@@ -1,9 +1,0 @@
-{
-    "python.analysis.extraPaths": [
-        "./exp",
-        "./OnMachine",
-        "./OnMachine/Octave_Config",
-        "./OnMachine/MeasFlow",
-        "./OnMachine/SQctrlCali"
-    ]
-}

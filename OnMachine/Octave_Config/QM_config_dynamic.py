@@ -1,7 +1,7 @@
 from numpy import array, cos, sin, pi
 from qm.octave import QmOctaveConfig
 from qm.QuantumMachinesManager import QuantumMachinesManager
-from set_octave import OctaveUnit, octave_declaration
+from OnMachine.Octave_Config.set_octave import OctaveUnit, octave_declaration
 
 #######################
 # AUXILIARY FUNCTIONS #
@@ -129,12 +129,12 @@ class Circuit_info:
             for weights_cata in ["origin","rotated","optimal"]:
                 # optimal for ex, save the computed dict for config to directly replace with it.
                 if weights_cata != "optimal":
-                    self.__RoInfo[f"q{idx}"][f"RO_weights"][weights_cata] = {}
+                    self.__RoInfo[f"q{idx}"][f"RO_weights"][weights_cata] = (0/180)*pi
                 # rotated for ex, save the rotated angle for confog to compute the exact value
                 else:
-                    self.__RoInfo[f"q{idx}"][f"RO_weights"][weights_cata] = (0/180)*pi
+                    self.__RoInfo[f"q{idx}"][f"RO_weights"][weights_cata] = {}
         
-            self.__RoInfo["registered"].append("q"+str(idx))
+            self.__RoInfo["registered"].append(f"q{idx}")
         self.__RoInfo['readout_len'] = 1500
         self.__RoInfo['time_of_flight'] = 280
         
@@ -223,7 +223,7 @@ class Circuit_info:
                     case _:
                         init_value = {"180":1,"90":1}
                 self.__XyInfo[f'q{idx}'][info] = init_value 
-            self.__XyInfo["register"].append(f"q_{idx}")
+            self.__XyInfo["register"].append(f"q{idx}")
         # CW pulse info
         self.__XyInfo["const_len"] = 1000
         self.__XyInfo["const_amp"] = 0.1
@@ -739,14 +739,14 @@ class QM_config():
             if from_which_value != 'optimal':
                 match cata_name:
                     case "cos":
-                        self.__config["integration_weights"][weights_first_name+cata_name]['cosine'] = [(cos(updated_RO_spec[target_q]["RO_weights"][from_which_value]), RO_len)]
-                        self.__config["integration_weights"][weights_first_name+cata_name]['sine'] = [(sin(updated_RO_spec[target_q]["RO_weights"][from_which_value]), RO_len)]
+                        self.__config["integration_weights"][weights_first_name+cata_name]['cosine'] = [(cos(float(updated_RO_spec[target_q]["RO_weights"][from_which_value])), RO_len)]
+                        self.__config["integration_weights"][weights_first_name+cata_name]['sine'] = [(sin(float(updated_RO_spec[target_q]["RO_weights"][from_which_value])), RO_len)]
                     case "sin":
-                        self.__config["integration_weights"][weights_first_name+cata_name]['cosine'] = [(-sin(updated_RO_spec[target_q]["RO_weights"][from_which_value]), RO_len)]
-                        self.__config["integration_weights"][weights_first_name+cata_name]['sine'] = [(cos(updated_RO_spec[target_q]["RO_weights"][from_which_value]), RO_len)]
+                        self.__config["integration_weights"][weights_first_name+cata_name]['cosine'] = [(-sin(float(updated_RO_spec[target_q]["RO_weights"][from_which_value])), RO_len)]
+                        self.__config["integration_weights"][weights_first_name+cata_name]['sine'] = [(cos(float(updated_RO_spec[target_q]["RO_weights"][from_which_value])), RO_len)]
                     case "minus_sin":
-                        self.__config["integration_weights"][weights_first_name+cata_name]['cosine'] = [(sin(updated_RO_spec[target_q]["RO_weights"][from_which_value]), RO_len)]
-                        self.__config["integration_weights"][weights_first_name+cata_name]['sine'] = [(-cos(updated_RO_spec[target_q]["RO_weights"][from_which_value]), RO_len)]
+                        self.__config["integration_weights"][weights_first_name+cata_name]['cosine'] = [(sin(float(updated_RO_spec[target_q]["RO_weights"][from_which_value])), RO_len)]
+                        self.__config["integration_weights"][weights_first_name+cata_name]['sine'] = [(-cos(float(updated_RO_spec[target_q]["RO_weights"][from_which_value])), RO_len)]
                     case _:
                         pass
             else:
