@@ -8,7 +8,7 @@ u = unit(coerce_to_integer=True)
 
 myConfig = QM_config()
 the_spec = Circuit_info(q_num=5)
-choose = 1
+choose = 0
 
 
 cluster_name = "QPX_2"  # Write your cluster_name if version >= QOP220
@@ -86,10 +86,9 @@ if choose == 0:
     myConfig.update_downconverter(channel=1,offset= 0.006487780227661133+0.00832853277297247, gain_db= 0)
     myConfig.update_downconverter(channel=2,offset= 0.004683707580566406+0.008599453735351563, gain_db= 0)
 
-    the_spec.export_spec(r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Spec_Alloffset_1208')
-    myConfig.export_config(r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Config_Alloffset_1208')
-
-# else:
+    the_spec.export_spec(r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Spec_init_1208')
+    myConfig.export_config(r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Config_init_1208')
+else:
     the_spec.import_spec(r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Spec_Alloffset_1208')
     myConfig.import_config(r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Config_Alloffset_1208')
 

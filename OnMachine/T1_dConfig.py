@@ -78,8 +78,8 @@ def exp_relaxation_time(t_delay, q_name:list, ro_element:list, config, qmm:Quant
     output_data = {}
     for r_idx, r_name in enumerate(ro_element):
         output_data[r_name] = np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]])
+    
     qm.close()
-
     return output_data
 
 
@@ -90,7 +90,7 @@ def plot_T1( x, y, y_label:list=["I","Q"], fig=None ):
     y shape (N,M)
     N is 1(I only) or 2(both IQ)
     """
-    signal_num = y.shape[-1]
+    signal_num = y.shape[0]
     if fig == None:
         fig, ax = plt.subplots(nrows=signal_num)
     # c = ax.pcolormesh(dfs, amp_log_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
@@ -125,9 +125,11 @@ def statistic_T1_exp( repeat:int, t_delay, q_name, ro_element, config, qmm, n_av
     """
     statistic_T1 = {}
     raw_data = {}
+    T1_avg = {}
     for r in ro_element:
         statistic_T1[r] = []
         raw_data[r] = []
+        T1_avg[r] = []
     for i in range(repeat):
         print(f"{i}th T1")
         data = exp_relaxation_time(t_delay, q_name, ro_element, config, qmm, n_avg, initializer)
@@ -136,12 +138,17 @@ def statistic_T1_exp( repeat:int, t_delay, q_name, ro_element, config, qmm, n_av
             print(f"{r} T1 = {T1_i}")
             statistic_T1[r].append( [T1_i, 0])
             raw_data[r].append(data[r])
+            if T1_i != 0:
+                T1_avg[r].append(T1_i)
+    
+    for r in T1_avg:
+        T1_avg[r] = np.mean(T1_avg[r])
 
     for r in ro_element:
         statistic_T1[r] = np.array(statistic_T1[r]).transpose()
         raw_data[r] = np.array(raw_data[r])
 
-    return statistic_T1, raw_data
+    return statistic_T1, raw_data, T1_avg
 
 def T1_hist( data, T1_max, fig=None):
 
@@ -170,8 +177,8 @@ def T1_hist( data, T1_max, fig=None):
 
 if __name__ == '__main__':
     from QM_config_dynamic import Circuit_info, QM_config, initializer
-    config_path = getcwd()+'/OnMachine/Config_Calied_1211'
-    spec_path = getcwd()+'/OnMachine/Spec_Calied_1211'
+    config_path = getcwd()+'/OnMachine/Config_Calied_1212_40ns'
+    spec_path = getcwd()+'/OnMachine/Spec_Calied_1212_40ns'
     q_num = 5
     target_q = 'q1'
 
@@ -193,7 +200,10 @@ if __name__ == '__main__':
 
     repeat_T1 = 10
     
-    statistic_T1, raw_data = statistic_T1_exp(repeat_T1, t_delay, q_name, ro_element, dyna_config.get_config(), qmm, n_avg, initializer=init_macro)
+    statistic_T1, raw_data, avg_T1 = statistic_T1_exp(repeat_T1, t_delay, q_name, ro_element, dyna_config.get_config(), qmm, n_avg, initializer=init_macro)
+    for i in range(repeat_T1):
+        plot_T1(t_delay,raw_data[ro_element[0]][i])
+    print(avg_T1)
     print(statistic_T1[ro_element[0]].shape)
     fig = T1_hist(statistic_T1[ro_element[0]][0],40)
     fig.show()

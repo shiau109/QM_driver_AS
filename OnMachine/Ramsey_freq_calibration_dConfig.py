@@ -176,6 +176,7 @@ def Ramsey_freq_calibration( virtial_detune_freq, q_name:list, ro_element:list, 
                 except:
                     plt.tight_layout()
                     print("fig.show() didn't work!")
+                    plt.show()
                     plt.pause(0.1)
                 plt.pause(0.1)
 

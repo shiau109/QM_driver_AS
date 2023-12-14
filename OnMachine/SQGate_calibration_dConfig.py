@@ -40,14 +40,15 @@ u = unit(coerce_to_integer=True)
 ###################
 
 
-def DRAG_calibration_Yale( drag_coef, q_name:str, ro_element:list, config, qmm:QuantumMachinesManager, n_avg=100, mode:str='live', initializer:tuple=None):
+def DRAG_calibration_Yale( drag_coef, q_name:str, ro_element:list, config, qmm:QuantumMachinesManager, n_avg=3000, mode:str='live', initializer:tuple=None):
     """
      "The DRAG coefficient 'drag_coef' must be different from 0 in the config."
     """
     a_min = 0
     a_max = 1.5
-    da = 0.02
-    amps = np.arange(a_min, a_max + da / 2, da)  # + da/2 to add a_max to amplitudes
+    fit_point = 4
+    da = (a_max-a_min)/fit_point
+    amps = np.arange(a_min, a_max + da, da)  # + da/2 to add a_max to amplitudes
     amp_len = len(amps)
     print("excute DRAG_calibration_Yale")
     with program() as drag:
@@ -344,7 +345,7 @@ def StarkShift_scout(program, ro_element:list, config:dict, qmm:QuantumMachinesM
 
     else:
         # Open the quantum machine
-        qm = qmm.open_qm(config,close_other_machines=False)
+        qm = qmm.open_qm(config)
         # Send the QUA program to the OPX, which compiles and executes it
         job = qm.execute(program)
         # Get results from QUA program
