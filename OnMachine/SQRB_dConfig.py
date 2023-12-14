@@ -32,7 +32,7 @@ from qualang_tools.results import fetching_tool, progress_counter
 from qualang_tools.plot import interrupt_on_close
 from macros import multiplexed_readout
 import warnings
-from qualang_tools.units import unit
+
 
 from RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 
@@ -41,6 +41,7 @@ from matplotlib.figure import Figure
 #######################
 # AUXILIARY FUNCTIONS #
 #######################
+from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
 
 
@@ -148,18 +149,14 @@ def play_sequence(sequence_list, depth, q_name, pi_len):
                 play("y90", q_name)
                 play("-x90", q_name)
 
-def single_qubit_RB( pi_len, max_circuit_depth, delta_clifford, q_name:str, ro_element:list, config, qmm:QuantumMachinesManager, num_of_sequences:int=20, n_avg=100, state_discrimination:list=None, initialization_macro=None, simulate:bool=False ):
+def single_qubit_RB(q_name:str,ro_element:list,config,qmm:QuantumMachinesManager,initializer:tuple=None,plot:bool=False,max_circuit_depth:int=700,delta_clifford:int=20,num_of_sequences:int=30,n_avg:int=300, state_discrimination:list=None, simulate:bool=False ):
     '''
         initialization_macro from `QM_config_dynamic.initializer()`
     '''
-    
+    pi_len = config['pulses'][config['elements'][q_name]['operations']["x180"]]["length"]
     is_discriminated = False
     if state_discrimination is not None:
         is_discriminated = True
-
-    is_const_init = False
-    if initialization_macro is None:
-        is_const_init = True  
 
     gate_step = max_circuit_depth / delta_clifford + 1
     ###################
@@ -172,9 +169,7 @@ def single_qubit_RB( pi_len, max_circuit_depth, delta_clifford, q_name:str, ro_e
         saved_gate = declare(int)
         m = declare(int)  # QUA variable for the loop over random sequences
         n = declare(int)  # QUA variable for the averaging loop
-        a = declare(fixed)  # QUA variable for the DRAG coefficient pre-factor
         iqdata_stream = multiRO_declare( ro_element )
-        n_st = declare_stream()  # Stream for the averaging iteration 'n'
         state = declare(bool)  # QUA variable for state discrimination
         # The relevant streams
         m_st = declare_stream()
@@ -197,11 +192,11 @@ def single_qubit_RB( pi_len, max_circuit_depth, delta_clifford, q_name:str, ro_e
                 with if_((depth == 1) | (depth == depth_target)):
                     with for_(n, 0, n < n_avg, n + 1):
                         # Initialize
-                        if is_const_init:
+                        if initializer is None:
                             wait(100 * u.us)
                         else:
                             try:
-                                initialization_macro[0](*initialization_macro[1])
+                                initializer[0](*initializer[1])
                             except:
                                 print("initialization_macro didn't work!")
                                 wait(100 * u.us)
@@ -210,9 +205,9 @@ def single_qubit_RB( pi_len, max_circuit_depth, delta_clifford, q_name:str, ro_e
 
                         # Operation
                         # The strict_timing ensures that the sequence will be played without gaps
-                        # with strict_timing_():
+                        with strict_timing_():
                             # Play the random sequence of desired depth
-                        play_sequence(sequence_list, depth, q_name, pi_len)
+                            play_sequence(sequence_list, depth, q_name, pi_len)
                         # Align the two elements to measure after playing the circuit.
                         align()
 
@@ -265,6 +260,7 @@ def single_qubit_RB( pi_len, max_circuit_depth, delta_clifford, q_name:str, ro_e
         simulation_config = SimulationConfig(duration=10_000)  # In clock cycles = 4ns
         job = qmm.simulate(config, rb, simulation_config)
         job.get_simulated_samples().con1.plot()
+        plt.show()
 
     else:
         # Open the quantum machine
@@ -277,8 +273,9 @@ def single_qubit_RB( pi_len, max_circuit_depth, delta_clifford, q_name:str, ro_e
         else:
             results = fetching_tool(job, data_list=["I_avg", "Q_avg", "iteration"], mode="live")
         # Live plotting
-        fig, ax = plt.subplots()
-        interrupt_on_close(fig, job)  # Interrupts the job when closing the figure
+        if plot:
+            fig, ax = plt.subplots()
+            interrupt_on_close(fig, job)  # Interrupts the job when closing the figure
         # data analysis
         x = np.arange(0, max_circuit_depth + 0.1, delta_clifford)
         x[0] = 1  # to set the first value of 'x' to be depth = 1 as in the experiment
@@ -294,9 +291,10 @@ def single_qubit_RB( pi_len, max_circuit_depth, delta_clifford, q_name:str, ro_e
             # Progress bar
             progress_counter(iteration, num_of_sequences, start_time=results.get_start_time())
             # Plot averaged values
-            plot_SQRB_live( x, value_avg, ax )
-            plt.cla()
-            plt.pause(0.1)
+            if plot:
+                plot_SQRB_live( x, value_avg, ax )
+                plt.cla()
+                plt.pause(0.1)
 
 
         # At the end of the program, fetch the non-averaged results to get the error-bars
@@ -314,7 +312,10 @@ def single_qubit_RB( pi_len, max_circuit_depth, delta_clifford, q_name:str, ro_e
         # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
         qm.close()
 
-        return x, value_avg, error_avg
+        epg = plot_SQRB_result( x, value_avg, error_avg, plot )
+
+
+        return epg
 
 
 def ana_SQRB( x, y ):
@@ -360,16 +361,17 @@ def plot_SQRB_live( x, y, ax ):
     ax.set_title("Single qubit RB")
     
 
-def plot_SQRB_result( x, y, yerr, fig:Figure=None ):
-
-    fig, ax = plt.subplots()
+def plot_SQRB_result( x, y, yerr, plot:bool ):
     par,epg = ana_SQRB( x, y )
-    ax.errorbar(x, y, yerr=yerr, marker=".")
-    ax.plot(x, power_law(x, *par), linestyle="--", linewidth=2)
-    ax.set_xlabel("Number of Clifford gates")
-    ax.set_ylabel("Sequence Fidelity")
-    ax.set_title(f"Single qubit RB, gate_error={epg}")
-    plt.show()
+    if plot:
+        fig, ax = plt.subplots()
+        ax.errorbar(x, y, yerr=yerr, marker=".")
+        ax.plot(x, power_law(x, *par), linestyle="--", linewidth=2)
+        ax.set_xlabel("Number of Clifford gates")
+        ax.set_ylabel("Sequence Fidelity")
+        ax.set_title(f"Single qubit RB, gate_error={epg}")
+        plt.show()
+    return epg
 
 
 
