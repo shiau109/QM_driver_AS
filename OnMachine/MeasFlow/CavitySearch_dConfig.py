@@ -83,11 +83,10 @@ def search_resonators( freq_span_Hz:float, config:dict, ro_element:list, qm_mach
     output_data = results.fetch_all()
     # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
     qm.close()
-    return output_data
+    return [output_data,frequencies]
 
 if __name__ == '__main__':
-    # FIXME:
-    # 1215 with a raw dynamic config can have a result, but it's a little bit strange.
+    # 1215 Test complete
     import matplotlib.pyplot as plt
     spec = Circuit_info(q_num=5)
     config = QM_config()
@@ -96,8 +95,9 @@ if __name__ == '__main__':
     qmm, _ = spec.buildup_qmm()
     freq_span = 400e6 # MHz
     init_macro = initializer(spec.give_depletion_time_for("q1"),mode='depletion')
-    idata, qdata, repetition = search_resonators(freq_span,config.get_config(),["q1_ro"],qmm,50,initializer=init_macro)  
+    data= search_resonators(freq_span,config.get_config(),["q1_ro"],qmm,50,initializer=init_macro)  
+    idata, qdata, repetition = data[0]
+    sweep_range = data[1]
     zdata = idata +1j*qdata
-    search_range = arange(-1*freq_span,freq_span,2e6)
-    plt.plot(search_range, np.abs(zdata),label="Origin")
+    plt.plot(sweep_range, np.abs(zdata),label="Origin")
     plt.show()
