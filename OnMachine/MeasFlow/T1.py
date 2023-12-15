@@ -1,6 +1,4 @@
-from os import getcwd
-import sys
-sys.path.append(getcwd()+'/exp')
+
 from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
 from qm.QuantumMachinesManager import QuantumMachinesManager
@@ -12,10 +10,10 @@ from qualang_tools.results import fetching_tool
 from qualang_tools.plot import interrupt_on_close
 from qualang_tools.results import progress_counter
 from qualang_tools.plot.fitting import Fit
-from common_fitting_func import gaussian
+from exp.common_fitting_func import gaussian
 from scipy.optimize import curve_fit
 import warnings
-from RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
+from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 
 warnings.filterwarnings("ignore")
 

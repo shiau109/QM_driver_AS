@@ -18,8 +18,6 @@ Prerequisites:
     - (optional) Having calibrated the readout (readout_frequency, amplitude, duration_optimization IQ_blobs) for better SNR.
     - Set the desired flux bias.
 """
-import os, sys
-sys.path.append(os.getcwd()+'/exp')
 from qm.qua import *
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm import SimulationConfig
@@ -30,11 +28,11 @@ import numpy as np
 from qualang_tools.bakery.randomized_benchmark_c1 import c1_table
 from qualang_tools.results import fetching_tool, progress_counter
 from qualang_tools.plot import interrupt_on_close
-from macros import multiplexed_readout
+from exp.macros import multiplexed_readout
 import warnings
 
 
-from RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
+from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 
 from matplotlib.figure import Figure
 

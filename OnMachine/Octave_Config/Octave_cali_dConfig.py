@@ -9,8 +9,8 @@ import os
 main_path = os.getcwd()
 
 q_num = 5
-config_file_path = main_path+'/OnMachine/Config_Calied_1212_40ns'
-spec_file_path = main_path+'/OnMachine/Spec_Calied_1212_40ns'
+config_file_path = main_path+'/OnMachine/Octave_Config/test_config'
+spec_file_path = main_path+'/OnMachine/Octave_Config/test_spec'
 
 # Configure the Octave parameters for each element
 rr1 = ElementsSettings("q1_ro", gain=0, rf_in_port=["octave1", 1], down_convert_LO_source="Internal")

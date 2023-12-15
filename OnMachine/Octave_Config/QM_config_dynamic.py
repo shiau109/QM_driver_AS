@@ -15,20 +15,30 @@ def initializer(Paras:tuple,mode:str):
     '''
         initialize the measurement basic mode is wait for thermalization.\n
         Paras: (parameters ex.30*u.us,),\n
-        mode: "wait" for wait a given time, "active" for active reset.
+        mode: "wait"-> wait a given time, "active" for active reset.\n
+        "depletion"-> wait for cavity a given time. from `Circuit_info.give_depletion_time_for()`\n
         return: (func,(parmeters))
+
     '''
-    if mode == 'wait':
-        from qm.qua import wait
-        if isinstance(Paras,int) or isinstance(Paras,float):
-            return (wait,(Paras//4,))
-        elif isinstance(Paras,tuple) :
-            return (wait,(Paras[0]//4,))
-        else:
-            raise TypeError("function `wait()` should get the argument with type int, float or tuple!")
-    else:
-        from qm.qua import wait
-        return (wait,(100*u.us,))
+    match mode.lower():
+        case 'wait':
+            from qm.qua import wait
+            if isinstance(Paras,int) or isinstance(Paras,float):
+                return (wait,(Paras//4,))
+            elif isinstance(Paras,tuple) :
+                return (wait,(Paras[0]//4,))
+            else:
+                raise TypeError("function `wait()` should get the argument with type int, float or tuple!")
+        case 'depletion':
+            # check format
+            if not isinstance(Paras,tuple):
+                raise ValueError("The 'Paras' should come from Circuit_info.give_depletion_time_for(), Check it!")
+            else:
+                from qm.qua import wait
+                return (wait,Paras)
+        case _:
+            from qm.qua import wait
+            return (wait,(100*u.us,))
 
 
 ############################################
@@ -137,7 +147,22 @@ class Circuit_info:
             self.__RoInfo["registered"].append(f"q{idx}")
         self.__RoInfo['readout_len'] = 1500
         self.__RoInfo['time_of_flight'] = 280
+    
+    def give_depletion_time_for(self,target_r:str='all'):
+        """
+            return the paras for `initializer()` when its mode is 'depletion'.\n
+            target_r: "q2" (will trnsform it to resonators automatically)
+        """ 
+        rrs = [] 
+        if target_r.lower() == 'all':
+            for q_idx in self.__RoInfo["registered"]:
+                rrs.append(f"{q_idx}_ro")
+        else:
+            rrs.append(f"{target_r}_ro")
         
+        return (self.__RoInfo["depletion_time"],rrs)
+
+
 
     def optimal_ROweights_generator(self, npz_file_path:str):
         from qualang_tools.config.integration_weights_tools import convert_integration_weights

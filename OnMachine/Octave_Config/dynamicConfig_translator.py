@@ -89,7 +89,8 @@ if choose == 0:
     the_spec.export_spec(r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Spec_init_1208')
     myConfig.export_config(r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Config_init_1208')
 else:
-    the_spec.import_spec(r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Octave_Config/Spec_init_1208')
-    myConfig.import_config(r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Octave_Config/Config_init_1208')
+    the_spec.import_spec(r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Octave_Config/test_spec')
+    myConfig.import_config(r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Octave_Config/test_config')
 
-    print(the_spec.get_HardwareInfo())
+    print(myConfig.get_config()["integration_weights"])
+    print(myConfig.get_config()["pulses"])
