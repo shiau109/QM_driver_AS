@@ -128,7 +128,7 @@ class Circuit_info:
             
             for weights_cata in ["origin","rotated","optimal"]:
                 # optimal for ex, save the computed dict for config to directly replace with it.
-                if weights_cata != "optimal":
+                if weights_cata == "optimal":
                     self.__RoInfo[f"q{idx}"][f"RO_weights"][weights_cata] = {}
                 # rotated for ex, save the rotated angle for confog to compute the exact value
                 else:
@@ -223,7 +223,7 @@ class Circuit_info:
                     case _:
                         init_value = {"180":1,"90":1}
                 self.__XyInfo[f'q{idx}'][info] = init_value 
-            self.__XyInfo["register"].append(f"q_{idx}")
+            self.__XyInfo["register"].append(f"q{idx}")
         # CW pulse info
         self.__XyInfo["const_len"] = 1000
         self.__XyInfo["const_amp"] = 0.1
