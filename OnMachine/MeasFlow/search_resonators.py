@@ -86,6 +86,8 @@ def search_resonators( freq_span_Hz:float, config:dict, ro_element:list, qm_mach
     return output_data
 
 if __name__ == '__main__':
+    # FIXME:
+    # 1215 with a raw dynamic config can have a result, but it's a little bit strange.
     import matplotlib.pyplot as plt
     spec = Circuit_info(q_num=5)
     config = QM_config()
