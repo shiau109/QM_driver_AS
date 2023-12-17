@@ -1,4 +1,4 @@
-from numpy import array, cos, sin, pi
+from numpy import array, cos, sin, pi, arange
 from qm.octave import QmOctaveConfig
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from OnMachine.Octave_Config.set_octave import OctaveUnit, octave_declaration
@@ -120,6 +120,8 @@ class Circuit_info:
         self.__RoInfo = {}
         self.__RoInfo["registered"] = []
         self.__RoInfo["depletion_time"] = 1 * u.us
+        dIF = 200/self.q_num
+        init_IF = arange(-200,210,dIF)
         for idx in range(1, self.q_num+1):
             self.__RoInfo[f"q{idx}"] = {}
             for info in ['resonator_LO','resonator_IF','readout_amp','ge_threshold']:
@@ -127,7 +129,7 @@ class Circuit_info:
                     case 'resonator_LO':
                         init_value = 6 * u.GHz
                     case 'resonator_IF':
-                        init_value = -100 * u.MHz
+                        init_value = init_IF[idx-1] * u.MHz
                     case 'readout_amp':
                         init_value = 0.2 
                     case _:
@@ -307,6 +309,7 @@ class Circuit_info:
         pickle.dump(spec,f)
         # close file
         f.close()
+    
 
     def import_spec( self, path ):
         import pickle
@@ -1372,7 +1375,7 @@ class QM_config():
                     raise KeyError(f"RO update keyname goes wrong: {info.split('_')[1].lower()}")
             
 
-    def update_Readout(self,target_q:str='all',RoInfo:dict={},integration_weights_from:str='deny'):
+    def update_Readout(self,target_q:str='all',RoInfo:dict={},integration_weights_from:str='rotated'):
         """
             Beside frequency, other info will need to update the waveform or integration weights,\n
             update the other info for dynamic configuration like amp, len.... for the specific qubit\n
@@ -1432,6 +1435,7 @@ class QM_config():
         pickle.dump(self.__config,f)
         # close file
         f.close()
+
 
     def import_config( self, path ):
         import pickle

@@ -1,9 +1,12 @@
 
 from OnMachine.Octave_Config.QM_config_dynamic import Circuit_info, QM_config
 import os
-SpecConfig_path = os.getcwd()+'/OnMachine/Octave_Config'
-
-qubit_num = 5
+SpecConfig_path = os.getcwd()+'/OnMachine/Octave_Config/'
+################# Import ####################
+config_loca = SpecConfig_path+"test_config" #
+spec_loca = SpecConfig_path+"test_spec"     #
+#############################################
+qubit_num = 4
 specs = Circuit_info(qubit_num)
 config = QM_config()
 
@@ -62,6 +65,7 @@ config.update_downconverter(channel=2,offset= 0.004683707580566406+0.00859945373
 
 
 
+if __name__ == '__main__':
+    specs.export_spec(spec_loca)
+    config.export_config(config_loca)
 
-specs.export_spec(f"{SpecConfig_path}/test_spec")
-config.export_config(f"{SpecConfig_path}/test_config")

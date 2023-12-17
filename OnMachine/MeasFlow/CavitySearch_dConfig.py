@@ -23,7 +23,7 @@ import warnings
 from OnMachine.Octave_Config.QM_config_dynamic import Circuit_info, QM_config, initializer,u
 from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 warnings.filterwarnings("ignore")
-from numpy import arange
+from numpy import arange, ndarray, absolute, arctan2, diff, array, mean, unwrap
 
 
 ###################
@@ -34,11 +34,15 @@ from numpy import arange
 # # The frequency sweep parameters
 # frequencies = np.arange(-247e6, -227e6, 0.01e6)
 
-def search_resonators( freq_span_Hz:float, config:dict, ro_element:list, qm_machine:QuantumMachinesManager, n_avg:int=10000, initializer:tuple=None):
-    reso_Hz = 2e6 # 2 MHz/point
-    frequencies = arange(-1*freq_span_Hz,freq_span_Hz,reso_Hz)
+def search_resonators( config:dict, ro_element:list, qm_machine:QuantumMachinesManager, freq_span_MHz:int=400, resolu_MHz:int=2, n_avg:int=100, initializer:tuple=None):
+    """
+        Search cavities with the given IF span range along the given ro_element's LO.\n
+        ro_element: ["q1_ro"], temporarily support only 1 element in the list.\n
+        initializer: from `initializer(paras,mode='depletion')`, and use paras return from `Circuit_info.give_depletion_time_for()`  
+    """
+    plot_x = arange(-1*freq_span_MHz,(freq_span_MHz+0.1),resolu_MHz)
+    frequencies = arange(-1*freq_span_MHz*1e6,(freq_span_MHz+0.1)*1e6,resolu_MHz*1e6)
     freq_len = frequencies.shape[-1]
-
     with program() as resonator_spec:
 
         f = declare(int)  # QUA variable for the readout frequency --> Hz int 32 up to 2^32
@@ -79,25 +83,46 @@ def search_resonators( freq_span_Hz:float, config:dict, ro_element:list, qm_mach
     # Send the QUA program to the OPX, which compiles and executes it
     job = qm.execute(resonator_spec)
     # Get results from QUA program
-    results = fetching_tool(job, data_list=[f"{ro_element[0]}_I", f"{ro_element[0]}_Q", "iteration"], mode="wait_for_all")
-    output_data = results.fetch_all()
+    results = fetching_tool(job, data_list=[f"{ro_element[0]}_I", f"{ro_element[0]}_Q", "iteration"], mode="live")
+
+    while results.is_processing():
+        output_data = results.fetch_all()
+        progress_counter(output_data[-1], n_avg, start_time=results.get_start_time())
     # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
     qm.close()
-    return [output_data,frequencies]
+    return output_data[0], output_data[1], plot_x
+
+def plot_CS(x:ndarray,idata:ndarray,qdata:ndarray,plot:bool=False,save:bool=False):
+    amp = absolute(idata +1j*qdata)
+    pha = unwrap(diff(arctan2(qdata,idata),append=mean(diff(arctan2(qdata,idata)))))
+    fig, ax = plt.subplots(2,1)
+    ax[0].plot(x,amp)
+    ax[0].set_title('Amplitude')
+    ax[0].set_xlabel("IF frequency (MHz)")
+    ax[1].plot(x,pha)
+    ax[1].set_title('Phase')
+    ax[1].set_xlabel("IF frequency (MHz)")
+    plt.tight_layout()
+    if save:
+        plt.savefig()
+    if plot:
+        plt.show()
 
 if __name__ == '__main__':
     # 1215 Test complete
     import matplotlib.pyplot as plt
-    spec = Circuit_info(q_num=5)
+    from OnMachine.MeasFlow.ConfigBuildUp import spec_loca, config_loca
+    spec = Circuit_info(q_num=4)
     config = QM_config()
-    spec.import_spec("/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Octave_Config/test_spec")
-    config.import_config("/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Octave_Config/test_config")
+    spec.import_spec(spec_loca)
+    config.import_config(config_loca)
     qmm, _ = spec.buildup_qmm()
-    freq_span = 400e6 # MHz
     init_macro = initializer(spec.give_depletion_time_for("q1"),mode='depletion')
-    data= search_resonators(freq_span,config.get_config(),["q1_ro"],qmm,50,initializer=init_macro)  
-    idata, qdata, repetition = data[0]
-    sweep_range = data[1]
-    zdata = idata +1j*qdata
-    plt.plot(sweep_range, np.abs(zdata),label="Origin")
-    plt.show()
+    idata, qdata, sweep_range = search_resonators(config.get_config(),["q1_ro"],qmm,n_avg=50,initializer=init_macro)  
+    
+    plot_CS(sweep_range,idata,qdata,plot=True)
+
+    
+ 
+
+    
