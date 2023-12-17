@@ -24,6 +24,7 @@ from OnMachine.Octave_Config.QM_config_dynamic import Circuit_info, QM_config, i
 from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 warnings.filterwarnings("ignore")
 from numpy import arange, ndarray, absolute, arctan2, diff, array, mean, unwrap
+import matplotlib.pyplot as plt
 
 
 ###################
@@ -109,10 +110,10 @@ def plot_CS(x:ndarray,idata:ndarray,qdata:ndarray,plot:bool=False,save:bool=Fals
         plt.show()
 
 if __name__ == '__main__':
-    # 1215 Test complete
-    import matplotlib.pyplot as plt
-    from OnMachine.MeasFlow.ConfigBuildUp import spec_loca, config_loca
-    spec = Circuit_info(q_num=4)
+    # 20231215 Test complete :Ratis
+
+    from OnMachine.MeasFlow.ConfigBuildUp import spec_loca, config_loca, qubit_num
+    spec = Circuit_info(qubit_num)
     config = QM_config()
     spec.import_spec(spec_loca)
     config.import_config(config_loca)

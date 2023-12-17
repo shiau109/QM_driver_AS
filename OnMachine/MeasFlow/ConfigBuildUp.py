@@ -2,11 +2,11 @@
 from OnMachine.Octave_Config.QM_config_dynamic import Circuit_info, QM_config
 import os
 SpecConfig_path = os.getcwd()+'/OnMachine/Octave_Config/'
-################# Import ####################
+########### For other import ################
 config_loca = SpecConfig_path+"test_config" #
 spec_loca = SpecConfig_path+"test_spec"     #
+qubit_num = 4                               #
 #############################################
-qubit_num = 4
 specs = Circuit_info(qubit_num)
 config = QM_config()
 

@@ -25,6 +25,7 @@ from qualang_tools.results import progress_counter, fetching_tool
 from qualang_tools.loops import from_array, qua_logspace
 from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 import warnings
+import matplotlib.pyplot as plt
 from numpy import arange
 warnings.filterwarnings("ignore")
 from OnMachine.Octave_Config.QM_config_dynamic import u
@@ -137,10 +138,10 @@ def plot_power_dep_resonator( dfs, amp_ratio, data, ax=None ):
 
 
 if __name__ == '__main__':
-    import matplotlib.pyplot as plt
+    # 20231216 Test complete :Ratis
     from OnMachine.Octave_Config.QM_config_dynamic import Circuit_info, QM_config, initializer
-    from OnMachine.MeasFlow.ConfigBuildUp import spec_loca, config_loca
-    spec = Circuit_info(q_num = 4)
+    from OnMachine.MeasFlow.ConfigBuildUp import spec_loca, config_loca, qubit_num
+    spec = Circuit_info(qubit_num)
     config = QM_config()
     spec.import_spec(spec_loca)
     config.import_config(config_loca)

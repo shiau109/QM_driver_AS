@@ -12,7 +12,7 @@ if __name__ == '__main__':
     match mssn_cata.lower():
         case "cs":
             # Update RO IF after Cavity Search
-            # [target_q, IF]
+            # [target_q, IF(MHz)]
             cavities = [['q1',-278],['q2',-167],['q3',-95],['q4',12.5]]
             for i in cavities:
                 f = spec.update_RoInfo_for(target_q=i[0],IF=i[1])
@@ -23,7 +23,7 @@ if __name__ == '__main__':
 
         case "power":
             # Update RO amp, dress RO after power dependence
-            # [target_q, amp_scale, added_IF]        
+            # [target_q, amp_scale, added_IF(MHz)]        
             modifiers = [['q1',0.08,0.83],['q2',0.1,3.16],['q3',0.08,4.63],['q4',0.1,2]] 
             for i in modifiers:
                 old_if = spec.get_spec_forConfig("ro")[i[0]]["resonator_IF"]*1e-6

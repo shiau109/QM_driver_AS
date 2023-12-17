@@ -122,9 +122,10 @@ def plot_flux_dep_resonator( data, dfs, flux, ax=None ):
     
 
 if __name__ == '__main__':
+    # TODO: test
     from OnMachine.Octave_Config.QM_config_dynamic import Circuit_info, QM_config, initializer
-    from OnMachine.MeasFlow.ConfigBuildUp import spec_loca, config_loca
-    spec = Circuit_info(q_num = 4)
+    from OnMachine.MeasFlow.ConfigBuildUp import spec_loca, config_loca, qubit_num
+    spec = Circuit_info(qubit_num)
     config = QM_config()
     spec.import_spec(spec_loca)
     config.import_config(config_loca)
