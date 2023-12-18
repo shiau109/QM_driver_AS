@@ -269,13 +269,14 @@ def get_proj_distance( proj_pts, iq_data ):
     return projectedDistance[0]
 
 if __name__=='__main__':
-    file_path = r'C:\Users\shiau\OneDrive\Desktop\multiplexRO interference'
-    file_name = "IQ_Blobs_q1_2_3_4_5_all.npz"
+    file_path = r'D:\Data\5Q_DR3'
+    file_name = "sh_r3_x3-20231213_213704.npz"
 
     data = np.load(f"{file_path}\\{file_name}")# , allow_pickle=True)["arr_0"].item()
     for r in data.keys():
-        
-        gmm_model = train_model(data[r]*1000)
+        d = np.moveaxis(data[r],1,0)
+        gmm_model = train_model(d*1000)
         fig = plt.figure(constrained_layout=True)
-        create_img(data[r]*1000, gmm_model, fig, r)
+        create_img(d*1000, gmm_model, fig, r)
+        fig.show()
     plt.show()
