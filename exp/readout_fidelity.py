@@ -24,7 +24,6 @@ from qm.simulate import SimulationConfig
 from configuration import *
 import matplotlib.pyplot as plt
 from qualang_tools.results import fetching_tool
-from qualang_tools.analysis import two_state_discriminator
 from macros import qua_declaration, multiplexed_readout, reset_qubit
 from RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save_singleShot
 
@@ -32,6 +31,8 @@ from RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save_sin
 def state_distinguishability( q_name:list, ro_element, shot_num, config, qmm:QuantumMachinesManager, init_macro=None, simulate=False):
     """
     init_macro is Callable
+    return data format is dict with keys from ro_element and value is ndarray with shape()
+
     """
     with program() as iq_blobs:
 
@@ -109,9 +110,18 @@ if __name__ == '__main__':
     end_time = time.time()
     elapsed_time = np.round(end_time-start_time, 1)
 
+    # Analysis
+    from qualang_tools.analysis import two_state_discriminator
     for r in resonators:
         two_state_discriminator(output_data[r][0][0], output_data[r][1][0], output_data[r][0][1], output_data[r][1][1], True, True)
 
+    from state_distribution import train_model, create_img
+    for r in output_data.keys():
+        d = np.moveaxis(output_data[r],1,0)
+        gmm_model = train_model(d*1000)
+        fig = plt.figure(constrained_layout=True)
+        create_img(d*1000, gmm_model, fig, r)
+    plt.show() 
 
     #   Data Saving   # 
     save_data = True
@@ -119,6 +129,5 @@ if __name__ == '__main__':
         from save_data import save_npz
         import sys
         save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
-        save_npz(save_dir, save_progam_name, output_data)
+        save_npz(save_dir, "ro_fidelity", output_data)
 
-    plt.show()
