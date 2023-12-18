@@ -275,7 +275,9 @@ def plot_SQRB_result( x, y, yerr, plot:bool=False ):
     return epg
 
 
-
+if __name__ == '__main__':
+    import sys
+    print(sys.path)
 
 
 
