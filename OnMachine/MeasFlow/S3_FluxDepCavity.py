@@ -39,7 +39,8 @@ def flux_dep_cavity( ro_element:list, config:dict, qm_machine:QuantumMachinesMan
     dfs = arange(-freq_span_MHz*u.MHz,(freq_span_MHz+freq_resolu_MHz)*u.MHz,freq_resolu_MHz*u.MHz)
     flux = arange(-flux_span,flux_span+flux_resolu,flux_resolu)
     plot_freq = arange(-freq_span_MHz,(freq_span_MHz+freq_resolu_MHz),freq_resolu_MHz)
-    
+    df_len = dfs.shape[0]
+    flux_len = flux.shape[0]
     with program() as multi_res_spec_vs_flux:
         # QUA macro to declare the measurement variables and their corresponding streams for a given number of resonators
         iqdata_stream = multiRO_declare( ro_element )
@@ -64,18 +65,21 @@ def flux_dep_cavity( ro_element:list, config:dict, qm_machine:QuantumMachinesMan
                             initializer[0](*initializer[1])
                         except:
                             wait(1*u.us,ro_element)
+
+                    # Operations
                     for ro in ro_element:
-                        idx = ro.split("_")[-1]
-                        set_dc_offset(f"q{idx}_z", "single", dc)
-                    
+                        q = ro.split("_")[0]
+                        set_dc_offset(f"{q}_z", "single", dc)
                     wait(flux_settle_time_ns * u.ns)  
+
+                    # Readout
                     multiRO_measurement( iqdata_stream, ro_element, weights='rotated_')
                     
             save(n, n_st)
 
         with stream_processing():
             n_st.save("n")
-            multiRO_pre_save( iqdata_stream, ro_element, (dfs.shape[0], flux.shape[0]))
+            multiRO_pre_save( iqdata_stream, ro_element, (df_len, flux_len))
             
     #######################
 
@@ -86,7 +90,7 @@ def flux_dep_cavity( ro_element:list, config:dict, qm_machine:QuantumMachinesMan
         ro_ch_name.append(f"{r_name}_I")
         ro_ch_name.append(f"{r_name}_Q")
 
-    data_list = ro_ch_name + ["iteration"]   
+    data_list = ro_ch_name + ["n"]   
     results = fetching_tool(job, data_list=data_list, mode="live")
     output_data = {}
     while results.is_processing():
@@ -106,23 +110,23 @@ def plot_flux_dep_resonator( data, dfs, flux, ax=None ):
     """
     data shape ( 2, N, M )
     2 is I,Q
-    N is freq
-    M is RO amp
+    N is flux
+    M is freq
     """
     idata = data[0]
     qdata = data[1]
     zdata = idata +1j*qdata
-    s21 = zdata/flux[:,None]
+    s21 = zdata
 
     if ax==None:
         fig, ax = plt.subplots()
         ax.set_title('pcolormesh')
         fig.show()
-    ax.pcolormesh(dfs, flux, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    ax.pcolormesh(flux, dfs, absolute(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
     
 
 if __name__ == '__main__':
-    # TODO: test
+    # 20231218 Test complete: Ratis
     from OnMachine.Octave_Config.QM_config_dynamic import Circuit_info, QM_config, initializer
     from OnMachine.MeasFlow.ConfigBuildUp import spec_loca, config_loca, qubit_num
     spec = Circuit_info(qubit_num)
@@ -139,6 +143,6 @@ if __name__ == '__main__':
         fig, ax = plt.subplots()
         plot_flux_dep_resonator(results[r], freq_axis, flux_axis, ax)
         ax.set_title(r)
-        ax.set_xlabel("additional IF freq (MHz)")
-        ax.set_ylabel("Flux bias")
+        ax.set_xlabel("Flux bias")
+        ax.set_ylabel("additional IF freq (MHz)")
     plt.show()

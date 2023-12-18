@@ -36,7 +36,17 @@ if __name__ == '__main__':
             config.export_config(config_loca)
         
         case "flux":
-            pass
+            # Update RO amp, dress RO after power dependence
+            # [target_q, offset_bias, added_IF(MHz)]        
+            modifiers = [['q1',-0.045,0.083],['q2',-0.045,0.072],['q3',0,0],['q4',-0.06,0.014]] 
+            for i in modifiers:
+                old_if = spec.get_spec_forConfig("ro")[i[0]]["resonator_IF"]*1e-6
+                config.update_ReadoutFreqs(spec.update_RoInfo_for(target_q=i[0],IF=i[2]+old_if))
+                z = spec.update_ZInfo_for(target_q=i[0],offset=i[1])
+                config.update_z_offset(z,mode='offset')
+            
+            spec.export_spec(spec_loca)
+            config.export_config(config_loca)
 
         case _:
             pass
