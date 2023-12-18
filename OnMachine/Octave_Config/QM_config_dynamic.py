@@ -142,6 +142,7 @@ class Circuit_info:
                 # optimal for ex, save the computed dict for config to directly replace with it.
                 if weights_cata != "optimal":
                     self.__RoInfo[f"q{idx}"][f"RO_weights"][weights_cata] = (0/180)*pi
+
                 # rotated for ex, save the rotated angle for confog to compute the exact value
                 else:
                     self.__RoInfo[f"q{idx}"][f"RO_weights"][weights_cata] = {}
