@@ -153,7 +153,7 @@ class TwoQubitRb:
                 qe: declare_input_stream(int, name=f"{qe}_is", size=self._buffer_length)
                 for qe in self._rb_baker.all_elements
             }
-
+            print(gates_is)
             assign(progress, 0)
             with for_each_(sequence_depth, sequence_depths):
                 with for_(repeat, 0, repeat < num_repeats, repeat + 1):
@@ -230,6 +230,15 @@ class TwoQubitRb:
         prog = self._gen_qua_program(circuit_depths, num_circuits_per_depth, num_shots_per_circuit)
 
         qm = qmm.open_qm(self._config)
+        # TODO
+        simulate = True
+        if simulate:
+            from qm import SimulationConfig
+            import matplotlib.pyplot as plt
+            simulation_config = SimulationConfig(duration=100_000)  # In clock cycles = 4ns
+            job = qmm.simulate(self._config, prog, simulation_config)
+            job.get_simulated_samples().con1.plot()
+            plt.show()
         job = qm.execute(prog)
 
         gen_sequence_callback = kwargs["gen_sequence_callback"] if "gen_sequence_callback" in kwargs else None

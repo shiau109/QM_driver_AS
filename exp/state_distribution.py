@@ -17,10 +17,10 @@ def train_model( data ):
     for i in range(data.shape[0]):
         idata = np.append(idata,data[i][0])
         qdata = np.append(qdata,data[i][1])
-    training_data = np.array([idata, qdata])
+    training = np.array([idata, qdata])
     my_model = GMM_model()
-    my_model.import_trainingData(training_data.transpose())
-    my_model.relabel_model(data[0])
+    my_model.training(training.transpose())
+    my_model.rebuild_model(data[0])
     return my_model
 
 def create_img( data, dist_model, fig=None, label="" ):
@@ -59,11 +59,11 @@ def create_img( data, dist_model, fig=None, label="" ):
     ax_hist_1.tick_params(axis='both', labelsize=15)
 
     # scatter plot
-    training_data = dist_model.training_data.transpose()
+    training = dist_model.training.transpose()
     training_plot = {
-        "I":training_data[0],
-        "Q":training_data[1],
-        "label": dist_model.get_prediction(dist_model.training_data)
+        "I":training[0],
+        "Q":training[1],
+        "label": dist_model.predict_data(dist_model.training)
     }
     make_scatter_dist( training_plot, ax_iq_all )
 
@@ -73,7 +73,7 @@ def create_img( data, dist_model, fig=None, label="" ):
     prepare_0_plot = {
         "I":prepare_0_data[0],
         "Q":prepare_0_data[1],
-        "label": dist_model.get_prediction(prepare_0_data.transpose())
+        "label": dist_model.predict_data(prepare_0_data.transpose())
     }
     make_scatter_dist(prepare_0_plot,ax_iq_0)
     prepare_0_dist = dist_model.get_distribution()
@@ -86,7 +86,7 @@ def create_img( data, dist_model, fig=None, label="" ):
     prepare_1_plot = {
         "I":prepare_1_data[0],
         "Q":prepare_1_data[1],
-        "label": dist_model.get_prediction(prepare_1_data.transpose())
+        "label": dist_model.predict_data(prepare_1_data.transpose())
     }
     make_scatter_dist(prepare_1_plot,ax_iq_1)
     prepare_1_dist = dist_model.get_distribution()

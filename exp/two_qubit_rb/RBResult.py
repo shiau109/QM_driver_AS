@@ -4,6 +4,8 @@ import numpy as np
 import xarray as xr
 from matplotlib import pyplot as plt
 
+def power_law(power, a, b, p):
+    return a * (p**power) + b
 
 @dataclasses.dataclass
 class RBResult:

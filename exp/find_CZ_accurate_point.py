@@ -178,7 +178,7 @@ flux_Qi = 2
 t_min, t_max = 22, 27
 t_delay = np.arange(t_min, t_max + 0.1, 1) 
 
-amps = np.arange(0.3888, 0.39, 0.0004) 
+amps = np.arange(0.3888, 0.3904, 0.0004) 
 signal_mode = 'I'
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
 CZ_phase_diff(q_id,flux_Qi,control_Qi,ramsey_Qi,idle_flux_point,signal_mode,simulate,qmm)

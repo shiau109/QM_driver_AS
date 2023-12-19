@@ -23,10 +23,10 @@ num_of_sequences = 100
 n_avg = 200
 seed = 345323
 cooldown_time = 10000
-qb = "q3_xy"
-rr = "rr3"
+qb = "q2_xy"
+rr = "rr2"
 # qmm = QuantumMachinesManager(host=qop_ip, port=80)
-qmm = QuantumMachinesManager(host=qop_ip, cluster_name=cluster_name, octave=octave_config)
+qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config) 
 
 
 
@@ -243,4 +243,4 @@ print(
 plt.title("r_c: %s%%, r_g: %s%%" %(r_c*100, r_g*100))
 plt.show()
 
-np.savez(save_dir/"rb_values", value)
+# np.savez(save_dir/"rb_values", value)

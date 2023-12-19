@@ -259,7 +259,7 @@ cz_point_1_2_q2 = 0.14519591 # q1 - q2 = Ec
 gft_cz_1_2_q2 = flattop_gaussian_waveform(cz_point_1_2_q2-idle_q2, 8 * u.ns, 8 * u.ns)
 g_cz_1_2_q2 = 0.5 * abs(0.5-idle_q2) * gaussian(16, 16/4)
 cz_len = 24
-cz_amp = 0.17532 #0.3896
+cz_amp = 0.39#0.1755
 #############################################
 #                Resonators                 #
 #############################################
@@ -274,8 +274,7 @@ resonator_IF[4] = int((-25.8) * u.MHz)
 # Above is for verifying wide-sweep results: -156, -38, 39, 137, 231
 
 # Readout pulse parameters (optimal input for IQ-mixer: 125mV)
-readout_len = 1700
-readout_zero_len = 400
+readout_len = 2000
 readout_amp = np.zeros(5)
 readout_amp[0] = 0.03
 readout_amp[1] = 0.03*0.7
@@ -341,8 +340,8 @@ else:
 
 # state discrimination
 rotation_angle_q1 = (148.6 / 180) * np.pi
-rotation_angle_q2 = ((18+1.1+17.0) / 180) * np.pi
-rotation_angle_q3 = ((252.3+357.5+1.5+204.2+5.2) / 180) * np.pi
+rotation_angle_q2 = ((18+1.1) / 180) * np.pi
+rotation_angle_q3 = ((252.3+357.5+1.5+204.2) / 180) * np.pi
 rotation_angle_q4 = (0 / 180) * np.pi
 rotation_angle_q5 = (0 / 180) * np.pi
 ge_threshold_q1 = 0.000909
@@ -1107,82 +1106,82 @@ config = {
     "integration_weights": {
         # Default:
         "cosine_weights": {
-            "cosine": [(0.0, readout_zero_len)] + [(1.0, readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(0.0, readout_len)],
+            "cosine": [(1.0, readout_len)],
+            "sine": [(0.0, readout_len)],
         },
         "sine_weights": {
-            "cosine": [(0.0, readout_zero_len)] + [(0.0, readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(1.0, readout_len)],
+            "cosine": [(0.0, readout_len)],
+            "sine": [(1.0, readout_len)],
         },
         "minus_sine_weights": {
-            "cosine": [(0.0, readout_zero_len)] + [(0.0, readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(-1.0, readout_len)],
+            "cosine": [(0.0, readout_len)],
+            "sine": [(-1.0, readout_len)],
         },
 
         # rotated q1:
         "rotated_cosine_weights_q1": {
-            "cosine": [(0.0, readout_zero_len)] + [(np.cos(rotation_angle_q1), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(np.sin(rotation_angle_q1), readout_len)],
+            "cosine": [(np.cos(rotation_angle_q1), readout_len)],
+            "sine": [(np.sin(rotation_angle_q1), readout_len)],
         },
         "rotated_sine_weights_q1": {
-            "cosine": [(0.0, readout_zero_len)] + [(-np.sin(rotation_angle_q1), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(np.cos(rotation_angle_q1), readout_len)],
+            "cosine": [(-np.sin(rotation_angle_q1), readout_len)],
+            "sine": [(np.cos(rotation_angle_q1), readout_len)],
         },
         "rotated_minus_sine_weights_q1": {
-            "cosine": [(0.0, readout_zero_len)] + [(np.sin(rotation_angle_q1), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(-np.cos(rotation_angle_q1), readout_len)],
+            "cosine": [(np.sin(rotation_angle_q1), readout_len)],
+            "sine": [(-np.cos(rotation_angle_q1), readout_len)],
         },
         # rotated q2:
         "rotated_cosine_weights_q2": {
-            "cosine": [(0.0, readout_zero_len)] + [(np.cos(rotation_angle_q2), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(np.sin(rotation_angle_q2), readout_len)],
+            "cosine": [(np.cos(rotation_angle_q2), readout_len)],
+            "sine": [(np.sin(rotation_angle_q2), readout_len)],
         },
         "rotated_sine_weights_q2": {
-            "cosine": [(0.0, readout_zero_len)] + [(-np.sin(rotation_angle_q2), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(np.cos(rotation_angle_q2), readout_len)],
+            "cosine": [(-np.sin(rotation_angle_q2), readout_len)],
+            "sine": [(np.cos(rotation_angle_q2), readout_len)],
         },
         "rotated_minus_sine_weights_q2": {
-            "cosine": [(0.0, readout_zero_len)] + [(np.sin(rotation_angle_q2), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(-np.cos(rotation_angle_q2), readout_len)],
+            "cosine": [(np.sin(rotation_angle_q2), readout_len)],
+            "sine": [(-np.cos(rotation_angle_q2), readout_len)],
         },
         # rotated q3:
         "rotated_cosine_weights_q3": {
-            "cosine": [(0.0, readout_zero_len)] + [(np.cos(rotation_angle_q3), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(np.sin(rotation_angle_q3), readout_len)],
+            "cosine": [(np.cos(rotation_angle_q3), readout_len)],
+            "sine": [(np.sin(rotation_angle_q3), readout_len)],
         },
         "rotated_sine_weights_q3": {
-            "cosine": [(0.0, readout_zero_len)] + [(-np.sin(rotation_angle_q3), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(np.cos(rotation_angle_q3), readout_len)],
+            "cosine": [(-np.sin(rotation_angle_q3), readout_len)],
+            "sine": [(np.cos(rotation_angle_q3), readout_len)],
         },
         "rotated_minus_sine_weights_q3": {
-            "cosine": [(0.0, readout_zero_len)] + [(np.sin(rotation_angle_q3), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(-np.cos(rotation_angle_q3), readout_len)],
+            "cosine": [(np.sin(rotation_angle_q3), readout_len)],
+            "sine": [(-np.cos(rotation_angle_q3), readout_len)],
         },
         # rotated q4:
         "rotated_cosine_weights_q4": {
-            "cosine": [(0.0, readout_zero_len)] + [(np.cos(rotation_angle_q4), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(np.sin(rotation_angle_q4), readout_len)],
+            "cosine": [(np.cos(rotation_angle_q4), readout_len)],
+            "sine": [(np.sin(rotation_angle_q4), readout_len)],
         },
         "rotated_sine_weights_q4": {
-            "cosine": [(0.0, readout_zero_len)] + [(-np.sin(rotation_angle_q4), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(np.cos(rotation_angle_q4), readout_len)],
+            "cosine": [(-np.sin(rotation_angle_q4), readout_len)],
+            "sine": [(np.cos(rotation_angle_q4), readout_len)],
         },
         "rotated_minus_sine_weights_q4": {
-            "cosine": [(0.0, readout_zero_len)] + [(np.sin(rotation_angle_q4), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(-np.cos(rotation_angle_q4), readout_len)],
+            "cosine": [(np.sin(rotation_angle_q4), readout_len)],
+            "sine": [(-np.cos(rotation_angle_q4), readout_len)],
         },
         # rotated q5:
         "rotated_cosine_weights_q5": {
-            "cosine": [(0.0, readout_zero_len)] + [(np.cos(rotation_angle_q5), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(np.sin(rotation_angle_q5), readout_len)],
+            "cosine": [(np.cos(rotation_angle_q5), readout_len)],
+            "sine": [(np.sin(rotation_angle_q5), readout_len)],
         },
         "rotated_sine_weights_q5": {
-            "cosine": [(0.0, readout_zero_len)] + [(-np.sin(rotation_angle_q5), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(np.cos(rotation_angle_q5), readout_len)],
+            "cosine": [(-np.sin(rotation_angle_q5), readout_len)],
+            "sine": [(np.cos(rotation_angle_q5), readout_len)],
         },
         "rotated_minus_sine_weights_q5": {
-            "cosine": [(0.0, readout_zero_len)] + [(np.sin(rotation_angle_q5), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(-np.cos(rotation_angle_q5), readout_len)],
+            "cosine": [(np.sin(rotation_angle_q5), readout_len)],
+            "sine": [(-np.cos(rotation_angle_q5), readout_len)],
         },
 
         # optimal weight for readout on q1:

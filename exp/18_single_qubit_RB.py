@@ -37,7 +37,7 @@ warnings.filterwarnings("ignore")
 ##############################
 # Program-specific variables #
 ##############################
-qubit = 1
+qubit = 2
 
 if qubit == 1:
     threshold = ge_threshold_q1

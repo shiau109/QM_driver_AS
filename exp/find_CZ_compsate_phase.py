@@ -156,7 +156,7 @@ def live_plotting(signal,signal_c,ramsey_Qi):
 
 flux_Qi = 2  
 ramsey_Qi = 3
-a = 0.39
+a = 0.3896
 type = 'square'
 signal_mode = 'I'
 scale_reference = const_flux_amp 

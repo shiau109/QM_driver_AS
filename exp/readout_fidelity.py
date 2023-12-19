@@ -115,16 +115,9 @@ if __name__ == '__main__':
     for r in resonators:
         two_state_discriminator(output_data[r][0][0], output_data[r][1][0], output_data[r][0][1], output_data[r][1][1], True, True)
 
-    from state_distribution import train_model, create_img
-    for r in output_data.keys():
-        d = np.moveaxis(output_data[r],1,0)
-        gmm_model = train_model(d*1000)
-        fig = plt.figure(constrained_layout=True)
-        create_img(d*1000, gmm_model, fig, r)
-    plt.show() 
 
     #   Data Saving   # 
-    save_data = True
+    save_data = False
     if save_data:
         from save_data import save_npz
         import sys

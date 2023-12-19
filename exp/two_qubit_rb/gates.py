@@ -10,7 +10,7 @@ import numpy as np
 
 from .simple_tableau import SimpleTableau
 
-q1, q2 = cirq.LineQubit.range(1, 3)
+q1, q2 = cirq.LineQubit.range(2, 4)
 
 C1_reduced = [
     cirq.PhasedXZGate(axis_phase_exponent=0, x_exponent=0, z_exponent=0),
@@ -304,7 +304,7 @@ class GateGenerator:
 
     @staticmethod
     def _reduce_gate(gate: List[cirq.GateOperation]):
-        qubit_ops = {1: None, 2: None}
+        qubit_ops = {1: None, 2: None, 3: None}
         output = []
 
         def append_qubit_ops():

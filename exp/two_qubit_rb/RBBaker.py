@@ -141,7 +141,6 @@ class RBBaker:
     def run(self, op_list_per_qe: dict, length, unsafe=True):
         if set(op_list_per_qe.keys()) != self._all_elements:
             raise RuntimeError(f"must specify ops for all elements: {', '.join(self._all_elements)} ")
-
         align()
         for qe, op_list in op_list_per_qe.items():
             cmd_i = declare(int)
@@ -150,4 +149,6 @@ class RBBaker:
                     for op_id, b in enumerate(self._op_to_baking[qe]):
                         with case_(op_id):
                             self._run_baking_for_qe(b, qe)
+                            # print('!!!!!')
+                            # print(b.get_waveforms_dict())
         align()

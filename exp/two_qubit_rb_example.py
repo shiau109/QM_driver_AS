@@ -49,8 +49,8 @@ def bake_phased_xz(baker: Baking, q, x, z, a):
 
 
 # single qubit phase corrections in units of 2pi applied after the CZ gate
-qubit1_frame_update = 16.583 / 360  # example values, should be taken from QPU parameters
-qubit2_frame_update = 28.047 / 360  # example values, should be taken from QPU parameters
+qubit1_frame_update = 15.646 / 360  # example values, should be taken from QPU parameters
+qubit2_frame_update = 51.59 / 360  # example values, should be taken from QPU parameters
 
 
 # defines the CZ gate that realizes the mapping |00> -> |00>, |01> -> |01>, |10> -> |10>, |11> -> -|11>
@@ -62,10 +62,10 @@ def bake_cz(baker: Baking, q1, q2):
     q1_z_element = f"q{q1}_z"
     baker.add_op("cz",q1_z_element,wf)
     baker.play("cz", q1_z_element)
-    baker.align()
+    baker.align(q1_xy_element,q2_xy_element,q1_z_element)
     baker.frame_rotation_2pi(qubit1_frame_update, q1_xy_element)
     baker.frame_rotation_2pi(qubit2_frame_update, q2_xy_element)
-    baker.align()
+    baker.align(q1_xy_element,q2_xy_element,q1_z_element)
 
 
 def prep():
@@ -74,8 +74,8 @@ def prep():
 
 
 def meas():
-    threshold1 = 1.230e-04  # threshold for state discrimination 0 <-> 1 using the I quadrature
-    threshold2 = -4.683e-04  # threshold for state discrimination 0 <-> 1 using the I quadrature
+    threshold1 = 1.127e-04  # threshold for state discrimination 0 <-> 1 using the I quadrature
+    threshold2 = -3.345e-04  # threshold for state discrimination 0 <-> 1 using the I quadrature
     I1 = declare(fixed)
     I2 = declare(fixed)
     Q1 = declare(fixed)
@@ -83,7 +83,7 @@ def meas():
     state1 = declare(bool)
     state2 = declare(bool)
     multiplexed_readout(
-        [I1, I2], None, [Q1, Q2], None, resonators=[1, 2], weights="rotated_"
+        [I1, I2], None, [Q1, Q2], None, resonators=[2, 3], weights="rotated_"
     )  # readout macro for multiplexed readout
     assign(state1, I1 > threshold1)  # assume that all information is in I
     assign(state2, I2 > threshold2)  # assume that all information is in I
@@ -99,7 +99,7 @@ rb = TwoQubitRb(
 )  # create RB experiment from configuration and defined functions
 
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name)  # initialize qmm
-res = rb.run(qmm, circuit_depths=[1, 2, 3, 4, 5], num_circuits_per_depth=20, num_shots_per_circuit=2000)
+res = rb.run(qmm, circuit_depths=[0,1,2,3,4,5,6,7,8,9,10,11,12], num_circuits_per_depth=20, num_shots_per_circuit=2000)
 # circuit_depths ~ how many consecutive Clifford gates within one executed circuit https://qiskit.org/documentation/apidoc/circuit.html
 # num_circuits_per_depth ~ how many random circuits within one depth
 # num_shots_per_circuit ~ repetitions of the same circuit (averaging)
