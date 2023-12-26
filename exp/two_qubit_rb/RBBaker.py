@@ -4,7 +4,7 @@ from typing import Callable, Dict, Optional, List
 
 import cirq
 from cirq import GateOperation
-from qm.qua import switch_, case_, declare, align, for_
+from qm.qua import switch_, case_, declare, align, for_, play
 from qualang_tools.bakery.bakery import Baking, baking
 
 from .gates import GateGenerator, gate_db
@@ -149,6 +149,10 @@ class RBBaker:
                     for op_id, b in enumerate(self._op_to_baking[qe]):
                         with case_(op_id):
                             self._run_baking_for_qe(b, qe)
-                            # print('!!!!!')
-                            # print(b.get_waveforms_dict())
+
+            # for op_id, b in enumerate(self._op_to_baking[qe]):
+            #     self._run_baking_for_qe(b, qe)
+
+
+
         align()

@@ -4,7 +4,7 @@ from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.jobs.running_qm_job import RunningQmJob
 from qm.qua import *
 from qm.qua._dsl import _Expression
-
+from qm import generate_qua_script
 from qualang_tools.bakery.bakery import Baking
 from .RBBaker import RBBaker
 from .RBResult import RBResult
@@ -156,6 +156,7 @@ class TwoQubitRb:
             print(gates_is)
             assign(progress, 0)
             with for_each_(sequence_depth, sequence_depths):
+                
                 with for_(repeat, 0, repeat < num_repeats, repeat + 1):
                     assign(progress, progress + 1)
                     save(progress, progress_os)
@@ -170,6 +171,17 @@ class TwoQubitRb:
                         assign(state, (Cast.to_int(out2) << 1) + Cast.to_int(out1))
                         save(state, state_os)
 
+                # advance_input_stream(gates_len_is)
+                # for gate_is in gates_is.values():
+                #     advance_input_stream(gate_is)
+                # assign(length, gates_len_is[0])
+                # self._rb_baker.run(gates_is, length)
+                # out1, out2 = self._measure_func()
+                # self._rb_baker.run(gates_is, length)
+                # out1, out2 = self._measure_func()
+                # # # play("x90", "q2_xy")
+                # save(progress, progress_os)
+                # save(state, state_os)
             with stream_processing():
                 state_os.buffer(len(sequence_depths), num_repeats, num_averages).save("state")
                 progress_os.save("progress")
@@ -235,7 +247,10 @@ class TwoQubitRb:
         if simulate:
             from qm import SimulationConfig
             import matplotlib.pyplot as plt
-            simulation_config = SimulationConfig(duration=100_000)  # In clock cycles = 4ns
+            simulation_config = SimulationConfig(duration=400_000)  # In clock cycles = 4ns
+            # with open("config.txt", 'w') as file:
+            #     file.write(str(self._config))
+            # print(self._config['waveforms'])
             job = qmm.simulate(self._config, prog, simulation_config)
             job.get_simulated_samples().con1.plot()
             plt.show()

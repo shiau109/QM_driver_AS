@@ -169,7 +169,7 @@ with program() as rb:
         I_st.buffer(max_circuit_depth).buffer(num_of_sequences).average().save("I")
         n_st.save("iteration")
 
-# job = qmm.simulate(config, rb, SimulationConfig(10000))
+# job = qmm.simulate(config, rb, SimulationConfig(50000))
 # job.get_simulated_samples().con1.plot()
 # plt.show()
 

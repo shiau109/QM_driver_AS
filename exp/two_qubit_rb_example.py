@@ -1,6 +1,6 @@
 import matplotlib.pylab as plt
 from qm.qua import *
-from qm import QuantumMachinesManager
+from qm import QuantumMachinesManager, generate_qua_script
 from qualang_tools.bakery.bakery import Baking
 from configuration import *
 from two_qubit_rb import TwoQubitRb
@@ -49,33 +49,36 @@ def bake_phased_xz(baker: Baking, q, x, z, a):
 
 
 # single qubit phase corrections in units of 2pi applied after the CZ gate
-qubit1_frame_update = 15.646 / 360  # example values, should be taken from QPU parameters
-qubit2_frame_update = 51.59 / 360  # example values, should be taken from QPU parameters
+qubit1_frame_update = 0 #24.543 / 360  # example values, should be taken from QPU parameters
+qubit2_frame_update = 0 #55.478 / 360  # example values, should be taken from QPU parameters
 
 
 # defines the CZ gate that realizes the mapping |00> -> |00>, |01> -> |01>, |10> -> |10>, |11> -> -|11>
 def bake_cz(baker: Baking, q1, q2):
-    wf = np.array([cz_amp]*cz_len)
-    wf = wf.tolist()
-    q1_xy_element = f"q{q1}_xy"  #
+    # wf = np.array([cz_amp]*(cz_len+1)) # cz_len+1 is the exactly time of z pulse.
+    # wf = wf.tolist()
+    q1_xy_element = f"q{q1}_xy"  
     q2_xy_element = f"q{q2}_xy"
     q1_z_element = f"q{q1}_z"
-    baker.add_op("cz",q1_z_element,wf)
-    baker.play("cz", q1_z_element)
-    baker.align(q1_xy_element,q2_xy_element,q1_z_element)
-    baker.frame_rotation_2pi(qubit1_frame_update, q1_xy_element)
-    baker.frame_rotation_2pi(qubit2_frame_update, q2_xy_element)
+    # baker.add_op("cz",q1_z_element,wf)
+    # baker.wait(20,q1_xy_element,q2_xy_element,q1_z_element) # The unit is 1 ns.
+    # baker.play("cz", q1_z_element)
+    # baker.align(q1_xy_element,q2_xy_element,q1_z_element)
+    # baker.wait(20,q1_xy_element,q2_xy_element,q1_z_element)
+    # baker.frame_rotation_2pi(qubit1_frame_update, q1_xy_element)
+    # baker.frame_rotation_2pi(qubit2_frame_update, q2_xy_element)
     baker.align(q1_xy_element,q2_xy_element,q1_z_element)
 
 
 def prep():
+    # wait(int(16* u.ns))
     wait(int(10 * 12000 * u.ns))  # thermal preparation in clock cycles (time = 10 x T1 x 4ns)
     align()
 
 
 def meas():
-    threshold1 = 1.127e-04  # threshold for state discrimination 0 <-> 1 using the I quadrature
-    threshold2 = -3.345e-04  # threshold for state discrimination 0 <-> 1 using the I quadrature
+    threshold1 = 8.003e-05  # threshold for state discrimination 0 <-> 1 using the I quadrature
+    threshold2 = -3.386e-04  # threshold for state discrimination 0 <-> 1 using the I quadrature
     I1 = declare(fixed)
     I2 = declare(fixed)
     Q1 = declare(fixed)
@@ -109,3 +112,5 @@ plt.show()
 
 res.plot_fidelity()
 plt.show()
+
+

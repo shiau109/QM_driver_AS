@@ -25,7 +25,7 @@ def cz_gate(type, idle_flux_point, flux_Qi, segment, a):
         with switch_(segment):
             for j in range(0, const_flux_len + 1):
                 with case_(j):
-                    square_pulse_segments[j].run(amp_array=[(f"q{flux_Qi}_z", a)])    
+                    square_pulse_segments[j].run(amp_array=[(f"q{flux_Qi}_z", a)])  
         align()
         set_dc_offset(f"q{flux_Qi}_z", "single", idle_flux_point[flux_Qi-1])
         wait(5)
@@ -175,10 +175,10 @@ q_id = [1,2,3,4]
 control_Qi = 2
 ramsey_Qi = 3
 flux_Qi = 2
-t_min, t_max = 22, 27
+t_min, t_max = 22, 26
 t_delay = np.arange(t_min, t_max + 0.1, 1) 
 
-amps = np.arange(0.3888, 0.3904, 0.0004) 
+amps = np.arange(0.3498, 0.3514, 0.0004) 
 signal_mode = 'I'
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
 CZ_phase_diff(q_id,flux_Qi,control_Qi,ramsey_Qi,idle_flux_point,signal_mode,simulate,qmm)

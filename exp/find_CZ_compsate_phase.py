@@ -156,7 +156,7 @@ def live_plotting(signal,signal_c,ramsey_Qi):
 
 flux_Qi = 2  
 ramsey_Qi = 3
-a = 0.3896
+a = 0.351
 type = 'square'
 signal_mode = 'I'
 scale_reference = const_flux_amp 
@@ -165,7 +165,12 @@ const_flux_len = 24
 flux_waveform = np.array([const_flux_amp] * (const_flux_len+1))
 Phi = np.arange(0, 5, 0.05) # 5 rotations
 
-simulate = False
-q_id = [1,2,3,4]
-qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)      
-I, Q, I_c, Q_c = CZ_phase_compensate(q_id,flux_Qi,ramsey_Qi,Phi,const_flux_len,simulate,qmm)
+###
+square_pulse_segments = baked_waveform(flux_waveform, const_flux_len, flux_Qi)
+for segment in square_pulse_segments:
+    print(segment.get_waveforms_dict())
+
+# simulate = True
+# q_id = [1,2,3,4]
+# qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)      
+# I, Q, I_c, Q_c = CZ_phase_compensate(q_id,flux_Qi,ramsey_Qi,Phi,const_flux_len,simulate,qmm)

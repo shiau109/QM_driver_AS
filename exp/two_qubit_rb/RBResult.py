@@ -1,11 +1,11 @@
 import dataclasses
-
+from scipy.optimize import curve_fit
 import numpy as np
 import xarray as xr
 from matplotlib import pyplot as plt
 
-def power_law(power, a, b, p):
-    return a * (p**power) + b
+def power_law(m, a, b, p):
+    return a * (p**m) + b
 
 @dataclasses.dataclass
 class RBResult:
@@ -36,4 +36,34 @@ class RBResult:
 
     def plot_fidelity(self):
         fidelity = (self.data.state == 0).sum(("repeat", "average")) / (self.num_repeats * self.num_averages)
-        fidelity.rename("fidelity").plot.line()
+        # print('!!!!!')
+        # print(fidelity)
+        # print('!!!!!')
+        # print(type(fidelity))
+        # print(fidelity.values)
+        # print(type(fidelity.values))
+
+        x = np.linspace(0, len(self.circuit_depths), len(self.circuit_depths))
+        data = fidelity.values
+        pars, cov = curve_fit(
+            f=power_law,
+            xdata=x,
+            ydata=data,
+            p0=[0.5, 0.5, 0.9],
+            bounds=(-np.inf, np.inf),
+            maxfev=2000,
+        )
+        d = 2**2
+        ref_r = (1 - pars[2])*(d-1)/d
+        ref_f = 1 - ref_r
+        print("#########################")
+        print("### Fitted Parameters ###")
+        print("#########################")
+        print(f"A = {pars[0]:.3}, B = {pars[1]:.3}, p = {pars[2]:.3}")
+        print(f'Reference Error Rate: {ref_r:.4f}')
+        print(f'Reference Fidelity: {ref_f:.4f}')
+        plt.figure()
+        plt.plot(x, power_law(x, *pars), linestyle="--", linewidth=2, label='fitting')
+        fidelity.rename("fidelity").plot.line(label='exp')
+        plt.title(f'Two-Qubit Gate Reference Fidelity: {ref_f:.4f}')
+        plt.legend()

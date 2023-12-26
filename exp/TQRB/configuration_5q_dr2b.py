@@ -14,10 +14,10 @@ u = unit(coerce_to_integer=True)
 # Network parameters #
 ######################
 # Either using Cluster or Port:
-cluster_name = "QPX_3"  # Write your cluster_name if version >= QOP220
-# qop_ip = "192.168.1.146"  # Write the QM router IP address
-qop_port = 9803  # Write the QOP port if version < QOP220
-qop_ip = "qum.phys.sinica.edu.tw"  # Write the QM router IP address
+cluster_name = "QPX_2"  # Write your cluster_name if version >= QOP220
+qop_ip = "192.168.1.105"  # Write the QM router IP address
+qop_port = None  # Write the QOP port if version < QOP220
+# qop_ip = "qum.phys.sinica.edu.tw"  # Write the QM router IP address
 # qop_port = 9800  # Write the QOP port if version < QOP220
 
 ###################
@@ -25,8 +25,8 @@ qop_ip = "qum.phys.sinica.edu.tw"  # Write the QM router IP address
 ###################
 # Path to save data
 save_data = False
-save_dir = r"D:\Data\5Q_DR3"
-# save_dir = (Path().absolute()/"PYQUM"/"TEST"/"BETAsite"/"QM"/"OPXPlus"/"data")
+save_dir = r"C:\Users\admin\SynologyDrive\09 Data\Fridge Data\Qubit\20231027_DR2_5XQ\Jacky"
+
 
 ############################
 # Set octave configuration #
@@ -47,7 +47,7 @@ port_mapping = {
 
 # The Octave port is 11xxx, where xxx are the last three digits of the Octave internal IP that can be accessed from
 # the OPX admin panel if you QOP version is >= QOP220. Otherwise, it is 50 for Octave1, then 51, 52 and so on.
-octave_1 = OctaveUnit("octave1", qop_ip, port=11253, con="con1", clock="Internal", port_mapping=port_mapping)
+octave_1 = OctaveUnit("octave1", qop_ip, port=11250, con="con1", clock="Internal", port_mapping=port_mapping)
 
 # Add the octaves
 octaves = [octave_1]
@@ -61,64 +61,76 @@ octave_config = octave_declaration(octaves)
 #############################################
 #                  Qubits                   #
 #############################################
+qubit_frequency = np.zeros(5)
+qubit_frequency[0] = (3.78915+0.0005-0.001) * u.GHz
+qubit_frequency[1] = (4.24498) * u.GHz
+qubit_frequency[2] = (3.2334) * u.GHz
+qubit_frequency[3] = (3.5729) * u.GHz
+qubit_frequency[4] = (4.76323) * u.GHz
+
 qubit_LO = np.zeros(5)
-qubit_LO[0] = (4.055) * u.GHz
-qubit_LO[1] = (4.3) * u.GHz
-qubit_LO[2] = (3.85) * u.GHz  ### idle point 
-qubit_LO[3] = (3.95) * u.GHz
-qubit_LO[4] = (4.75) * u.GHz
+qubit_LO[0] = qubit_LO_q1 = (3.500 + 0.38) * u.GHz
+qubit_LO[1] = qubit_LO_q2 = (3.900 + 0.43) * u.GHz
+qubit_LO[2] = qubit_LO_q3 = (3.300 + 0.08) * u.GHz
+qubit_LO[3] = qubit_LO_q4 = (3.200) * u.GHz
+qubit_LO[4] = qubit_LO_q5 = (4.400) * u.GHz
+
+
+
 
 # Qubits IF
 qubit_IF = np.zeros(5)
-qubit_IF[0] = (-116.8+0.245) * u.MHz       # Q1
-qubit_IF[1] = (-100.227-1.56+0.203) * u.MHz      # Q2
-qubit_IF[2] = (-317.056-0.45-0.071-0.044) * u.MHz
-qubit_IF[3] = (-89.5911-0.272) * u.MHz     # Q4
-qubit_IF[4] = (-92) * u.MHz                # Q5
+for i in range(5):
+    qubit_IF[i] = qubit_frequency[i] - qubit_LO[i]
+    # print(qubit_IF[i]/1e6)
+
+
 # For comparing 2q:
 # qubit_IF[1] = qubit_IF[0]
 
 # Relaxation time
-qubit1_T1 = int(12000 * u.ns)
-qubit2_T1 = int(12000 * u.ns)
+qubit1_T1 = int(20000 * u.ns)
+qubit2_T1 = int(16000 * u.ns)
 qubit3_T1 = int(12000 * u.ns)
 qubit4_T1 = int(12000 * u.ns)
 qubit5_T1 = int(12000 * u.ns)
-thermalization_time = 10 * max(qubit1_T1, qubit2_T1, qubit3_T1, qubit4_T1, qubit5_T1)
+thermalization_time = 5 * max(qubit1_T1, qubit2_T1, qubit3_T1, qubit4_T1, qubit5_T1)
+# thermalization_time = 200_000 * u.ns
 
 # CW pulse parameter
-const_len = 100
-const_amp = 270 * u.mV
+const_len = 1500
+const_amp = 500 * u.mV
 # Saturation_pulse
 saturation_len = 1 * u.us
-saturation_amp = 0.1
+saturation_amp = 0.5
 # Pi pulse parameters
-pi_len = 40
+pi_len = 24 #24
 pi_sigma = pi_len / 4
-pi_amp_q1 = 0.15*0.872*0.975*0.97/3
-pi_amp_q2 = 0.14913/3*0.98*1.0007*1.04*0.9975*0.997
-pi_amp_q3 = 0.07635*1.005*0.997
-pi_amp_q4 = 0.15365
-pi_amp_q5 = 0.5
+pi_amp = np.zeros(5)
+pi_amp[0] = 0.1023681613115015*0.999*0.9975*0.8*1.07
+pi_amp[1] = 0.105406217017*0.998
+pi_amp[2] = 0.173*1.007
+pi_amp[3] = 0.175
+pi_amp[4] = 0.42
 
-r90_amp_q1 = pi_amp_q1/2 
-r90_amp_q2 = pi_amp_q2/2*0.9894*1.013*0.998*0.999*1.001
-r90_amp_q3 = pi_amp_q3/2*1.0105
-r90_amp_q4 = pi_amp_q4/2 *1.104*0.99
-# pi_amp_q4 = 0.1*1.135*1.005*0.805
-r90_amp_q5 = pi_amp_q5/2
+r90_amp = np.zeros(5)
+r90_amp[0] = pi_amp[0]/2*1.0705562870200880443
+r90_amp[1] = pi_amp[1]/2 *1.0014855*1.007*1.005
+r90_amp[2] = pi_amp[2]/2*1.02
+r90_amp[3] = pi_amp[3]/2
+r90_amp[4] = pi_amp[4]/2
 
 # DRAG coefficients (# No DRAG when drag_coef_qi=0, it's just a gaussian.)
-drag_coef_q1 = 0.68
-drag_coef_q2 = -0.65
-drag_coef_q3 = 0.7
-drag_coef_q4 = 1.0
+drag_coef_q1 = 0.55
+drag_coef_q2 = 0.2
+drag_coef_q3 = 2.1
+drag_coef_q4 = 0
 drag_coef_q5 = 0
-anharmonicity_q1 = -(220.8) * u.MHz
-anharmonicity_q2 = -(200) * u.MHz
-anharmonicity_q3 = -(200) * u.MHz
-anharmonicity_q4 = -(196) * u.MHz
-anharmonicity_q5 = -(208) * u.MHz
+anharmonicity_q1 = -(450.2-344.2)*2 * u.MHz
+anharmonicity_q2 = (470.7-369.2)*2 * u.MHz
+anharmonicity_q3 = (200) * u.MHz
+anharmonicity_q4 = -(200) * u.MHz
+anharmonicity_q5 = -(200) * u.MHz
 AC_stark_detuning_q1 = 0 * u.MHz
 AC_stark_detuning_q2 = 0 * u.MHz
 AC_stark_detuning_q3 = 0 * u.MHz
@@ -126,91 +138,99 @@ AC_stark_detuning_q4 = 0 * u.MHz
 AC_stark_detuning_q5 = 0 * u.MHz
 
 # DRAG waveforms (x180)
-x180_wf_q1, x180_der_wf_q1 = np.array(drag_gaussian_pulse_waveforms(pi_amp_q1, pi_len, pi_sigma, drag_coef_q1, anharmonicity_q1, AC_stark_detuning_q1))
+x180_wf_q1, x180_der_wf_q1 = np.array(drag_gaussian_pulse_waveforms(pi_amp[0], pi_len, pi_sigma, drag_coef_q1, anharmonicity_q1, AC_stark_detuning_q1))
 x180_I_wf_q1, x180_Q_wf_q1 = x180_wf_q1, x180_der_wf_q1
-x180_wf_q2, x180_der_wf_q2 = np.array(drag_gaussian_pulse_waveforms(pi_amp_q2, pi_len, pi_sigma, drag_coef_q2, anharmonicity_q2, AC_stark_detuning_q2))
+x180_wf_q2, x180_der_wf_q2 = np.array(drag_gaussian_pulse_waveforms(pi_amp[1], pi_len, pi_sigma, drag_coef_q2, anharmonicity_q2, AC_stark_detuning_q2))
 x180_I_wf_q2, x180_Q_wf_q2 = x180_wf_q2, x180_der_wf_q2
-x180_wf_q3, x180_der_wf_q3 = np.array(drag_gaussian_pulse_waveforms(pi_amp_q3, pi_len, pi_sigma, drag_coef_q3, anharmonicity_q3, AC_stark_detuning_q3))
+x180_wf_q3, x180_der_wf_q3 = np.array(drag_gaussian_pulse_waveforms(pi_amp[2], pi_len, pi_sigma, drag_coef_q3, anharmonicity_q3, AC_stark_detuning_q3))
 x180_I_wf_q3, x180_Q_wf_q3 = x180_wf_q3, x180_der_wf_q3
-x180_wf_q4, x180_der_wf_q4 = np.array(drag_gaussian_pulse_waveforms(pi_amp_q4, pi_len, pi_sigma, drag_coef_q4, anharmonicity_q4, AC_stark_detuning_q4))
+x180_wf_q4, x180_der_wf_q4 = np.array(drag_gaussian_pulse_waveforms(pi_amp[3], pi_len, pi_sigma, drag_coef_q4, anharmonicity_q4, AC_stark_detuning_q4))
 x180_I_wf_q4, x180_Q_wf_q4 = x180_wf_q4, x180_der_wf_q4
-x180_wf_q5, x180_der_wf_q5 = np.array(drag_gaussian_pulse_waveforms(pi_amp_q5, pi_len, pi_sigma, drag_coef_q5, anharmonicity_q5, AC_stark_detuning_q5))
+x180_wf_q5, x180_der_wf_q5 = np.array(drag_gaussian_pulse_waveforms(pi_amp[4], pi_len, pi_sigma, drag_coef_q5, anharmonicity_q5, AC_stark_detuning_q5))
 x180_I_wf_q5, x180_Q_wf_q5 = x180_wf_q5, x180_der_wf_q5
 # DRAG waveforms (x90)
-x90_wf_q1, x90_der_wf_q1 = np.array(drag_gaussian_pulse_waveforms(r90_amp_q1, pi_len, pi_sigma, drag_coef_q1, anharmonicity_q1, AC_stark_detuning_q1))
+x90_wf_q1, x90_der_wf_q1 = np.array(drag_gaussian_pulse_waveforms(r90_amp[0], pi_len, pi_sigma, drag_coef_q1, anharmonicity_q1, AC_stark_detuning_q1))
 x90_I_wf_q1, x90_Q_wf_q1 = x90_wf_q1, x90_der_wf_q1
-x90_wf_q2, x90_der_wf_q2 = np.array(drag_gaussian_pulse_waveforms(r90_amp_q2, pi_len, pi_sigma, drag_coef_q2, anharmonicity_q2, AC_stark_detuning_q2))
+x90_wf_q2, x90_der_wf_q2 = np.array(drag_gaussian_pulse_waveforms(r90_amp[1], pi_len, pi_sigma, drag_coef_q2, anharmonicity_q2, AC_stark_detuning_q2))
 x90_I_wf_q2, x90_Q_wf_q2 = x90_wf_q2, x90_der_wf_q2
-x90_wf_q3, x90_der_wf_q3 = np.array(drag_gaussian_pulse_waveforms(r90_amp_q3, pi_len, pi_sigma, drag_coef_q3, anharmonicity_q3, AC_stark_detuning_q3))
+x90_wf_q3, x90_der_wf_q3 = np.array(drag_gaussian_pulse_waveforms(r90_amp[2], pi_len, pi_sigma, drag_coef_q3, anharmonicity_q3, AC_stark_detuning_q3))
 x90_I_wf_q3, x90_Q_wf_q3 = x90_wf_q3, x90_der_wf_q3
-x90_wf_q4, x90_der_wf_q4 = np.array(drag_gaussian_pulse_waveforms(r90_amp_q4, pi_len, pi_sigma, drag_coef_q4, anharmonicity_q4, AC_stark_detuning_q4))
+x90_wf_q4, x90_der_wf_q4 = np.array(drag_gaussian_pulse_waveforms(r90_amp[3], pi_len, pi_sigma, drag_coef_q4, anharmonicity_q4, AC_stark_detuning_q4))
 x90_I_wf_q4, x90_Q_wf_q4 = x90_wf_q4, x90_der_wf_q4
-x90_wf_q5, x90_der_wf_q5 = np.array(drag_gaussian_pulse_waveforms(r90_amp_q5, pi_len, pi_sigma, drag_coef_q5, anharmonicity_q5, AC_stark_detuning_q5))
+x90_wf_q5, x90_der_wf_q5 = np.array(drag_gaussian_pulse_waveforms(r90_amp[4], pi_len, pi_sigma, drag_coef_q5, anharmonicity_q5, AC_stark_detuning_q5))
 x90_I_wf_q5, x90_Q_wf_q5 = x90_wf_q5, x90_der_wf_q5
 # DRAG waveforms (-x90)
-minus_x90_wf_q1, minus_x90_der_wf_q1 = np.array(drag_gaussian_pulse_waveforms(-r90_amp_q1, pi_len, pi_sigma, drag_coef_q1, anharmonicity_q1, AC_stark_detuning_q1))
+minus_x90_wf_q1, minus_x90_der_wf_q1 = np.array(drag_gaussian_pulse_waveforms(-r90_amp[0], pi_len, pi_sigma, drag_coef_q1, anharmonicity_q1, AC_stark_detuning_q1))
 minus_x90_I_wf_q1, minus_x90_Q_wf_q1 = minus_x90_wf_q1, minus_x90_der_wf_q1
-minus_x90_wf_q2, minus_x90_der_wf_q2 = np.array(drag_gaussian_pulse_waveforms(-r90_amp_q2, pi_len, pi_sigma, drag_coef_q2, anharmonicity_q2, AC_stark_detuning_q2))
+minus_x90_wf_q2, minus_x90_der_wf_q2 = np.array(drag_gaussian_pulse_waveforms(-r90_amp[1], pi_len, pi_sigma, drag_coef_q2, anharmonicity_q2, AC_stark_detuning_q2))
 minus_x90_I_wf_q2, minus_x90_Q_wf_q2 = minus_x90_wf_q2, minus_x90_der_wf_q2
-minus_x90_wf_q3, minus_x90_der_wf_q3 = np.array(drag_gaussian_pulse_waveforms(-r90_amp_q3, pi_len, pi_sigma, drag_coef_q3, anharmonicity_q3, AC_stark_detuning_q3))
+minus_x90_wf_q3, minus_x90_der_wf_q3 = np.array(drag_gaussian_pulse_waveforms(-r90_amp[2], pi_len, pi_sigma, drag_coef_q3, anharmonicity_q3, AC_stark_detuning_q3))
 minus_x90_I_wf_q3, minus_x90_Q_wf_q3 = minus_x90_wf_q3, minus_x90_der_wf_q3
-minus_x90_wf_q4, minus_x90_der_wf_q4 = np.array(drag_gaussian_pulse_waveforms(-r90_amp_q4, pi_len, pi_sigma, drag_coef_q4, anharmonicity_q4, AC_stark_detuning_q4))
+minus_x90_wf_q4, minus_x90_der_wf_q4 = np.array(drag_gaussian_pulse_waveforms(-r90_amp[3], pi_len, pi_sigma, drag_coef_q4, anharmonicity_q4, AC_stark_detuning_q4))
 minus_x90_I_wf_q4, minus_x90_Q_wf_q4 = minus_x90_wf_q4, minus_x90_der_wf_q4
-minus_x90_wf_q5, minus_x90_der_wf_q5 = np.array(drag_gaussian_pulse_waveforms(-r90_amp_q5, pi_len, pi_sigma, drag_coef_q5, anharmonicity_q5, AC_stark_detuning_q5))
+minus_x90_wf_q5, minus_x90_der_wf_q5 = np.array(drag_gaussian_pulse_waveforms(-r90_amp[4], pi_len, pi_sigma, drag_coef_q5, anharmonicity_q5, AC_stark_detuning_q5))
 minus_x90_I_wf_q5, minus_x90_Q_wf_q5 = minus_x90_wf_q5, minus_x90_der_wf_q5
 # DRAG waveforms (y180)
-y180_wf_q1, y180_der_wf_q1 = np.array(drag_gaussian_pulse_waveforms(pi_amp_q1, pi_len, pi_sigma, drag_coef_q1, anharmonicity_q1, AC_stark_detuning_q1))
+y180_wf_q1, y180_der_wf_q1 = np.array(drag_gaussian_pulse_waveforms(pi_amp[0], pi_len, pi_sigma, drag_coef_q1, anharmonicity_q1, AC_stark_detuning_q1))
 y180_I_wf_q1, y180_Q_wf_q1 = (-1) * y180_der_wf_q1, y180_wf_q1
-y180_wf_q2, y180_der_wf_q2 = np.array(drag_gaussian_pulse_waveforms(pi_amp_q2, pi_len, pi_sigma, drag_coef_q2, anharmonicity_q2, AC_stark_detuning_q2))
+y180_wf_q2, y180_der_wf_q2 = np.array(drag_gaussian_pulse_waveforms(pi_amp[1], pi_len, pi_sigma, drag_coef_q2, anharmonicity_q2, AC_stark_detuning_q2))
 y180_I_wf_q2, y180_Q_wf_q2 = (-1) * y180_der_wf_q2, y180_wf_q2
-y180_wf_q3, y180_der_wf_q3 = np.array(drag_gaussian_pulse_waveforms(pi_amp_q3, pi_len, pi_sigma, drag_coef_q3, anharmonicity_q3, AC_stark_detuning_q3))
+y180_wf_q3, y180_der_wf_q3 = np.array(drag_gaussian_pulse_waveforms(pi_amp[2], pi_len, pi_sigma, drag_coef_q3, anharmonicity_q3, AC_stark_detuning_q3))
 y180_I_wf_q3, y180_Q_wf_q3 = (-1) * y180_der_wf_q3, y180_wf_q3
-y180_wf_q4, y180_der_wf_q4 = np.array(drag_gaussian_pulse_waveforms(pi_amp_q4, pi_len, pi_sigma, drag_coef_q4, anharmonicity_q4, AC_stark_detuning_q4))
+y180_wf_q4, y180_der_wf_q4 = np.array(drag_gaussian_pulse_waveforms(pi_amp[3], pi_len, pi_sigma, drag_coef_q4, anharmonicity_q4, AC_stark_detuning_q4))
 y180_I_wf_q4, y180_Q_wf_q4 = (-1) * y180_der_wf_q4, y180_wf_q4
-y180_wf_q5, y180_der_wf_q5 = np.array(drag_gaussian_pulse_waveforms(pi_amp_q5, pi_len, pi_sigma, drag_coef_q5, anharmonicity_q5, AC_stark_detuning_q5))
+y180_wf_q5, y180_der_wf_q5 = np.array(drag_gaussian_pulse_waveforms(pi_amp[4], pi_len, pi_sigma, drag_coef_q5, anharmonicity_q5, AC_stark_detuning_q5))
 y180_I_wf_q5, y180_Q_wf_q5 = (-1) * y180_der_wf_q5, y180_wf_q5
 # DRAG waveforms (y90)
-y90_wf_q1, y90_der_wf_q1 = np.array(drag_gaussian_pulse_waveforms(r90_amp_q1, pi_len, pi_sigma, drag_coef_q1, anharmonicity_q1, AC_stark_detuning_q1))
+y90_wf_q1, y90_der_wf_q1 = np.array(drag_gaussian_pulse_waveforms(r90_amp[0], pi_len, pi_sigma, drag_coef_q1, anharmonicity_q1, AC_stark_detuning_q1))
 y90_I_wf_q1, y90_Q_wf_q1 = (-1) * y90_der_wf_q1, y90_wf_q1
-y90_wf_q2, y90_der_wf_q2 = np.array(drag_gaussian_pulse_waveforms(r90_amp_q2, pi_len, pi_sigma, drag_coef_q2, anharmonicity_q2, AC_stark_detuning_q2))
+y90_wf_q2, y90_der_wf_q2 = np.array(drag_gaussian_pulse_waveforms(r90_amp[1], pi_len, pi_sigma, drag_coef_q2, anharmonicity_q2, AC_stark_detuning_q2))
 y90_I_wf_q2, y90_Q_wf_q2 = (-1) * y90_der_wf_q2, y90_wf_q2
-y90_wf_q3, y90_der_wf_q3 = np.array(drag_gaussian_pulse_waveforms(r90_amp_q3, pi_len, pi_sigma, drag_coef_q3, anharmonicity_q3, AC_stark_detuning_q3))
+y90_wf_q3, y90_der_wf_q3 = np.array(drag_gaussian_pulse_waveforms(r90_amp[2], pi_len, pi_sigma, drag_coef_q3, anharmonicity_q3, AC_stark_detuning_q3))
 y90_I_wf_q3, y90_Q_wf_q3 = (-1) * y90_der_wf_q3, y90_wf_q3
-y90_wf_q4, y90_der_wf_q4 = np.array(drag_gaussian_pulse_waveforms(r90_amp_q4, pi_len, pi_sigma, drag_coef_q4, anharmonicity_q4, AC_stark_detuning_q4))
+y90_wf_q4, y90_der_wf_q4 = np.array(drag_gaussian_pulse_waveforms(r90_amp[3], pi_len, pi_sigma, drag_coef_q4, anharmonicity_q4, AC_stark_detuning_q4))
 y90_I_wf_q4, y90_Q_wf_q4 = (-1) * y90_der_wf_q4, y90_wf_q4
-y90_wf_q5, y90_der_wf_q5 = np.array(drag_gaussian_pulse_waveforms(r90_amp_q5, pi_len, pi_sigma, drag_coef_q5, anharmonicity_q5, AC_stark_detuning_q5))
+y90_wf_q5, y90_der_wf_q5 = np.array(drag_gaussian_pulse_waveforms(r90_amp[4], pi_len, pi_sigma, drag_coef_q5, anharmonicity_q5, AC_stark_detuning_q5))
 y90_I_wf_q5, y90_Q_wf_q5 = (-1) * y90_der_wf_q5, y90_wf_q5
 # DRAG waveforms (-y90)
-minus_y90_wf_q1, minus_y90_der_wf_q1 = np.array(drag_gaussian_pulse_waveforms(-r90_amp_q1, pi_len, pi_sigma, drag_coef_q1, anharmonicity_q1, AC_stark_detuning_q1))
+minus_y90_wf_q1, minus_y90_der_wf_q1 = np.array(drag_gaussian_pulse_waveforms(-r90_amp[0], pi_len, pi_sigma, drag_coef_q1, anharmonicity_q1, AC_stark_detuning_q1))
 minus_y90_I_wf_q1, minus_y90_Q_wf_q1 = (-1) * minus_y90_der_wf_q1, minus_y90_wf_q1
-minus_y90_wf_q2, minus_y90_der_wf_q2 = np.array(drag_gaussian_pulse_waveforms(-r90_amp_q2, pi_len, pi_sigma, drag_coef_q2, anharmonicity_q2, AC_stark_detuning_q2))
+minus_y90_wf_q2, minus_y90_der_wf_q2 = np.array(drag_gaussian_pulse_waveforms(-r90_amp[1], pi_len, pi_sigma, drag_coef_q2, anharmonicity_q2, AC_stark_detuning_q2))
 minus_y90_I_wf_q2, minus_y90_Q_wf_q2 = (-1) * minus_y90_der_wf_q2, minus_y90_wf_q2
-minus_y90_wf_q3, minus_y90_der_wf_q3 = np.array(drag_gaussian_pulse_waveforms(-r90_amp_q3, pi_len, pi_sigma, drag_coef_q3, anharmonicity_q3, AC_stark_detuning_q3))
+minus_y90_wf_q3, minus_y90_der_wf_q3 = np.array(drag_gaussian_pulse_waveforms(-r90_amp[2], pi_len, pi_sigma, drag_coef_q3, anharmonicity_q3, AC_stark_detuning_q3))
 minus_y90_I_wf_q3, minus_y90_Q_wf_q3 = (-1) * minus_y90_der_wf_q3, minus_y90_wf_q3
-minus_y90_wf_q4, minus_y90_der_wf_q4 = np.array(drag_gaussian_pulse_waveforms(-r90_amp_q4, pi_len, pi_sigma, drag_coef_q4, anharmonicity_q4, AC_stark_detuning_q4))
+minus_y90_wf_q4, minus_y90_der_wf_q4 = np.array(drag_gaussian_pulse_waveforms(-r90_amp[3], pi_len, pi_sigma, drag_coef_q4, anharmonicity_q4, AC_stark_detuning_q4))
 minus_y90_I_wf_q4, minus_y90_Q_wf_q4 = (-1) * minus_y90_der_wf_q4, minus_y90_wf_q4
-minus_y90_wf_q5, minus_y90_der_wf_q5 = np.array(drag_gaussian_pulse_waveforms(-r90_amp_q5, pi_len, pi_sigma, drag_coef_q5, anharmonicity_q5, AC_stark_detuning_q5))
+minus_y90_wf_q5, minus_y90_der_wf_q5 = np.array(drag_gaussian_pulse_waveforms(-r90_amp[4], pi_len, pi_sigma, drag_coef_q5, anharmonicity_q5, AC_stark_detuning_q5))
 minus_y90_I_wf_q5, minus_y90_Q_wf_q5 = (-1) * minus_y90_der_wf_q5, minus_y90_wf_q5
 
 ##########################################
 #               Flux line                #
 ##########################################
 flux_settle_time = 100 * u.ns
-idle_flux_point = [0, -0.3529, -0.3421, -0.3433, -3.400e-01]
+
 max_frequency_point = np.zeros(5)
-max_frequency_point[0] = -3.400e-01
-max_frequency_point[1] = -3.429e-01
-max_frequency_point[2] = -3.421e-01
-max_frequency_point[3] = -3.414e-01
-max_frequency_point[4] = -3.350e-01
+max_frequency_point[0] = -0.039 # 0.1 
+max_frequency_point[1] = -0.059
+max_frequency_point[2] = -0.04 #-0.04 -0.0185
+max_frequency_point[3] = -0.039
+max_frequency_point[4] = -0.049
 
 min_frequency_point = np.zeros(5)
-min_frequency_point[0] = 0
-min_frequency_point[1] = -0.05
-min_frequency_point[2] = 1.290e-02
-min_frequency_point[3] = -1.914e-01
-min_frequency_point[4] = 5.000e-03
+min_frequency_point[0] = 0.3
+min_frequency_point[1] = 0.32
+min_frequency_point[2] = 0.28
+min_frequency_point[3] = 0.32
+min_frequency_point[4] = 0.35
 
+detune_point = np.zeros(5)
+detune_point[0] = 0.1
+detune_point[1] = 0.2 # 0.15 # 0.2
+detune_point[2] = 0.16
+detune_point[3] = 0.2
+detune_point[4] = 0.15
+
+idle_point = np.zeros(5)
 idle_q1 = max_frequency_point[0] - 0.26
 idle_q2 = max_frequency_point[1] + 0.0
 idle_q3 = max_frequency_point[2] + 0.2
@@ -218,39 +238,16 @@ idle_q4 = max_frequency_point[3] + 0.0
 idle_q5 = max_frequency_point[4] + 0.0
 
 # Resonator frequency versus flux fit parameters according to resonator_spec_vs_flux
-# Initial value
-p0 = [[],[],[],[],[]]
-p0[0] = [2999999.9107172964,  4.717259048157249,  0.27608944530859275,  0.4999999999981507, 5732755699.221205]
-p0[1] = [2999999.9107172964,  4.717259048157249,  0.27608944530859275,  0.4999999999981507, 6e9]
-p0[2] = [2999999.9107172964,  4.717259048157249,  0.27608944530859275,  0.4999999999981507, 5.8e9]
-p0[3] = [2999999.9107172964,  4.717259048157249,  0.27608944530859275,  0.4999999999981507, 5.9e9]
-p0[4] = [2999999.9107172964,  4.717259048157249,  0.27608944530859275,  0.4999999999981507, 6.11e9]
-# Final value
-p1 = [[],[],[],[],[]]
-p1[0] = [2.99999985e+06, 4.63740337e+00, 2.87575166e-01, 3.37430408e-01, 5.73279474e+09]
-p1[1] = [3.00000000e+06, 4.56771904e+00, 1.44636142e-01, 3.02362805e-01, 6.02213301e+09]
-p1[2] = [6.20348242e+05, 4.58797293e+00, 1.00989049e+00, 3.88074851e-01, 5.84590432e+09]
-p1[3] = [2.97585161e+06, 4.26565302e+00, 9.52911885e-02, 3.56194180e-01, 6.11003429e+09]
-p1[4] = [2.97658113e+06, 4.55657910e+00, 8.12816539e-01, 3.35075856e-01, 5.92236351e+09]
+# amplitude * np.cos(2 * np.pi * frequency * x + phase) + offset
+amplitude_fit1, frequency_fit1, phase_fit1, offset_fit1 = [0, 0, 0, 0]
+amplitude_fit2, frequency_fit2, phase_fit2, offset_fit2 = [0, 0, 0, 0]
+amplitude_fit3, frequency_fit3, phase_fit3, offset_fit3 = [0, 0, 0, 0]
+amplitude_fit4, frequency_fit4, phase_fit4, offset_fit4 = [0, 0, 0, 0]
+amplitude_fit5, frequency_fit5, phase_fit5, offset_fit5 = [0, 0, 0, 0]
 
-# Resonator frequency versus flux fit parameters according to cosine_func
-# Initial value
-g0 = [[],[],[],[],[]]
-g0[0] = [0.4045e6, 1.5, 3, 5.8464515e9]
-g0[1] = [0.4045e6, 1.5, 3, 6e9]
-g0[2] = [0.4045e6, 1.5, 3, 5.8e9]
-g0[3] = [0.4045e6, 1.5, 3, 5.9e9]
-g0[4] = [0.4045e6, 1.5, 3, 6.11e9]
-# Final value
-g1 = [[],[],[],[],[]]
-g1[0] = []
-g1[1] = [4.58486660e+05, 1.44852667e+00, 3.14159265e+00, 6.02469755e+09]
-g1[2] = [4.25051438e+05, 1.43541579e+00, 3.07592411e+00, 5.84640091e+09]
-g1[3] = [3.99999991e+06, 3.79006707e-01, 8.11582702e-01, 6.10906045e+09]
-g1[4] = [1.42510392e+06, 1.46039739e+00, 3.08277727e+00, 5.92422529e+09]
-
-const_flux_len = 200
-const_flux_amp = 0.5 #0.45
+const_flux_len = 600
+# const_flux_amp = 0.45 # CZ
+const_flux_amp = 0.2
 
 ##########################################
 #               two-qubit                #
@@ -258,34 +255,46 @@ const_flux_amp = 0.5 #0.45
 cz_point_1_2_q2 = 0.14519591 # q1 - q2 = Ec
 gft_cz_1_2_q2 = flattop_gaussian_waveform(cz_point_1_2_q2-idle_q2, 8 * u.ns, 8 * u.ns)
 g_cz_1_2_q2 = 0.5 * abs(0.5-idle_q2) * gaussian(16, 16/4)
-cz_len = 24
-cz_amp = 0.17550
+
 #############################################
 #                Resonators                 #
 #############################################
-resonator_LO = 5.95 * u.GHz
+resonator_LO = 5.96 * u.GHz
+
+# resonator_frequency = np.zeros(5)
+# resonator_frequency[0] = 
+# resonator_frequency[1] = 
+# resonator_frequency[2] = 
+# resonator_frequency[3] = 
+# resonator_frequency[4] = 
+
 # Resonators IF
 resonator_IF = np.zeros(5)
-resonator_IF[0] = int((-214.21) * u.MHz)
-resonator_IF[1] = int((75.159-0.08) * u.MHz)
-resonator_IF[2] = int((-103.17-0.8) * u.MHz) 
-resonator_IF[3] = int((163.06) * u.MHz)
-resonator_IF[4] = int((-25.8) * u.MHz)
+resonator_IF[0] = int((-237.55-0.05) * u.MHz)
+resonator_IF[1] = int((54.44) * u.MHz)
+resonator_IF[2] = int((-123.85-0.8) * u.MHz) 
+resonator_IF[3] = int((142.54) * u.MHz)
+resonator_IF[4] = int((-50.2) * u.MHz)
 # Above is for verifying wide-sweep results: -156, -38, 39, 137, 231
 
 # Readout pulse parameters (optimal input for IQ-mixer: 125mV)
-readout_len = 1700
-readout_zero_len = 400
+readout_len = 1200
 readout_amp = np.zeros(5)
-readout_amp[0] = 0.03
-readout_amp[1] = 0.03*0.7
-readout_amp[2] = 0.03*0.45
-readout_amp[3] = 0.03
-# readout_amp[3] = 0.02
-readout_amp[4] = 0.02
+
+# readout_amp[0] = 0.03
+# readout_amp[1] = 0.03
+# readout_amp[2] = 0.03
+# readout_amp[3] = 0.03
+# readout_amp[4] = 0.03
+
+readout_amp[0] = 0.018*1.3 #0.02 
+readout_amp[1] = 0.020*1.2
+readout_amp[2] = 0.020*1.2
+readout_amp[3] = 0.02
+readout_amp[4] = 0.015
 
 # TOF and depletion time
-time_of_flight = 200  # must be a multiple of 4
+time_of_flight = 280 #280  # must be a multiple of 4
 depletion_time = int(1000/560) * u.us
 
 opt_weights = False
@@ -340,16 +349,21 @@ else:
     opt_weights_minus_real_q5 = [(1.0, readout_len)]
 
 # state discrimination
-rotation_angle_q1 = (148.6 / 180) * np.pi
-rotation_angle_q2 = ((18+1.1+17.0) / 180) * np.pi
-rotation_angle_q3 = ((252.3+357.5+1.5+204.2+5.2) / 180) * np.pi
-rotation_angle_q4 = (0 / 180) * np.pi
-rotation_angle_q5 = (0 / 180) * np.pi
-ge_threshold_q1 = 0.000909
-ge_threshold_q2 = 1.230e-04
-ge_threshold_q3 = -4.683e-04
-ge_threshold_q4 = 2.419e-04
-ge_threshold_q5 = 0
+rotation_angle_q1 = (  (18.7+251.9) / 180) *np.pi #
+rotation_angle_q2 = ( (41.5-0.5) / 180) * np.pi
+rotation_angle_q3 = ((287.2+300+236) / 180) * np.pi
+rotation_angle_q4 = (31.7 / 180) * np.pi
+rotation_angle_q5 = (291.9 / 180) * np.pi
+
+ge_threshold = np.zeros(5)
+ge_threshold[0] = ge_threshold_q1 = -1.421e-03 #-1.631e-03
+ge_threshold[1] = ge_threshold_q2 = 3.893e-04
+ge_threshold[2] = ge_threshold_q3 = 8.577e-5
+ge_threshold[3] = ge_threshold_q4 = 4.641e-5
+ge_threshold[4] = ge_threshold_q5 = 1.524e-4
+
+
+
 
 #############################################
 #                  Config                   #
@@ -363,12 +377,12 @@ config = {
                 2: {"offset": 0.0},  # Q readout line
                 3: {"offset": 0.0},  # I qubit1 XY
                 4: {"offset": 0.0},  # Q qubit1 XY
-                5: {"offset": idle_flux_point[4]},  # qubit1 Z
-                6: {"offset": idle_flux_point[1]},  # qubit2 Z
+                5: {"offset": max_frequency_point[0]},  # qubit1 Z
+                6: {"offset": max_frequency_point[1]},  # qubit2 Z
                 7: {"offset": 0.0},  # I qubit2 XY
                 8: {"offset": 0.0},  # Q qubit2 XY
-                9: {"offset": idle_flux_point[2]},  # qubit3 Z
-                10: {"offset": idle_flux_point[3]},  # qubit4 Z
+                9: {"offset": max_frequency_point[2]},  # qubit3 Z
+                10: {"offset": max_frequency_point[3]},  # qubit4 Z
             },
             "digital_outputs": {
                 1: {},
@@ -503,7 +517,7 @@ config = {
                 "I": ("con1", 7),
                 "Q": ("con1", 8),
                 "lo_frequency": qubit_LO[1],
-                "mixer": "octave_octave1_4",
+                "mixer": "octave_octave1_3",
             },
             "intermediate_frequency": qubit_IF[1],  # frequency at offset ch8 (max freq)
             "operations": {
@@ -522,7 +536,7 @@ config = {
                 "I": ("con1", 3),
                 "Q": ("con1", 4),
                 "lo_frequency": qubit_LO[2],
-                "mixer": "octave_octave1_3",
+                "mixer": "octave_octave1_4",
             },
             "intermediate_frequency": qubit_IF[2],
             "operations": {
@@ -536,44 +550,44 @@ config = {
                 "-y90": "-y90_pulse_q3",
             },
         },
-        "q4_xy": {
-            "mixInputs": {
-                "I": ("con1", 7),
-                "Q": ("con1", 8),
-                "lo_frequency": qubit_LO[3],
-                "mixer": "octave_octave1_5",
-            },
-            "intermediate_frequency": qubit_IF[3],
-            "operations": {
-                "cw": "const_pulse",
-                "saturation": "saturation_pulse",
-                "x180": "x180_pulse_q4",
-                "x90": "x90_pulse_q4",
-                "-x90": "-x90_pulse_q4",
-                "y90": "y90_pulse_q4",
-                "y180": "y180_pulse_q4",
-                "-y90": "-y90_pulse_q4",
-            },
-        },
-        "q5_xy": {
-            "mixInputs": {
-                "I": ("con1", 7),
-                "Q": ("con1", 8),
-                "lo_frequency": qubit_LO[4],
-                "mixer": "octave_octave2_1",
-            },
-            "intermediate_frequency": qubit_IF[4],
-            "operations": {
-                "cw": "const_pulse",
-                "saturation": "saturation_pulse",
-                "x180": "x180_pulse_q5",
-                "x90": "x90_pulse_q5",
-                "-x90": "-x90_pulse_q5",
-                "y90": "y90_pulse_q5",
-                "y180": "y180_pulse_q5",
-                "-y90": "-y90_pulse_q5",
-            },
-        },
+        # "q4_xy": {
+        #     "mixInputs": {
+        #         "I": ("con1", 7),
+        #         "Q": ("con1", 8),
+        #         "lo_frequency": qubit_LO[3],
+        #         "mixer": "octave_octave1_5",
+        #     },
+        #     "intermediate_frequency": qubit_IF[3],
+        #     "operations": {
+        #         "cw": "const_pulse",
+        #         "saturation": "saturation_pulse",
+        #         "x180": "x180_pulse_q4",
+        #         "x90": "x90_pulse_q4",
+        #         "-x90": "-x90_pulse_q4",
+        #         "y90": "y90_pulse_q4",
+        #         "y180": "y180_pulse_q4",
+        #         "-y90": "-y90_pulse_q4",
+        #     },
+        # },
+        # "q5_xy": {
+        #     "mixInputs": {
+        #         "I": ("con1", 3),
+        #         "Q": ("con1", 4),
+        #         "lo_frequency": qubit_LO[4],
+        #         "mixer": "octave_octave2_1",
+        #     },
+        #     "intermediate_frequency": qubit_IF[4],
+        #     "operations": {
+        #         "cw": "const_pulse",
+        #         "saturation": "saturation_pulse",
+        #         "x180": "x180_pulse_q5",
+        #         "x90": "x90_pulse_q5",
+        #         "-x90": "-x90_pulse_q5",
+        #         "y90": "y90_pulse_q5",
+        #         "y180": "y180_pulse_q5",
+        #         "-y90": "-y90_pulse_q5",
+        #     },
+        # },
         "q1_z": {
             "singleInput": {
                 "port": ("con1", 5),
@@ -591,7 +605,6 @@ config = {
                 "const": "const_flux_pulse",
                 # options: gft_cz_pulse_1_2_q2, g_cz_pulse_1_2_q2
                 "cz_1_2": "gft_cz_pulse_1_2_q2",
-                "cz": "cz_flux_pulse",
             },
         },
         "q3_z": {
@@ -612,15 +625,15 @@ config = {
 
             },
         },
-        "q5_z": {
-            "singleInput": {
-                "port": ("con1", 5),
-            },
-            "operations": {
-                "const": "const_flux_pulse",
+    #     "q5_z": {
+    #         "singleInput": {
+    #             "port": ("con1", 5),
+    #         },
+    #         "operations": {
+    #             "const": "const_flux_pulse",
                 
-            },
-        },
+    #         },
+    #     },
         
     },
     "pulses": {
@@ -648,13 +661,7 @@ config = {
                 "Q": "zero_wf",
             },
         },
-        "cz_flux_pulse": {
-            "operation": "control",
-            "length": cz_len,
-            "waveforms": {
-                "single": "cz_wf",
-            },
-        },
+        
         # Qubit-1:
         "x90_pulse_q1": {
             "operation": "control",
@@ -1024,7 +1031,7 @@ config = {
         "saturation_wf": {"type": "constant", "sample": saturation_amp},
         "const_flux_wf": {"type": "constant", "sample": const_flux_amp},
         "zero_wf": {"type": "constant", "sample": 0.0},
-        "cz_wf": {"type": "constant", "sample": cz_amp},
+
         # Qubit-1:
         "x90_I_wf_q1": {"type": "arbitrary", "samples": x90_I_wf_q1.tolist()},
         "x90_Q_wf_q1": {"type": "arbitrary", "samples": x90_Q_wf_q1.tolist()},
@@ -1107,82 +1114,82 @@ config = {
     "integration_weights": {
         # Default:
         "cosine_weights": {
-            "cosine": [(0.0, readout_zero_len)] + [(1.0, readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(0.0, readout_len)],
+            "cosine": [(1.0, readout_len)],
+            "sine": [(0.0, readout_len)],
         },
         "sine_weights": {
-            "cosine": [(0.0, readout_zero_len)] + [(0.0, readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(1.0, readout_len)],
+            "cosine": [(0.0, readout_len)],
+            "sine": [(1.0, readout_len)],
         },
         "minus_sine_weights": {
-            "cosine": [(0.0, readout_zero_len)] + [(0.0, readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(-1.0, readout_len)],
+            "cosine": [(0.0, readout_len)],
+            "sine": [(-1.0, readout_len)],
         },
 
         # rotated q1:
         "rotated_cosine_weights_q1": {
-            "cosine": [(0.0, readout_zero_len)] + [(np.cos(rotation_angle_q1), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(np.sin(rotation_angle_q1), readout_len)],
+            "cosine": [(np.cos(rotation_angle_q1), readout_len)],
+            "sine": [(np.sin(rotation_angle_q1), readout_len)],
         },
         "rotated_sine_weights_q1": {
-            "cosine": [(0.0, readout_zero_len)] + [(-np.sin(rotation_angle_q1), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(np.cos(rotation_angle_q1), readout_len)],
+            "cosine": [(-np.sin(rotation_angle_q1), readout_len)],
+            "sine": [(np.cos(rotation_angle_q1), readout_len)],
         },
         "rotated_minus_sine_weights_q1": {
-            "cosine": [(0.0, readout_zero_len)] + [(np.sin(rotation_angle_q1), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(-np.cos(rotation_angle_q1), readout_len)],
+            "cosine": [(np.sin(rotation_angle_q1), readout_len)],
+            "sine": [(-np.cos(rotation_angle_q1), readout_len)],
         },
         # rotated q2:
         "rotated_cosine_weights_q2": {
-            "cosine": [(0.0, readout_zero_len)] + [(np.cos(rotation_angle_q2), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(np.sin(rotation_angle_q2), readout_len)],
+            "cosine": [(np.cos(rotation_angle_q2), readout_len)],
+            "sine": [(np.sin(rotation_angle_q2), readout_len)],
         },
         "rotated_sine_weights_q2": {
-            "cosine": [(0.0, readout_zero_len)] + [(-np.sin(rotation_angle_q2), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(np.cos(rotation_angle_q2), readout_len)],
+            "cosine": [(-np.sin(rotation_angle_q2), readout_len)],
+            "sine": [(np.cos(rotation_angle_q2), readout_len)],
         },
         "rotated_minus_sine_weights_q2": {
-            "cosine": [(0.0, readout_zero_len)] + [(np.sin(rotation_angle_q2), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(-np.cos(rotation_angle_q2), readout_len)],
+            "cosine": [(np.sin(rotation_angle_q2), readout_len)],
+            "sine": [(-np.cos(rotation_angle_q2), readout_len)],
         },
         # rotated q3:
         "rotated_cosine_weights_q3": {
-            "cosine": [(0.0, readout_zero_len)] + [(np.cos(rotation_angle_q3), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(np.sin(rotation_angle_q3), readout_len)],
+            "cosine": [(np.cos(rotation_angle_q3), readout_len)],
+            "sine": [(np.sin(rotation_angle_q3), readout_len)],
         },
         "rotated_sine_weights_q3": {
-            "cosine": [(0.0, readout_zero_len)] + [(-np.sin(rotation_angle_q3), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(np.cos(rotation_angle_q3), readout_len)],
+            "cosine": [(-np.sin(rotation_angle_q3), readout_len)],
+            "sine": [(np.cos(rotation_angle_q3), readout_len)],
         },
         "rotated_minus_sine_weights_q3": {
-            "cosine": [(0.0, readout_zero_len)] + [(np.sin(rotation_angle_q3), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(-np.cos(rotation_angle_q3), readout_len)],
+            "cosine": [(np.sin(rotation_angle_q3), readout_len)],
+            "sine": [(-np.cos(rotation_angle_q3), readout_len)],
         },
         # rotated q4:
         "rotated_cosine_weights_q4": {
-            "cosine": [(0.0, readout_zero_len)] + [(np.cos(rotation_angle_q4), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(np.sin(rotation_angle_q4), readout_len)],
+            "cosine": [(np.cos(rotation_angle_q4), readout_len)],
+            "sine": [(np.sin(rotation_angle_q4), readout_len)],
         },
         "rotated_sine_weights_q4": {
-            "cosine": [(0.0, readout_zero_len)] + [(-np.sin(rotation_angle_q4), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(np.cos(rotation_angle_q4), readout_len)],
+            "cosine": [(-np.sin(rotation_angle_q4), readout_len)],
+            "sine": [(np.cos(rotation_angle_q4), readout_len)],
         },
         "rotated_minus_sine_weights_q4": {
-            "cosine": [(0.0, readout_zero_len)] + [(np.sin(rotation_angle_q4), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(-np.cos(rotation_angle_q4), readout_len)],
+            "cosine": [(np.sin(rotation_angle_q4), readout_len)],
+            "sine": [(-np.cos(rotation_angle_q4), readout_len)],
         },
         # rotated q5:
         "rotated_cosine_weights_q5": {
-            "cosine": [(0.0, readout_zero_len)] + [(np.cos(rotation_angle_q5), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(np.sin(rotation_angle_q5), readout_len)],
+            "cosine": [(np.cos(rotation_angle_q5), readout_len)],
+            "sine": [(np.sin(rotation_angle_q5), readout_len)],
         },
         "rotated_sine_weights_q5": {
-            "cosine": [(0.0, readout_zero_len)] + [(-np.sin(rotation_angle_q5), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(np.cos(rotation_angle_q5), readout_len)],
+            "cosine": [(-np.sin(rotation_angle_q5), readout_len)],
+            "sine": [(np.cos(rotation_angle_q5), readout_len)],
         },
         "rotated_minus_sine_weights_q5": {
-            "cosine": [(0.0, readout_zero_len)] + [(np.sin(rotation_angle_q5), readout_len)],
-            "sine": [(0.0, readout_zero_len)] + [(-np.cos(rotation_angle_q5), readout_len)],
+            "cosine": [(np.sin(rotation_angle_q5), readout_len)],
+            "sine": [(-np.cos(rotation_angle_q5), readout_len)],
         },
 
         # optimal weight for readout on q1:
@@ -1264,15 +1271,15 @@ config = {
         ],
         "octave_octave1_3": [
             {
-                "intermediate_frequency": qubit_IF[2],
-                "lo_frequency": qubit_LO[2],
+                "intermediate_frequency": qubit_IF[1],
+                "lo_frequency": qubit_LO[1],
                 "correction": (1, 0, 0, 1),
             }
         ],
         "octave_octave1_4": [
             {
-                "intermediate_frequency": qubit_IF[1],
-                "lo_frequency": qubit_LO[1],
+                "intermediate_frequency": qubit_IF[2],
+                "lo_frequency": qubit_LO[2],
                 "correction": (1, 0, 0, 1),
             }
         ],

@@ -114,7 +114,7 @@ def Ramsey_freq_calibration( virtial_detune_freq, q_name:list, ro_element:list, 
         simulation_config = SimulationConfig(duration=10_000)  # In clock cycles = 4ns
         job = qmm.simulate(config, ramsey, simulation_config)
         job.get_simulated_samples().con1.plot()
-        job.get_simulated_samples().con2.plot()
+        # job.get_simulated_samples().con2.plot()
         plt.show()
 
     else:
