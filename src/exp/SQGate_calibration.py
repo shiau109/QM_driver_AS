@@ -249,9 +249,9 @@ if __name__ == '__main__':
     output_data = DRAG_calibration_Yale( drag_coef, q_name, ro_element, config, qmm, n_avg=n_avg)
     # output_data =  amp_calibration( amp_modify_range, q_name, ro_element, config, qmm, n_avg=n_avg, sequence_repeat=sequence_repeat, simulate=False)
 
-        #   Data Saving   # 
-    save_data = True
-    if save_data == True:
+    #   Data Saving   # 
+    save_data = False
+    if save_data:
         from save_data import save_npz
         import sys
         save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program

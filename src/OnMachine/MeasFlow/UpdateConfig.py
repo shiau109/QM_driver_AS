@@ -1,6 +1,6 @@
 from OnMachine.Octave_Config.QM_config_dynamic import Circuit_info, QM_config
 from OnMachine.MeasFlow.ConfigBuildUp import spec_loca, config_loca
-
+import numpy as np
 spec = Circuit_info(q_num=4)
 config = QM_config()
 spec.import_spec(spec_loca)
@@ -25,7 +25,7 @@ if __name__ == '__main__':
         case "power":
             # Update RO amp, dress RO after power dependence
             # [target_q, amp_scale, added_IF(MHz)]        
-            modifiers = [['q1',0.2,0.7],['q2',0.2,0.39],['q3',0.2,0],['q4',0.15,0.2]] 
+            modifiers = [['q1',0.2,0],['q2',0.2,0.39],['q3',0.2,0],['q4',0.15,0.2]] 
             for i in modifiers:
                 old_if = spec.get_spec_forConfig("ro")[i[0]]["resonator_IF"]*1e-6
                 old_amp = spec.get_spec_forConfig("ro")[i[0]]["readout_amp"]
@@ -39,7 +39,7 @@ if __name__ == '__main__':
         case "flux":
             # Update RO amp, dress RO after power dependence
             # [target_q, offset_bias, added_IF(MHz)]        
-            modifiers = [['q1',-0.04,0.0],['q2',-0.055,0.0],['q3',-0.035,0],['q4',-0.03,0.014]] 
+            modifiers = [['q1',-0.04,0.5],['q2',-0.04,0],['q3',-0.04,0],['q4',-0.04,0.4]] 
             for i in modifiers:
                 old_if = spec.get_spec_forConfig("ro")[i[0]]["resonator_IF"]*1e-6
                 config.update_ReadoutFreqs(spec.update_RoInfo_for(target_q=i[0],IF=i[2]+old_if))
@@ -49,5 +49,23 @@ if __name__ == '__main__':
             spec.export_spec(spec_loca)
             config.export_config(config_loca)
 
+        case "fluxq":
+            # Update RO amp, dress RO after power dependence
+            # [target_q, offset_bias, Q freq(GHz), LO(MHz)]        
+            modifiers = [['q1',-0.04,3.775,3.8],['q2',-0.04,4.1,4.0],['q3',-0.04,3.275,3.22],['q4',-0.04,4.1,4.0]] 
+            for i in modifiers:
+                ref_IF = (i[2]-i[3])*1000
+                print()
+                if np.abs(ref_IF) > 350:
+                    print("Warning IF > +/-350 MHz, IF is set 350 MHz")
+                    ref_IF = np.sign(ref_IF)*350
+                config.update_controlFreq(spec.update_aXyInfo_for(target_q=i[0],IF=ref_IF,LO=i[3]))
+                z = spec.update_ZInfo_for(target_q=i[0],offset=i[1])
+                config.update_z_offset(z,mode='offset')
+            
+            spec.export_spec(spec_loca)
+            config.export_config(config_loca)
+
         case _:
+            print("No such CMD")
             pass

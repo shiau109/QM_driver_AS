@@ -4,7 +4,7 @@ with open("README.md", "r") as f:
     long_description = f.read()
 
 setup(
-    name="AS_QM_driver",
+    name="QM_driver_AS",
     version="0.0.10",
     description="An experimental data",
     package_dir={"": "src"},

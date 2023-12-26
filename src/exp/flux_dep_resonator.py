@@ -32,10 +32,17 @@ u = unit(coerce_to_integer=True)
 
 warnings.filterwarnings("ignore")
 
-def flux_dep_cavity( ro_element:list, config:dict, qm_machine:QuantumMachinesManager, n_avg:int=100, flux_settle_time_ns:int=200, freq_span_MHz:float=3, flux_span:float=0.3, flux_resolu:float=0.01, freq_resolu_MHz:float=0.01, initializer:tuple=None ):
+def flux_dep_cavity( ro_element:list, config:dict, qm_machine:QuantumMachinesManager, n_avg:int=100, flux_settle_time_ns:int=200, freq_span_MHz:float=3, flux_span:float=0.3, flux_resolu:float=0.02, freq_resolu_MHz:float=0.05, initializer:tuple=None ):
+    """
+    
+    return is tuple
+    1. data\n
+    2. relative frequency (MHz) ref to original IF in config\n
+    3. absolute voltage for flux line\n
+
+    """
     dfs = np.arange(-freq_span_MHz*u.MHz,(freq_span_MHz+freq_resolu_MHz)*u.MHz,freq_resolu_MHz*u.MHz)
     flux = np.arange(-flux_span,flux_span+flux_resolu,flux_resolu)
-    plot_freq = np.arange(-freq_span_MHz,(freq_span_MHz+freq_resolu_MHz),freq_resolu_MHz)
     df_len = dfs.shape[0]
     flux_len = flux.shape[0]
     with program() as multi_res_spec_vs_flux:
@@ -99,8 +106,10 @@ def flux_dep_cavity( ro_element:list, config:dict, qm_machine:QuantumMachinesMan
         progress_counter(iteration, n_avg, start_time=results.get_start_time()) 
     # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
     qm.close()
-
-    return output_data, plot_freq, flux
+    
+    
+    relative_freq = dfs/1e6  # np.arange(-freq_span_MHz,(freq_span_MHz+freq_resolu_MHz),freq_resolu_MHz)
+    return output_data, relative_freq, flux
 
 
 def plot_flux_dep_resonator( data, dfs, flux, ax=None ):

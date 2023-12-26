@@ -37,11 +37,11 @@ qmm,_ = spec.buildup_qmm()
 init_macro = initializer(spec.give_depletion_time_for("all"),mode='depletion')
 
 ro_elements = ['q1_ro','q2_ro','q3_ro','q4_ro']
+
 results, freq_axis, flux_axis = flux_dep_cavity(ro_elements, config.get_config(), qmm, initializer=init_macro)
 for r in ro_elements:
     fig, ax = plt.subplots()
     plot_flux_dep_resonator(results[r], freq_axis, flux_axis, ax)
     ax.set_title(r)
-    ax.set_xlabel("Flux bias")
-    ax.set_ylabel("additional IF freq (MHz)")
+
 plt.show()
