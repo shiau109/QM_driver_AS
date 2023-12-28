@@ -23,7 +23,7 @@ init_macro = initializer(spec.give_depletion_time_for("all"),mode='depletion')
 
 ro_elements = ['q1_ro','q2_ro','q3_ro','q4_ro']
 q_name = ['q1_xy']
-z_name = ['q1_z','q2_z','q3_z','q4_z']
+z_name = ['q1_z']
 # Adjust the pulse duration and amplitude to drive the qubit into a mixed state
 # saturation_len = 1 * u.us  # In ns (should be < FFT of df)
 # saturation_amp = 0.01  # pre-factor to the value defined in the config - restricted to [-2; 2)
@@ -36,7 +36,7 @@ flux_resolu = 0.01
 dfs = np.arange(-span, +span, df)
 flux = np.arange(-flux_span,flux_span+flux_resolu,flux_resolu)
 
-output_data, flux, dfs = flux_twotone_qubit( flux, dfs, q_name, ro_elements, z_name, config.get_config(), qmm, saturation_ampRatio=1, n_avg=200)
+output_data, flux, dfs = flux_twotone_qubit( flux, dfs, q_name, ro_elements, z_name, config.get_config(), qmm, saturation_ampRatio=0.1, n_avg=200)
 plt.show()
 
 from exp.config_par import *
@@ -45,8 +45,9 @@ from exp.config_par import *
 for r in ro_elements:
     xy_LO = get_LO(q_name[0],config.get_config())
     xy_IF_idle = get_IF(q_name[0],config.get_config())
+    z_abs = get_offset(z_name[0],config.get_config())
     fig, ax = plt.subplots(2)
-    plot_ana_flux_dep_qubit(output_data[r], flux, dfs, xy_LO, xy_IF_idle, ax)
+    plot_ana_flux_dep_qubit(output_data[r], flux, dfs, xy_LO, xy_IF_idle, z_abs, ax)
     ax[0].set_title(r)
     ax[1].set_title(r)
 

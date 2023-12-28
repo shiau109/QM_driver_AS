@@ -16,7 +16,9 @@ u = unit(coerce_to_integer=True)
 def flux_twotone_qubit( offset_arr, d_freq_arr, q_name:list, ro_element:list, z_name:list, config, qmm:QuantumMachinesManager, n_avg:int=100, saturation_len=1, saturation_ampRatio=0.1, flux_settle_time=10, simulate:bool=False):
     """
     q_name is XY on
-    z_name is Shift
+    z_name is Z
+
+    offset_arr is refer to offset in config
     """
     res_num = len(ro_element)
     ref_ro_IF = {}
@@ -47,7 +49,7 @@ def flux_twotone_qubit( offset_arr, d_freq_arr, q_name:list, ro_element:list, z_
             with for_(*from_array(dc, offset_arr)):
 
                 for z in z_name:
-                    set_dc_offset( z, "single", dc)
+                    set_dc_offset( z, "single", ref_z_offset[z] +dc)
                     # assign(index, 0)
 
                 with for_(*from_array(df, d_freq_arr)):
@@ -144,7 +146,7 @@ def plot_flux_dep_qubit( data, flux, dfs, ax=None ):
     ax[0].pcolormesh( dfs, flux, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
     ax[1].pcolormesh( dfs, flux, np.angle(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
 
-def plot_ana_flux_dep_qubit( data, flux, dfs, freq_LO, freq_IF, ax=None ):
+def plot_ana_flux_dep_qubit( data, flux, dfs, freq_LO, freq_IF, abs_z, ax=None ):
     """
     data shape ( 2, N, M )
     2 is I,Q
@@ -164,10 +166,14 @@ def plot_ana_flux_dep_qubit( data, flux, dfs, freq_LO, freq_IF, ax=None ):
     ax[0].pcolormesh( abs_freq, flux, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
     ax[0].axvline(x=freq_LO+freq_IF, color='b', linestyle='--', label='ref IF')
     ax[0].axvline(x=freq_LO, color='r', linestyle='--', label='LO')
+    ax[0].axhline(y=abs_z, color='black', linestyle='--', label='abs z')
+
     ax[0].legend()
     ax[1].pcolormesh( abs_freq, flux, np.angle(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
     ax[1].axvline(x=freq_LO+freq_IF, color='b', linestyle='--', label='ref IF')
     ax[1].axvline(x=freq_LO, color='r', linestyle='--', label='LO')
+    ax[1].axhline(y=abs_z, color='black', linestyle='--', label='abs z')
+
     ax[1].legend()
 
 
