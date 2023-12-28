@@ -23,15 +23,15 @@ init_macro = initializer(spec.give_depletion_time_for("all"),mode='depletion')
 
 ro_elements = ['q1_ro','q2_ro','q3_ro','q4_ro']
 q_name = ['q1_xy']
-z_name = ['q1_z']
+z_name = ['q3_z']
 # Adjust the pulse duration and amplitude to drive the qubit into a mixed state
 # saturation_len = 1 * u.us  # In ns (should be < FFT of df)
 # saturation_amp = 0.01  # pre-factor to the value defined in the config - restricted to [-2; 2)
 
 span = 200 * u.MHz
 df = 1 * u.MHz
-flux_span = 0.1
-flux_resolu = 0.01
+flux_span = 0.05
+flux_resolu = 0.005
 
 dfs = np.arange(-span, +span, df)
 flux = np.arange(-flux_span,flux_span+flux_resolu,flux_resolu)

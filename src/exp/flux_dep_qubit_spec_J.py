@@ -48,10 +48,6 @@ def flux_twotone_qubit( offset_arr, d_freq_arr, q_name:list, ro_element:list, z_
 
             with for_(*from_array(dc, offset_arr)):
 
-                for z in z_name:
-                    set_dc_offset( z, "single", ref_z_offset[z] +dc)
-                    # assign(index, 0)
-
                 with for_(*from_array(df, d_freq_arr)):
 
                     # initializaion
@@ -61,10 +57,18 @@ def flux_twotone_qubit( offset_arr, d_freq_arr, q_name:list, ro_element:list, z_
                     #     update_frequency( r, dynamic_ro_IF[index])
 
                     # operation
+                    for z in z_name:
+                        set_dc_offset( z, "single", ref_z_offset[z] +dc)
+                        # assign(index, 0)
+                    wait(100)
                     for xy in q_name:
                         update_frequency( xy, ref_xy_IF[xy] +df )
                         play("saturation"*amp(saturation_ampRatio), xy, duration=(saturation_len/4) *u.us)
-
+                    align()
+                    for z in z_name:
+                        set_dc_offset( z, "single", ref_z_offset[z])
+                    wait(100)
+                    align()
                     # measurement
                     multiRO_measurement( iqdata_stream, ro_element, weights='rotated_'  )
 
@@ -163,13 +167,13 @@ def plot_ana_flux_dep_qubit( data, flux, dfs, freq_LO, freq_IF, abs_z, ax=None )
         fig, ax = plt.subplots()
         ax.set_title('pcolormesh')
         fig.show()
-    ax[0].pcolormesh( abs_freq, flux, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    ax[0].pcolormesh( abs_freq, abs_z+flux, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
     ax[0].axvline(x=freq_LO+freq_IF, color='b', linestyle='--', label='ref IF')
     ax[0].axvline(x=freq_LO, color='r', linestyle='--', label='LO')
     ax[0].axhline(y=abs_z, color='black', linestyle='--', label='abs z')
 
     ax[0].legend()
-    ax[1].pcolormesh( abs_freq, flux, np.angle(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    ax[1].pcolormesh( abs_freq, abs_z+flux, np.angle(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
     ax[1].axvline(x=freq_LO+freq_IF, color='b', linestyle='--', label='ref IF')
     ax[1].axvline(x=freq_LO, color='r', linestyle='--', label='LO')
     ax[1].axhline(y=abs_z, color='black', linestyle='--', label='abs z')
