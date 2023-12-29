@@ -14,11 +14,11 @@ rr4 = ElementsSettings("rr4", gain=0, rf_in_port=["octave1", 1], down_convert_LO
 rr5 = ElementsSettings("rr5", gain=0, rf_in_port=["octave1", 1], down_convert_LO_source="Internal")
 q1_xy = ElementsSettings("q1_xy", gain=20)
 q2_xy = ElementsSettings("q2_xy", gain=20)
-q3_xy = ElementsSettings("q3_xy", gain=20)
+q3_xy = ElementsSettings("q3_xy", gain=10)
 q4_xy = ElementsSettings("q4_xy", gain=20)
 q5_xy = ElementsSettings("q5_xy", gain=20)
 # Add the "octave" elements
-elements_settings = [rr1,rr2,rr3,q2_xy,q3_xy]
+elements_settings = [q2_xy,q3_xy]
 
 ###################
 # Octave settings #

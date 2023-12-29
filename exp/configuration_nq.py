@@ -71,8 +71,8 @@ qubit_LO[4] = (4.75) * u.GHz
 # Qubits IF
 qubit_IF = np.zeros(5)
 qubit_IF[0] = (-116.8+0.245) * u.MHz       # Q1
-qubit_IF[1] = (-100.227-1.56+0.203) * u.MHz      # Q2
-qubit_IF[2] = (-317.056-0.45-0.071-0.044) * u.MHz
+qubit_IF[1] = (-101.616+0.1-0.056-0.024) * u.MHz      # Q2
+qubit_IF[2] = (-317.332+0.335-0.016) * u.MHz
 qubit_IF[3] = (-89.5911-0.272) * u.MHz     # Q4
 qubit_IF[4] = (-92) * u.MHz                # Q5
 # For comparing 2q:
@@ -93,25 +93,25 @@ const_amp = 270 * u.mV
 saturation_len = 1 * u.us
 saturation_amp = 0.1
 # Pi pulse parameters
-pi_len = 40
+pi_len = 20
 pi_sigma = pi_len / 4
 pi_amp_q1 = 0.15*0.872*0.975*0.97/3
-pi_amp_q2 = 0.14913/3*0.98*1.0007*1.04*0.9975*0.997
-pi_amp_q3 = 0.07635*1.005*0.997
+pi_amp_q2 = 0.050255*2*1.0323*0.9976*0.99*1.0115*1.00773*0.9996
+pi_amp_q3 = 0.340467*0.9935*0.9977*1.0013*1.00345*1.009*0.99667
 pi_amp_q4 = 0.15365
 pi_amp_q5 = 0.5
 
 r90_amp_q1 = pi_amp_q1/2 
-r90_amp_q2 = pi_amp_q2/2*0.9894*1.013*0.998*0.999*1.001
-r90_amp_q3 = pi_amp_q3/2*1.0105
+r90_amp_q2 = pi_amp_q2/2*1.00496*0.9992
+r90_amp_q3 = pi_amp_q3/2*1.24157*0.9993*0.998*0.9975*1.00244
 r90_amp_q4 = pi_amp_q4/2 *1.104*0.99
 # pi_amp_q4 = 0.1*1.135*1.005*0.805
 r90_amp_q5 = pi_amp_q5/2
 
 # DRAG coefficients (# No DRAG when drag_coef_qi=0, it's just a gaussian.)
 drag_coef_q1 = 0.68
-drag_coef_q2 = -0.65
-drag_coef_q3 = 0.7
+drag_coef_q2 = -0.45
+drag_coef_q3 = 1.25
 drag_coef_q4 = 1.0
 drag_coef_q5 = 0
 anharmonicity_q1 = -(220.8) * u.MHz
@@ -341,8 +341,8 @@ else:
 
 # state discrimination
 rotation_angle_q1 = (148.6 / 180) * np.pi
-rotation_angle_q2 = ((18+1.1+17.0) / 180) * np.pi
-rotation_angle_q3 = ((252.3+357.5+1.5+204.2+5.2) / 180) * np.pi
+rotation_angle_q2 = ((18+1.1+17.0+359.3+0.7+341.5) / 180) * np.pi
+rotation_angle_q3 = ((101.4+7.9+352.4+37.1) / 180) * np.pi
 rotation_angle_q4 = (0 / 180) * np.pi
 rotation_angle_q5 = (0 / 180) * np.pi
 ge_threshold_q1 = 0.000909

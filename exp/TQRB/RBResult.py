@@ -36,7 +36,7 @@ class RBResult:
 
     def plot_fidelity(self):
         fidelity = (self.data.state == 0).sum(("repeat", "average")) / (self.num_repeats * self.num_averages)
-        x = np.linspace(0, len(self.circuit_depths), len(self.circuit_depths))
+        x = np.linspace(0, len(self.circuit_depths)-1, len(self.circuit_depths))
         data = fidelity.values
         pars, cov = curve_fit(
             f=power_law,

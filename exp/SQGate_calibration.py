@@ -238,13 +238,12 @@ if __name__ == '__main__':
     n_avg = 4000
 
     # Scan the DRAG coefficient pre-factor
-
     drag_coef = drag_coef_q3
     # Check that the DRAG coefficient is not 0
     assert drag_coef != 0, "The DRAG coefficient 'drag_coef' must be different from 0 in the config."
     ro_element = ["rr3"]
     q_name =  "q3_xy"
-    sequence_repeat = 20
+    sequence_repeat = 30
     amp_modify_range = 0.25/float(sequence_repeat)
     # output_data = DRAG_calibration_Yale( drag_coef, q_name, ro_element, config, qmm, n_avg=n_avg)
     output_data =  amp_calibration( amp_modify_range, q_name, ro_element, config, qmm, n_avg=n_avg, sequence_repeat=sequence_repeat, simulate=False)

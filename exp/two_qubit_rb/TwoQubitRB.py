@@ -156,7 +156,6 @@ class TwoQubitRb:
             print(gates_is)
             assign(progress, 0)
             with for_each_(sequence_depth, sequence_depths):
-                
                 with for_(repeat, 0, repeat < num_repeats, repeat + 1):
                     assign(progress, progress + 1)
                     save(progress, progress_os)
@@ -170,18 +169,6 @@ class TwoQubitRb:
                         out1, out2 = self._measure_func()
                         assign(state, (Cast.to_int(out2) << 1) + Cast.to_int(out1))
                         save(state, state_os)
-
-                # advance_input_stream(gates_len_is)
-                # for gate_is in gates_is.values():
-                #     advance_input_stream(gate_is)
-                # assign(length, gates_len_is[0])
-                # self._rb_baker.run(gates_is, length)
-                # out1, out2 = self._measure_func()
-                # self._rb_baker.run(gates_is, length)
-                # out1, out2 = self._measure_func()
-                # # # play("x90", "q2_xy")
-                # save(progress, progress_os)
-                # save(state, state_os)
             with stream_processing():
                 state_os.buffer(len(sequence_depths), num_repeats, num_averages).save("state")
                 progress_os.save("progress")

@@ -22,13 +22,11 @@ max_circuit_depth = 1000
 num_of_sequences = 100
 n_avg = 200
 seed = 345323
-cooldown_time = 10000
-qb = "q2_xy"
-rr = "rr2"
+cooldown_time = 12000
+qb = "q3_xy"
+rr = "rr3"
 # qmm = QuantumMachinesManager(host=qop_ip, port=80)
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config) 
-
-
 
 def generate_sequence():
     cayley = declare(int, value=c1_table.flatten().tolist())
@@ -48,7 +46,6 @@ def generate_sequence():
         assign(inv_gate[i], inv_list[current_state])
 
     return sequence, inv_gate
-
 
 def play_sequence(sequence_list, depth):
     i = declare(int)
