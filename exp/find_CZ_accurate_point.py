@@ -31,8 +31,7 @@ def cz_gate(type, idle_flux_point, flux_Qi, segment, a):
         wait(5)
 
 def baked_waveform(waveform, pulse_duration, flux_qubit):
-    pulse_segments = []  # Stores the baking objects
-    # Create the different baked sequences, each one corresponding to a different truncated duration
+    pulse_segments = [] 
     for i in range(0, pulse_duration + 1):
         with baking(config, padding_method="right") as b:
             if i == 0:  # Otherwise, the baking will be empty and will not be created
@@ -41,7 +40,6 @@ def baked_waveform(waveform, pulse_duration, flux_qubit):
                 wf = waveform[:i].tolist()
             b.add_op("flux_pulse", f"q{flux_qubit}_z", wf)
             b.play("flux_pulse", f"q{flux_qubit}_z")
-        # Append the baking object in the list to call it from the QUA program
         pulse_segments.append(b)
     return pulse_segments
 

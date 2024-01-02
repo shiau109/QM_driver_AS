@@ -581,10 +581,10 @@ def test_c2_clifford_compact(target,control,group:str):
     print(test2)
 '''
 if __name__ == '__main__':
-    num_gates = 11
+    num_gates = 21
     target = 2
     control = 3
-    for i in range(2):
+    for i in range(10):
         gen_RB_circuit_to_json(num_gates, target, control)
     # circuit = get_TQcircuit_random_clifford(target, control, num_gates, mode = 'ONE')
     # print(circuit)

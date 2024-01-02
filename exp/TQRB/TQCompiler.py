@@ -186,6 +186,7 @@ def meas():
 if __name__ == '__main__':
 
     mycompiler = TQCompile( 2, q1_frame_update= -258.128 / 360, q2_frame_update= -18.345 / 360, params={} )
+    ### TEST GATE
     q2_x180 = Gate("RX", 2, arg_value=np.pi)
     q3_x180 = Gate("RX", 3, arg_value=np.pi)
     q2_x90 = Gate("RX", 2, arg_value=np.pi/2)
@@ -201,6 +202,8 @@ if __name__ == '__main__':
     circuit = QubitCircuit(2)
     for gate in gate_seq:
         circuit.add_gate(gate)
+
+    ### TEST TQRB
     circuit_depths = [0]
     circuit_repeats = 1
     n_avg = 2000
@@ -215,30 +218,31 @@ if __name__ == '__main__':
         state = declare(int)
         state_os = declare_stream()
 
-        with for_(n, 0, n < n_avg, n + 1):  
-            wait(thermalization_time)
-            compiled_data = mycompiler.compile(circuit,schedule_mode='ASAP')
-            align()
-            wait(flux_settle_time * u.ns)
-            out1, out2 = meas()
-            assign(state, (Cast.to_int(out2) << 1) + Cast.to_int(out1))
-            save(state, state_os)
-            save(n, n_st)
+        ####  TEST GATE
+        # with for_(n, 0, n < n_avg, n + 1):  
+        #     wait(thermalization_time)
+        #     compiled_data = mycompiler.compile(circuit,schedule_mode='ASAP')
+        #     align()
+        #     wait(flux_settle_time * u.ns)
+        #     out1, out2 = meas()
+        #     assign(state, (Cast.to_int(out2) << 1) + Cast.to_int(out1))
+        #     save(state, state_os)
+        #     save(n, n_st)
 
-        # for i in circuit_depths:
-        #     for j in tqdm(range(circuit_repeats), desc="Processing", unit="step"):
-        #         with for_(n, 0, n < n_avg, n + 1):   
-        #             wait(thermalization_time)
-        #             compiled_data = mycompiler.compile(circuit[i][j],schedule_mode='ASAP')
-        #             align()
-        #             wait(flux_settle_time * u.ns)
-        #             out1, out2 = meas()
-        #             assign(state, (Cast.to_int(out2) << 1) + Cast.to_int(out1))
-        #             save(state, state_os)
-        #             save(n, n_st)
+        ####  TEST TQRB
+        for i in circuit_depths:
+            for j in tqdm(range(circuit_repeats), desc="Processing", unit="step"):
+                with for_(n, 0, n < n_avg, n + 1):   
+                    wait(thermalization_time)
+                    compiled_data = mycompiler.compile(circuit[i][j],schedule_mode='ASAP')
+                    align()
+                    wait(flux_settle_time * u.ns)
+                    out1, out2 = meas()
+                    assign(state, (Cast.to_int(out2) << 1) + Cast.to_int(out1))
+                    save(state, state_os)
+                    save(n, n_st)
         with stream_processing():
             n_st.save("n")
-            # state_os.buffer(n_avg).save("state")
             state_os.buffer(len(circuit_depths), circuit_repeats, n_avg).save("state")
 
     simulate = False

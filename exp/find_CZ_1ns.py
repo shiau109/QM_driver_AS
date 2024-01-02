@@ -17,8 +17,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 def baked_waveform(waveform, pulse_duration, flux_qubit):
-    pulse_segments = []  # Stores the baking objects
-    # Create the different baked sequences, each one corresponding to a different truncated duration
+    pulse_segments = []  
     for i in range(0, pulse_duration + 1):
         with baking(config, padding_method="right") as b:
             if i == 0:  # Otherwise, the baking will be empty and will not be created
@@ -27,7 +26,6 @@ def baked_waveform(waveform, pulse_duration, flux_qubit):
                 wf = waveform[:i].tolist()
             b.add_op("flux_pulse", f"q{flux_qubit}_z", wf)
             b.play("flux_pulse", f"q{flux_qubit}_z")
-        # Append the baking object in the list to call it from the QUA program
         pulse_segments.append(b)
     return pulse_segments
 
@@ -115,7 +113,6 @@ def live_plotting(I,Q,Qi_list):
         plt.pause(0.1)
 
 flux_Qi = 2  
-## The real output of voltage is amps times scale_reference: 0.45 
 scale_reference = const_flux_amp 
 Qi_list = [2,3]
 excited_Qi_list = [2,3]
