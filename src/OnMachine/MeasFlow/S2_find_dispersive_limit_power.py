@@ -31,7 +31,7 @@ import sys
 
 # 20231216 Test complete :Ratis
 from OnMachine.Octave_Config.QM_config_dynamic import Circuit_info, QM_config, initializer
-from OnMachine.MeasFlow.ConfigBuildUp import spec_loca, config_loca, qubit_num
+from OnMachine.BringUp.ConfigBuildUp import spec_loca, config_loca, qubit_num
 spec = Circuit_info(qubit_num)
 config = QM_config()
 spec.import_spec(spec_loca)

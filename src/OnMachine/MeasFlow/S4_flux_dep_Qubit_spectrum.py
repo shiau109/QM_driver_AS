@@ -12,7 +12,7 @@ import sys
 
 
 from OnMachine.Octave_Config.QM_config_dynamic import Circuit_info, QM_config, initializer
-from OnMachine.MeasFlow.ConfigBuildUp import spec_loca, config_loca, qubit_num
+from OnMachine.BringUp.ConfigBuildUp import spec_loca, config_loca, qubit_num
 spec = Circuit_info(qubit_num)
 config = QM_config()
 spec.import_spec(spec_loca)
@@ -23,20 +23,20 @@ init_macro = initializer(spec.give_depletion_time_for("all"),mode='depletion')
 
 ro_elements = ['q1_ro','q2_ro','q3_ro','q4_ro']
 q_name = ['q1_xy']
-z_name = ['q3_z']
+z_name = ['q1_z']
 # Adjust the pulse duration and amplitude to drive the qubit into a mixed state
 # saturation_len = 1 * u.us  # In ns (should be < FFT of df)
 # saturation_amp = 0.01  # pre-factor to the value defined in the config - restricted to [-2; 2)
 
-span = 200 * u.MHz
-df = 1 * u.MHz
-flux_span = 0.05
-flux_resolu = 0.005
+span = 300 * u.MHz
+df = 2 * u.MHz
+flux_span = 0.04
+flux_resolu = 0.001
 
 dfs = np.arange(-span, +span, df)
 flux = np.arange(-flux_span,flux_span+flux_resolu,flux_resolu)
 
-output_data, flux, dfs = flux_twotone_qubit( flux, dfs, q_name, ro_elements, z_name, config.get_config(), qmm, saturation_ampRatio=0.1, n_avg=200)
+output_data, flux, dfs = flux_twotone_qubit( flux, dfs, q_name, ro_elements, z_name, config.get_config(), qmm, saturation_ampRatio=0.03, n_avg=500)
 plt.show()
 
 from exp.config_par import *
