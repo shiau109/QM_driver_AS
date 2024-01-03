@@ -1,4 +1,17 @@
-pip install -e .
+Metadata-Version: 2.1
+Name: expData
+Version: 0.0.10
+Summary: An experimental data
+Home-page: https://github.com/shiau109/PYQUM_data
+Author: Li-Chieh, Hsiao
+Author-email: shiau109@gmail.com
+License: MIT
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+
 # To add the module path into python site-packages with ***.pth*** file
 1. Add the whole QM_opt module path into the python site-packages folder. 
 2. Check the root to the QM_opt folder use: 
