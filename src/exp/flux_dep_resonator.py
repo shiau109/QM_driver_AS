@@ -32,7 +32,7 @@ u = unit(coerce_to_integer=True)
 
 warnings.filterwarnings("ignore")
 
-def flux_dep_cavity( ro_element:list, config:dict, qm_machine:QuantumMachinesManager, n_avg:int=100, flux_settle_time_ns:int=200, freq_span_MHz:float=3, flux_span:float=0.3, flux_resolu:float=0.02, freq_resolu_MHz:float=0.05, initializer:tuple=None ):
+def flux_dep_cavity( ro_element:list, config:dict, qm_machine:QuantumMachinesManager, n_avg:int=100, flux_settle_time_ns:int=1000, freq_span_MHz:float=3, flux_span:float=0.3, flux_resolu:float=0.015, freq_resolu_MHz:float=0.05, initializer:tuple=None ):
     """
     
     return is tuple
