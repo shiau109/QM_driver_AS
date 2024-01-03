@@ -18,19 +18,23 @@ Next steps before going to the next node:
 
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.qua import *
-from configuration import *
+# from configuration import *
 import matplotlib.pyplot as plt
 from qualang_tools.loops import from_array
 from qualang_tools.results import fetching_tool, progress_counter
-from macros import multiplexed_readout, qua_declaration
-from RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
+from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 
 import warnings
 
 warnings.filterwarnings("ignore")
 
+from qualang_tools.units import unit
+#######################
+# AUXILIARY FUNCTIONS #
+#######################
+u = unit(coerce_to_integer=True)
 
-def freq_dep_signal( dfs, q_name:list, ro_element:list, n_avg, config, qmm:QuantumMachinesManager, init_macro=None, simulate=False ):
+def freq_dep_signal( dfs, q_name:list, ro_element:list, n_avg, config, qmm:QuantumMachinesManager, simulate=False, initializer:tuple=None ):
 
     center_IF = {}
     for r in ro_element:
@@ -51,13 +55,15 @@ def freq_dep_signal( dfs, q_name:list, ro_element:list, n_avg, config, qmm:Quant
 
                 with for_each_( p_idx, [0, 1]):  
                     # Init
-                    if simulate:
-                        wait( 100 )
+                    if initializer is None:
+                        wait(100*u.us)
+                        #wait(thermalization_time * u.ns)
                     else:
-                        if init_macro == None:
-                            wait(thermalization_time * u.ns)
-                        else:
-                            init_macro()
+                        try:
+                            initializer[0](*initializer[1])
+                        except:
+                            print("Initializer didn't work!")
+                            wait(100*u.us)
                         
                     # Operation
 
@@ -105,7 +111,7 @@ def freq_dep_signal( dfs, q_name:list, ro_element:list, n_avg, config, qmm:Quant
     qm.close()
     return output_data
 
-def power_dep_signal( amp_ratio, q_name:list, ro_element:list, n_avg, config, qmm:QuantumMachinesManager, init_macro=None, simulate=False ):
+def power_dep_signal( amp_ratio, q_name:list, ro_element:list, n_avg, config, qmm:QuantumMachinesManager, initializer=None, simulate=False ):
 
     center_IF = {}
     for r in ro_element:
@@ -124,14 +130,16 @@ def power_dep_signal( amp_ratio, q_name:list, ro_element:list, n_avg, config, qm
             with for_(*from_array(a, amp_ratio)):
 
                 with for_each_( p_idx, [0, 1]):  
-                    # Init
-                    if simulate:
-                        wait( 100 )
+                                        # Init
+                    if initializer is None:
+                        wait(100*u.us)
+                        #wait(thermalization_time * u.ns)
                     else:
-                        if init_macro == None:
-                            wait(thermalization_time * u.ns)
-                        else:
-                            init_macro()
+                        try:
+                            initializer[0](*initializer[1])
+                        except:
+                            print("Initializer didn't work!")
+                            wait(100*u.us)
                         
                     # Operation
                     with switch_(p_idx, unsafe=True):

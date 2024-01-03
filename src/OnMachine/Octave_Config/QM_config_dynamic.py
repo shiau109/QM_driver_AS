@@ -273,6 +273,7 @@ class Circuit_info:
         ### If update info is related to freq return the dict for updating the config.
         '''
         new_freq = {}
+        print(kwargs)
         for name in list(kwargs.keys()):
             if name.lower() == 'amp':
                 self.__XyInfo[target_q]["pi_amp"] = kwargs[name] 
@@ -1260,6 +1261,7 @@ class QM_config():
             Only update the info in config about control frequency\n
             updatedInfo: from `Circuit_info.update_aXyInfo_for()`
         """
+        print(updatedInfo)
         for info in updatedInfo:
             if info.split("_")[1].lower() in ["lo","if"]: # this should be update in both elements and mixers
                 target_q = info.split("_")[-1]
@@ -1292,6 +1294,7 @@ class QM_config():
             raise ValueError("The updated spec should be given!")
         qs = [target_q] if target_q != 'all' else updatedSpec["register"]
         for q in qs:
+            print(f"{q} update controlWaveform")
             for waveform in self.__config["elements"][f"{q}_xy"]["operations"]:
                 if waveform not in ["cw", "saturation"]:
                     for waveform_basis in self.__config["pulses"][f"{waveform}_pulse_{q}"]["waveforms"]:
@@ -1314,6 +1317,7 @@ class QM_config():
                     # pi_len check
                     old_len = self.__config["pulses"][f"{waveform}_pulse_{q}"]['length']
                     new_len = updatedSpec[q]['pi_len']
+                    print(f"new pi len{new_len}")
                     if old_len != new_len:
                         self.__config["pulses"][f"{waveform}_pulse_{q}"]['length'] = new_len
 

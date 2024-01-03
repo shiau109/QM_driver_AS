@@ -29,7 +29,7 @@ from exp.search_resonators import *
 # 20231215 Test complete :Ratis
 
 # Dynamic config
-from OnMachine.BringUp.ConfigBuildUp import spec_loca, config_loca, qubit_num
+from OnMachine.MeasFlow.ConfigBuildUp import spec_loca, config_loca, qubit_num
 spec = Circuit_info(qubit_num)
 config = QM_config()
 spec.import_spec(spec_loca)

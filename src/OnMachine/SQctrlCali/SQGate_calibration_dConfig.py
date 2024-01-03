@@ -1,22 +1,4 @@
-"""
-        DRAG PULSE CALIBRATION (YALE METHOD)
-The sequence consists in applying successively x180-y90 and y180-x90 to the qubit while varying the DRAG
-coefficient alpha. The qubit is reset to the ground state between each sequence and its state is measured and stored.
-Each sequence will bring the qubit to the same state only when the DRAG coefficient is set to its correct value.
 
-This protocol is described in Reed's thesis (Fig. 5.8) https://rsl.yale.edu/sites/default/files/files/RSL_Theses/reed.pdf
-This protocol was also cited in: https://doi.org/10.1103/PRXQuantum.2.040202
-
-Prerequisites:
-    - Having found the resonance frequency of the resonator coupled to the qubit under study (resonator_spectroscopy).
-    - Having calibrated qubit pi pulse (x180) by running qubit, spectroscopy, rabi_chevron, power_rabi and updated the config.
-    - (optional) Having calibrated the readout (readout_frequency, amplitude, duration_optimization IQ_blobs) for better SNR.
-    - Set the DRAG coefficient to a non-zero value in the config: such as drag_coef = 1
-    - Set the desired flux bias.
-
-Next steps before going to the next node:
-    - Update the DRAG coefficient (drag_coef) in the configuration.
-"""
 import sys, os
 sys.path.append(os.getcwd()+"/exp")
 from qm.qua import *
@@ -28,9 +10,9 @@ from qualang_tools.plot import interrupt_on_close
 from qualang_tools.loops import from_array
 import matplotlib.pyplot as plt
 import warnings
-from QM_config_dynamic import QM_config, Circuit_info
+from OnMachine.Octave_Config.QM_config_dynamic import QM_config, Circuit_info
 
-from RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
+from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 
 warnings.filterwarnings("ignore")
 from qualang_tools.units import unit
@@ -373,29 +355,41 @@ def StarkShift_scout(program, ro_element:list, config:dict, qmm:QuantumMachinesM
 
 
 if __name__ == '__main__':
-    pass
+    
     # qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-    # n_avg = 1000
+    n_avg = 400
 
-    # # Scan the DRAG coefficient pre-factor
+    # Scan the DRAG coefficient pre-factor
 
     # drag_coef = drag_coef_q1
-    # # Check that the DRAG coefficient is not 0
+    # Check that the DRAG coefficient is not 0
     # assert drag_coef != 0, "The DRAG coefficient 'drag_coef' must be different from 0 in the config."
-    # ro_element = ["rr1"]
-    # q_name =  "q1_xy"
-    # sequence_repeat = 1
-    # amp_modify_range = 0.25/float(sequence_repeat)
-    # # output_data = DRAG_calibration_Yale( drag_coef, q_name, ro_element, config, qmm, n_avg=n_avg)
-    # output_data =  amp_calibration( amp_modify_range, q_name, ro_element, config, qmm, n_avg=n_avg, sequence_repeat=sequence_repeat, simulate=False, mode='live')
+    from OnMachine.Octave_Config.QM_config_dynamic import Circuit_info, QM_config, initializer
+    from OnMachine.MeasFlow.ConfigBuildUp import spec_loca, config_loca, qubit_num
+    spec = Circuit_info(qubit_num)
+    config = QM_config()
+    spec.import_spec(spec_loca)
+    config.import_config(config_loca)
 
-    #     #   Data Saving   # 
-    # save_data = False
-    # if save_data:
-    #     from save_data import save_npz
-    #     import sys
-    #     save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
-    #     save_npz(save_dir, save_progam_name, output_data)
+    qmm,_ = spec.buildup_qmm()
+    from qualang_tools.units import unit
+    u = unit(coerce_to_integer=True)
+    init_macro = initializer( 100*u.us,mode='wait')    
     
-    # # # Plot
-    # plt.show()
+    ro_element = ["q1_ro"]
+    q_name =  "q1_xy"
+    sequence_repeat = 1
+    amp_modify_range = 0.25/float(sequence_repeat)
+    # output_data = DRAG_calibration_Yale( drag_coef, q_name, ro_element, config, qmm, n_avg=n_avg)
+    output_data =  amp_calibration( amp_modify_range, q_name, ro_element, config.get_config(), qmm, n_avg=n_avg, sequence_repeat=sequence_repeat, simulate=False, mode='live')
+
+        #   Data Saving   # 
+    save_data = False
+    if save_data:
+        from exp.save_data import save_npz
+        import sys
+        save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
+        # save_npz(save_dir, save_progam_name, output_data)
+    
+    # # Plot
+    plt.show()

@@ -1,12 +1,12 @@
 
-# from QM_config_dynamic import QM_config, Circuit_info
+from OnMachine.Octave_Config.QM_config_dynamic import QM_config, Circuit_info
 from qm.QuantumMachinesManager import QuantumMachinesManager
 
-from SQGate_calibration_dConfig import amp_calibration, DRAG_calibration_Yale, StarkShift_scout, StarkShift_program
-from allxy_dConfig import AllXY_executor
-from Ramsey_freq_calibration_dConfig import Ramsey_freq_calibration, plot_ana_result
+from OnMachine.SQctrlCali.SQGate_calibration_dConfig import amp_calibration, DRAG_calibration_Yale, StarkShift_scout, StarkShift_program
+from OnMachine.allxy_dConfig import AllXY_executor
+from OnMachine.SQctrlCali.Ramsey_freq_calibration_dConfig import Ramsey_freq_calibration, plot_ana_result
 
-from AutoCali_analyzer import find_amp_minima, math_eqns, analysis_drag_a, find_AC_minima
+from OnMachine.SQctrlCali.AutoCali_analyzer import find_amp_minima, math_eqns, analysis_drag_a, find_AC_minima
 from numpy import mean, ndarray, arange, array, std
 import matplotlib.pyplot as plt
 
@@ -444,15 +444,24 @@ def AutoCaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
 
 if __name__ == '__main__':
     # from RB20ns_dConfig import RB_executor, plot_SQRB_result
-    from SQRB_dConfig import single_qubit_RB
-    from QM_config_dynamic import QM_config, Circuit_info, initializer
+    from OnMachine.SQRB_dConfig import single_qubit_RB
+    from OnMachine.Octave_Config.QM_config_dynamic import QM_config, Circuit_info, initializer
+
+    import os
+    SpecConfig_path = os.getcwd()+'/config/'
+    ########### For other import ################
+    config_loca = SpecConfig_path+"DR2b_couplerTest_config" #
+    spec_loca = SpecConfig_path+"DR2b_couplerTest_spec"     #
+    qubit_num = 4                               #
+    #############################################    
+    
     dyna_config = QM_config()
-    the_specs = Circuit_info(q_num=5)
+    the_specs = Circuit_info(q_num=qubit_num)
     target_q = 'q1'
     
     # load config file
-    dyna_config.import_config(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Config_init_1208')
-    the_specs.import_spec(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Spec_init_1208')
+    dyna_config.import_config(path=config_loca)
+    the_specs.import_spec(path=spec_loca)
     qmm,_ = the_specs.buildup_qmm()
     init_macro = initializer((the_specs.give_WaitTime_with_q(target_q,wait_scale=5),),'wait')
     the_specs.update_aXyInfo_for(target_q,len=40)
@@ -467,8 +476,8 @@ if __name__ == '__main__':
     
     calied_specs, calied_config = AutoCaliFlow(target_q,the_specs,dyna_config,qmm,1.0,init_macro)
     
-    calied_specs.export_spec(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Spec_Calied_1214_40ns')
-    calied_config.export_config(path=r'/Users/ratiswu/Documents/GitHub/QM_opt/OnMachine/Config_Calied_1214_40ns')
+    calied_specs.export_spec(path=config_loca+"_testCali")
+    calied_config.export_config(path=spec_loca+"_testCali")
     print(calied_specs.get_ReadableSpec_fromQ(target_q,'xy'))
     # ret = AllXY_executor(f"{target_q}_xy",f"{target_q}_ro",xyw,20000,dyna_config.get_config(),qmm,mode='live')
     # # RB after Calibrations

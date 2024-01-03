@@ -20,8 +20,8 @@ q2_xy = ElementsSettings("q2_xy", gain=15)
 # q4_xy = ElementsSettings("q4_xy", gain=20)
 # q5_xy = ElementsSettings("q5_xy", gain=20)
 # Add the "octave" elements
-# elements_settings = [rr1,rr2,rr3,rr4]
-elements_settings = [q1_xy,q2_xy]
+elements_settings = [rr1,rr2,rr3,rr4,q1_xy,q2_xy]
+# elements_settings = [q1_xy,q2_xy]
 
 # elements_settings = [q3_xy]
 
