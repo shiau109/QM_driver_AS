@@ -1,29 +1,15 @@
-import qpu.backend.phychannel as pch
-from qutip import sigmax, sigmay, sigmaz, basis, qeye, tensor, Qobj
 from qutip_qip.operations import Gate #Measurement in 0.3.X qutip_qip
 from qutip_qip.circuit import QubitCircuit
-from qutip_qip.compiler import GateCompiler, Instruction
+from qutip_qip.compiler import GateCompiler
 from tqdm import tqdm
-import qpu.backend.circuit.backendcircuit as bec
-import qpu.backend.component as qcp
-from pandas import DataFrame
-import pulse_signal.common_Mathfunc as ps 
-from qualang_tools.bakery.bakery import Baking
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.qua import *
 from qm import SimulationConfig
 from configuration import *
 import matplotlib.pyplot as plt
-from qualang_tools.loops import from_array
-from qualang_tools.results import fetching_tool
-from qualang_tools.plot import interrupt_on_close
-from qualang_tools.results import progress_counter
 import numpy as np
-from util import run_in_thread, pbar
-from RBResult import RBResult
 from qualang_tools.bakery import baking
-from TQClifford import m_random_Clifford_circuit, get_TQcircuit_random_clifford
-import warnings
+
 
 x180_wf, y180_wf, x90_wf, y90_wf, minus_x90_wf, minus_y90_wf  = [], [], [], [], [], []
 for i in range(5):
@@ -137,6 +123,7 @@ class TQCompile(GateCompiler):
             q1_z_element = f"q{gate.controls[0]}_z"
             b.add_op("cz",q1_z_element,cz_wf)
             b.wait(20,q1_xy_element,q2_xy_element,q1_z_element) # The unit is 1 ns.
+            b.align(q1_xy_element,q2_xy_element,q1_z_element)
             b.play("cz", q1_z_element)
             b.align(q1_xy_element,q2_xy_element,q1_z_element)
             b.wait(23,q1_xy_element,q2_xy_element,q1_z_element)
@@ -145,27 +132,6 @@ class TQCompile(GateCompiler):
             b.align(q1_xy_element,q2_xy_element,q1_z_element)
             b.run()
 
-def multiplexed_readout(I, I_st, Q, Q_st, resonators, sequential=False, amplitude=1.0, weights=""):
-    """Perform multiplexed readout on two resonators"""
-    if type(resonators) is not list:
-        resonators = [resonators]
-
-    for ind, res in enumerate(resonators):
-        measure(
-            "readout" * amp(amplitude),
-            f"rr{res}",
-            None,
-            dual_demod.full(weights + "cos", "out1", weights + "sin", "out2", I[ind]),
-            dual_demod.full(weights + "minus_sin", "out1", weights + "cos", "out2", Q[ind]),
-        )
-
-        if I_st is not None:
-            save(I[ind], I_st[ind])
-        if Q_st is not None:
-            save(Q[ind], Q_st[ind])
-
-        if sequential and ind < len(resonators) - 1:
-            align(f"rr{res}", f"rr{res+1}")
 
 def meas():
     threshold1 = 1.243e-04 # threshold for state discrimination 0 <-> 1 using the I quadrature
@@ -184,7 +150,9 @@ def meas():
     return state1, state2
 
 if __name__ == '__main__':
-
+    from TQRB.TQClifford import m_random_Clifford_circuit, get_TQcircuit_random_clifford
+    from TQRB.RBResult import RBResult
+    from macros import multiplexed_readout
     mycompiler = TQCompile( 2, q1_frame_update= -258.128 / 360, q2_frame_update= -18.345 / 360, params={} )
     ### TEST GATE
     q2_x180 = Gate("RX", 2, arg_value=np.pi)
@@ -234,7 +202,7 @@ if __name__ == '__main__':
             for j in tqdm(range(circuit_repeats), desc="Processing", unit="step"):
                 with for_(n, 0, n < n_avg, n + 1):   
                     wait(thermalization_time)
-                    compiled_data = mycompiler.compile(circuit[i][j],schedule_mode='ASAP')
+                    compiled_data = mycompiler.compile(circuit,schedule_mode='ASAP')
                     align()
                     wait(flux_settle_time * u.ns)
                     out1, out2 = meas()

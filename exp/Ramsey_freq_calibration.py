@@ -61,9 +61,9 @@ def Ramsey_freq_calibration( virtial_detune_freq, q_name:list, ro_element:list, 
         n_st = declare_stream()
         t = declare(int)  # QUA variable for the idle time
         phi = declare(fixed)  # Phase to apply the virtual Z-rotation
-        phi_idx = declare(int)
+        phi_idx = declare(bool, )
         with for_(n, 0, n < n_avg, n + 1):
-            with for_each_( phi_idx, [-1, 1]):
+            with for_each_( phi_idx, [True, False]):
                 
                 with for_(*from_array(t, evo_time_tick)):
 
@@ -75,11 +75,9 @@ def Ramsey_freq_calibration( virtial_detune_freq, q_name:list, ro_element:list, 
 
                     align()
                     # Operation
-                    with switch_(phi_idx, unsafe=True):
-                        with case_(1):
-                            assign(phi, Cast.mul_fixed_by_int(virtial_detune_freq * 1e-3, 4 * t))
-                        with case_(-1):
-                            assign(phi, Cast.mul_fixed_by_int(-virtial_detune_freq * 1e-3, 4 * t))
+                    True_value = Cast.mul_fixed_by_int(virtial_detune_freq * 1e-3, 4 * t)
+                    False_value = Cast.mul_fixed_by_int(-virtial_detune_freq * 1e-3, 4 * t)
+                    assign(phi, Util.cond(phi_idx, True_value, False_value))
 
                     for q in q_name:
                         play("x90", q)  # 1st x90 gate
@@ -208,7 +206,6 @@ def plot_ana_result( evo_time, data, detuning, ax=None ):
 if __name__ == '__main__':
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
     n_avg = 1000  # Number of averages
-
 
     ro_element = ["rr3"]
     q_name =  ["q3_xy"]

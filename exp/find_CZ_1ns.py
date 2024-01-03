@@ -13,6 +13,7 @@ from common_fitting_func import *
 from macros import qua_declaration, multiplexed_readout
 from qualang_tools.bakery import baking
 import warnings
+from qm import generate_qua_script
 
 warnings.filterwarnings("ignore")
 
@@ -47,6 +48,7 @@ def CZ_1ns(q_id,Qi_list,flux_Qi,amps,const_flux_len,simulate,qmm):
         with for_(n, 0, n < n_avg, n + 1):
             with for_(*from_array(a, amps)):
                 with for_(segment, 0, segment <= const_flux_len, segment + 1):
+                    wait(thermalization_time * u.ns)
                     if excited_Qi_list != []: 
                         for excited_Qi in excited_Qi_list:
                             play("x180", f"q{excited_Qi}_xy")
@@ -60,7 +62,6 @@ def CZ_1ns(q_id,Qi_list,flux_Qi,amps,const_flux_len,simulate,qmm):
                     wait(5)
                     align()
                     multiplexed_readout(I, I_st, Q, Q_st, resonators=[x+1 for x in q_id], weights="rotated_")
-                    wait(thermalization_time * u.ns)
             save(n, n_st)
         with stream_processing():
             n_st.save("n")
@@ -74,6 +75,9 @@ def CZ_1ns(q_id,Qi_list,flux_Qi,amps,const_flux_len,simulate,qmm):
         plt.show()
     else:
         qm = qmm.open_qm(config)
+        sourceFile = open('debug.py', 'w')
+        print(generate_qua_script(cz, config), file=sourceFile)
+        sourceFile.close()
         job = qm.execute(cz)
         fig = plt.figure()
         interrupt_on_close(fig, job)
@@ -117,7 +121,7 @@ scale_reference = const_flux_amp
 Qi_list = [2,3]
 excited_Qi_list = [2,3]
 n_avg = 500  
-amps = np.arange(0.33, 0.44, 0.001) 
+amps = np.arange(0.32, 0.38, 0.001) 
 const_flux_len = 50
 flux_waveform = np.array([const_flux_amp] * const_flux_len)
 square_pulse_segments = baked_waveform(flux_waveform, const_flux_len, flux_Qi)
