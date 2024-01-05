@@ -53,7 +53,7 @@ if __name__ == '__main__':
         case "q":
             # Update RO amp, dress RO after power dependence
             # [target_q, offset_bias, Q freq(GHz), LO(MHz)]        
-            modifiers = [['q1',0.11,3.235,3.3],['q2',0.125,3.5,3.6],['q3',-0.02,3.175,3.3],['q4',0.2,3.1,3.10]] 
+            modifiers = [['q1',0.11,3.236,3.3],['q2',0.125,3.5,3.6],['q3',-0.02,3.175,3.3],['q4',0.2,3.1,3.10]] 
             for i in modifiers:
                 ref_IF = (i[2]-i[3])*1000
                 if np.abs(ref_IF) > 350:
