@@ -2,7 +2,6 @@ from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.qua import *
 from qm import SimulationConfig
 from configuration import *
-
 from qualang_tools.loops import from_array
 from qualang_tools.results import fetching_tool, progress_counter
 from qualang_tools.plot import interrupt_on_close
@@ -15,32 +14,49 @@ import matplotlib.pyplot as plt
 import os, fnmatch
 from qualang_tools.bakery import baking
 from macros import multiplexed_readout
+from common_fitting_func import *
 from cosine import Cosine
 
-def cz_gate(type, idle_flux_point, flux_Qi, segment, a):
-    if type == "square":
-        flux_waveform = np.array([const_flux_amp] * const_flux_len)
-        square_pulse_segments = baked_waveform(flux_waveform, const_flux_len, flux_Qi)
-        wait(5)  
-        with switch_(segment):
-            for j in range(0, const_flux_len + 1):
-                with case_(j):
-                    square_pulse_segments[j].run(amp_array=[(f"q{flux_Qi}_z", a)])  
-        align()
-        set_dc_offset(f"q{flux_Qi}_z", "single", idle_flux_point[flux_Qi-1])
-        wait(5)
+def cz_gate(type, idle_flux_point, flux_Qi, segment, a, paras = None):
+    flux_waveform = np.array([const_flux_amp] * const_flux_len)
+    pulse_segments = baked_waveform(flux_waveform, const_flux_len, flux_Qi, type, paras)
+    wait(5)  
+    with switch_(segment):
+        for j in range(0, const_flux_len + 1):
+            with case_(j):
+                pulse_segments[j].run(amp_array=[(f"q{flux_Qi}_z", a)])  
+    align()
+    set_dc_offset(f"q{flux_Qi}_z", "single", idle_flux_point[flux_Qi-1])
+    wait(5)
 
-def baked_waveform(waveform, pulse_duration, flux_qubit):
-    pulse_segments = [] 
-    for i in range(0, pulse_duration + 1):
-        with baking(config, padding_method="right") as b:
-            if i == 0:  # Otherwise, the baking will be empty and will not be created
-                wf = [0.0] * 16
-            else:
-                wf = waveform[:i].tolist()
-            b.add_op("flux_pulse", f"q{flux_qubit}_z", wf)
-            b.play("flux_pulse", f"q{flux_qubit}_z")
-        pulse_segments.append(b)
+
+def baked_waveform(waveform, pulse_duration, flux_qubit, type, paras = None):
+    pulse_segments = []
+    if type == 'square':  
+        for i in range(0, pulse_duration + 1):
+            with baking(config, padding_method="symmetric_l") as b:
+                if i == 0:  # Otherwise, the baking will be empty and will not be created
+                    wf = [0.0] * 16
+                else:
+                    wf = waveform[:i].tolist()
+                b.add_op("flux_pulse", f"q{flux_qubit}_z", wf)
+                b.play("flux_pulse", f"q{flux_qubit}_z")
+            pulse_segments.append(b)
+
+    elif type == 'eerp':
+        duration = np.linspace(0,pulse_duration-1,pulse_duration)
+        p = ( paras[0], paras[1]/2, paras[1]/paras[2], 2*paras[1], 5 ) # This 5 can make the pulse edge smooth in the begining.
+        eerp_up_wf = np.array(EERP(duration,*p)[:(paras[1]+5)]) 
+        eerp_dn_wf = eerp_up_wf[::-1]
+        for i in range(0, pulse_duration + 1):
+            with baking(config, padding_method="symmetric_l") as b:
+                if i == 0: 
+                    wf = np.concatenate((eerp_up_wf, eerp_dn_wf)).tolist()
+                else:
+                    wf = np.concatenate((eerp_up_wf, waveform[:i], eerp_dn_wf)).tolist()
+                b.add_op("flux_pulse", f"q{flux_qubit}_z", wf)
+                b.play("flux_pulse", f"q{flux_qubit}_z")
+            pulse_segments.append(b)
     return pulse_segments
 
 def CZ_phase_diff(q_id,flux_Qi,control_Qi,ramsey_Qi,idle_flux_point,signal_mode,simulate,qmm):
@@ -73,26 +89,23 @@ def CZ_phase_diff(q_id,flux_Qi,control_Qi,ramsey_Qi,idle_flux_point,signal_mode,
                 ## This +1 is inserted because of making segment equal to actual pulse duration
                 with for_(segment, t_min+1, segment <= t_max+1, segment + 1): 
                     with for_(*from_array(phi, Phi)):
-                        wait(thermalization_time * u.ns, f"q{control_Qi}_z")
+                        wait(thermalization_time * u.ns)
                         align()
                         play("x90", f"q{ramsey_Qi}_xy")
                         align()
-                        cz_gate(cz_type,idle_flux_point,flux_Qi,segment,a)
+                        cz_gate(type, idle_flux_point, flux_Qi, segment, a, paras = [const_flux_amp,edge,sFactor])
                         align()
                         frame_rotation_2pi(phi, f"q{ramsey_Qi}_xy")
                         play("x90", f"q{ramsey_Qi}_xy")
                         wait(flux_settle_time * u.ns)
-                        align()
                         multiplexed_readout(I_g, I_st_g, Q_g, Q_st_g, resonators=[x+1 for x in q_id], weights="rotated_")
-                        
-                        align()
 
-                        wait(thermalization_time * u.ns, f"q{control_Qi}_z")
-                        align()
+                        wait(thermalization_time * u.ns)
+                        align()                       
                         play("x180", f"q{control_Qi}_xy")
                         play("x90", f"q{ramsey_Qi}_xy")
                         align()
-                        cz_gate(cz_type,idle_flux_point,flux_Qi,segment,a)
+                        cz_gate(type, idle_flux_point, flux_Qi, segment, a, paras = [const_flux_amp,edge,sFactor])
                         align()
                         frame_rotation_2pi(phi, f"q{ramsey_Qi}_xy")
                         play("x90", f"q{ramsey_Qi}_xy")
@@ -158,14 +171,14 @@ def live_plotting(signal_g, signal_e, control_Qi, ramsey_Qi,row,col,ax):
                 ax[i,j].plot(fit.x_data, fit.fit_type(fit.x, fit.popt) * fit.y_normal, '-r', alpha=0.5)
                 dphase = (phase_g-phase_e)/np.pi*180     
             except Exception as e: print(e)
-            ax[i,j].set_title(f"pha_diff {dphase:.1f}, ZW {t_delay[j]:.0f}, ZL {amps[i]*const_flux_amp:.5f}",fontsize = 8)
-            ax[i,j].set_xlabel('Phase cycle',fontsize = 8)
-            ax[i,j].set_ylabel('Voltage [V]',fontsize = 8)
-            ax[i, j].tick_params(axis='both', labelsize=8)
+            ax[i,j].set_title(f"pha_diff {dphase:.1f}, ZW {t_delay[j]:.0f}, ZL {amps[i]*const_flux_amp:.5f}",fontsize = 7)
+            ax[i,j].set_xlabel('Phase cycle',fontsize = 7)
+            ax[i,j].set_ylabel('Voltage [V]',fontsize = 7)
+            ax[i, j].tick_params(axis='both', labelsize=7)
     plt.tight_layout()
     plt.pause(1.0)
 
-cz_type = "square"
+type = "eerp"
 simulate = False
 Phi = np.arange(0, 5, 0.05) # 5 rotations
 n_avg = 1300
@@ -173,10 +186,11 @@ q_id = [1,2,3,4]
 control_Qi = 2
 ramsey_Qi = 3
 flux_Qi = 2
-t_min, t_max = 22, 26
+t_min, t_max = 15, 19
 t_delay = np.arange(t_min, t_max + 0.1, 1) 
-
-amps = np.arange(0.3498, 0.3514, 0.0004) 
+edge = 10
+sFactor = 4
+amps = np.arange(0.3498, 0.3522, 0.0004) 
 signal_mode = 'I'
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
 CZ_phase_diff(q_id,flux_Qi,control_Qi,ramsey_Qi,idle_flux_point,signal_mode,simulate,qmm)

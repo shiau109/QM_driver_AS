@@ -18,6 +18,17 @@ from cosine import Cosine
 warnings.filterwarnings("ignore")
 
 def cz_gate(type, idle_flux_point, flux_Qi, const_flux_len, a):
+    # with baking(config,padding_method="symmetric_l") as b:
+    #     q1_z_element = f"q{flux_Qi}_z"
+    #     b.add_op("cz",q1_z_element,cz_wf)
+    #     b.wait(20) # The unit is 1 ns.
+    #     b.align()
+    #     b.play("cz", q1_z_element)
+    #     b.align(q1_z_element)
+    #     b.wait(23,q1_z_element)
+    #     b.align()
+    #     b.run()
+
     if type == "square":
         square_pulse_segments = baked_waveform(flux_waveform, const_flux_len, flux_Qi)
         wait(5)  
@@ -155,15 +166,19 @@ def live_plotting(signal,signal_c,ramsey_Qi):
     plt.pause(0.1)
 
 flux_Qi = 2  
-ramsey_Qi = 2
-a = 0.3498
+ramsey_Qi = 3
+a = cz_amp/const_flux_amp
 type = 'square'
 signal_mode = 'I'
 scale_reference = const_flux_amp 
 n_avg = 2000  
-const_flux_len = 24
+const_flux_len = cz_len
 flux_waveform = np.array([const_flux_amp] * (const_flux_len+1))
 Phi = np.arange(0, 5, 0.05) # 5 rotations
+
+cz_wf = np.array([cz_amp]*(cz_len+1)) # cz_len+1 is the exactly time of z pulse.
+cz_wf = cz_wf.tolist()
+
 
 ###
 # square_pulse_segments = baked_waveform(flux_waveform, const_flux_len, flux_Qi)

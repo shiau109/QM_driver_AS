@@ -14,20 +14,52 @@ from macros import qua_declaration, multiplexed_readout
 from qualang_tools.bakery import baking
 import warnings
 from qm import generate_qua_script
-
+from common_fitting_func import *
 warnings.filterwarnings("ignore")
 
-def baked_waveform(waveform, pulse_duration, flux_qubit):
-    pulse_segments = []  
-    for i in range(0, pulse_duration + 1):
-        with baking(config, padding_method="right") as b:
-            if i == 0:  # Otherwise, the baking will be empty and will not be created
-                wf = [0.0] * 16
-            else:
-                wf = waveform[:i].tolist()
-            b.add_op("flux_pulse", f"q{flux_qubit}_z", wf)
-            b.play("flux_pulse", f"q{flux_qubit}_z")
-        pulse_segments.append(b)
+# x = np.linspace(0,49,50)
+# p = (1,5,1.5,20,0) 
+# print(np.round(EERP(x,*p),3))
+# eerp_up_wf = const_flux_amp*np.array(EERP(x,*p)[:10])
+# eerp_dn_wf = eerp_up_wf[::-1]
+# waveform = np.array([const_flux_amp] * const_flux_len)
+# # print(np.round(eerp_up_wf,3))
+# # print(np.round(eerp_dn_wf,3))
+# # flat_wf = np.array([1.0] * 10)
+# eerp_wf = np.concatenate((eerp_up_wf, waveform[:30], eerp_dn_wf))
+# print(eerp_wf)
+# plt.plot(x,eerp_wf,'-o')
+# plt.show()
+
+
+
+def baked_waveform(waveform, pulse_duration, flux_qubit, type, paras = None):
+    pulse_segments = []
+    if type == 'square':  
+        for i in range(0, pulse_duration + 1):
+            with baking(config, padding_method="symmetric_l") as b:
+                if i == 0:  # Otherwise, the baking will be empty and will not be created
+                    wf = [0.0] * 16
+                else:
+                    wf = waveform[:i].tolist()
+                b.add_op("flux_pulse", f"q{flux_qubit}_z", wf)
+                b.play("flux_pulse", f"q{flux_qubit}_z")
+            pulse_segments.append(b)
+
+    elif type == 'eerp':
+        duration = np.linspace(0,pulse_duration-1,pulse_duration)
+        p = ( paras[0], paras[1]/2, paras[1]/paras[2], 2*paras[1], 5 ) # This 5 can make the pulse edge smooth in the begining.
+        eerp_up_wf = np.array(EERP(duration,*p)[:(paras[1]+5)]) 
+        eerp_dn_wf = eerp_up_wf[::-1]
+        for i in range(0, pulse_duration + 1):
+            with baking(config, padding_method="symmetric_l") as b:
+                if i == 0: 
+                    wf = np.concatenate((eerp_up_wf, eerp_dn_wf)).tolist()
+                else:
+                    wf = np.concatenate((eerp_up_wf, waveform[:i], eerp_dn_wf)).tolist()
+                b.add_op("flux_pulse", f"q{flux_qubit}_z", wf)
+                b.play("flux_pulse", f"q{flux_qubit}_z")
+            pulse_segments.append(b)
     return pulse_segments
 
 def CZ_1ns(q_id,Qi_list,flux_Qi,amps,const_flux_len,simulate,qmm):
@@ -60,7 +92,6 @@ def CZ_1ns(q_id,Qi_list,flux_Qi,amps,const_flux_len,simulate,qmm):
                                 square_pulse_segments[j].run(amp_array=[(f"q{flux_Qi}_z", a)])
                     align()
                     wait(5)
-                    align()
                     multiplexed_readout(I, I_st, Q, Q_st, resonators=[x+1 for x in q_id], weights="rotated_")
             save(n, n_st)
         with stream_processing():
@@ -121,7 +152,9 @@ n_avg = 500
 amps = np.arange(0.32, 0.38, 0.001) 
 const_flux_len = 50
 flux_waveform = np.array([const_flux_amp] * const_flux_len)
-square_pulse_segments = baked_waveform(flux_waveform, const_flux_len, flux_Qi)
+edge = 10
+sFactor = 4
+square_pulse_segments = baked_waveform(flux_waveform, const_flux_len, flux_Qi, 'eerp', paras=[const_flux_amp,edge,sFactor])
 # for list in square_pulse_segments:
 #     print('-'*20)
 #     print(list.get_waveforms_dict())

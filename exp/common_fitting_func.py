@@ -3,6 +3,7 @@ from scipy.stats import norm
 from scipy.optimize import fsolve
 import matplotlib.pyplot as plt
 from configuration import *
+from scipy.special import erf
 
 def gaussian(x, mu, sigma):
     return norm.pdf(x, mu, sigma)
@@ -43,8 +44,41 @@ def flux_qubit_spec_with_d(flux,v_period,max_freq,max_flux,Ec,d):
 def cosine_func(x, amplitude, frequency, phase, offset):
     return amplitude * np.cos(2 * np.pi * frequency * x + phase) + offset
 
+def errf(x, *p)->np.ndarray:
+    """
+    return error function array
+    x: array like, shape (n,)\n
+    p[0]: amp \n
+    p[1]: center of edge \n
+    p[2]: edge sigma \n
+    """
+    return p[0] * (erf((x - p[1]) / (np.sqrt(2) * p[2])) + 1)/2
+
+def EERP(x, *p)->np.ndarray:
+    """
+    return Gaussian Edge Rectangular Pulse array
+    x: array like, shape (n,) \n
+    p[0]: amp \n
+    p[1]: center of edge \n. It also means half of the edge.
+    p[2]: edge sigma \n
+    p[3]: pulse length \n. The total length of the pulse including edge. 
+    p[4]: start time\n
+    """
+    total_t = p[3]
+    start_t = p[4]
+    Td = total_t - p[1]
+    f1 = errf(x, p[0], p[1] + start_t, p[2])
+    f2 = -errf(x, p[0], Td + start_t, p[2])
+    return f1 + f2
 
 if __name__ == '__main__':
+
+    x = np.linspace(0,34,35)
+    p = (1,5,2.5,20,5) 
+    print(np.round(EERP(x,*p),3))
+    plt.plot(x, EERP(x,*p),'-o')
+    plt.show()
+    
     ### Test S21_notch
     # x = np.linspace(-48e6,-44e6,5000)
     # print(type(S21_notch(x)))
@@ -52,16 +86,16 @@ if __name__ == '__main__':
     # plt.show()
 
     ### Test resonator_flux
-    Qi = 3
-    flux = np.arange(-0.5, 0.5, 0.001)
-    res_F = resonator_flux(-3.100e-01+0.14, *p1[Qi-1])
-    res_IF = (res_F - resonator_LO)/1e6
-    res_IF = int(res_IF * u.MHz)
-    res_IF_cos = cosine_func(flux, 0.4045e6, 1.5, 3, 5.8464515e9)
-    print(res_IF)
-    plt.plot(flux, resonator_flux(flux, 2.22397609e+06, 4.47370446e+00, 2.20718217e-01, 3.12854012e-01, 5.84462834e+09))   
-    plt.plot(flux, res_IF_cos)
-    plt.show()
+    # Qi = 3
+    # flux = np.arange(-0.5, 0.5, 0.001)
+    # res_F = resonator_flux(-3.100e-01+0.14, *p1[Qi-1])
+    # res_IF = (res_F - resonator_LO)/1e6
+    # res_IF = int(res_IF * u.MHz)
+    # res_IF_cos = cosine_func(flux, 0.4045e6, 1.5, 3, 5.8464515e9)
+    # print(res_IF)
+    # plt.plot(flux, resonator_flux(flux, 2.22397609e+06, 4.47370446e+00, 2.20718217e-01, 3.12854012e-01, 5.84462834e+09))   
+    # plt.plot(flux, res_IF_cos)
+    # plt.show()
 
     ##################### Qubit spec ############################ 
 
@@ -79,3 +113,5 @@ if __name__ == '__main__':
     # The solution to f(x) = 3193100000.0 is x = 0.15361442261694103
     # # Q4  
     # The solution to f(x) = 3724653000.0 is x = 0.06834788688427282
+
+

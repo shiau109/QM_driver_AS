@@ -55,18 +55,18 @@ qubit2_frame_update = 0 #55.478 / 360  # example values, should be taken from QP
 
 # defines the CZ gate that realizes the mapping |00> -> |00>, |01> -> |01>, |10> -> |10>, |11> -> -|11>
 def bake_cz(baker: Baking, q1, q2):
-    # wf = np.array([cz_amp]*(cz_len+1)) # cz_len+1 is the exactly time of z pulse.
-    # wf = wf.tolist()
+    wf = np.array([cz_amp]*(cz_len+1)) # cz_len+1 is the exactly time of z pulse.
+    wf = wf.tolist()
     q1_xy_element = f"q{q1}_xy"  
     q2_xy_element = f"q{q2}_xy"
     q1_z_element = f"q{q1}_z"
-    # baker.add_op("cz",q1_z_element,wf)
-    # baker.wait(20,q1_xy_element,q2_xy_element,q1_z_element) # The unit is 1 ns.
-    # baker.play("cz", q1_z_element)
-    # baker.align(q1_xy_element,q2_xy_element,q1_z_element)
-    # baker.wait(20,q1_xy_element,q2_xy_element,q1_z_element)
-    # baker.frame_rotation_2pi(qubit1_frame_update, q1_xy_element)
-    # baker.frame_rotation_2pi(qubit2_frame_update, q2_xy_element)
+    baker.add_op("cz",q1_z_element,wf)
+    baker.wait(20,q1_xy_element,q2_xy_element,q1_z_element) # The unit is 1 ns.
+    baker.play("cz", q1_z_element)
+    baker.align(q1_xy_element,q2_xy_element,q1_z_element)
+    baker.wait(20,q1_xy_element,q2_xy_element,q1_z_element)
+    baker.frame_rotation_2pi(qubit1_frame_update, q1_xy_element)
+    baker.frame_rotation_2pi(qubit2_frame_update, q2_xy_element)
     baker.align(q1_xy_element,q2_xy_element,q1_z_element)
 
 

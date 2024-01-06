@@ -229,18 +229,6 @@ class TwoQubitRb:
         prog = self._gen_qua_program(circuit_depths, num_circuits_per_depth, num_shots_per_circuit)
 
         qm = qmm.open_qm(self._config)
-        # TODO
-        simulate = True
-        if simulate:
-            from qm import SimulationConfig
-            import matplotlib.pyplot as plt
-            simulation_config = SimulationConfig(duration=400_000)  # In clock cycles = 4ns
-            # with open("config.txt", 'w') as file:
-            #     file.write(str(self._config))
-            # print(self._config['waveforms'])
-            job = qmm.simulate(self._config, prog, simulation_config)
-            job.get_simulated_samples().con1.plot()
-            plt.show()
         job = qm.execute(prog)
 
         gen_sequence_callback = kwargs["gen_sequence_callback"] if "gen_sequence_callback" in kwargs else None

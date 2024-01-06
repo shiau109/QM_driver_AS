@@ -258,8 +258,10 @@ const_flux_amp = 0.5 #0.45
 cz_point_1_2_q2 = 0.14519591 # q1 - q2 = Ec
 gft_cz_1_2_q2 = flattop_gaussian_waveform(cz_point_1_2_q2-idle_q2, 8 * u.ns, 8 * u.ns)
 g_cz_1_2_q2 = 0.5 * abs(0.5-idle_q2) * gaussian(16, 16/4)
-cz_len = 24
-cz_amp = 0.17490
+cz_sqr_len = 26
+cz_sqr_amp = 0.17510
+cz_eerp_len = 17
+cz_eerp_amp = 0.17550
 #############################################
 #                Resonators                 #
 #############################################
@@ -342,7 +344,7 @@ else:
 # state discrimination
 rotation_angle_q1 = (148.6 / 180) * np.pi
 rotation_angle_q2 = ((749) / 180) * np.pi
-rotation_angle_q3 = ((823.2) / 180) * np.pi
+rotation_angle_q3 = ((823.2+20.2) / 180) * np.pi
 rotation_angle_q4 = (0 / 180) * np.pi
 rotation_angle_q5 = (0 / 180) * np.pi
 ge_threshold_q1 = 0.000909
@@ -591,7 +593,7 @@ config = {
                 "const": "const_flux_pulse",
                 # options: gft_cz_pulse_1_2_q2, g_cz_pulse_1_2_q2
                 "cz_1_2": "gft_cz_pulse_1_2_q2",
-                "cz": "cz_flux_pulse",
+                # "cz": "cz_flux_pulse",
             },
         },
         "q3_z": {
@@ -648,13 +650,13 @@ config = {
                 "Q": "zero_wf",
             },
         },
-        "cz_flux_pulse": {
-            "operation": "control",
-            "length": cz_len,
-            "waveforms": {
-                "single": "cz_wf",
-            },
-        },
+        # "cz_flux_pulse": {
+        #     "operation": "control",
+        #     "length": cz_len,
+        #     "waveforms": {
+        #         "single": "cz_wf",
+        #     },
+        # },
         # Qubit-1:
         "x90_pulse_q1": {
             "operation": "control",
@@ -1024,7 +1026,7 @@ config = {
         "saturation_wf": {"type": "constant", "sample": saturation_amp},
         "const_flux_wf": {"type": "constant", "sample": const_flux_amp},
         "zero_wf": {"type": "constant", "sample": 0.0},
-        "cz_wf": {"type": "constant", "sample": cz_amp},
+        # "cz_wf": {"type": "constant", "sample": cz_amp},
         # Qubit-1:
         "x90_I_wf_q1": {"type": "arbitrary", "samples": x90_I_wf_q1.tolist()},
         "x90_Q_wf_q1": {"type": "arbitrary", "samples": x90_Q_wf_q1.tolist()},

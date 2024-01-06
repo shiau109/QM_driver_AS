@@ -1,5 +1,5 @@
 
-# Single QUA script generated at 2024-01-02 15:42:45.573014
+# Single QUA script generated at 2024-01-03 17:24:50.540678
 # QUA library version: 1.1.3
 
 from qm.qua import *
@@ -36,7 +36,6 @@ with program() as prog:
     with for_(v1,0,(v1<500),(v1+1)):
         with for_(v10,0.32,(v10<0.37950000000000006),(v10+0.0010000000000000009)):
             with for_(v11,0,(v11<=50),(v11+1)):
-                wait(30000, )
                 play("x180", "q2_xy")
                 play("x180", "q3_xy")
                 align()
@@ -546,7 +545,7 @@ config = {
         },
         "cz_flux_pulse": {
             "operation": "control",
-            "length": 24,
+            "length": 25,
             "waveforms": {
                 "single": "cz_wf",
             },
@@ -1282,7 +1281,7 @@ config = {
         },
         "cz_wf": {
             "type": "constant",
-            "sample": 0.1755,
+            "sample": 0.1751,
         },
         "x90_I_wf_q1": {
             "type": "arbitrary",
@@ -2491,7 +2490,7 @@ loaded_config = {
             "operation": "control",
         },
         "cz_flux_pulse": {
-            "length": 24,
+            "length": 25,
             "waveforms": {
                 "single": "cz_wf",
             },
@@ -3227,7 +3226,7 @@ loaded_config = {
             "type": "constant",
         },
         "cz_wf": {
-            "sample": 0.1755,
+            "sample": 0.1751,
             "type": "constant",
         },
         "x90_I_wf_q1": {
