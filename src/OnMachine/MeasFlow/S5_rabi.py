@@ -26,7 +26,7 @@ q_name = ['q1_xy']
 n_avg = 100
 
 dfs = np.arange(-100e6, 100e6, 1e6)
-time = np.arange(16, 400, 8)
+time = np.arange(16, 400, 8) # ns
 cc = time/4
 amps = np.arange(0, 1.5, 0.01)
 
@@ -56,9 +56,23 @@ plt.show()
     
 
 #   Data Saving   # 
-save_data = False
+xy_LO = get_LO(q_name[0],config.get_config())
+xy_IF_idle = get_IF(q_name[0],config.get_config())
+
+output_data["setting"] = {
+    "xy_freq_LO":xy_LO,
+    "xy_freq_Idle":xy_IF_idle
+}
+
+output_data["paras"] = {
+    "xy_time":time,
+    "d_xy_freq":dfs
+}
+
+
+save_data = True
 if save_data:
     from exp.save_data import save_npz
     import sys
     save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
-    # save_npz(save_dir, save_progam_name, output_data)
+    save_npz(r"D:\Data\DR2_5Q", "Q1_idle_Rabi", output_data) 

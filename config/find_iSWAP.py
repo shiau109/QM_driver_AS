@@ -23,17 +23,14 @@ z_name = ['q3_z']
 # saturation_amp = 0.01  # pre-factor to the value defined in the config - restricted to [-2; 2)
 
 
-n_avg = 200  # The number of averages
-# amps = np.arange(-0.047, -0.042, 0.00025)  # The abs flux amplitude absZvolt-offset
-# time = np.arange(40, 10000, 40) # The flux pulse durations in clock cycles (4ns) - Must be larger than 4 clock cycles.
-
-amps = np.arange(-0.06, -0.02, 0.0005)  # The abs flux amplitude absZvolt-offset
-time = np.arange(40, 2000, 40) # The flux pulse durations in clock cycles (4ns) - Must be larger than 4 clock cycles.
+n_avg = 1300  # The number of averages
+amps = np.arange(-0.04, -0.05, -0.00025)  # The abs flux amplitude absZvolt-offset
+time = np.arange(40, 8000, 40) # The flux pulse durations in clock cycles (4ns) - Must be larger than 4 clock cycles.
 
 cc = time/4
 
 from exp.iSWAP_J import exp_coarse_iSWAP, plot_ana_iSWAP_chavron
-output_data = exp_coarse_iSWAP( amps, cc, excited_q, ro_elements, z_name, config.get_config(), qmm, n_avg=n_avg, simulate=False, initializer=init_macro )
+output_data = exp_coarse_iSWAP( amps, cc, excited_q, ro_elements, z_name, config.get_config(), qmm, n_avg=100, simulate=False, initializer=init_macro )
 
 
 for r in ro_elements:
@@ -63,5 +60,5 @@ if save_data:
     from exp.save_data import save_npz
     import sys
     save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
-    save_npz(r"D:\Data\DR2_5Q", "iSWAP", output_data)    
+    save_npz(r"D:\Data\DR2_5Q", "iSWAP_Qc3500", output_data)    
 
