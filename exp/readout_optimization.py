@@ -271,30 +271,29 @@ if __name__ == '__main__':
 
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
 
-    operate_qubit = ["q3_xy"]
-    ro_element = ["rr3"]
+    operate_qubit = ["q2_xy"]
+    ro_element = ["rr2"]
 
     # The frequency sweep around the resonators' frequency "resonator_IF_q"
-    dfs = np.arange(-1e6, 1e6, 0.02e6)
-    output_data = freq_dep_signal( dfs, operate_qubit, ro_element, n_avg, config, qmm)
-    for r in ro_element:
-        fig = plt.figure()
-        ax = fig.subplots(3,1)
-        plot_freq_signal( dfs, output_data[r], r, ax )
-    plt.show()
-    
-    # amps = np.linspace(0, 1.8, 180)
-    # data = power_dep_signal( amps, operate_qubit, ro_element, n_avg, config, qmm)
+    # dfs = np.arange(-1e6, 1e6, 0.02e6)
+    # output_data = freq_dep_signal( dfs, operate_qubit, ro_element, n_avg, config, qmm)
     # for r in ro_element:
     #     fig = plt.figure()
-    #     ax = fig.subplots(1,2,sharex=True)
-    #     plot_amp_signal( amps, data[r], r, ax[0] )
-    #     plot_amp_signal_phase( amps, data[r], r, ax[1] )
-
-    #     fig.suptitle(f"{r} RO amplitude")
+    #     ax = fig.subplots(3,1)
+    #     plot_freq_signal( dfs, output_data[r], r, ax )
+    # plt.show()
+    
+    amps = np.linspace(0, 1.8, 180)
+    data = power_dep_signal( amps, operate_qubit, ro_element, n_avg, config, qmm)
+    for r in ro_element:
+        fig = plt.figure()
+        ax = fig.subplots(1,2,sharex=True)
+        plot_amp_signal( amps, data[r], r, ax[0] )
+        plot_amp_signal_phase( amps, data[r], r, ax[1] )
+        fig.suptitle(f"{r} RO amplitude")
     plt.show()
     #   Data Saving   # 
-    save_data = True
+    save_data = False
     if save_data:
         from save_data import save_npz
         import sys

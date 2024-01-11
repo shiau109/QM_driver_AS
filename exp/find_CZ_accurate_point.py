@@ -172,9 +172,9 @@ def live_plotting(signal_g, signal_e, control_Qi, ramsey_Qi,row,col,ax):
                 dphase = (phase_g-phase_e)/np.pi*180     
             except Exception as e: print(e)
             ax[i,j].set_title(f"pha_diff {dphase:.1f}, ZW {t_delay[j]:.0f}, ZL {amps[i]*const_flux_amp:.5f}",fontsize = 7)
-            ax[i,j].set_xlabel('Phase cycle',fontsize = 7)
-            ax[i,j].set_ylabel('Voltage [V]',fontsize = 7)
-            ax[i, j].tick_params(axis='both', labelsize=7)
+            # ax[i,j].set_xlabel('Phase cycle',fontsize = 7)
+            # ax[i,j].set_ylabel('Voltage [V]',fontsize = 7)
+            # ax[i, j].tick_params(axis='both', labelsize=7)
     plt.tight_layout()
     plt.pause(1.0)
 

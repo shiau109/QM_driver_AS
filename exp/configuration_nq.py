@@ -96,8 +96,8 @@ saturation_amp = 0.1
 pi_len = 20
 pi_sigma = pi_len / 4
 pi_amp_q1 = 0.15*0.872*0.975*0.97/3
-pi_amp_q2 = 0.10337*0.99837*0.9993
-pi_amp_q3 = 0.33792*1.00164
+pi_amp_q2 = 0.10337*0.99837*0.9993*1.00387
+pi_amp_q3 = 0.33792*1.00164*1.00493
 pi_amp_q4 = 0.15365
 pi_amp_q5 = 0.5
 
@@ -260,8 +260,8 @@ gft_cz_1_2_q2 = flattop_gaussian_waveform(cz_point_1_2_q2-idle_q2, 8 * u.ns, 8 *
 g_cz_1_2_q2 = 0.5 * abs(0.5-idle_q2) * gaussian(16, 16/4)
 cz_sqr_len = 26
 cz_sqr_amp = 0.17510
-cz_eerp_len = 17
-cz_eerp_amp = 0.17550
+cz_eerp_len = 19
+cz_eerp_amp = 0.17510
 #############################################
 #                Resonators                 #
 #############################################
@@ -269,8 +269,8 @@ resonator_LO = 5.95 * u.GHz
 # Resonators IF
 resonator_IF = np.zeros(5)
 resonator_IF[0] = int((-214.21) * u.MHz)
-resonator_IF[1] = int((75.159-0.08) * u.MHz)
-resonator_IF[2] = int((-103.17-0.8) * u.MHz) 
+resonator_IF[1] = int((75.137-0.2) * u.MHz)
+resonator_IF[2] = int((-103.10-0.155) * u.MHz) 
 resonator_IF[3] = int((163.06) * u.MHz)
 resonator_IF[4] = int((-25.8) * u.MHz)
 # Above is for verifying wide-sweep results: -156, -38, 39, 137, 231
@@ -280,8 +280,8 @@ readout_len = 1700
 readout_zero_len = 400
 readout_amp = np.zeros(5)
 readout_amp[0] = 0.03
-readout_amp[1] = 0.03*0.7
-readout_amp[2] = 0.03*0.45
+readout_amp[1] = 0.03*0.7*1.2*1.4
+readout_amp[2] = 0.03*0.45*1.5*0.71*1.324
 readout_amp[3] = 0.03
 # readout_amp[3] = 0.02
 readout_amp[4] = 0.02
@@ -343,13 +343,13 @@ else:
 
 # state discrimination
 rotation_angle_q1 = (148.6 / 180) * np.pi
-rotation_angle_q2 = ((749) / 180) * np.pi
-rotation_angle_q3 = ((823.2+20.2) / 180) * np.pi
+rotation_angle_q2 = ((749+11.7+320.7) / 180) * np.pi
+rotation_angle_q3 = ((108+169.1+333.0) / 180) * np.pi
 rotation_angle_q4 = (0 / 180) * np.pi
 rotation_angle_q5 = (0 / 180) * np.pi
 ge_threshold_q1 = 0.000909
-ge_threshold_q2 = 1.230e-04
-ge_threshold_q3 = -4.683e-04
+ge_threshold_q2 = -6.129e-04
+ge_threshold_q3 = 1.883e-06
 ge_threshold_q4 = 2.419e-04
 ge_threshold_q5 = 0
 

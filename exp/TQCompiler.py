@@ -49,8 +49,8 @@ idle_gate = Gate("IDLE", 2)
 cz = Gate("CZ", controls=2, targets=3)
 
 def meas():
-    threshold1 = 6.453e-05 # threshold for state discrimination 0 <-> 1 using the I quadrature
-    threshold2 = -4.099e-04  # threshold for state discrimination 0 <-> 1 using the I quadrature
+    threshold1 = -6.129e-04 # threshold for state discrimination 0 <-> 1 using the I quadrature
+    threshold2 = 1.883e-06  # threshold for state discrimination 0 <-> 1 using the I quadrature
     I1 = declare(fixed)
     I2 = declare(fixed)
     Q1 = declare(fixed)

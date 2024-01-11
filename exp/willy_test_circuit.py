@@ -19,7 +19,7 @@ for gate in gate_seq:
     circuit.add_gate(gate)
 n_avg = 2000
 
-mycompiler = TQCompile( 2, q1_frame_update= 0.8, q2_frame_update= 0, params={}, cz_type='eerp' )
+mycompiler = TQCompile( 2, q1_frame_update= 0.8, q2_frame_update= 0.8, params={}, cz_type='eerp' )
 with program() as prog:
     n = declare(int)
     n_st = declare_stream()  

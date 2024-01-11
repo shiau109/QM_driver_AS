@@ -17,17 +17,12 @@ warnings.filterwarnings("ignore")
 def T2_exp(Qi,n_avg,idle_times,idle_flux_point,q_id,qmm):
     resonators = [i+1 for i in q_id]
     res_num = len(resonators)
-    res_F = resonator_flux( idle_flux_point[Qi-1], *p1[Qi-1])
-    res_IF = (res_F - resonator_LO)/1e6
-    res_IF = int(res_IF * u.MHz)
     with program() as ramsey:
         I, I_st, Q, Q_st, n, n_st = qua_declaration(res_num)
         t = declare(int)  
-        resonator_freq = declare(int, value=res_IF)
         for i in q_id:
             set_dc_offset(f"q{i+1}_z", "single", idle_flux_point[i])
         update_frequency(f"q{Qi}_xy", detuning + qubit_IF[Qi-1])
-        update_frequency(f"rr{Qi}", resonator_freq)
         wait(flux_settle_time * u.ns)
         with for_(n, 0, n < n_avg, n + 1):
             with for_(*from_array(t, idle_times)):
@@ -140,11 +135,11 @@ def T2_hist(data, T2_max, signal_name):
     except Exception as e:
         print(f"An error occurred: {e}")
 
-n_avg = 750
-idle_times = np.arange(4, 200, 1)  
-detuning = 1e6  
-q_id = [0,1,2,3]
-Qi = 3
+n_avg = 2000
+idle_times = np.arange(4, 200, 2)  
+detuning = 2e6  
+q_id = [1,2,3,4]
+Qi = 2
 
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
 I,Q = T2_exp(Qi,n_avg,idle_times,idle_flux_point,q_id,qmm)

@@ -35,7 +35,9 @@ class RBResult:
         plt.tight_layout()
 
     def plot_fidelity(self):
+        counts_0 = (self.data.state == 0).sum('average') / self.num_averages
         fidelity = (self.data.state == 0).sum(("repeat", "average")) / (self.num_repeats * self.num_averages)
+        std_repeat = counts_0.std('repeat')
         x = np.linspace(0, len(self.circuit_depths)-1, len(self.circuit_depths))
         data = fidelity.values
         pars, cov = curve_fit(
@@ -57,6 +59,7 @@ class RBResult:
         print(f'Reference Fidelity: {ref_f:.4f}')
         plt.figure()
         plt.plot(x, power_law(x, *pars), linestyle="--", linewidth=2, label='fitting')
+        plt.errorbar(x, fidelity, yerr=std_repeat, fmt='o', label='exp with error bar')
         fidelity.rename("fidelity").plot.line(label='exp')
         plt.title(f'Two-Qubit Gate Reference Fidelity: {ref_f:.4f}')
         plt.legend()

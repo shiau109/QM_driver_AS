@@ -584,7 +584,7 @@ if __name__ == '__main__':
     num_gates = 22
     target = 2
     control = 3
-    for i in range(3):
+    for i in range(20):
         gen_RB_circuit_to_json(num_gates, target, control)
     # circuit = get_TQcircuit_random_clifford(target, control, num_gates, mode = 'ONE')
     # print(circuit)

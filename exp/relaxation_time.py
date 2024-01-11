@@ -137,13 +137,16 @@ def T1_hist( data, T1_max, fig=None):
     if fig == None:
         fig, ax = plt.subplots()
     new_data = data/1000 # change ns to us
-
+    # print(new_data)
+    print(f'Mean: {np.mean(new_data):.2f}')
     bin_width = 0.5
     start_value = np.mean(new_data)*0.5
     end_value = np.mean(new_data)*1.5
     custom_bins = [start_value + i * bin_width for i in range(int((end_value - start_value) / bin_width) + 1)]
     hist_values, bin_edges = np.histogram(new_data, bins=custom_bins, density=True)
     bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+    # print(bin_centers)
+    # print(hist_values)
     # params, covariance = curve_fit(gaussian, bin_centers, hist_values)
     # mu, sigma = params
     ax.hist(new_data, 20, density=False, alpha=0.7, color='blue', label='Histogram')
@@ -165,19 +168,19 @@ if __name__ == '__main__':
     d_tau = 400 // 4  # in clock cycles
     t_delay = np.arange(tau_min, tau_max + 0.1, d_tau)  # Linear sweep
 
-    q_name = ["q2_xy"]
-    ro_element = ["rr2"]
+    q_name = ["q3_xy"]
+    ro_element = ["rr3"]
 
-    repeat_T1 = 1000
+    repeat_T1 = 100
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
     statistic_T1, raw_data = statistic_T1_exp(repeat_T1, t_delay, q_name, ro_element, config, qmm, n_avg)
-    print(statistic_T1[ro_element[0]].shape)
+    # print(statistic_T1[ro_element[0]].shape)
     fig = T1_hist(statistic_T1[ro_element[0]][0],40)
     fig.show()
     plt.show()
 
     #   Data Saving   # 
-    save_data = True
+    save_data = False
     if save_data == True:
         from save_data import save_npz
         import sys
