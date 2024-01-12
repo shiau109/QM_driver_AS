@@ -74,11 +74,9 @@ def Ramsey_freq_calibration( virtial_detune_freq, q_name:list, ro_element:list, 
 
                     align()
                     # Operation
-                    with switch_(phi_idx, unsafe=True):
-                        with case_(1):
-                            assign(phi, Cast.mul_fixed_by_int(virtial_detune_freq * 1e-3, 4 * t))
-                        with case_(-1):
-                            assign(phi, Cast.mul_fixed_by_int(-virtial_detune_freq * 1e-3, 4 * t))
+                    True_value = Cast.mul_fixed_by_int(virtial_detune_freq * 1e-3, 4 * t)
+                    False_value = Cast.mul_fixed_by_int(-virtial_detune_freq * 1e-3, 4 * t)
+                    assign(phi, Util.cond(phi_idx, True_value, False_value))
 
                     for q in q_name:
                         play("x90", q)  # 1st x90 gate

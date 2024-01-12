@@ -1,6 +1,5 @@
 
 from qm.qua import *
-from qm import SimulationConfig
 import matplotlib.pyplot as plt
 import warnings
 from exp.readout_optimization import *
