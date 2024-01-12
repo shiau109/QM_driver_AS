@@ -23,12 +23,12 @@ z_name = ['q3_z']
 # saturation_amp = 0.01  # pre-factor to the value defined in the config - restricted to [-2; 2)
 
 
-n_avg = 200  # The number of averages
-# amps = np.arange(-0.047, -0.042, 0.00025)  # The abs flux amplitude absZvolt-offset
-# time = np.arange(40, 10000, 40) # The flux pulse durations in clock cycles (4ns) - Must be larger than 4 clock cycles.
+n_avg = 1000  # The number of averages
+amps = np.arange(-0.046, -0.041, 0.0002)  # The abs flux amplitude absZvolt-offset
+time = np.arange(40, 10000, 40) # The flux pulse durations in clock cycles (4ns) - Must be larger than 4 clock cycles.
 
-amps = np.arange(-0.06, -0.02, 0.0005)  # The abs flux amplitude absZvolt-offset
-time = np.arange(40, 2000, 40) # The flux pulse durations in clock cycles (4ns) - Must be larger than 4 clock cycles.
+# amps = np.arange(-0.06, -0.02, 0.0005)  # The abs flux amplitude absZvolt-offset
+# time = np.arange(40, 2000, 40) # The flux pulse durations in clock cycles (4ns) - Must be larger than 4 clock cycles.
 
 cc = time/4
 
