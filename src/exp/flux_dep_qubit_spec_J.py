@@ -13,7 +13,7 @@ import exp.config_par as gc
 from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
 
-def flux_twotone_qubit( offset_arr, d_freq_arr, q_name:list, ro_element:list, z_name:list, config, qmm:QuantumMachinesManager, n_avg:int=100, saturation_len=1, saturation_ampRatio=0.1, flux_settle_time=10, simulate:bool=False):
+def flux_twotone_qubit( offset_arr, d_freq_arr, q_name:list, ro_element:list, z_name:list, config, qmm:QuantumMachinesManager, n_avg:int=100, saturation_len=5, saturation_ampRatio=0.1, flux_settle_time=10, simulate:bool=False):
     """
     q_name is XY on
     z_name is Z
@@ -60,14 +60,14 @@ def flux_twotone_qubit( offset_arr, d_freq_arr, q_name:list, ro_element:list, z_
                     for z in z_name:
                         set_dc_offset( z, "single", ref_z_offset[z] +dc)
                         # assign(index, 0)
-                    wait(250)
+                    wait(25)
                     for xy in q_name:
                         update_frequency( xy, ref_xy_IF[xy] +df )
                         play("saturation"*amp(saturation_ampRatio), xy, duration=(saturation_len/4) *u.us)
                     align()
                     for z in z_name:
                         set_dc_offset( z, "single", ref_z_offset[z])
-                    wait(250)
+                    wait(25)
                     align()
                     # measurement
                     multiRO_measurement( iqdata_stream, ro_element, weights='rotated_'  )
@@ -379,10 +379,10 @@ def plot_flux_dep_qubit( data, flux, dfs, ax=None ):
         fig, ax = plt.subplots()
         ax.set_title('pcolormesh')
         fig.show()
-    ax[0].pcolormesh( dfs, flux, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
-    ax[1].pcolormesh( dfs, flux, np.angle(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    ax[0].pcolormesh( dfs, flux, idata, cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    ax[1].pcolormesh( dfs, flux, qdata, cmap='RdBu')# , vmin=z_min, vmax=z_max)
 
-def plot_ana_flux_dep_qubit( data, flux, dfs, freq_LO, freq_IF, abs_z, ax=None ):
+def plot_ana_flux_dep_qubit( data, flux, dfs, freq_LO, freq_IF, abs_z, ax=None, iq_rotate=0 ):
     """
     data shape ( 2, N, M )
     2 is I,Q
@@ -391,7 +391,7 @@ def plot_ana_flux_dep_qubit( data, flux, dfs, freq_LO, freq_IF, abs_z, ax=None )
     """
     idata = data[0]
     qdata = data[1]
-    zdata = idata +1j*qdata
+    zdata = (idata +1j*qdata)*np.exp(iq_rotate)
     s21 = zdata
 
     abs_freq = freq_LO+freq_IF+dfs
@@ -399,13 +399,13 @@ def plot_ana_flux_dep_qubit( data, flux, dfs, freq_LO, freq_IF, abs_z, ax=None )
         fig, ax = plt.subplots()
         ax.set_title('pcolormesh')
         fig.show()
-    ax[0].pcolormesh( abs_freq, abs_z+flux, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    ax[0].pcolormesh( abs_freq, abs_z+flux, np.real(zdata), cmap='RdBu')# , vmin=z_min, vmax=z_max)
     ax[0].axvline(x=freq_LO+freq_IF, color='b', linestyle='--', label='ref IF')
     ax[0].axvline(x=freq_LO, color='r', linestyle='--', label='LO')
     ax[0].axhline(y=abs_z, color='black', linestyle='--', label='idle z')
 
     ax[0].legend()
-    ax[1].pcolormesh( abs_freq, abs_z+flux, np.angle(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    ax[1].pcolormesh( abs_freq, abs_z+flux, np.imag(zdata), cmap='RdBu')# , vmin=z_min, vmax=z_max)
     ax[1].axvline(x=freq_LO+freq_IF, color='b', linestyle='--', label='ref IF')
     ax[1].axvline(x=freq_LO, color='r', linestyle='--', label='LO')
     ax[1].axhline(y=abs_z, color='black', linestyle='--', label='idle z')

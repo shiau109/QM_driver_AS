@@ -176,16 +176,14 @@ def plot_iSWAP_chavron( data, amp, time, ax=None ):
     ax[0].pcolormesh( amp, time, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
     ax[1].pcolormesh( amp, time, np.angle(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
 
-def plot_ana_iSWAP_chavron( data, amp, time, ax=None ):
+def plot_ana_iSWAP_chavron( data, amp, time, ax=None, iq_rotate = 0 ):
     """
     data shape ( 2, N, M )
-    2 is I,Q
-    N is freq
-    M is time
+
     """
     idata = data[0]
     qdata = data[1]
-    zdata = idata +1j*qdata
+    zdata = (idata +1j*qdata)*np.exp(1j*iq_rotate)
     s21 = zdata
 
     # abs_freq = freq_LO+freq_IF+amp
@@ -193,11 +191,11 @@ def plot_ana_iSWAP_chavron( data, amp, time, ax=None ):
         fig, ax = plt.subplots()
         ax.set_title('pcolormesh')
         fig.show()
-    ax[0].pcolormesh( amp, time, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    ax[0].pcolormesh( amp, time, np.real(zdata), cmap='RdBu')# , vmin=z_min, vmax=z_max)
     # ax[0].axvline(x=freq_LO+freq_IF, color='b', linestyle='--', label='ref IF')
     # ax[0].axvline(x=freq_LO, color='r', linestyle='--', label='LO')
 
     # ax[0].legend()
-    ax[1].pcolormesh( amp, time, np.angle(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    ax[1].pcolormesh( amp, time, np.imag(zdata), cmap='RdBu')# , vmin=z_min, vmax=z_max)
 
     # ax[1].legend()

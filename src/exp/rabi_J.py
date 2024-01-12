@@ -232,7 +232,7 @@ def plot_freq_dep_time_rabi( data, dfs, time, ax=None ):
     ax[1].pcolormesh( time, dfs, np.angle(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
 
 
-def plot_ana_freq_time_rabi( data, dfs, time, freq_LO, freq_IF, ax=None ):
+def plot_ana_freq_time_rabi( data, dfs, time, freq_LO, freq_IF, ax=None, iq_rotate = 0 ):
     """
     data shape ( 2, N, M )
     2 is I,Q
@@ -241,7 +241,7 @@ def plot_ana_freq_time_rabi( data, dfs, time, freq_LO, freq_IF, ax=None ):
     """
     idata = data[0]
     qdata = data[1]
-    zdata = idata +1j*qdata
+    zdata = (idata +1j*qdata)*np.exp(1j*iq_rotate)
     s21 = zdata
 
     abs_freq = freq_LO+freq_IF+dfs
@@ -249,13 +249,13 @@ def plot_ana_freq_time_rabi( data, dfs, time, freq_LO, freq_IF, ax=None ):
         fig, ax = plt.subplots()
         ax.set_title('pcolormesh')
         fig.show()
-    ax[0].pcolormesh( time, abs_freq, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    ax[0].pcolormesh( time, abs_freq, np.real(zdata), cmap='RdBu')# , vmin=z_min, vmax=z_max)
     # ax[0].axvline(x=freq_LO+freq_IF, color='b', linestyle='--', label='ref IF')
     # ax[0].axvline(x=freq_LO, color='r', linestyle='--', label='LO')
     ax[0].axhline(y=freq_LO+freq_IF, color='black', linestyle='--', label='ref IF')
 
     ax[0].legend()
-    ax[1].pcolormesh( time, abs_freq, np.angle(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    ax[1].pcolormesh( time, abs_freq, np.imag(zdata), cmap='RdBu')# , vmin=z_min, vmax=z_max)
     ax[1].axhline(y=freq_LO+freq_IF, color='black', linestyle='--', label='ref IF')
 
     ax[1].legend()
