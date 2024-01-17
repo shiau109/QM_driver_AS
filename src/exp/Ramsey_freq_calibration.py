@@ -245,6 +245,7 @@ def plot_ana_result( evo_time, data, detuning, ax=None ):
 
     ax.legend()
     plt.tight_layout()
+    return (freq_pos-freq_neg)/2
 
 if __name__ == '__main__':
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
