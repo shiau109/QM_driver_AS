@@ -20,12 +20,12 @@ Next steps before going to the next node:
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.qua import *
 from qm import SimulationConfig
-from configuration import *
+# from configuration import *
 import matplotlib.pyplot as plt
 from qualang_tools.loops import from_array
 from qualang_tools.results import fetching_tool, progress_counter
 from qualang_tools.plot import interrupt_on_close
-from RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
+from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 from qualang_tools.plot.fitting import Fit
 import warnings
 
@@ -42,7 +42,7 @@ u = unit(coerce_to_integer=True)
 # The QUA program #
 ###################
 
-def Ramsey_freq_calibration( virtial_detune_freq, q_name:list, ro_element:list, config, qmm:QuantumMachinesManager, n_avg:int=100, simulate = False ):
+def Ramsey_freq_calibration( virtial_detune_freq, q_name:list, ro_element:list, config, qmm:QuantumMachinesManager, n_avg:int=100, simulate = False, initializer:tuple=None ):
     """
     Use positive and nagative detuning refence to freq in config to get measured ramsey oscillation frequency.
     evo_time unit is tick (4ns)
@@ -52,6 +52,7 @@ def Ramsey_freq_calibration( virtial_detune_freq, q_name:list, ro_element:list, 
     Ramsey_period = (1e3/virtial_detune_freq)* u.ns
     tick_resolution = (Ramsey_period//(4*point_per_period))
     evo_time_tick_max = tick_resolution *point_per_period*6
+    print(f"time resolution {tick_resolution*4} ,max time {evo_time_tick_max*4}")
     evo_time_tick = np.arange( 4, evo_time_tick_max, tick_resolution)
     evo_time = evo_time_tick*4
     time_len = len(evo_time)
@@ -61,18 +62,25 @@ def Ramsey_freq_calibration( virtial_detune_freq, q_name:list, ro_element:list, 
         n_st = declare_stream()
         t = declare(int)  # QUA variable for the idle time
         phi = declare(fixed)  # Phase to apply the virtual Z-rotation
-        phi_idx = declare(int)
+        phi_idx = declare(bool,)
         with for_(n, 0, n < n_avg, n + 1):
-            with for_each_( phi_idx, [-1, 1]):
+            with for_each_( phi_idx, [True, False]):
                 with for_(*from_array(t, evo_time_tick)):
 
                     # Rotate the frame of the second x90 gate to implement a virtual Z-rotation
                     # 4*tau because tau was in clock cycles and 1e-9 because tau is ns
                     
-                    # Init
-                    if not simulate: wait(thermalization_time * u.ns)
+                                        # Init
+                    if initializer is None:
+                        wait(100*u.us)
+                        #wait(thermalization_time * u.ns)
+                    else:
+                        try:
+                            initializer[0](*initializer[1])
+                        except:
+                            print("Initializer didn't work!")
+                            wait(100*u.us)
 
-                    align()
                     # Operation
                     True_value = Cast.mul_fixed_by_int(virtial_detune_freq * 1e-3, 4 * t)
                     False_value = Cast.mul_fixed_by_int(-virtial_detune_freq * 1e-3, 4 * t)
