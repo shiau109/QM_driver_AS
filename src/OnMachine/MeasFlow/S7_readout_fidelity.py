@@ -1,0 +1,45 @@
+
+from OnMachine.Octave_Config.QM_config_dynamic import Circuit_info, QM_config, initializer
+from OnMachine.MeasFlow.ConfigBuildUp import spec_loca, config_loca, qubit_num
+spec = Circuit_info(qubit_num)
+config = QM_config()
+spec.import_spec(spec_loca)
+config.import_config(config_loca)
+
+qmm,_ = spec.buildup_qmm()
+from qualang_tools.units import unit
+u = unit(coerce_to_integer=True)
+init_macro = initializer( 100*u.us,mode='wait')
+
+resonators = ["q1_ro"]
+q_name = ["q1_xy"]
+shot_num = 10000
+
+import matplotlib.pyplot as plt
+import time
+from analysis.state_distribution import train_model, create_img
+# start_time = time.time()
+
+from exp.readout_fidelity import readout_fidelity
+from qualang_tools.analysis import two_state_discriminator
+
+output_data = readout_fidelity( q_name, resonators, shot_num, config.get_config(), qmm, init_macro)  
+end_time = time.time()
+# elapsed_time = np.round(end_time-start_time, 1)
+save_data = False
+for r in resonators:
+    
+    gmm_model = train_model(output_data[r]*1000)
+    fig = plt.figure(constrained_layout=True)
+    create_img(output_data[r]*1000, gmm_model)
+    # fig.show()
+    # plt.show()
+    two_state_discriminator(output_data[r][0][0], output_data[r][0][1], output_data[r][1][0], output_data[r][1][1], True, True)
+    if save_data:
+        figure = plt.gcf() # get current figure
+        figure.set_size_inches(12, 10)
+        plt.tight_layout()
+        plt.pause(0.1)
+        plt.savefig(f"{save_path}-{r}.png", dpi = 500)
+
+plt.show()
