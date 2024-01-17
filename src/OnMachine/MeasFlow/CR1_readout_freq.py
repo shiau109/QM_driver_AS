@@ -20,8 +20,8 @@ config.import_config(config_loca)
 qmm,_ = spec.buildup_qmm()
 init_macro = initializer( 100*u.us,mode='wait')
 
-ro_elements = ['q1_ro','q2_ro','q3_ro','q4_ro']
-operate_qubit = ['q1_xy']
+ro_elements = ['q2_ro']
+operate_qubit = ['q2_xy']
 n_avg = 500
 
 dfs = np.arange(-1e6, 1e6, 0.05e6)
