@@ -237,7 +237,7 @@ print(
     f"Gate infidelity: r_g = {np.format_float_scientific(r_g, precision=2)}  ({r_g_std:.1})"
 )
 
-plt.title("r_c: %s%%, r_g: %s%%" %(r_c*100, r_g*100))
+plt.title(f"r_c: {r_c*100:.3}%, r_g: {r_g*100:.3}%")
 plt.show()
 
 # np.savez(save_dir/"rb_values", value)

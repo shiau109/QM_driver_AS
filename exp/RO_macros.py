@@ -8,8 +8,6 @@ from qm.qua import *
 from qualang_tools.addons.variables import assign_variables_to_element
 from qualang_tools.results import fetching_tool, progress_counter
 from qualang_tools.plot import interrupt_on_close
-from configuration import *
-
 import matplotlib.pyplot as plt
 from scipy import signal
 from scipy.optimize import curve_fit

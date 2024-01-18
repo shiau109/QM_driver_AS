@@ -271,8 +271,8 @@ if __name__ == '__main__':
 
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
 
-    operate_qubit = ["q2_xy"]
-    ro_element = ["rr2"]
+    operate_qubit = ["q3_xy"]
+    ro_element = ["rr3"]
 
     # The frequency sweep around the resonators' frequency "resonator_IF_q"
     # dfs = np.arange(-1e6, 1e6, 0.02e6)

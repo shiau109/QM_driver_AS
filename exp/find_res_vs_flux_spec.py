@@ -182,7 +182,7 @@ q_id = [1,2,3,4] # q_id = [1] means rr2
 Qi_list = [3] # Qi = 1 means Q1
 n_avg = 500
 dfs = np.arange(-3e6, 3e6, 0.05e6)
-flux = np.arange(idle_flux_point[1]-0.15, idle_flux_point[1]+0.3, 0.005)
+flux = np.arange(idle_flux_point[2]-0.15, idle_flux_point[2]+0.3, 0.005)
 Flux = np.zeros((len(q_id), len(flux)))
 Frequency = np.zeros((len(q_id), len(dfs)))
 Amplitude = np.zeros((len(q_id), len(flux),len(dfs)))

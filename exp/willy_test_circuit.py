@@ -13,13 +13,14 @@ import warnings
 # cnot:q2_y90,q2_x180,cz,q2_y90,q2_x180
 gate_seq = [
     q3_x90,q2_y90,q2_x180,cz,q2_y90,q2_x180
+    # q3_x180
 ]
 circuit = QubitCircuit(2)
 for gate in gate_seq:
     circuit.add_gate(gate)
 n_avg = 2000
 
-mycompiler = TQCompile( 2, q1_frame_update= 0.8, q2_frame_update= 0.8, params={}, cz_type='eerp' )
+mycompiler = TQCompile( 2, q1_frame_update= 0.64, q2_frame_update= 0.86, params={}, cz_type='eerp' )
 with program() as prog:
     n = declare(int)
     n_st = declare_stream()  

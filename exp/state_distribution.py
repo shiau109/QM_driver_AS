@@ -1,5 +1,4 @@
 import numpy as np
-from single_shot.distribution_model import GMM_model
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 from sklearn.mixture import GaussianMixture
@@ -27,10 +26,10 @@ class GMM_model():
         print( ground_data.shape )
 
         gp = np.array([np.mean(ground_data, axis=1)])
-        print( gp )
-        print( gp.shape )
+        # print( gp )
+        # print( gp.shape )
 
-        print(self.gmm.predict( gp ))
+        # print(self.gmm.predict( gp ))
         if self.gmm.predict( gp ) == 1:
             self.gmm.means_ = np.flip(self.gmm.means_,0)
             self.gmm.weights_ = np.flip(self.gmm.weights_,0)
@@ -96,10 +95,10 @@ def train_model( data ):
     for i in range(data.shape[0]):
         idata = np.append(idata,data[i][0])
         qdata = np.append(qdata,data[i][1])
-    training = np.array([idata, qdata])
+    training_data = np.array([idata, qdata])
     my_model = GMM_model()
-    my_model.training(training.transpose())
-    my_model.rebuild_model(data[0])
+    my_model.import_trainingData(training_data.transpose())
+    my_model.relabel_model(data[0])
     return my_model
 
 def create_img( data, dist_model, fig=None, label="" ):
@@ -138,11 +137,11 @@ def create_img( data, dist_model, fig=None, label="" ):
     ax_hist_1.tick_params(axis='both', labelsize=15)
 
     # scatter plot
-    training = dist_model.training.transpose()
+    training_data = dist_model.training_data.transpose()
     training_plot = {
-        "I":training[0],
-        "Q":training[1],
-        "label": dist_model.predict_data(dist_model.training)
+        "I":training_data[0],
+        "Q":training_data[1],
+        "label": dist_model.get_prediction(dist_model.training_data)
     }
     make_scatter_dist( training_plot, ax_iq_all )
 
@@ -152,7 +151,7 @@ def create_img( data, dist_model, fig=None, label="" ):
     prepare_0_plot = {
         "I":prepare_0_data[0],
         "Q":prepare_0_data[1],
-        "label": dist_model.predict_data(prepare_0_data.transpose())
+        "label": dist_model.get_prediction(prepare_0_data.transpose())
     }
     make_scatter_dist(prepare_0_plot,ax_iq_0)
     prepare_0_dist = dist_model.get_distribution()
@@ -165,7 +164,7 @@ def create_img( data, dist_model, fig=None, label="" ):
     prepare_1_plot = {
         "I":prepare_1_data[0],
         "Q":prepare_1_data[1],
-        "label": dist_model.predict_data(prepare_1_data.transpose())
+        "label": dist_model.get_prediction(prepare_1_data.transpose())
     }
     make_scatter_dist(prepare_1_plot,ax_iq_1)
     prepare_1_dist = dist_model.get_distribution()
@@ -348,14 +347,13 @@ def get_proj_distance( proj_pts, iq_data ):
     return projectedDistance[0]
 
 if __name__=='__main__':
-    file_path = r'D:\Data\5Q_DR3'
-    file_name = "sh_r3_x3-20231213_213704.npz"
+    file_path = r'C:\Users\shiau\OneDrive\Desktop\multiplexRO interference'
+    file_name = "IQ_Blobs_q1_2_3_4_5_all.npz"
 
     data = np.load(f"{file_path}\\{file_name}")# , allow_pickle=True)["arr_0"].item()
     for r in data.keys():
-        d = np.moveaxis(data[r],1,0)
-        gmm_model = train_model(d*1000)
+        
+        gmm_model = train_model(data[r]*1000)
         fig = plt.figure(constrained_layout=True)
-        create_img(d*1000, gmm_model, fig, r)
-        fig.show()
+        create_img(data[r]*1000, gmm_model, fig, r)
     plt.show()

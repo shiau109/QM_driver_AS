@@ -103,11 +103,11 @@ def pi_length_fitting(I,Q,plot_index):
     except (Exception,):
         pass
 
-times = np.arange(4, 200, 1)  
+times = np.arange(4, 100, 1)  
 n_avg = 1000
 q_id = [1,2,3,4]
-Qi = 3
-simulate = False 
+Qi = 2
+simulate = True 
 for i in q_id: 
     if i == Qi-1: plot_index = q_id.index(i)  
 

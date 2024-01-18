@@ -23,13 +23,16 @@ class CircuitResult:
     def plot_hist(self,count=None):
         plt.figure()
         self.data.state.plot.hist(xticks=range(4))
+        plt.xticks(range(4), ['|00>', '|10>', '|01>', '|11>'])
         plt.tight_layout()
         if count != None:
             self.get_hist_value(count)
         
-    def get_hist_value(self,count):
+    def get_hist_value(self,count_list):
         hist_value = self.data.state.values
-        hist_value = len(hist_value[hist_value==count])
-        print(hist_value)
-        return hist_value
+        value = 0
+        for count in count_list:
+            value += len(hist_value[hist_value==count])
+        print(value)
+        return value
         

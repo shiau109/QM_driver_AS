@@ -57,12 +57,11 @@ def readout_fidelity( q_name:list, ro_element, shot_num, config, qmm:QuantumMach
                         wait(100*u.us)
                     
                 # Operation
-                with switch_(p_idx, unsafe=True):
-                    with case_(0):
+                with if_(p_idx == 0):
                         pass
-                    with case_(1):
+                with elif_(p_idx == 1):
                         for q in q_name:
-                            play("x180", q)
+                            play("x180", q)                    
                 align()
                 # Readout
                 multiRO_measurement(iqdata_stream, ro_element, weights="rotated_")  
@@ -96,6 +95,7 @@ def readout_fidelity( q_name:list, ro_element, shot_num, config, qmm:QuantumMach
     qm.close()
     return output_data
 
+
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import time
@@ -106,8 +106,8 @@ if __name__ == '__main__':
 
 
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-    resonators = ["rr2"]
-    q_name = ["q2_xy"]
+    resonators = ["rr3"]
+    q_name = ["q3_xy"]
     n_runs = 20000
     reset = "cooldown"  # can be set to "cooldown" or "active"
 
@@ -121,13 +121,14 @@ if __name__ == '__main__':
         new_data = np.moveaxis(output_data[r]*1000, 1, 0)
 
         gmm_model = train_model(new_data)
-        fig = plt.figure(constrained_layout=True)
-        create_img(new_data, gmm_model)
+        # fig = plt.figure(constrained_layout=True)
+        SNR = create_img(new_data, gmm_model,get_SNR=True)
+        print(SNR)
         # fig.show()
         # plt.show()
-        two_state_discriminator(output_data[r][0][0], output_data[r][1][0], output_data[r][0][1], output_data[r][1][1], True, True)
+        # two_state_discriminator(output_data[r][0][0], output_data[r][1][0], output_data[r][0][1], output_data[r][1][1], True, True)
 
-    plt.show()
+    # plt.show()
     #   Data Saving   # 
     save_data = False
     if save_data:
@@ -137,4 +138,3 @@ if __name__ == '__main__':
         save_npz(save_dir, save_progam_name, output_data)
 
     plt.show()
-

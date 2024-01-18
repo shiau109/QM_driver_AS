@@ -72,7 +72,7 @@ qubit_LO[4] = (4.75) * u.GHz
 qubit_IF = np.zeros(5)
 qubit_IF[0] = (-116.8+0.245) * u.MHz       # Q1
 qubit_IF[1] = (-101.616+0.1-0.056-0.024) * u.MHz      # Q2
-qubit_IF[2] = (-317.332+0.335-0.016+0.02-0.04) * u.MHz
+qubit_IF[2] = (-317.332+0.309-0.06) * u.MHz
 qubit_IF[3] = (-89.5911-0.272) * u.MHz     # Q4
 qubit_IF[4] = (-92) * u.MHz                # Q5
 # For comparing 2q:
@@ -96,14 +96,14 @@ saturation_amp = 0.1
 pi_len = 20
 pi_sigma = pi_len / 4
 pi_amp_q1 = 0.15*0.872*0.975*0.97/3
-pi_amp_q2 = 0.10337*0.99837*0.9993*1.00387
-pi_amp_q3 = 0.33792*1.00164*1.00493
+pi_amp_q2 = 0.10322
+pi_amp_q3 = 0.33792*1.00164*1.00493*0.99304*1.0037
 pi_amp_q4 = 0.15365
 pi_amp_q5 = 0.5
 
 r90_amp_q1 = pi_amp_q1/2 
 r90_amp_q2 = pi_amp_q2/2*1.00496*0.9992
-r90_amp_q3 = pi_amp_q3/2*1.24157*0.9993*0.998*0.9975*1.00244*0.9975
+r90_amp_q3 = pi_amp_q3/2*1.23565
 r90_amp_q4 = pi_amp_q4/2 *1.104*0.99
 # pi_amp_q4 = 0.1*1.135*1.005*0.805
 r90_amp_q5 = pi_amp_q5/2
@@ -196,7 +196,7 @@ minus_y90_I_wf_q5, minus_y90_Q_wf_q5 = (-1) * minus_y90_der_wf_q5, minus_y90_wf_
 #               Flux line                #
 ##########################################
 flux_settle_time = 100 * u.ns
-idle_flux_point = [0, -0.3529, -0.3421, -0.3433, -3.400e-01]
+idle_flux_point = [0, -0.3479, -0.3421, -0.3433, -3.400e-01]
 max_frequency_point = np.zeros(5)
 max_frequency_point[0] = -3.400e-01
 max_frequency_point[1] = -3.429e-01
@@ -260,8 +260,8 @@ gft_cz_1_2_q2 = flattop_gaussian_waveform(cz_point_1_2_q2-idle_q2, 8 * u.ns, 8 *
 g_cz_1_2_q2 = 0.5 * abs(0.5-idle_q2) * gaussian(16, 16/4)
 cz_sqr_len = 26
 cz_sqr_amp = 0.17510
-cz_eerp_len = 19
-cz_eerp_amp = 0.17510
+cz_eerp_len = 22
+cz_eerp_amp = 0.16720
 #############################################
 #                Resonators                 #
 #############################################
@@ -269,19 +269,19 @@ resonator_LO = 5.95 * u.GHz
 # Resonators IF
 resonator_IF = np.zeros(5)
 resonator_IF[0] = int((-214.21) * u.MHz)
-resonator_IF[1] = int((75.137-0.2) * u.MHz)
-resonator_IF[2] = int((-103.10-0.155) * u.MHz) 
+resonator_IF[1] = int((75.137-0.2+0.131-0.0014) * u.MHz)
+resonator_IF[2] = int((-103.3368+0.04) * u.MHz) 
 resonator_IF[3] = int((163.06) * u.MHz)
 resonator_IF[4] = int((-25.8) * u.MHz)
 # Above is for verifying wide-sweep results: -156, -38, 39, 137, 231
 
 # Readout pulse parameters (optimal input for IQ-mixer: 125mV)
-readout_len = 1700
-readout_zero_len = 400
+readout_len = 1500
+readout_zero_len = 100
 readout_amp = np.zeros(5)
 readout_amp[0] = 0.03
-readout_amp[1] = 0.03*0.7*1.2*1.4
-readout_amp[2] = 0.03*0.45*1.5*0.71*1.324
+readout_amp[1] = 0.03*0.95
+readout_amp[2] = 0.03*0.8
 readout_amp[3] = 0.03
 # readout_amp[3] = 0.02
 readout_amp[4] = 0.02
@@ -343,13 +343,13 @@ else:
 
 # state discrimination
 rotation_angle_q1 = (148.6 / 180) * np.pi
-rotation_angle_q2 = ((749+11.7+320.7) / 180) * np.pi
-rotation_angle_q3 = ((108+169.1+333.0) / 180) * np.pi
+rotation_angle_q2 = ((46.8+3.0+359.3) / 180) * np.pi
+rotation_angle_q3 = ((108+169.1+333.0+354.8+351.0) / 180) * np.pi
 rotation_angle_q4 = (0 / 180) * np.pi
 rotation_angle_q5 = (0 / 180) * np.pi
 ge_threshold_q1 = 0.000909
-ge_threshold_q2 = -6.129e-04
-ge_threshold_q3 = 1.883e-06
+ge_threshold_q2 = -1.819e-04
+ge_threshold_q3 = -2.181e-05
 ge_threshold_q4 = 2.419e-04
 ge_threshold_q5 = 0
 
