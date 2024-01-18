@@ -11,8 +11,8 @@ from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
 init_macro = initializer( 100*u.us,mode='wait')
 
-resonators = ["q1_ro"]
-q_name = ["q1_xy"]
+resonators = ["q2_ro"]
+q_name = ["q2_xy"]
 shot_num = 10000
 
 import matplotlib.pyplot as plt
@@ -22,24 +22,24 @@ from analysis.state_distribution import train_model, create_img
 
 from exp.readout_fidelity import readout_fidelity
 from qualang_tools.analysis import two_state_discriminator
-
+import numpy as np
 output_data = readout_fidelity( q_name, resonators, shot_num, config.get_config(), qmm, init_macro)  
 end_time = time.time()
 # elapsed_time = np.round(end_time-start_time, 1)
 save_data = False
 for r in resonators:
-    
-    gmm_model = train_model(output_data[r]*1000)
+    new_data = np.moveaxis(output_data[r]*1000,1,0)
+    gmm_model = train_model(new_data)
     fig = plt.figure(constrained_layout=True)
-    create_img(output_data[r]*1000, gmm_model)
+    create_img(new_data, gmm_model)
     # fig.show()
     # plt.show()
-    two_state_discriminator(output_data[r][0][0], output_data[r][0][1], output_data[r][1][0], output_data[r][1][1], True, True)
-    if save_data:
-        figure = plt.gcf() # get current figure
-        figure.set_size_inches(12, 10)
-        plt.tight_layout()
-        plt.pause(0.1)
-        plt.savefig(f"{save_path}-{r}.png", dpi = 500)
+    two_state_discriminator(output_data[r][0][0], output_data[r][1][0], output_data[r][0][1], output_data[r][1][1], True, True)
+    # if save_data:
+    #     figure = plt.gcf() # get current figure
+    #     figure.set_size_inches(12, 10)
+    #     plt.tight_layout()
+    #     plt.pause(0.1)
+    #     plt.savefig(f"{save_path}-{r}.png", dpi = 500)
 
 plt.show()
