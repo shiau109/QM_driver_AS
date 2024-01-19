@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-raw_data = np.load(r'D:\Data\DR2_5Q\1u_Q2Z1_crosstalk_ramsey_20240118_1419.npz', allow_pickle=True)# ["arr_0"].item()
+raw_data = np.load(r'D:\Data\DR2_5Q\10u5em1_Q2Z1_crosstalk_pi_20240118_1416.npz', allow_pickle=True)# ["arr_0"].item()
 # tomo_data =
 other_info = {}
 for k, v in raw_data.items():
@@ -24,44 +24,26 @@ print(offset)
 data -= offset
 
 
-from scipy.interpolate import interp2d
-# Create an interpolation function
-interp_func = interp2d(d_z_crosstalk_amp, d_z_target_amp, data, kind='linear')
 
-# Define new points for interpolation
-new_d_z_target_amp = np.linspace(d_z_target_amp[0], d_z_target_amp[-1], 500)
-new_d_z_crosstalk_amp = np.linspace(d_z_crosstalk_amp[0], d_z_crosstalk_amp[-1], 500)
-
-# Interpolate values at new points
-new_data = interp_func(new_d_z_crosstalk_amp, new_d_z_target_amp )
 # Apply Gaussian smoothing
 from scipy.ndimage import gaussian_filter
 sigma = 1.0  # Adjust the standard deviation based on your needs
 smoothed_data = gaussian_filter(data, sigma=sigma)
-# data = smoothed_data
-# d_z_target_amp = new_d_z_target_amp
-# d_z_crosstalk_amp = new_d_z_crosstalk_amp
 
-# M = d_z_target_amp[0]-d_z_target_amp[-1]
+
 print(data.shape, d_z_target_amp.shape, d_z_crosstalk_amp.shape)
-# N = d_z_crosstalk_amp[0]-d_z_crosstalk_amp[1]
-M, N = data.shape
-f_z_target = np.fft.fftshift(np.fft.fftfreq(M, d=np.abs(d_z_target_amp[0]-d_z_target_amp[1])))
-f_z_crosstalk = np.fft.fftshift(np.fft.fftfreq(N, d=np.abs(d_z_crosstalk_amp[0]-d_z_crosstalk_amp[1])))
-print(f_z_target.shape, f_z_crosstalk.shape)
+# M, N = data.shape
 
-# Compute the 2D Fourier Transform
+def get_freq_axes( axes ):
+    f_axes = []
+    for a in axes:
+        ax_len = a.shape[-1]
+        d = np.abs(a[0]-a[1])
+        print(f"length: {ax_len}, delta:{d}")
 
-fft_result = np.fft.fft2(data)
+        f_axes.append( np.fft.fftshift(np.fft.fftfreq(ax_len, d=d)) )
+    return f_axes
 
-# Shift zero frequency components to the center
-fft_result_shifted = np.fft.fftshift(fft_result)
-
-# Compute the magnitude spectrum (absolute values)
-magnitude_spectrum = np.abs(fft_result_shifted)
-
-max_index = np.argmax(magnitude_spectrum)
-max_indices = np.unravel_index(max_index, magnitude_spectrum.shape)
 from scipy.interpolate import RegularGridInterpolator
 
 def get_weighted_pos( data, axes ):
@@ -104,23 +86,67 @@ def get_max_pos( data, axes ):
     print(f"f_z_crosstalk: {axes[1][max_indices[1]]}")
     return f_z_target_pos, f_z_crosstalk_pos
 
+def get_extend( data, axes:list, extend_num = 50 ):
+    extended_data = np.pad(data, extend_num, mode='constant', constant_values=0)
+    ext_axes = []
+    for a in axes:
+        ax_len = a.shape[-1]
+        d = a[1]-a[0]
+        total_point = ax_len+2*extend_num
+        ext_axes.append( np.linspace( a[0]-extend_num*d, a[-1]+extend_num*d, total_point) )
+    print(extended_data,extended_data.shape)
 
-get_max_pos(magnitude_spectrum, [f_z_target,f_z_crosstalk])
-f_z_target_pos, f_z_crosstalk_pos = get_weighted_pos(magnitude_spectrum, [f_z_target,f_z_crosstalk] )
-# f_z_target_pos, f_z_crosstalk_pos = get_max_pos(magnitude_spectrum)
+    return extended_data, ext_axes
+
+
+def get_interp( data, axes:list, extend_num = 50 ):
+    from scipy.interpolate import interp2d
+    # Create an interpolation function
+    interp_func = interp2d(axes[1], axes[0], data, kind='linear')
+    # Define new points for interpolation
+    ext_axes = []
+    for a in axes:
+        ax_len = a.shape[-1]
+        d = a[1]-a[0]
+        total_point = ax_len+2*extend_num
+        ext_axes.append( np.linspace( a[0], a[-1], total_point) )
+    # Interpolate values at new points
+    extended_data = interp_func(ext_axes[1], ext_axes[0] )
+    print(extended_data,extended_data.shape)
+
+    return extended_data, ext_axes
+
+data, axes = get_extend(data, [d_z_target_amp, d_z_crosstalk_amp], 100)
+# data, axes = get_interp(data, [d_z_target_amp, d_z_crosstalk_amp], 100)
+
+
+f_axes = get_freq_axes( axes )
+
+# Compute the 2D Fourier Transform
+fft_result = np.fft.fft2(data)
+
+# Shift zero frequency components to the center
+fft_result_shifted = np.fft.fftshift(fft_result)
+
+# Compute the magnitude spectrum (absolute values)
+magnitude_spectrum = np.abs(fft_result_shifted)
+
+get_max_pos(magnitude_spectrum, f_axes)
+# f_z_target_pos, f_z_crosstalk_pos = get_weighted_pos(magnitude_spectrum, f_axes )
+f_z_target_pos, f_z_crosstalk_pos = get_max_pos(magnitude_spectrum, f_axes)
 z_slope = f_z_target_pos/f_z_crosstalk_pos
 print(f"z_slope: {z_slope}")
 # Display the original image and its Fourier Transform
 plt.figure(figsize=(12, 6))
 
 plt.subplot(121)
-plt.pcolormesh(d_z_crosstalk_amp, d_z_target_amp, data, cmap='gray')
+plt.pcolormesh(axes[1], axes[0], data, cmap='gray')
 plt.plot([d_z_crosstalk_amp[0],d_z_crosstalk_amp[-1]],[-d_z_crosstalk_amp[0]/z_slope,-d_z_crosstalk_amp[-1]/z_slope])
 plt.title('Original Image')
 
 plt.subplot(122)
 # plt.pcolormesh(f_z_crosstalk, f_z_target, np.log1p(magnitude_spectrum), cmap='gray')  # Use log scale for better visualization
-plt.pcolormesh(f_z_crosstalk, f_z_target, magnitude_spectrum, cmap='gray')  # Use log scale for better visualization
+plt.pcolormesh(f_axes[1], f_axes[0], magnitude_spectrum, cmap='gray')  # Use log scale for better visualization
 plt.plot([-f_z_crosstalk_pos,f_z_crosstalk_pos],[-f_z_target_pos,f_z_target_pos])
 
 plt.title('2D Fourier Transform (Magnitude Spectrum)')
