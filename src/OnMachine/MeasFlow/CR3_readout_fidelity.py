@@ -26,7 +26,6 @@ import numpy as np
 output_data = readout_fidelity( q_name, resonators, shot_num, config.get_config(), qmm, init_macro)  
 end_time = time.time()
 # elapsed_time = np.round(end_time-start_time, 1)
-save_data = False
 for r in resonators:
     new_data = np.moveaxis(output_data[r]*1000,1,0)
     gmm_model = train_model(new_data)
@@ -43,3 +42,9 @@ for r in resonators:
     #     plt.savefig(f"{save_path}-{r}.png", dpi = 500)
 
 plt.show()
+save_data = True
+if save_data:
+    from exp.save_data import save_npz
+    import sys
+    save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
+    save_npz(r"D:\Data\DR2_5Q", "ro_fidelity", output_data)   
