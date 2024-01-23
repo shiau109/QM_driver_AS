@@ -1,0 +1,147 @@
+{
+    "version": 1,
+    "controllers": {
+        "con1": {
+            "analog_outputs": {
+                "1": {"offset": 0.0},  
+                "2": {"offset": 0.0},  
+                "3": {"offset": 0.0},  
+                "4": {"offset": 0.0},  
+                "5": {"offset": 0.0},  
+                "6": {"offset": 0.0},  
+                "7": {"offset": 0.0}, 
+                "8": {"offset": 0.0}, 
+                "9": {"offset": 0.0},  
+                "10": {"offset": 0.0}
+            },
+            "digital_outputs": {
+                "1": {},
+                "3": {},
+                "5": {},
+                "7": {},
+                "10": {}
+            },
+            "analog_inputs": {
+                "1": {"offset": 0.0, "gain_db": 0},  
+                "2": {"offset": 0.0, "gain_db": 0}
+            }
+        }
+    },
+    "elements": {
+        "q1_xy": {
+            "mixInputs": {
+                "I": ["con1", 1],
+                "Q": ["con1", 2],
+                "lo_frequency": 6,
+                "mixer": "mixer_qubit"
+            },
+            "intermediate_frequency": 0,
+            "operations": {
+                "saturation": "saturation_pulse",
+                "x180": "pi_pulse",
+                "x90": "pi_half_pulse"
+            }
+        },
+        "q1_z" : {
+            "singleInput": {
+                "port": ["con1", 1]
+            },
+            "intermediate_frequency": 0,
+            "operations": {
+                "saturation": "saturation_pulse"
+            }
+        },
+        "q1_ro" : {
+            "mixInputs": {
+                "I": ["con1", 1],
+                "Q": ["con1", 2],
+                "lo_frequency": 6,
+                "mixer": "mixer_qubit"
+            },
+            "intermediate_frequency": 0,
+            "operations": {
+                "saturation": "saturation_pulse"
+            },
+            "outputs": {
+                "out1": ["con1", 1]
+            },
+            "time_of_flight": 180,
+            "smearing": 0
+        }
+
+    },
+    "pulses": {
+        "q1_readout_pulse": {
+            "operation": "measurement",
+            "length": 2000,
+            "waveforms": {
+                "I": "readout_wf_q1",
+                "Q": "zero_wf"
+            },
+            "integration_weights": {
+                "cos": "cosine_weights",
+                "sin": "sine_weights",
+                "minus_sin": "minus_sine_weights",
+                "rotated_cos": "rotated_cosine_weights_q1",
+                "rotated_sin": "rotated_sine_weights_q1",
+                "rotated_minus_sin": "rotated_minus_sine_weights_q1"
+            },
+            "digital_marker": "ON"
+        },
+        "q5_-x90_pulse": {
+            "operation": "control",
+            "length": 40,
+            "waveforms": {
+                "I": "minus_y90_I_wf_q5",
+                "Q": "minus_y90_Q_wf_q5"
+            }
+        },
+        "g_cz_pulse_1_2_q2": {
+            "operation": "control",
+            "length": 200,
+            "waveforms": {
+                "single": "g_cz_wf_1_2_q2"
+            }
+        }
+    },
+    "waveforms": {
+        "const_wf": {"type": "constant", "sample": 1},
+        "x90_I_wf_q1": {"type": "arbitrary", "samples": [0,1,2,3,4,5]}
+    },
+    "digital_waveforms": {
+        "ON": {
+            "samples": [[1, 0]]
+        }
+    },
+    "integration_weights": {
+        "cos": {
+            "cosine": [[1.0, 1000]],
+            "sine": [[0.0, 1000]]
+        },
+        "sin": {
+            "cosine": [[0.0, 1000]],
+            "sine": [[1.0, 1000]]
+        }
+    },
+    "mixers": {
+        "octave_octave2_1": [
+            {
+                "intermediate_frequency": 1,
+                "lo_frequency": 4,
+                "correction": [1, 0, 0, 1]
+            }
+        ],
+        "octave_octave1_1": [
+            {
+                "intermediate_frequency": 1,
+                "lo_frequency": 6,
+                "correction": [1, 0, 0, 1]
+            },
+            {
+                "intermediate_frequency": 2,
+                "lo_frequency": 6,
+                "correction": [1, 0, 0, 1]
+            }
+        ]
+    }
+}
