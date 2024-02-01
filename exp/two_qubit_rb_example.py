@@ -3,9 +3,12 @@ from qm.qua import *
 from qm import QuantumMachinesManager, generate_qua_script
 from qualang_tools.bakery.bakery import Baking
 from configuration import *
-from two_qubit_rb import TwoQubitRb
+from test_two_qubit_rb.two_qubit_rb import TwoQubitRb
 
-
+from test_two_qubit_rb.two_qubit_rb.tracker.operation_tracker import OperationTracker
+from test_two_qubit_rb.two_qubit_rb.tracker.sequence_tracker import SequenceTracker
+ot = OperationTracker()
+st = SequenceTracker(ot)
 ##############################
 ## General helper functions ##
 ##############################
@@ -42,20 +45,25 @@ q2 = "3"
 
 # single qubit generic gate constructor Z^{z}Z^{a}X^{x}Z^{-a} that can reach any point on the Bloch sphere (starting from arbitrary points)
 def bake_phased_xz(baker: Baking, q, x, z, a):
+    ot.register_phase_xz(q=q, x=x, z=z, a=a)
+    if q == 1: element = f"q{q1}_xy"
+    elif q ==2: element = f"q{q2}_xy"
+    else: raise Exception()
     element = f"q{q}_xy"
-    baker.frame_rotation_2pi(-a, element)
+    baker.frame_rotation_2pi(a/2, element)
     baker.play("x180", element, amp=x)
-    baker.frame_rotation_2pi(a + z, element)
+    baker.frame_rotation_2pi(-(a + z)/2, element)
 
 
 # single qubit phase corrections in units of 2pi applied after the CZ gate
-qubit1_frame_update = 0 #24.543 / 360  # example values, should be taken from QPU parameters
-qubit2_frame_update = 0 #55.478 / 360  # example values, should be taken from QPU parameters
+qubit1_frame_update = -93.047 / 360  # example values, should be taken from QPU parameters
+qubit2_frame_update = 24.683/ 360  # example values, should be taken from QPU parameters
 
 
 # defines the CZ gate that realizes the mapping |00> -> |00>, |01> -> |01>, |10> -> |10>, |11> -> -|11>
 def bake_cz(baker: Baking, q1, q2):
-    wf = np.array([cz_amp]*(cz_len+1)) # cz_len+1 is the exactly time of z pulse.
+    ot.register_cz()
+    wf = np.array([cz_sqr_amp]*(cz_sqr_len+1)) # cz_len+1 is the exactly time of z pulse.
     wf = wf.tolist()
     q1_xy_element = f"q{q1}_xy"  
     q2_xy_element = f"q{q2}_xy"
@@ -77,8 +85,8 @@ def prep():
 
 
 def meas():
-    threshold1 = 8.003e-05  # threshold for state discrimination 0 <-> 1 using the I quadrature
-    threshold2 = -3.386e-04  # threshold for state discrimination 0 <-> 1 using the I quadrature
+    threshold1 = 5.003e-05 # threshold for state discrimination 0 <-> 1 using the I quadrature
+    threshold2 = -6.740e-07  # threshold for state discrimination 0 <-> 1 using the I quadrature
     I1 = declare(fixed)
     I2 = declare(fixed)
     Q1 = declare(fixed)
@@ -98,14 +106,20 @@ def meas():
 ##############################
 
 rb = TwoQubitRb(
-    config, bake_phased_xz, {"CZ": bake_cz}, prep, meas, verify_generation=False, interleaving_gate=None
+    config, bake_phased_xz, {"CZ": bake_cz}, prep, meas, verify_generation=False, interleaving_gate=None, 
+    operation_tracker = ot,
+    sequence_tracker = st
 )  # create RB experiment from configuration and defined functions
 
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name)  # initialize qmm
-res = rb.run(qmm, circuit_depths=[0,1,2,3,4,5,6,7,8,9,10,11,12], num_circuits_per_depth=20, num_shots_per_circuit=2000)
+res = rb.run(qmm, circuit_depths=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], num_circuits_per_depth=10, num_shots_per_circuit=2000)
+st.print_sequences()
+# st.verify_sequences()
+# ot.print_operations()  
 # circuit_depths ~ how many consecutive Clifford gates within one executed circuit https://qiskit.org/documentation/apidoc/circuit.html
 # num_circuits_per_depth ~ how many random circuits within one depth
 # num_shots_per_circuit ~ repetitions of the same circuit (averaging)
+
 
 res.plot_hist()
 plt.show()
@@ -113,4 +127,10 @@ plt.show()
 res.plot_fidelity()
 plt.show()
 
+import xarray as xr
+ds = xr.Dataset()
+ds['data'] = res.data.state
+ds.to_netcdf("data.nc")
+
+print(res.data.state.mean("average"))
 

@@ -12,7 +12,7 @@ import warnings
 
 # cnot:q2_y90,q2_x180,cz,q2_y90,q2_x180
 gate_seq = [
-    q3_x90,q2_y90,q2_x180,cz,q2_y90,q2_x180
+    idle_gate
     # q3_x180
 ]
 circuit = QubitCircuit(2)

@@ -30,27 +30,45 @@ def cz_gate(type, idle_flux_point, flux_Qi, const_flux_len, a):
     #     b.run()
 
     if type == "square":
-        square_pulse_segments = baked_waveform(flux_waveform, const_flux_len, flux_Qi)
+        square_pulse_segments = baked_waveform(flux_waveform, const_flux_len, flux_Qi, type)
         wait(5)  
         square_pulse_segments[const_flux_len].run(amp_array=[(f"q{flux_Qi}_z", a)])    
         align()
         set_dc_offset(f"q{flux_Qi}_z", "single", idle_flux_point[flux_Qi-1])
         wait(5)
+    # elif type == 'eerp':
+    #     eerp_pulse_segments = baked_waveform(waveform, pulse_duration, flux_qubit, type, paras = None)
 
-def baked_waveform(waveform, pulse_duration, flux_qubit):
-    pulse_segments = []  # Stores the baking objects
-    # Create the different baked sequences, each one corresponding to a different truncated duration
-    for i in range(0, pulse_duration + 1):
-        with baking(config, padding_method="right") as b:
-            if i == 0:  # Otherwise, the baking will be empty and will not be created
-                wf = [0.0] * 16
-            else:
-                wf = waveform[:i].tolist()
-            b.add_op("flux_pulse", f"q{flux_qubit}_z", wf)
-            b.play("flux_pulse", f"q{flux_qubit}_z")
-        # Append the baking object in the list to call it from the QUA program
-        pulse_segments.append(b)
+
+def baked_waveform(waveform, pulse_duration, flux_qubit, type, paras = None):
+    pulse_segments = []
+    if type == 'square':  
+        for i in range(0, pulse_duration + 1):
+            with baking(config, padding_method="symmetric_l") as b:
+                if i == 0:  # Otherwise, the baking will be empty and will not be created
+                    wf = [0.0] * 16
+                else:
+                    wf = waveform[:i].tolist()
+                b.add_op("flux_pulse", f"q{flux_qubit}_z", wf)
+                b.play("flux_pulse", f"q{flux_qubit}_z")
+            pulse_segments.append(b)
+
+    elif type == 'eerp':
+        duration = np.linspace(0,pulse_duration-1,pulse_duration)
+        p = ( paras[0], paras[1]/2, paras[1]/paras[2], 2*paras[1], 5 ) # This 5 can make the pulse edge smooth in the begining.
+        eerp_up_wf = np.array(EERP(duration,*p)[:(paras[1]+5)]) 
+        eerp_dn_wf = eerp_up_wf[::-1]
+        for i in range(0, pulse_duration + 1):
+            with baking(config, padding_method="symmetric_l") as b:
+                if i == 0: 
+                    wf = np.concatenate((eerp_up_wf, eerp_dn_wf)).tolist()
+                else:
+                    wf = np.concatenate((eerp_up_wf, waveform[:i], eerp_dn_wf)).tolist()
+                b.add_op("flux_pulse", f"q{flux_qubit}_z", wf)
+                b.play("flux_pulse", f"q{flux_qubit}_z")
+            pulse_segments.append(b)
     return pulse_segments
+
 
 def CZ_phase_compensate(q_id,flux_Qi,ramsey_Qi,Phi,const_flux_len,simulate,qmm):
     res_IF = []
@@ -79,7 +97,7 @@ def CZ_phase_compensate(q_id,flux_Qi,ramsey_Qi,Phi,const_flux_len,simulate,qmm):
         with for_(n, 0, n < n_avg, n + 1):
             with for_(*from_array(phi, Phi)):
                 ###  With CZ flux
-                wait(thermalization_time * u.ns)
+                if not simulate: wait(thermalization_time * u.ns)
                 play("x90", f"q{ramsey_Qi}_xy")
                 align()
                 ## This +1 is inserted because of making const_flux_len equal to actual pulse duration 
@@ -92,7 +110,7 @@ def CZ_phase_compensate(q_id,flux_Qi,ramsey_Qi,Phi,const_flux_len,simulate,qmm):
                 multiplexed_readout(I, I_st, Q, Q_st, resonators=[x+1 for x in q_id], weights="rotated_")
 
                 ###  Without CZ flux
-                wait(thermalization_time * u.ns)
+                if not simulate: wait(thermalization_time * u.ns)
                 play("x90", f"q{ramsey_Qi}_xy")
                 align()
                 cz_gate(type, idle_flux_point, flux_Qi, const_flux_len+1, a=0)
@@ -167,16 +185,16 @@ def live_plotting(signal,signal_c,ramsey_Qi):
 
 flux_Qi = 2  
 ramsey_Qi = 3
-a = cz_amp/const_flux_amp
+a = cz_sqr_amp/const_flux_amp
 type = 'square'
 signal_mode = 'I'
 scale_reference = const_flux_amp 
 n_avg = 2000  
-const_flux_len = cz_len
+const_flux_len = cz_sqr_len
 flux_waveform = np.array([const_flux_amp] * (const_flux_len+1))
 Phi = np.arange(0, 5, 0.05) # 5 rotations
 
-cz_wf = np.array([cz_amp]*(cz_len+1)) # cz_len+1 is the exactly time of z pulse.
+cz_wf = np.array([cz_sqr_amp]*(cz_sqr_len+1)) # cz_len+1 is the exactly time of z pulse.
 cz_wf = cz_wf.tolist()
 
 

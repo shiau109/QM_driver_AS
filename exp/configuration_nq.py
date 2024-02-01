@@ -72,7 +72,7 @@ qubit_LO[4] = (4.75) * u.GHz
 qubit_IF = np.zeros(5)
 qubit_IF[0] = (-116.8+0.245) * u.MHz       # Q1
 qubit_IF[1] = (-101.616+0.1-0.056-0.024) * u.MHz      # Q2
-qubit_IF[2] = (-317.332+0.309-0.06) * u.MHz
+qubit_IF[2] = (-317.332+0.309-0.06+0.05) * u.MHz
 qubit_IF[3] = (-89.5911-0.272) * u.MHz     # Q4
 qubit_IF[4] = (-92) * u.MHz                # Q5
 # For comparing 2q:
@@ -96,14 +96,14 @@ saturation_amp = 0.1
 pi_len = 20
 pi_sigma = pi_len / 4
 pi_amp_q1 = 0.15*0.872*0.975*0.97/3
-pi_amp_q2 = 0.10322
-pi_amp_q3 = 0.33792*1.00164*1.00493*0.99304*1.0037
+pi_amp_q2 = 0.10322*0.99223
+pi_amp_q3 = 0.3382*0.9976*1.00036*1.00143*1.006
 pi_amp_q4 = 0.15365
 pi_amp_q5 = 0.5
 
 r90_amp_q1 = pi_amp_q1/2 
 r90_amp_q2 = pi_amp_q2/2*1.00496*0.9992
-r90_amp_q3 = pi_amp_q3/2*1.23565
+r90_amp_q3 = pi_amp_q3/2*1.23565*0.9996*0.998*1.006
 r90_amp_q4 = pi_amp_q4/2 *1.104*0.99
 # pi_amp_q4 = 0.1*1.135*1.005*0.805
 r90_amp_q5 = pi_amp_q5/2
@@ -258,10 +258,10 @@ const_flux_amp = 0.5 #0.45
 cz_point_1_2_q2 = 0.14519591 # q1 - q2 = Ec
 gft_cz_1_2_q2 = flattop_gaussian_waveform(cz_point_1_2_q2-idle_q2, 8 * u.ns, 8 * u.ns)
 g_cz_1_2_q2 = 0.5 * abs(0.5-idle_q2) * gaussian(16, 16/4)
-cz_sqr_len = 26
-cz_sqr_amp = 0.17510
+cz_sqr_len = 25
+cz_sqr_amp = 0.16835
 cz_eerp_len = 22
-cz_eerp_amp = 0.16720
+cz_eerp_amp = 0.16740
 #############################################
 #                Resonators                 #
 #############################################
@@ -281,7 +281,7 @@ readout_zero_len = 100
 readout_amp = np.zeros(5)
 readout_amp[0] = 0.03
 readout_amp[1] = 0.03*0.95
-readout_amp[2] = 0.03*0.8
+readout_amp[2] = 0.03*1.3
 readout_amp[3] = 0.03
 # readout_amp[3] = 0.02
 readout_amp[4] = 0.02
@@ -343,13 +343,13 @@ else:
 
 # state discrimination
 rotation_angle_q1 = (148.6 / 180) * np.pi
-rotation_angle_q2 = ((46.8+3.0+359.3) / 180) * np.pi
-rotation_angle_q3 = ((108+169.1+333.0+354.8+351.0) / 180) * np.pi
+rotation_angle_q2 = ((46.3+5.3) / 180) * np.pi
+rotation_angle_q3 = ((238.2) / 180) * np.pi
 rotation_angle_q4 = (0 / 180) * np.pi
 rotation_angle_q5 = (0 / 180) * np.pi
 ge_threshold_q1 = 0.000909
-ge_threshold_q2 = -1.819e-04
-ge_threshold_q3 = -2.181e-05
+ge_threshold_q2 = 5.003e-05
+ge_threshold_q3 = -6.740e-07
 ge_threshold_q4 = 2.419e-04
 ge_threshold_q5 = 0
 

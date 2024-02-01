@@ -581,15 +581,35 @@ def test_c2_clifford_compact(target,control,group:str):
     print(test2)
 '''
 if __name__ == '__main__':
-    num_gates = 22
-    target = 2
-    control = 3
-    for i in range(20):
-        gen_RB_circuit_to_json(num_gates, target, control)
+    
+    # num_gates = 22
+    # target = 2
+    # control = 3
+    # for i in range(20):
+    #     gen_RB_circuit_to_json(num_gates, target, control)
+
     # circuit = get_TQcircuit_random_clifford(target, control, num_gates, mode = 'ONE')
     # print(circuit)
     # for gate in circuit.gates:
     #     print(gate.name)
 
+    q2_x180 = Gate("RX", 2, arg_value=np.pi)
+    q3_x180 = Gate("RX", 3, arg_value=np.pi)
+    q2_x90 = Gate("RX", 2, arg_value=np.pi/2)
+    q3_x90 = Gate("RX", 3, arg_value=np.pi/2)
+    q2_y180 = Gate("RY", 2, arg_value=np.pi)
+    q2_y90 = Gate("RY", 2, arg_value=np.pi/2)
+    q3_y90 = Gate("RY", 3, arg_value=np.pi/2)
+    q3_y180 = Gate("RY", 3, arg_value=np.pi)
+    q23_cz = Gate("CZ", controls=2, targets=3)
+    circuit = QubitCircuit(2)
+    gate_seq = [
+       q3_y90,q2_y90,q2_x180,q23_cz,q2_y90,q2_x180
+    #    q2_y90,q2_x180,q3_y90,q3_x180,q23_cz,q3_y90,q3_x180
+
+    ]
+
+    op = decomposition(gate_seq)
+    print(op)
 
 

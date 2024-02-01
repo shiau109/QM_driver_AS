@@ -49,6 +49,7 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
+simulate = False
 
 ####################
 # Helper functions #
@@ -128,7 +129,6 @@ def baked_waveform(waveform, pulse_duration, qubit_index):
 # Index of the qubit to measure
 qubit = 2
 
-
 n_avg = 1_000  # Number of averages
 # FLux pulse waveform generation
 # The zeros are just here to visualize the rising and falling times of the flux pulse. they need to be set to 0 before
@@ -159,6 +159,9 @@ with program() as cryoscope:
         with for_(segment, 0, segment <= const_flux_len + total_zeros, segment + 1):
             # Alternate between X/2 and Y/2 pulses
             with for_each_(flag, [True, False]):
+
+                # Wait cooldown time and save the results
+                if not simulate: wait(thermalization_time * u.ns)
                 # Play first X/2
                 play("x90", f"q{qubit}_xy")
                 # Play truncated flux pulse
@@ -189,8 +192,7 @@ with program() as cryoscope:
                 save(state[1], state_st[1])
                 save(state[2], state_st[2])
                 save(state[3], state_st[3])
-                # Wait cooldown time and save the results
-                wait(thermalization_time * u.ns)
+
         save(n, n_st)
 
     with stream_processing():
@@ -220,14 +222,9 @@ with program() as cryoscope:
 
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
 
-###########################
-# Run or Simulate Program #
-###########################
-simulate = False
-
 if simulate:
     # Simulates the QUA program for the specified duration
-    simulation_config = SimulationConfig(duration=10_000)  # In clock cycles = 4ns
+    simulation_config = SimulationConfig(duration=40_000)  # In clock cycles = 4ns
     job = qmm.simulate(config, cryoscope, simulation_config)
     job.get_simulated_samples().con1.plot()
     plt.show()

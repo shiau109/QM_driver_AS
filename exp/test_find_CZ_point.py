@@ -17,47 +17,34 @@ from macros import multiplexed_readout
 from common_fitting_func import *
 from cosine import Cosine
 
-def cz_gate(type, idle_flux_point, flux_Qi, segment, a, paras = None):
-    flux_waveform = np.array([const_flux_amp] * const_flux_len)
-    pulse_segments = baked_waveform(flux_waveform, const_flux_len, flux_Qi, type, paras)
-    wait(5)  
-    with switch_(segment):
-        for j in range(0, const_flux_len + 1):
-            with case_(j):
-                pulse_segments[j].run(amp_array=[(f"q{flux_Qi}_z", a)])  
-    align()
-    set_dc_offset(f"q{flux_Qi}_z", "single", idle_flux_point[flux_Qi-1])
-    wait(5)
+def get_CZ_wf(segment,a):
+    edge = 10
+    sFactor = 4
+    duration = np.linspace(0,49,50)
+    paras = [a, edge, sFactor]
+    p = ( paras[0], paras[1]/2, paras[1]/paras[2], 2*paras[1], 5 ) # This 5 can make the pulse edge smooth in the begining.
+    eerp_up_wf = np.array(EERP(duration,*p)[:(paras[1]+5)]) 
+    eerp_dn_wf = eerp_up_wf[::-1]
+    waveform = np.array([a]*(segment+1))
+    eerp_wf = np.concatenate((eerp_up_wf, waveform, eerp_dn_wf))
+    eerp_wf = eerp_wf.tolist()
+    wf = eerp_wf
+    return wf
 
-
-def baked_waveform(waveform, pulse_duration, flux_qubit, type, paras = None):
-    pulse_segments = []
-    if type == 'square':  
-        for i in range(0, pulse_duration + 1):
-            with baking(config, padding_method="symmetric_l") as b:
-                if i == 0:  # Otherwise, the baking will be empty and will not be created
-                    wf = [0.0] * 16
-                else:
-                    wf = waveform[:i].tolist()
-                b.add_op("flux_pulse", f"q{flux_qubit}_z", wf)
-                b.play("flux_pulse", f"q{flux_qubit}_z")
-            pulse_segments.append(b)
-
-    elif type == 'eerp':
-        duration = np.linspace(0,pulse_duration-1,pulse_duration)
-        p = ( paras[0], paras[1]/2, paras[1]/paras[2], 2*paras[1], 5 ) # This 5 can make the pulse edge smooth in the begining.
-        eerp_up_wf = np.array(EERP(duration,*p)[:(paras[1]+5)]) 
-        eerp_dn_wf = eerp_up_wf[::-1]
-        for i in range(0, pulse_duration + 1):
-            with baking(config, padding_method="symmetric_l") as b:
-                if i == 0: 
-                    wf = np.concatenate((eerp_up_wf, eerp_dn_wf)).tolist()
-                else:
-                    wf = np.concatenate((eerp_up_wf, waveform[:i], eerp_dn_wf)).tolist()
-                b.add_op("flux_pulse", f"q{flux_qubit}_z", wf)
-                b.play("flux_pulse", f"q{flux_qubit}_z")
-            pulse_segments.append(b)
-    return pulse_segments
+def cz_gate(flux_Qi,ramsey_Qi,segment,a):
+    wf = get_CZ_wf(segment,a)
+    with baking(config,padding_method="symmetric_l") as b:
+        q1_xy_element = f"q{flux_Qi}_xy"  
+        q2_xy_element = f"q{ramsey_Qi}_xy"
+        q1_z_element = f"q{flux_Qi}_z"
+        b.add_op("cz",q1_z_element,wf)
+        b.wait(20,q1_xy_element,q2_xy_element,q1_z_element) # The unit is 1 ns.
+        b.align(q1_xy_element,q2_xy_element,q1_z_element)
+        b.play("cz", q1_z_element)
+        b.align(q1_xy_element,q2_xy_element,q1_z_element)
+        b.wait(23,q1_xy_element,q2_xy_element,q1_z_element)
+        b.align(q1_xy_element,q2_xy_element,q1_z_element)
+        b.run()
 
 def CZ_phase_diff(q_id,flux_Qi,control_Qi,ramsey_Qi,idle_flux_point,signal_mode,simulate,qmm):
     res_IF = []
@@ -93,7 +80,7 @@ def CZ_phase_diff(q_id,flux_Qi,control_Qi,ramsey_Qi,idle_flux_point,signal_mode,
                         align()
                         play("x90", f"q{ramsey_Qi}_xy")
                         align()
-                        cz_gate(type, idle_flux_point, flux_Qi, segment, a, paras = [const_flux_amp,edge,sFactor])
+                        cz_gate(flux_Qi,ramsey_Qi,segment,a)
                         align()
                         frame_rotation_2pi(phi, f"q{ramsey_Qi}_xy")
                         play("x90", f"q{ramsey_Qi}_xy")
@@ -105,7 +92,7 @@ def CZ_phase_diff(q_id,flux_Qi,control_Qi,ramsey_Qi,idle_flux_point,signal_mode,
                         play("x180", f"q{control_Qi}_xy")
                         play("x90", f"q{ramsey_Qi}_xy")
                         align()
-                        cz_gate(type, idle_flux_point, flux_Qi, segment, a, paras = [const_flux_amp,edge,sFactor])
+                        cz_gate(flux_Qi,ramsey_Qi,segment,a)
                         align()
                         frame_rotation_2pi(phi, f"q{ramsey_Qi}_xy")
                         play("x90", f"q{ramsey_Qi}_xy")
@@ -178,19 +165,28 @@ def live_plotting(signal_g, signal_e, control_Qi, ramsey_Qi,row,col,ax):
     plt.tight_layout()
     plt.pause(1.0)
 
-type = "square"
-simulate = False
-Phi = np.arange(0, 5, 0.05) # 5 rotations
-n_avg = 1500
-q_id = [1,2,3,4]
-control_Qi = 2
-ramsey_Qi = 3
-flux_Qi = 2
-t_min, t_max = 22, 28
-t_delay = np.arange(t_min, t_max + 0.1, 1) 
-edge = 10
-sFactor = 4
-amps = np.arange(0.3351, 0.3391, 0.0008) 
-signal_mode = 'I'
-qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-CZ_phase_diff(q_id,flux_Qi,control_Qi,ramsey_Qi,idle_flux_point,signal_mode,simulate,qmm)
+# type = "eerp"
+# simulate = True
+# Phi = np.arange(0, 5, 0.05) # 5 rotations
+# n_avg = 1500
+# q_id = [1,2,3,4]
+# control_Qi = 2
+# ramsey_Qi = 3
+# flux_Qi = 2
+# t_min, t_max = 20, 25
+# t_delay = np.arange(t_min, t_max + 0.1, 1) 
+# edge = 10
+# sFactor = 4
+# amps = np.arange(0.3336, 0.3356, 0.0004) 
+# signal_mode = 'I'
+# qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
+# CZ_phase_diff(q_id,flux_Qi,control_Qi,ramsey_Qi,idle_flux_point,signal_mode,simulate,qmm)
+    
+segment = 20
+a = 0.33
+wf = get_CZ_wf(segment,a)
+print(len(wf))
+x = np.linspace(0,50,51)
+plt.plot(x,wf)
+plt.show()
+
