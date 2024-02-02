@@ -1,23 +1,6 @@
-"""
-        RESONATOR SPECTROSCOPY INDIVIDUAL RESONATORS
-This sequence involves measuring the resonator by sending a readout pulse and demodulating the signals to extract the
-'I' and 'Q' quadratures across varying readout intermediate frequencies.
-The data is then post-processed to determine the resonator resonance frequency.
-This frequency can be used to update the readout intermediate frequency in the configuration under "resonator_IF".
-
-Prerequisites:
-    - Ensure calibration of the time of flight, offsets, and gains (referenced as "time_of_flight").
-    - Calibrate the IQ mixer connected to the readout line (whether it's an external mixer or an Octave port).
-    - Define the readout pulse amplitude and duration in the configuration.
-    - Specify the expected resonator depletion time in the configuration.
-
-Before proceeding to the next node:
-    - Update the readout frequency, labeled as "resonator_IF_q1" and "resonator_IF_q2", in the configuration.
-"""
 
 from qm.qua import *
 from qm.QuantumMachinesManager import QuantumMachinesManager
-# from configuration import *
 from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
 from qualang_tools.results import progress_counter, fetching_tool
@@ -25,32 +8,28 @@ from qualang_tools.loops import from_array
 import warnings
 
 from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
-import matplotlib.pyplot as plt
 
 warnings.filterwarnings("ignore")
 
-###################
-#   Data Saving   #
-###################
 from datetime import datetime
-import sys
 
-###################
-# The QUA program #
-###################
-# ro_element = "rr1"  # The resonator element
-# n_avg = 10000  # The number of averages
-# # The frequency sweep parameters
-# frequencies = np.arange(-247e6, -227e6, 0.01e6)
-def search_resonators( config:dict, ro_element:list, qm_machine:QuantumMachinesManager, freq_span_MHz:int=400, resolu_MHz:int=2, n_avg:int=100, initializer:tuple=None):
+def frequency_sweep( config:dict, qm_machine:QuantumMachinesManager, ro_element:list=["q1_ro"], span:int=600, resolution:int=2, n_avg:int=100, initializer:tuple=None):
     """
-        Search cavities with the given IF span range along the given ro_element's LO.\n
+        Search cavities with the given IF span range (LO+/-span/2) along the given ro_element's LO.\n
+
+        span:\n
+        Unit in MHz, 
         ro_element: ["q1_ro"], temporarily support only 1 element in the list.\n
         initializer: from `initializer(paras,mode='depletion')`, and use paras return from `Circuit_info.give_depletion_time_for()`  
     """
-    plot_x = np.arange(-1*freq_span_MHz,(freq_span_MHz+0.1),resolu_MHz)
-    frequencies = np.arange(-1*freq_span_MHz*1e6,(freq_span_MHz+0.1)*1e6,resolu_MHz*1e6)
+    span_qua = span * u.MHz
+    resolution_qua = resolution * u.MHz
+
+    frequencies = np.arange(-span_qua/2,span_qua/2,resolution_qua )
+    plot_x = frequencies/1e6 #  Unit in MHz
     freq_len = frequencies.shape[-1]
+
+    # The QUA program #
     with program() as resonator_spec:
 
         f = declare(int)  # QUA variable for the readout frequency --> Hz int 32 up to 2^32
@@ -71,10 +50,8 @@ def search_resonators( config:dict, ro_element:list, qm_machine:QuantumMachinesM
                         print("initializer didn't work!")
                         wait(1 * u.us, ro_element[0]) 
                 # Operation
-                # Update the frequency of the digital oscillator linked to the resonator element
                 update_frequency( ro_element[0], f)
                 # Readout
-                # Measure the resonator (send a readout pulse and demodulate the signals to get the 'I' & 'Q' quadratures)
                 multiRO_measurement( iqdata_stream, ro_element,weights="rotated_") 
             # Save the averaging iteration to get the progress bar
             save(n, n_st)
@@ -118,6 +95,7 @@ def plot_CS(x:np.ndarray,idata:np.ndarray,qdata:np.ndarray,plot:bool=False,save:
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
+    # from configuration import *
 
     search_range = np.arange(-400e6, 400e6, 0.5e6)
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
