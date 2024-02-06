@@ -18,12 +18,13 @@ spec = import_spec( spec_loca )
 config = import_config( config_loca ).get_config()
 qmm, _ = spec.buildup_qmm()
 init_macro = initializer(spec.give_depletion_time_for("q1"),mode='depletion')
-idata, qdata, sweep_range = frequency_sweep(config,qmm,n_avg=50,initializer=init_macro)  
+dataset = frequency_sweep(config,qmm,n_avg=50,initializer=init_macro)  
+
+idata = dataset["q1_ro"].sel(mixer='I').values
+qdata = dataset["q1_ro"].sel(mixer='Q').values
 
 zdata = idata+1j*qdata
-plt.plot(sweep_range,np.abs(zdata))
-# plt.plot(sweep_range,qdata)
-
+plt.plot(dataset.coords["frequency"].values,np.abs(zdata))
 plt.show()    
  
 

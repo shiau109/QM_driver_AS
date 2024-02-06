@@ -11,9 +11,10 @@ from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 
 warnings.filterwarnings("ignore")
 
-from datetime import datetime
+import xarray as xr
+# 20240202 Test complete :Jacky
 
-def frequency_sweep( config:dict, qm_machine:QuantumMachinesManager, ro_element:list=["q1_ro"], span:int=600, resolution:int=2, n_avg:int=100, initializer:tuple=None):
+def frequency_sweep( config:dict, qm_machine:QuantumMachinesManager, ro_element:list=["q1_ro"], span:int=600, resolution:int=2, n_avg:int=100, initializer:tuple=None)->xr.Dataset:
     """
         Search cavities with the given IF span range (LO+/-span/2) along the given ro_element's LO.\n
 
@@ -25,9 +26,9 @@ def frequency_sweep( config:dict, qm_machine:QuantumMachinesManager, ro_element:
     span_qua = span * u.MHz
     resolution_qua = resolution * u.MHz
 
-    frequencies = np.arange(-span_qua/2,span_qua/2,resolution_qua )
-    plot_x = frequencies/1e6 #  Unit in MHz
-    freq_len = frequencies.shape[-1]
+    frequencies_qua = np.arange(-span_qua/2,span_qua/2,resolution_qua )
+    frequencies_mhz = frequencies_qua/1e6 #  Unit in MHz
+    freq_len = frequencies_qua.shape[-1]
 
     # The QUA program #
     with program() as resonator_spec:
@@ -38,7 +39,7 @@ def frequency_sweep( config:dict, qm_machine:QuantumMachinesManager, ro_element:
         n_st = declare_stream()
 
         with for_(n, 0, n < n_avg, n + 1):  # QUA for_ loop for averaging
-            with for_(*from_array(f, frequencies)):  # QUA for_ loop for sweeping the frequency
+            with for_(*from_array(f, frequencies_qua)):  # QUA for_ loop for sweeping the frequency
                 # Initialization
                 # Wait for the resonator to deplete
                 if initializer is None:
@@ -75,7 +76,17 @@ def frequency_sweep( config:dict, qm_machine:QuantumMachinesManager, ro_element:
         progress_counter(output_data[-1], n_avg, start_time=results.get_start_time())
     # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
     qm.close()
-    return output_data[0], output_data[1], plot_x
+
+    # Creating an xarray dataset
+    output_data = results.fetch_all()
+    record_data = np.array([output_data[0],output_data[1]])
+    dataset = xr.Dataset(
+        {
+            ro_element[0]: (["mixer","frequency"], record_data),
+        },
+        coords={"frequency": frequencies_mhz, "mixer":np.array(["I","Q"]) }
+    )
+    return dataset
 
 def plot_CS(x:np.ndarray,idata:np.ndarray,qdata:np.ndarray,plot:bool=False,save:bool=False):
     amp = np.absolute(idata +1j*qdata)
