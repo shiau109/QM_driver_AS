@@ -19,7 +19,7 @@ def frequency_sweep( config:dict, qm_machine:QuantumMachinesManager, ro_element:
         Search cavities with the given IF span range (LO+/-span/2) along the given ro_element's LO.\n
 
         span:\n
-        Unit in MHz, 
+        Unit in MHz, \n
         ro_element: ["q1_ro"], temporarily support only 1 element in the list.\n
         initializer: from `initializer(paras,mode='depletion')`, and use paras return from `Circuit_info.give_depletion_time_for()`  
     """
@@ -72,17 +72,17 @@ def frequency_sweep( config:dict, qm_machine:QuantumMachinesManager, ro_element:
     results = fetching_tool(job, data_list=[f"{ro_element[0]}_I", f"{ro_element[0]}_Q", "iteration"], mode="live")
 
     while results.is_processing():
-        output_data = results.fetch_all()
-        progress_counter(output_data[-1], n_avg, start_time=results.get_start_time())
+        fetch_data = results.fetch_all()
+        progress_counter(fetch_data[-1], n_avg, start_time=results.get_start_time())
     # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
     qm.close()
 
     # Creating an xarray dataset
-    output_data = results.fetch_all()
-    record_data = np.array([output_data[0],output_data[1]])
+    fetch_data = results.fetch_all()
+    output_data = np.array([fetch_data[0],fetch_data[1]])
     dataset = xr.Dataset(
         {
-            ro_element[0]: (["mixer","frequency"], record_data),
+            ro_element[0]: (["mixer","frequency"], output_data),
         },
         coords={"frequency": frequencies_mhz, "mixer":np.array(["I","Q"]) }
     )

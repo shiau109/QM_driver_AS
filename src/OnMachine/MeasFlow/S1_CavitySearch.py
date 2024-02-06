@@ -3,7 +3,6 @@ import warnings
 warnings.filterwarnings("ignore")
 import matplotlib.pyplot as plt
 
-from exp.frequency_sweep import *
 
 # 20231215 Test complete :Ratis
 # 20240202 Test complete :Jacky
@@ -18,11 +17,14 @@ spec = import_spec( spec_loca )
 config = import_config( config_loca ).get_config()
 qmm, _ = spec.buildup_qmm()
 init_macro = initializer(spec.give_depletion_time_for("q1"),mode='depletion')
+
+# Measurement
+from exp.frequency_sweep import *
 dataset = frequency_sweep(config,qmm,n_avg=50,initializer=init_macro)  
 
+# Plot
 idata = dataset["q1_ro"].sel(mixer='I').values
 qdata = dataset["q1_ro"].sel(mixer='Q').values
-
 zdata = idata+1j*qdata
 plt.plot(dataset.coords["frequency"].values,np.abs(zdata))
 plt.show()    
