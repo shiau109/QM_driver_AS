@@ -14,7 +14,7 @@ u = unit(coerce_to_integer=True)
 warnings.filterwarnings("ignore")
 import xarray as xr
 
-def flux_dep_cavity( ro_element:list, config:dict, qm_machine:QuantumMachinesManager, n_avg:int=100, flux_settle_time_ns:int=1000, freq_span:float=3, flux_span:float=0.3, flux_resolu:float=0.015, freq_resolution:float=0.05, initializer:tuple=None ):
+def freq_sweep_flux_dep( ro_element:list, config:dict, qm_machine:QuantumMachinesManager, n_avg:int=100, flux_settle_time_ns:int=1000, freq_span:float=3, flux_span:float=0.3, flux_resolu:float=0.015, freq_resolution:float=0.05, initializer:tuple=None ):
     """
     
     return is tuple
