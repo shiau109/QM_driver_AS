@@ -15,27 +15,27 @@ import sys
 import xarray as xr
 
 
-def frequency_sweep_power_dep( ro_element:list, config:dict, qm_machine:QuantumMachinesManager, n_avg:int=100, span:int=5, freq_resolution:float=0.05, amp_max_ratio:float=1.5,amp_resolu:float=0.01, initializer:tuple=None)->xr.Dataset:
+def frequency_sweep_power_dep( ro_element:list, config:dict, qm_machine:QuantumMachinesManager, n_avg:int=100, freq_span:int=5, freq_resolution:float=0.05, amp_max_ratio:float=1.5,amp_resolu:float=0.01, initializer:tuple=None)->xr.Dataset:
     """
-    span:\n
+    freq_span:\n
         Unit in MHz, \n
 
     output: xarray dataset
         coords : frequency, amp_ratio
     """
-    span_qua = span * u.MHz
-    resolution_qua = freq_resolution * u.MHz
+    freq_span_qua = freq_span * u.MHz
+    freq_resolution_qua = freq_resolution * u.MHz
 
-    frequencies_qua = np.arange(-span_qua/2,span_qua/2,resolution_qua )
+    freqs_qua = np.arange(-freq_span_qua/2,freq_span_qua/2,freq_resolution_qua )
     amp_ratio = np.arange(0.01,amp_max_ratio+0.01,amp_resolu)
     
-    frequencies_mhz = frequencies_qua/1e6 #  Unit in MHz
+    freqs_mhz = freqs_qua/1e6 #  Unit in MHz
 
     center_IF = {}
     for r in ro_element:
         center_IF[r] = config["elements"][r]["intermediate_frequency"]
     
-    freq_len = frequencies_qua.shape[-1]
+    freq_len = freqs_qua.shape[-1]
     amp_ratio_len = amp_ratio.shape[-1]
 
     ###################
@@ -53,7 +53,7 @@ def frequency_sweep_power_dep( ro_element:list, config:dict, qm_machine:QuantumM
             # with for_(*qua_logspace(a, -1, 0, 2)):
             with for_(*from_array(a, amp_ratio)):
                 
-                with for_(*from_array(df, frequencies_qua)):
+                with for_(*from_array(df, freqs_qua)):
                     # Initialization
                     if initializer is None:
                         wait(1*u.us, ro_element)
@@ -107,11 +107,11 @@ def frequency_sweep_power_dep( ro_element:list, config:dict, qm_machine:QuantumM
                                np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]]) )
     dataset = xr.Dataset(
         output_data,
-        coords={ "mixer":np.array(["I","Q"]), "frequency": frequencies_mhz, "amp_ratio": amp_ratio }
+        coords={ "mixer":np.array(["I","Q"]), "frequency": freqs_mhz, "amp_ratio": amp_ratio }
     )
     return dataset
 
-def plot_power_dep_resonator( frequencies_qua, amp_ratio, data, ax=None ):
+def plot_power_dep_resonator( freqs_qua, amp_ratio, data, ax=None ):
     """
     data shape ( 2, N, M )
     2 is I,Q
@@ -127,7 +127,7 @@ def plot_power_dep_resonator( frequencies_qua, amp_ratio, data, ax=None ):
         fig, ax = plt.subplots()
         ax.set_title('pcolormesh')
         fig.show()
-    ax.pcolormesh(frequencies_qua, amp_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    ax.pcolormesh(freqs_qua, amp_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
 
 
 if __name__ == '__main__':
@@ -135,9 +135,9 @@ if __name__ == '__main__':
     n_avg = 200  # The number of averages
     # The frequency sweep around the resonators' frequency "resonator_IF_q"
 
-    span = 5 * u.MHz
+    freq_span = 5 * u.MHz
     df = 0.1 * u.MHz
-    frequencies_qua = np.arange(-span, +span + 0.1, df)
+    freqs_qua = np.arange(-freq_span, +freq_span + 0.1, df)
 
 
     # The readout amplitude sweep (as a pre-factor of the readout amplitude) - must be within [-2; 2)
@@ -147,10 +147,10 @@ if __name__ == '__main__':
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
     
     resonators = ["rr1","rr2","rr3","rr4"]
-    output_data = mRO_power_dep_resonator( resonators ,frequencies_qua, amp_ratio,1000,n_avg,config,qmm)  
+    output_data = mRO_power_dep_resonator( resonators ,freqs_qua, amp_ratio,1000,n_avg,config,qmm)  
     for r in resonators:
         fig, ax = plt.subplots()
-        plot_power_dep_resonator(frequencies_qua, amp_ratio, output_data[r], ax)
+        plot_power_dep_resonator(freqs_qua, amp_ratio, output_data[r], ax)
         ax.set_title(r)
     plt.show()
  
