@@ -10,7 +10,7 @@ from exp.rabi_J import freq_time_rabi, plot_ana_freq_time_rabi, freq_power_rabi
 import numpy as np
 
 from OnMachine.Octave_Config.QM_config_dynamic import Circuit_info, QM_config, initializer
-from OnMachine.MeasFlow.ConfigBuildUp import spec_loca, config_loca, qubit_num
+from OnMachine.MeasFlow.ConfigBuildUp_old import spec_loca, config_loca, qubit_num
 spec = Circuit_info(qubit_num)
 config = QM_config()
 spec.import_spec(spec_loca)
@@ -22,7 +22,7 @@ u = unit(coerce_to_integer=True)
 init_macro = initializer( 100*u.us,mode='wait')
 
 ro_elements = ['q1_ro','q2_ro','q3_ro','q4_ro']
-q_name = ['q1_xy']
+q_name = ['q2_xy']
 n_avg = 100
 
 dfs = np.arange(-100e6, 100e6, 1e6)
@@ -70,7 +70,7 @@ output_data["paras"] = {
 }
 
 
-save_data = True
+save_data = False
 if save_data:
     from exp.save_data import save_npz
     import sys

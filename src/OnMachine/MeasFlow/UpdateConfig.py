@@ -1,5 +1,5 @@
 from OnMachine.Octave_Config.QM_config_dynamic import Circuit_info, QM_config
-from OnMachine.MeasFlow.ConfigBuildUp import spec_loca, config_loca
+from OnMachine.MeasFlow.ConfigBuildUp_old import spec_loca, config_loca
 import numpy as np
 spec = Circuit_info(q_num=4)
 config = QM_config()
@@ -53,23 +53,24 @@ if __name__ == '__main__':
         case "q":
             # Update RO amp, dress RO after power dependence
             # [target_q, offset_bias, Q freq(GHz), LO(MHz)]        
-            modifiers = [['q1',0.11,3.236,3.3],['q2',0.125,3.5,3.6],['q3',-0.02,3.175,3.3],['q4',0.2,3.1,3.10]] 
+            modifiers = [['q1',0.112,3.231-0.0017,3.3],['q2',-0.084,4.2461,4.3],['q3',-0.02,3.173,3.3],['q4',0.2,3.1,3.10]] 
             for i in modifiers:
                 ref_IF = (i[2]-i[3])*1000
                 if np.abs(ref_IF) > 350:
                     print("Warning IF > +/-350 MHz, IF is set 350 MHz")
                     ref_IF = np.sign(ref_IF)*350
+                
                 config.update_controlFreq(spec.update_aXyInfo_for(target_q=i[0],IF=ref_IF,LO=i[3]))
                 z = spec.update_ZInfo_for(target_q=i[0],offset=i[1])
                 config.update_z_offset(z,mode='offset')
-            
+                print(ref_IF,z)
             spec.export_spec(spec_loca)
             config.export_config(config_loca)
 
         case "rabi":
             # Update RO amp, dress RO after power dependence
             # [target_q, Q freq(GHz), amp, len]        
-            modifiers = [['q1',3.23,0.018*0.8,40],['q2',3.5,0.02,40],['q3',3.15,0.02,40],['q4',3.1,0,40]] 
+            modifiers = [['q1',3.233,0.018*0.8,40],['q2',4.2461,0.1*1.05,40],['q3',3.15,0.02,40],['q4',3.1,0,40]] 
             for i in modifiers:
                 qubit_LO = spec.get_spec_forConfig("xy")[i[0]]["qubit_LO"]*1e-9
                 ref_IF = (i[1]-qubit_LO)*1000
@@ -85,8 +86,8 @@ if __name__ == '__main__':
 
         case "ro":
             # Update RO amp, dress RO after power dependence
-            # [target_q, add_IF, mod_amp]        
-            modifiers = [['q1',-0.05,1],['q2',0,1],['q3',0,1],['q4',0,1]] 
+            # [target_q, add_IF(MHz), mod_amp]        
+            modifiers = [['q1',0,1],['q2',0,1.25],['q3',0,1],['q4',0,1]] 
             for i in modifiers:
                 print(f"{i[0]} RO")
 
