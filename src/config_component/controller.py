@@ -16,7 +16,6 @@ class Analog_output:
                 "offset":self.offset,
                 "filter":{} # TODO filter
             }
-
         }
 class Filter:
     """ TODO """
@@ -34,15 +33,35 @@ class Controller:
         self._analog_outputs = {}
         self.digital_outputs = {} # TODO
         self.analog_inputs = {} 
-    
+
+    @property
+    def name( self )->str:
+        return self._name
+        
     @property
     def analog_outputs( self )->Dict[int,Analog_output]:
         return self._analog_outputs
     
     def to_dict( self ):
+
+        analog_outputs = {}
+        for k, v in self.analog_outputs.items():
+            analog_outputs.update(v.to_dict())
+
         return {
             self._name:{
-                "analog_outputs":self.analog_outputs
+                "analog_outputs":analog_outputs,
+                "digital_outputs": {  # TODO
+                    1: {},
+                    3: {},
+                    5: {},
+                    7: {},
+                    10: {},
+                },
+                "analog_inputs": {  # TODO
+                    1: {"offset": 0, "gain_db": 0},  # I from down-conversion
+                    2: {"offset": 0, "gain_db": 0},  # Q from down-conversion
+                }
             }
         }
     

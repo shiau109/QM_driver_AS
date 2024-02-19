@@ -16,7 +16,7 @@ class DigitalWaveform:
     def to_dict( self ):
 
         output_dict = {
-            "samples": self._sample,
+            "samples": self._samples,
         }        
             
         return {

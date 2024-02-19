@@ -9,11 +9,28 @@ class IFChannel():
         self._intermediate_frequency = 0
         self._lo_frequency = 0
         self._correction = []
+
+    @property
+    def intermediate_frequency( self )->int:
+        return self._intermediate_frequency
+    @intermediate_frequency.setter
+    def intermediate_frequency( self, val:int ):
+        self._intermediate_frequency = val
+        
+    @property
+    def lo_frequency( self )->int:
+        return self._lo_frequency
+    @lo_frequency.setter
+    def lo_frequency( self, val:int ):
+        self._lo_frequency = val
     
     @property
     def correction( self )->list:
         return self._correction
-
+    @correction.setter
+    def correction( self, val:list )->list:
+        self._correction = val
+    
     def to_dict( self )->dict:
 
         output_dict = {
