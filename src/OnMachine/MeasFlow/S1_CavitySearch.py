@@ -19,7 +19,7 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(spec.give_depletion_time_for("q1"),mode='depletion')
 
 # Measurement
-from exp.frequency_sweep import *
+from exp.freq_sweep import *
 dataset = frequency_sweep(config,qmm,n_avg=50,initializer=init_macro)  
 
 # Plot

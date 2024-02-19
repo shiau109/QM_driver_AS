@@ -20,11 +20,10 @@ init_macro = initializer(spec.give_depletion_time_for("q1"),mode='depletion')
 # Measurement
 n_avg = 100  # The number of averages
 ro_elements = ["q1_ro"]
-from exp.frequency_sweep_power_dep import *
+from exp.freq_sweep_power_dep import *
 dataset = frequency_sweep_power_dep( ro_elements, config, qmm, n_avg=n_avg, amp_max_ratio=1.25, initializer=init_macro)  
 
 # Plot
-results = dataset
 dfs = dataset.coords["frequency"].values
 amps = dataset.coords["amp_ratio"].values
 for ro_name, data in dataset.data_vars.items():
