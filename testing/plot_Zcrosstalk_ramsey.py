@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-raw_data = np.load(r'D:\Data\DR2_5Q\10u5em1_Q2Z1_crosstalk_pi_20240118_1416.npz', allow_pickle=True)# ["arr_0"].item()
+raw_data = np.load(r'D:\Data\DR2_5Q\1u_Q2Z1_crosstalk_ramsey_20240118_1419.npz', allow_pickle=True)# ["arr_0"].item()
 # tomo_data =
 other_info = {}
 for k, v in raw_data.items():
@@ -135,20 +135,24 @@ get_max_pos(magnitude_spectrum, f_axes)
 # f_z_target_pos, f_z_crosstalk_pos = get_weighted_pos(magnitude_spectrum, f_axes )
 f_z_target_pos, f_z_crosstalk_pos = get_max_pos(magnitude_spectrum, f_axes)
 z_slope = f_z_target_pos/f_z_crosstalk_pos
-print(f"z_slope: {z_slope}")
+
+print(f"z_slope: {z_slope}, {-1/z_slope}")
 # Display the original image and its Fourier Transform
-plt.figure(figsize=(12, 6))
+# plt.figure(figsize=(4, 8))
 
-plt.subplot(121)
-plt.pcolormesh(axes[1], axes[0], data, cmap='gray')
-plt.plot([d_z_crosstalk_amp[0],d_z_crosstalk_amp[-1]],[-d_z_crosstalk_amp[0]/z_slope,-d_z_crosstalk_amp[-1]/z_slope])
-plt.title('Original Image')
-
-plt.subplot(122)
+fig, ax = plt.subplots(ncols=2)
+fig.set_size_inches(10, 5)
+ax[0].pcolormesh(axes[1]*1000, axes[0]*1000, data, cmap='gray')
+ax[0].plot([d_z_crosstalk_amp[0]*1000,d_z_crosstalk_amp[-1]*1000],[-d_z_crosstalk_amp[0]/z_slope*1000,-d_z_crosstalk_amp[-1]/z_slope*1000],color="r",linewidth=5)
+ax[0].set_title('Original Image')
+ax[0].set_xlabel(f"Q1 Delta Voltage (mV)")
+ax[0].set_ylabel(f"Q2 Delta Voltage (mV)")
 # plt.pcolormesh(f_z_crosstalk, f_z_target, np.log1p(magnitude_spectrum), cmap='gray')  # Use log scale for better visualization
-plt.pcolormesh(f_axes[1], f_axes[0], magnitude_spectrum, cmap='gray')  # Use log scale for better visualization
-plt.plot([-f_z_crosstalk_pos,f_z_crosstalk_pos],[-f_z_target_pos,f_z_target_pos])
-
-plt.title('2D Fourier Transform (Magnitude Spectrum)')
+ax[1].pcolormesh(f_axes[1]/1000, f_axes[0]/1000, magnitude_spectrum, cmap='gray')  # Use log scale for better visualization
+ax[1].plot([-f_z_crosstalk_pos/1000,f_z_crosstalk_pos/1000],[-f_z_target_pos/1000,f_z_target_pos/1000],"o",color="r",markersize=5)
+ax[1].plot([-f_z_crosstalk_pos/1000,f_z_crosstalk_pos/1000],[-f_z_target_pos/1000,f_z_target_pos/1000],color="r",linewidth=1)
+ax[1].set_xlabel(f"Q1 wavenumber (1/mV)")
+ax[1].set_ylabel(f"Q2 wavenumber (1/mV)")
+ax[1].set_title('2D Fourier Transform (Magnitude Spectrum)')
 
 plt.show()
