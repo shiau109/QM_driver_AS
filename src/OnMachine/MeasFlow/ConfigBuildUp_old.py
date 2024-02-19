@@ -3,15 +3,15 @@ from OnMachine.Octave_Config.QM_config_dynamic import Circuit_info, QM_config
 import os
 SpecConfig_path = os.getcwd()+'/config/'
 ########### For other import ################
-config_loca = SpecConfig_path+"DR2b_couplerTest_config" #
-spec_loca = SpecConfig_path+"DR2b_couplerTest_spec"     #
-qubit_num = 4                               #
+config_loca = SpecConfig_path+"DR4_config" #
+spec_loca = SpecConfig_path+"DR4_spec"     #
+qubit_num = 3                               #
 #############################################
 specs = Circuit_info(qubit_num)
 config = QM_config()
 
-cluster_name = "QPX_2"  # Write your cluster_name if version >= QOP220
-qop_ip = "192.168.1.105"  # Write the QM router IP address
+cluster_name = "QPX_4"  # Write your cluster_name if version >= QOP220
+qop_ip = "192.168.50.126"  # Write the QM router IP address
 qop_port = None 
 port_mapping = {
 ("con1", 1): ("octave1", "I1"),
