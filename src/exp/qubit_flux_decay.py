@@ -203,15 +203,12 @@ if __name__ == '__main__':
     # config = QM_config()
     # spec.import_spec(spec_loca)
     # config.import_config(config_loca)
-    
-    target_q = 'q1'
-
+  
     # qmm, _ = spec.buildup_qmm()
     # init_macro = initializer((spec.give_WaitTime_with_q(target_q,5),),'wait')
-
+  
+    target_q = 'q1'
     n_avg = 100
-
-
     q_name = [f"{target_q}_xy"]
     ro_element = [f"{target_q}_ro"]
     z_name = [f"{target_q}_z"]

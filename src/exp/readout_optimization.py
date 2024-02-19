@@ -29,9 +29,6 @@ import warnings
 warnings.filterwarnings("ignore")
 
 from qualang_tools.units import unit
-#######################
-# AUXILIARY FUNCTIONS #
-#######################
 u = unit(coerce_to_integer=True)
 
 def freq_dep_signal( dfs, q_name:list, ro_element:list, n_avg, config, qmm:QuantumMachinesManager, simulate=False, initializer:tuple=None ):
@@ -52,7 +49,6 @@ def freq_dep_signal( dfs, q_name:list, ro_element:list, n_avg, config, qmm:Quant
         with for_(n, 0, n < n_avg, n + 1):
             with for_(*from_array(df, dfs)):
                 # Update the frequency of the two resonator elements
-
                 with for_each_( p_idx, [0, 1]):  
                     # Init
                     if initializer is None:
