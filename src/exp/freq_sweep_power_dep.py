@@ -111,7 +111,7 @@ def frequency_sweep_power_dep( ro_element:list, config:dict, qm_machine:QuantumM
     )
     return dataset
 
-def plot_power_dep_resonator( freqs_qua, amp_ratio, data, ax=None ):
+def plot_power_dep_resonator( freqs, amp_ratio, data, ax=None ):
     """
     data shape ( 2, N, M )
     2 is I,Q
@@ -127,7 +127,7 @@ def plot_power_dep_resonator( freqs_qua, amp_ratio, data, ax=None ):
         fig, ax = plt.subplots()
         ax.set_title('pcolormesh')
         fig.show()
-    ax.pcolormesh(freqs_qua, amp_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    ax.pcolormesh(freqs, amp_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
 
 
 if __name__ == '__main__':

@@ -14,20 +14,18 @@ u = unit(coerce_to_integer=True)
 warnings.filterwarnings("ignore")
 import xarray as xr
 
-def freq_sweep_flux_dep( ro_element:list, config:dict, qm_machine:QuantumMachinesManager, n_avg:int=100, flux_settle_time_ns:int=1000, freq_span:float=3, flux_span:float=0.3, flux_resolu:float=0.015, freq_resolution:float=0.05, initializer:tuple=None ):
+def freq_sweep_flux_dep( ro_element:list, z_element:list, config:dict, qm_machine:QuantumMachinesManager, n_avg:int=100, flux_settle_time:int=1000, freq_span:float=3, flux_span:float=0.3, flux_resolution:float=0.015, freq_resolution:float=0.05, initializer:tuple=None )->xr.Dataset:
     """
-    
-    return is tuple
-    1. data\n
-    2. relative frequency (MHz) ref to original IF in config\n
-    3. absolute voltage for fluxes line\n
+    flux_settle_time unit in ns\n    
+    return is dataset with coords\n
+    ["mixer","flux","frequency"]\n
 
     """
     freq_span_qua = freq_span * u.MHz
     freq_resolution_qua = freq_resolution * u.MHz
 
     freqs_qua = np.arange(-freq_span_qua/2,freq_span_qua/2,freq_resolution_qua)
-    fluxes = np.arange(-flux_span,flux_span+flux_resolu,flux_resolu)
+    fluxes = np.arange(-flux_span,flux_span+flux_resolution,flux_resolution)
 
     freqs_mhz = freqs_qua/1e6 #  Unit in MHz
 
@@ -60,10 +58,9 @@ def freq_sweep_flux_dep( ro_element:list, config:dict, qm_machine:QuantumMachine
                             wait(1*u.us,ro_element)
 
                     # Operations
-                    for ro in ro_element:
-                        q = ro.split("_")[0]
-                        set_dc_offset(f"{q}_z", "single", dc)
-                    wait(flux_settle_time_ns * u.ns)  
+                    for z in z_element:
+                        set_dc_offset(z, "single", dc)
+                    wait(flux_settle_time * u.ns)  
 
                     # Readout
                     multiRO_measurement( iqdata_stream, ro_element, weights='rotated_')
@@ -99,7 +96,7 @@ def freq_sweep_flux_dep( ro_element:list, config:dict, qm_machine:QuantumMachine
     # Creating an xarray dataset
     fetch_data = results.fetch_all()
     for r_idx, r_name in enumerate(ro_element):
-        output_data[r_name] = ( ["mixer","flux","frequency"],
+        output_data[r_name] = ( ["mixer","frequency","flux"],
                                np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]]) )
     dataset = xr.Dataset(
         output_data,
@@ -108,7 +105,7 @@ def freq_sweep_flux_dep( ro_element:list, config:dict, qm_machine:QuantumMachine
     return dataset
 
 
-def plot_flux_dep_resonator( data, freqs_qua, fluxes, ax=None ):
+def plot_flux_dep_resonator( data, freqs, fluxes, ax=None ):
     """
     data shape ( 2, N, M )
     2 is I,Q
@@ -118,11 +115,10 @@ def plot_flux_dep_resonator( data, freqs_qua, fluxes, ax=None ):
     idata = data[0]
     qdata = data[1]
     zdata = idata +1j*qdata
-    s21 = zdata
 
     if ax==None:
         fig, ax = plt.subplots()
         ax.set_title('pcolormesh')
         fig.show()
-    ax.pcolormesh(fluxes, freqs_qua, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    ax.pcolormesh(fluxes, freqs, np.abs(zdata), cmap='RdBu')# , vmin=z_min, vmax=z_max)
     
