@@ -1,38 +1,38 @@
 from qm.qua import *
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm import SimulationConfig
-from configuration import *
+# from configuration import *
 from qualang_tools.results import fetching_tool, progress_counter
 from qualang_tools.loops import from_array
 from qualang_tools.plot import interrupt_on_close
-from RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
+from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 import matplotlib.pyplot as plt
 import warnings
 from scipy import signal
 from scipy.optimize import curve_fit
 from matplotlib.ticker import FuncFormatter
 warnings.filterwarnings("ignore")
+from qualang_tools.units import unit
+u = unit(coerce_to_integer=True)
 
-from config_par import get_offset
+from exp.config_par import get_offset
 
-def zline_crosstalk( flux_modify_range, prob_q_name:str, ro_element:str, z_line:list, flux_settle_time, config, qmm:QuantumMachinesManager, expect_crosstalk:float=1.0, n_avg:int=100, simulate=True):
+def ramsey_z_pulse( flux_modify_range, prob_q_name:str, ro_element:str, z_line:list, config, qmm:QuantumMachinesManager, evo_time=1, expect_crosstalk:float=1.0, n_avg:int=100, initializer:tuple=None, simulate=True):
     """
     Mapping z offset crosstalk by qubit frequency 
     """
     a_min = -flux_modify_range
     a_max = flux_modify_range
-    da = flux_modify_range/20
+    da = flux_modify_range/25
 
-    flux_2_range = np.arange(a_min, a_max + da / 2, da)  # + da/2 to add a_max to amplitudes
-    flux_1_range = flux_2_range*expect_crosstalk 
+    flux_crosstalk = np.arange(a_min, a_max + da / 2, da)  # + da/2 to add a_max to amplitudes
+    flux_target = np.arange(a_min, a_max - da / 2, da)*expect_crosstalk 
+    evo_cc = (evo_time/4)*u.us
+    # flux_target = np.arange(a_min*expect_crosstalk , (a_max + da / 2)*expect_crosstalk , da*expect_crosstalk/2 )#flux_crosstalk*expect_crosstalk 
+    flux_target_len = len(flux_target) 
+    flux_crosstalk_len = len(flux_crosstalk) 
 
-    # flux_1_range = np.arange(a_min*expect_crosstalk , (a_max + da / 2)*expect_crosstalk , da*expect_crosstalk/2 )#flux_2_range*expect_crosstalk 
-    flux_1_len = len(flux_1_range) 
-    flux_2_len = len(flux_2_range) 
-    print(flux_1_len,flux_2_len)
     with program() as zc:
-
-    
         iqdata_stream = multiRO_declare( ro_element )
         n = declare(int) 
         n_st = declare_stream()
@@ -41,21 +41,34 @@ def zline_crosstalk( flux_modify_range, prob_q_name:str, ro_element:str, z_line:
 
         with for_(n, 0, n < n_avg, n + 1):
             
-            with for_(*from_array(dc_1, flux_1_range)):
-                set_dc_offset( z_line[0], "single", get_offset(z_line[0],config)+dc_1 )
-                align()
-                wait(flux_settle_time) 
-                with for_(*from_array(dc_2, flux_2_range)):
+            with for_(*from_array(dc_1, flux_target)):
+                
+                with for_(*from_array(dc_2, flux_crosstalk)):
 
-                    set_dc_offset( z_line[1], "single", get_offset(z_line[1],config)+dc_2 )
                     
                     # Init
-                    align()
-                    wait(flux_settle_time) 
+                    if initializer is None:
+                        wait(100*u.us)
+                        #wait(thermalization_time * u.ns)
+                    else:
+                        try:
+                            initializer[0](*initializer[1])
+                        except:
+                            print("Initializer didn't work!")
+                            wait(100*u.us)
 
                     # Opration
                     play( "x90", prob_q_name )
-                    wait(250) 
+                    align()
+                    wait(25) 
+                    set_dc_offset( z_line[0], "single", get_offset(z_line[0],config)+dc_1 )
+                    set_dc_offset( z_line[1], "single", get_offset(z_line[1],config)+dc_2 )
+                    align()
+                    wait(evo_cc) 
+                    set_dc_offset( z_line[0], "single", get_offset(z_line[0],config) )
+                    set_dc_offset( z_line[1], "single", get_offset(z_line[1],config) )
+                    align()
+                    wait(25) 
                     play( "x90", prob_q_name )
                     wait(10) 
 
@@ -65,8 +78,8 @@ def zline_crosstalk( flux_modify_range, prob_q_name:str, ro_element:str, z_line:
             save(n, n_st)
         with stream_processing():
             n_st.save("iteration")
-            multiRO_pre_save( iqdata_stream, ro_element, (flux_1_len,flux_2_len) )
-
+            multiRO_pre_save( iqdata_stream, ro_element, (flux_target_len,flux_crosstalk_len) )
+    
     if simulate:
         simulation_config = SimulationConfig(duration=10_000)  # In clock cycles = 4ns
         job = qmm.simulate(config, zc, simulation_config)
@@ -95,8 +108,8 @@ def zline_crosstalk( flux_modify_range, prob_q_name:str, ro_element:str, z_line:
             ax[0].cla()
             ax[1].cla()
             output_data[ro_element] = np.array([fetch_data[0], fetch_data[1]])
-            plot_crosstalk_3Dscalar( flux_2_range, flux_1_range, output_data[ro_element][0], z_line, ax[0])
-            plot_crosstalk_3Dscalar( flux_2_range, flux_1_range, output_data[ro_element][1], z_line, ax[1])
+            plot_crosstalk_3Dscalar( flux_crosstalk, flux_target, output_data[ro_element][0], z_line, ax[0])
+            plot_crosstalk_3Dscalar( flux_crosstalk, flux_target, output_data[ro_element][1], z_line, ax[1])
             iteration = fetch_data[-1]
             # Progress bar
             progress_counter(iteration, n_avg, start_time=results.get_start_time())      
@@ -105,12 +118,115 @@ def zline_crosstalk( flux_modify_range, prob_q_name:str, ro_element:str, z_line:
             plt.pause(1) 
 
         qm.close()
-        return output_data
+        return output_data, flux_target, flux_crosstalk
+
+def pi_z_pulse( flux_modify_range, prob_q_name:str, ro_element:str, z_line:list, config, qmm:QuantumMachinesManager, evo_time=1, expect_crosstalk:float=1.0, n_avg:int=100, amp_ratio=0.5, initializer:tuple=None, simulate=True):
+    """
+    Mapping z offset crosstalk by qubit frequency 
+    """
+    a_min = -flux_modify_range
+    a_max = flux_modify_range
+    da = flux_modify_range/25
+
+    flux_crosstalk = np.arange(a_min, a_max + da / 2, da)  # + da/2 to add a_max to amplitudes
+    flux_target = np.arange(a_min, a_max - da / 2, da)*expect_crosstalk 
+    evo_cc = (evo_time/4)*u.us
+    # flux_target = np.arange(a_min*expect_crosstalk , (a_max + da / 2)*expect_crosstalk , da*expect_crosstalk/2 )#flux_crosstalk*expect_crosstalk 
+    flux_target_len = len(flux_target) 
+    flux_crosstalk_len = len(flux_crosstalk) 
+
+    with program() as zc:
+        iqdata_stream = multiRO_declare( ro_element )
+        n = declare(int) 
+        n_st = declare_stream()
+        dc_1 = declare(fixed) 
+        dc_2 = declare(fixed) 
+
+        with for_(n, 0, n < n_avg, n + 1):
+            
+            with for_(*from_array(dc_1, flux_target)):
+                
+                with for_(*from_array(dc_2, flux_crosstalk)):
+
+                    
+                    # Init
+                    if initializer is None:
+                        wait(100*u.us)
+                        #wait(thermalization_time * u.ns)
+                    else:
+                        try:
+                            initializer[0](*initializer[1])
+                        except:
+                            print("Initializer didn't work!")
+                            wait(100*u.us)
+
+                    # Opration
+                    # play("saturation"*amp(0.01), prob_q_name, duration=evo_cc)
+
+                    play( "x180"*amp(amp_ratio), prob_q_name, duration=evo_cc )
+                    set_dc_offset( z_line[0], "single", get_offset(z_line[0],config)+dc_1 )
+                    set_dc_offset( z_line[1], "single", get_offset(z_line[1],config)+dc_2 )
+                    align()
+                    # wait(evo_cc) 
+                    wait(25) 
+                    set_dc_offset( z_line[0], "single", get_offset(z_line[0],config) )
+                    set_dc_offset( z_line[1], "single", get_offset(z_line[1],config) )
+                    align()
+                    wait(25) 
+
+                    # Readout
+                    align()
+                    multiRO_measurement(iqdata_stream, ro_element, weights="rotated_")
+            save(n, n_st)
+        with stream_processing():
+            n_st.save("iteration")
+            multiRO_pre_save( iqdata_stream, ro_element, (flux_target_len,flux_crosstalk_len) )
+    
+    if simulate:
+        simulation_config = SimulationConfig(duration=10_000)  # In clock cycles = 4ns
+        job = qmm.simulate(config, zc, simulation_config)
+        job.get_simulated_samples().con1.plot()
+        plt.show()
+    else:
+        qm = qmm.open_qm(config)
+        job = qm.execute(zc)
+
+        ro_ch_name = []
+        ro_ch_name.append(f"{ro_element}_I")
+        ro_ch_name.append(f"{ro_element}_Q")
+        data_list = ro_ch_name + ["iteration"]   
+        results = fetching_tool(job, data_list=data_list, mode="live")
+
+        fig, ax = plt.subplots(2)
+        interrupt_on_close(fig, job)
+        # fig.colorbar( p_i, ax=ax[0] )
+        # fig.colorbar( p_q, ax=ax[1] )
+
+
+        output_data = {}
+        while results.is_processing():
+            fetch_data = results.fetch_all()
+            plt.cla()
+            ax[0].cla()
+            ax[1].cla()
+            output_data[ro_element] = np.array([fetch_data[0], fetch_data[1]])
+            plot_crosstalk_3Dscalar( flux_crosstalk, flux_target, output_data[ro_element][0], z_line, ax[0])
+            plot_crosstalk_3Dscalar( flux_crosstalk, flux_target, output_data[ro_element][1], z_line, ax[1])
+            iteration = fetch_data[-1]
+            # Progress bar
+            progress_counter(iteration, n_avg, start_time=results.get_start_time())      
+
+            plt.tight_layout()
+            plt.pause(1) 
+
+        qm.close()
+        return output_data, flux_target, flux_crosstalk
+
 
 def plot_crosstalk_3Dscalar( x, y, z, z_line_name, ax=None ):
         if ax == None:
             fig, ax = plt.subplots(2)
-        p_i = ax.pcolor(x, y, z)
+        p_i = ax.pcolormesh( x, y, z, cmap='RdBu')
 
         # plt.colorbar( p_q, ax=ax[1] )
         ax.set_xlabel(f"{z_line_name[1]} Delta Voltage (V)")

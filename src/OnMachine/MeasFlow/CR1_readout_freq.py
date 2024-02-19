@@ -11,7 +11,7 @@ import sys
 
 
 from OnMachine.Octave_Config.QM_config_dynamic import Circuit_info, QM_config, initializer
-from OnMachine.MeasFlow.ConfigBuildUp import spec_loca, config_loca, qubit_num
+from OnMachine.MeasFlow.ConfigBuildUp_old import spec_loca, config_loca, qubit_num
 spec = Circuit_info(qubit_num)
 config = QM_config()
 spec.import_spec(spec_loca)
@@ -20,9 +20,9 @@ config.import_config(config_loca)
 qmm,_ = spec.buildup_qmm()
 init_macro = initializer( 100*u.us,mode='wait')
 
-ro_elements = ['q1_ro','q2_ro','q3_ro','q4_ro']
-operate_qubit = ['q1_xy']
-n_avg = 500
+ro_elements = ['q2_ro']
+operate_qubit = ['q2_xy']
+n_avg = 1000
 
 dfs = np.arange(-1e6, 1e6, 0.05e6)
 output_data = freq_dep_signal( dfs, operate_qubit, ro_elements, n_avg, config.get_config(), qmm, initializer=init_macro)
@@ -35,7 +35,7 @@ for r in ro_elements:
 plt.show()
 
 
-amps = np.arange( 0.2, 1.5, 0.01)
+amps = np.arange( 0.2, 1.5, 0.05)
 output_data = power_dep_signal( amps, operate_qubit, ro_elements, n_avg, config.get_config(), qmm, initializer=init_macro)
 
 for r in ro_elements:

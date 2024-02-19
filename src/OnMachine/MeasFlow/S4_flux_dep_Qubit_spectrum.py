@@ -12,7 +12,7 @@ import sys
 
 
 from OnMachine.Octave_Config.QM_config_dynamic import Circuit_info, QM_config, initializer
-from OnMachine.MeasFlow.ConfigBuildUp import spec_loca, config_loca, qubit_num
+from OnMachine.MeasFlow.ConfigBuildUp_old import spec_loca, config_loca, qubit_num
 spec = Circuit_info(qubit_num)
 config = QM_config()
 spec.import_spec(spec_loca)
@@ -22,12 +22,12 @@ qmm,_ = spec.buildup_qmm()
 
 
 ro_elements = ['q1_ro','q2_ro','q3_ro','q4_ro']
-q_name = ['q1_xy']
-z_name = ['q3_z']
+q_name = ['q2_xy']
+z_name = ['q2_z']
 # Adjust the pulse duration and amplitude to drive the qubit into a mixed state
 # saturation_len = 1 * u.us  # In ns (should be < FFT of df)
 # saturation_amp = 0.01  # pre-factor to the value defined in the config - restricted to [-2; 2)
-n_avg = 100
+n_avg = 200
 span = 100 * u.MHz
 df = 0.5 * u.MHz
 flux_span = 0.06
@@ -71,9 +71,7 @@ output_data["paras"] = {
 }
 
 
-save_data = True
+save_data = False
 if save_data:
-    from exp.save_data import save_npz
-    import sys
-    save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
-    save_npz(r"D:\Data\DR2_5Q", "Q1Z3_flux_dep_Qspectrum", output_data)   
+    from exp.save_data import save_nc  
+    save_nc()

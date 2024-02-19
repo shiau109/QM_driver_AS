@@ -2,9 +2,9 @@
 from OnMachine.Octave_Config.QM_config_dynamic import QM_config, Circuit_info
 from qm.QuantumMachinesManager import QuantumMachinesManager
 
-from OnMachine.SQctrlCali.SQGate_calibration_dConfig import amp_calibration, DRAG_calibration_Yale, StarkShift_scout, StarkShift_program
+from exp.SQGate_calibration import amp_calibration, DRAG_calibration_Yale, StarkShift_scout, StarkShift_program
 from OnMachine.allxy_dConfig import AllXY_executor
-from OnMachine.SQctrlCali.Ramsey_freq_calibration_dConfig import Ramsey_freq_calibration, plot_ana_result
+from exp.Ramsey_freq_calibration import Ramsey_freq_calibration, plot_ana_result
 
 from OnMachine.SQctrlCali.AutoCali_analyzer import find_amp_minima, math_eqns, analysis_drag_a, find_AC_minima
 from numpy import mean, ndarray, arange, array, std
@@ -360,7 +360,7 @@ def AutoCaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
             print("Jump out and amp is calibrated, move onto next step: alpha calibration!")
             break
 
-        output_data, evo_time = Ramsey_freq_calibration( virtual_detune, [f"{target_q}_xy"], [f"{target_q}_ro"],config.get_config(), qm_machine, n_avg=avg_n_ramsey, simulate=False, mode='live', initializer=init_macro)
+        output_data, evo_time = Ramsey_freq_calibration( virtual_detune, [f"{target_q}_xy"], [f"{target_q}_ro"],config.get_config(), qm_machine, n_avg=avg_n_ramsey, simulate=False, initializer=init_macro)
         ans = plot_ana_result(evo_time,output_data[f"{target_q}_ro"][0],virtual_detune)
         
         # try to save some time from Ramsey exp
@@ -441,7 +441,8 @@ def AutoCaliFlow(target_q:str,spec:Circuit_info,config:QM_config,qm_machine:Quan
     
     return spec, config
         
-
+from qualang_tools.units import unit
+u = unit(coerce_to_integer=True)
 if __name__ == '__main__':
     # from RB20ns_dConfig import RB_executor, plot_SQRB_result
     from OnMachine.SQRB_dConfig import single_qubit_RB
@@ -457,13 +458,16 @@ if __name__ == '__main__':
     
     dyna_config = QM_config()
     the_specs = Circuit_info(q_num=qubit_num)
-    target_q = 'q1'
+    target_q = 'q2'
     
     # load config file
     dyna_config.import_config(path=config_loca)
     the_specs.import_spec(path=spec_loca)
     qmm,_ = the_specs.buildup_qmm()
-    init_macro = initializer((the_specs.give_WaitTime_with_q(target_q,wait_scale=5),),'wait')
+    # init_macro = initializer((the_specs.give_WaitTime_with_q(target_q,wait_scale=5),),'wait')
+    init_macro = initializer(100*u.us,'wait')
+
+    
     the_specs.update_aXyInfo_for(target_q,len=40)
     the_specs.update_aXyInfo_for(target_q,amp=the_specs.get_spec_forConfig('xy')[target_q]['pi_amp']/(40/24))
     dyna_config.update_controlWaveform(the_specs.get_spec_forConfig('xy'),target_q)
@@ -474,7 +478,7 @@ if __name__ == '__main__':
     # RB before Calibrations
     # epg = SQRB_executor(f"{target_q}_xy",[f"{target_q}_ro"],dyna_config.get_config(), qmm, initializer=init_macro,plot=True )
     
-    calied_specs, calied_config = AutoCaliFlow(target_q,the_specs,dyna_config,qmm,1.0,init_macro)
+    calied_specs, calied_config = AutoCaliFlow(target_q,the_specs,dyna_config,qmm,5,init_macro)
     
     calied_specs.export_spec(path=config_loca+"_testCali")
     calied_config.export_config(path=spec_loca+"_testCali")

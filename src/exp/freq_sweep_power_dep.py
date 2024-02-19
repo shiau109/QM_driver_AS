@@ -1,24 +1,3 @@
-"""
-        RESONATOR SPECTROSCOPY VERSUS READOUT AMPLITUDE
-This sequence involves measuring the resonator by sending a readout pulse and demodulating the signals to
-extract the 'I' and 'Q' quadratures.
-This is done across various readout intermediate frequencies and amplitudes.
-Based on the results, one can determine if a qubit is coupled to the resonator by noting the resonator frequency
-splitting. This information can then be used to adjust the readout amplitude, choosing a readout amplitude value
-just before the observed frequency splitting.
-
-Prerequisites:
-    - Calibration of the time of flight, offsets, and gains (referenced as "time_of_flight").
-    - Calibration of the IQ mixer connected to the readout line (be it an external mixer or an Octave port).
-    - Identification of the resonator's resonance frequency (referred to as "resonator_spectroscopy_multiplexed").
-    - Configuration of the readout pulse amplitude (the pulse processor will sweep up to twice this value) and duration.
-    - Specification of the expected resonator depletion time in the configuration.
-
-Before proceeding to the next node:
-    - Update the readout frequency, labeled as "resonator_IF_q", in the configuration.
-    - Adjust the readout amplitude, labeled as "readout_amp_q", in the configuration.
-"""
-
 from qm.qua import *
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qualang_tools.results import progress_counter, fetching_tool
@@ -33,22 +12,30 @@ from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
 from datetime import datetime
 import sys
+import xarray as xr
 
 
-def mRO_power_dep_resonator( ro_element:list, config:dict, qm_machine:QuantumMachinesManager, n_avg:int=100, freq_span_MHz:int=5, freq_resolu_MHz:float=0.05, amp_max_ratio:float=1.5,amp_resolu:float=0.01, initializer:tuple=None)->list:
+def frequency_sweep_power_dep( ro_element:list, config:dict, qm_machine:QuantumMachinesManager, n_avg:int=100, freq_span:int=5, freq_resolution:float=0.05, amp_max_ratio:float=1.5,amp_resolu:float=0.01, initializer:tuple=None)->xr.Dataset:
     """
-    df_array ref is IF on config
-    """
+    freq_span:\n
+        Unit in MHz, \n
 
-    dfs = np.arange(-freq_span_MHz*u.MHz,(freq_span_MHz+0.1)*u.MHz,freq_resolu_MHz*u.MHz)
+    output: xarray dataset
+        coords : frequency, amp_ratio
+    """
+    freq_span_qua = freq_span * u.MHz
+    freq_resolution_qua = freq_resolution * u.MHz
+
+    freqs_qua = np.arange(-freq_span_qua/2,freq_span_qua/2,freq_resolution_qua )
     amp_ratio = np.arange(0.01,amp_max_ratio+0.01,amp_resolu)
-    plot_freq_x = np.arange(-freq_span_MHz,(freq_span_MHz+0.1),freq_resolu_MHz)
     
+    freqs_mhz = freqs_qua/1e6 #  Unit in MHz
+
     center_IF = {}
     for r in ro_element:
         center_IF[r] = config["elements"][r]["intermediate_frequency"]
     
-    freq_len = dfs.shape[-1]
+    freq_len = freqs_qua.shape[-1]
     amp_ratio_len = amp_ratio.shape[-1]
 
     ###################
@@ -66,7 +53,7 @@ def mRO_power_dep_resonator( ro_element:list, config:dict, qm_machine:QuantumMac
             # with for_(*qua_logspace(a, -1, 0, 2)):
             with for_(*from_array(a, amp_ratio)):
                 
-                with for_(*from_array(df, dfs)):
+                with for_(*from_array(df, freqs_qua)):
                     # Initialization
                     if initializer is None:
                         wait(1*u.us, ro_element)
@@ -112,9 +99,19 @@ def mRO_power_dep_resonator( ro_element:list, config:dict, qm_machine:QuantumMac
         progress_counter(iteration, n_avg, start_time=results.get_start_time())        
     # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
     qm.close()
-    return [output_data,plot_freq_x,amp_ratio]
 
-def plot_power_dep_resonator( dfs, amp_ratio, data, ax=None ):
+    # Creating an xarray dataset
+    fetch_data = results.fetch_all()
+    for r_idx, r_name in enumerate(ro_element):
+        output_data[r_name] = ( ["mixer","amp_ratio","frequency"],
+                               np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]]) )
+    dataset = xr.Dataset(
+        output_data,
+        coords={ "mixer":np.array(["I","Q"]), "frequency": freqs_mhz, "amp_ratio": amp_ratio }
+    )
+    return dataset
+
+def plot_power_dep_resonator( freqs, amp_ratio, data, ax=None ):
     """
     data shape ( 2, N, M )
     2 is I,Q
@@ -130,7 +127,7 @@ def plot_power_dep_resonator( dfs, amp_ratio, data, ax=None ):
         fig, ax = plt.subplots()
         ax.set_title('pcolormesh')
         fig.show()
-    ax.pcolormesh(dfs, amp_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    ax.pcolormesh(freqs, amp_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
 
 
 if __name__ == '__main__':
@@ -138,9 +135,9 @@ if __name__ == '__main__':
     n_avg = 200  # The number of averages
     # The frequency sweep around the resonators' frequency "resonator_IF_q"
 
-    span = 5 * u.MHz
+    freq_span = 5 * u.MHz
     df = 0.1 * u.MHz
-    dfs = np.arange(-span, +span + 0.1, df)
+    freqs_qua = np.arange(-freq_span, +freq_span + 0.1, df)
 
 
     # The readout amplitude sweep (as a pre-factor of the readout amplitude) - must be within [-2; 2)
@@ -150,10 +147,10 @@ if __name__ == '__main__':
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
     
     resonators = ["rr1","rr2","rr3","rr4"]
-    output_data = mRO_power_dep_resonator( resonators ,dfs, amp_ratio,1000,n_avg,config,qmm)  
+    output_data = mRO_power_dep_resonator( resonators ,freqs_qua, amp_ratio,1000,n_avg,config,qmm)  
     for r in resonators:
         fig, ax = plt.subplots()
-        plot_power_dep_resonator(dfs, amp_ratio, output_data[r], ax)
+        plot_power_dep_resonator(freqs_qua, amp_ratio, output_data[r], ax)
         ax.set_title(r)
     plt.show()
  
