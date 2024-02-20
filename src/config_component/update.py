@@ -127,10 +127,10 @@ def update_ReadoutFreqs(config:Configuration,updatedInfo:dict):
         match info.split("_")[1].lower():
             case 'if':
                 elements.intermediate_frequency = updatedInfo[info]
-                config.mixers[mixer_name].iFChannels[int(target_q[-1])-1].intermediate_frequency = updatedInfo[info]
+                config.mixers[mixer_name].iFChannels[int(target_q[-1])].intermediate_frequency = updatedInfo[info]
             case 'lo' :
                 elements.input_map.lo_frequency = updatedInfo[info]
-                config.mixers[mixer_name].iFChannels[int(target_q[-1])-1].lo_frequency = updatedInfo[info]
+                config.mixers[mixer_name].iFChannels[int(target_q[-1])].lo_frequency = updatedInfo[info]
             case _:
                 raise KeyError(f"RO update keyname goes wrong: {info.split('_')[1].lower()}")
         

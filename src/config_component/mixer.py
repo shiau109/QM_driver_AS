@@ -65,6 +65,7 @@ class Mixer:
             self._name:channel_dicts
         }
 
+    
 def iFChannel_read_dict( infos:dict ):
 
     iFChannel = IFChannel()

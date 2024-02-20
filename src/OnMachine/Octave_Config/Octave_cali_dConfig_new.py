@@ -5,12 +5,11 @@ You need to run this file in order to update the Octaves with the new parameters
 from OnMachine.Octave_Config.set_octave import ElementsSettings, octave_settings
 
 # Configure the Octave parameters for each element
-rr1 = ElementsSettings("q1_ro", gain=0, rf_in_port=["octave1", 1], down_convert_LO_source="Internal")
+rr1 = ElementsSettings("q0_ro", gain=0, rf_in_port=["octave1", 1], down_convert_LO_source="Internal")
 # rr2 = ElementsSettings("q2_ro", gain=0, rf_in_port=["octave1", 1], down_convert_LO_source="Internal")
 # rr3 = ElementsSettings("q3_ro", gain=0, rf_in_port=["octave1", 1], down_convert_LO_source="Internal")
 # rr4 = ElementsSettings("q4_ro", gain=0, rf_in_port=["octave1", 1], down_convert_LO_source="Internal")
-# rr5 = ElementsSettings("rr5", gain=0, rf_in_port=["octave1", 1], down_convert_LO_source="Internal")
-q1_xy = ElementsSettings("q1_xy", gain=15)
+# q1_xy = ElementsSettings("q1_xy", gain=15)
 # q2_xy = ElementsSettings("q2_xy", gain=15)
 # q3_xy = ElementsSettings("q3_xy", gain=15)
 # q4_xy = ElementsSettings("q4_xy", gain=20)

@@ -14,7 +14,7 @@ warnings.filterwarnings("ignore")
 import xarray as xr
 # 20240202 Test complete :Jacky
 
-def frequency_sweep( config:dict, qm_machine:QuantumMachinesManager, ro_element:list=["q1_ro"], span:int=600, resolution:int=2, n_avg:int=100, initializer:tuple=None)->xr.Dataset:
+def frequency_sweep( config:dict, qm_machine:QuantumMachinesManager, ro_element:list=["q0_ro"], span:int=600, resolution:int=2, n_avg:int=100, initializer:tuple=None)->xr.Dataset:
     """
         Search cavities with the given IF span range (LO+/-span/2) along the given ro_element's LO.\n
 

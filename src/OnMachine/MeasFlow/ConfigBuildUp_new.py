@@ -1,16 +1,15 @@
 
 from config_component.channel_info import ChannelInfo
 from config_component.configuration import Configuration
-from config_component.construct import create_qubit
 import os
 SpecConfig_path = os.getcwd()+'/config/'
 ########### For other import ################
-config_loca = SpecConfig_path+"DR2b_discharge_config" #
-spec_loca = SpecConfig_path+"DR2b_discharge_spec"     #
+config_loca = SpecConfig_path+"DR4_5Q4C_config" #
+spec_loca = SpecConfig_path+"DR4_5Q4C_spec"     #
 #############################################
 
-cluster_name = "QPX_2"  # Write your cluster_name if version >= QOP220
-qop_ip = "192.168.1.105"  # Write the QM router IP address
+cluster_name = "QPX_4"  # Write your cluster_name if version >= QOP220
+qop_ip = "192.168.50.126"  # Write the QM router IP address
 qop_port = None 
 port_mapping = {
 ("con1", 1): ("octave1", "I1"),
@@ -26,7 +25,7 @@ port_mapping = {
 }
 
 if __name__ == '__main__':
-    qubit_num = 1   
+    qubit_num = 9   
 
     specs = ChannelInfo(qubit_num)
     specs.update_HardwareInfo(qop_ip=qop_ip, qop_port=qop_port, octave_port=11250, cluster_name=cluster_name, ctrl_name=("octave1","con1"), port_map=port_mapping, clock="Internal")
@@ -59,8 +58,21 @@ if __name__ == '__main__':
     }
     from config_component.controller import controller_read_dict
     config._controllers["con1"] = controller_read_dict("con1", opxp_hardware)
-    create_qubit(config,"q1",specs.get_spec_forConfig('ro'),specs.get_spec_forConfig('xy'),specs.get_spec_forConfig('wire'),specs.get_spec_forConfig('z'))
+
+    from config_component.construct import create_qubit, create_roChannel, create_zChannel
+    # create_qubit( config,"q1",specs.get_spec_forConfig('ro'),specs.get_spec_forConfig('xy'),specs.get_spec_forConfig('wire'),specs.get_spec_forConfig('z'))
+
     
+    for q_i, z_port in enumerate( [3,4,5,6,7] ):
+        q_name = f"q{q_i}"
+        specs.update_WireInfo_for(q_name,z=("con1",z_port))
+        create_roChannel( config, f"{q_name}_ro", specs.get_spec_forConfig('ro')[q_name],specs.get_spec_forConfig('wire')[q_name] )
+        create_zChannel( config, f"{q_name}_z", specs.get_spec_forConfig('z')[q_name],specs.get_spec_forConfig('wire')[q_name] )
+    
+    for q_i, z_port in enumerate( [8,9,10] ):
+        q_name = f"c{q_i}"
+        specs.update_WireInfo_for("q0",z=("con1",z_port))
+        create_zChannel( config, f"{q_name}_z", specs.get_spec_forConfig('z')["q0"],specs.get_spec_forConfig('wire')["q0"] )
 
     specs.export_spec(spec_loca)
     config.export_config(config_loca)

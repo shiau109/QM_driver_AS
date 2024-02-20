@@ -27,7 +27,7 @@ class ChannelInfo:
             self._ZInfo = {}
             self._WireInfo = {}
             self._RoInfo = {}
-            self._HardwareInfo = {}
+            self.init_hardwareInfo()
 
     # for hardware infomation
     def init_hardwareInfo(self):
@@ -95,7 +95,7 @@ class ChannelInfo:
         self._RoInfo["depletion_time"] = 1 * u.us
         dIF = 200/self.q_num
         init_IF = arange(-200,210,dIF)
-        for idx in range(1, self.q_num+1):
+        for idx in range(self.q_num):
             self._RoInfo[f"q{idx}"] = {}
             self._RoInfo[f"q{idx}"]["readout_len"] = 1500
             self._RoInfo[f"q{idx}"]["time_of_flight"] = 280
@@ -104,7 +104,7 @@ class ChannelInfo:
                     case 'resonator_LO':
                         init_value = 6 * u.GHz
                     case 'resonator_IF':
-                        init_value = init_IF[idx-1] * u.MHz
+                        init_value = init_IF[idx] * u.MHz
                     case 'readout_amp':
                         init_value = 0.2 
                     case _:
@@ -203,7 +203,7 @@ class ChannelInfo:
         '''
         self._XyInfo = {}
         self._XyInfo["register"] = []
-        for idx in range(1,self.q_num+1):
+        for idx in range(self.q_num):
             self._XyInfo[f'q{idx}'] = {}
             for info in ["pi_amp","pi_len","qubit_LO","qubit_IF","drag_coef","anharmonicity","AC_stark_detuning","waveform_func","pi_ampScale"]:
                 match info :
@@ -297,7 +297,7 @@ class ChannelInfo:
             DecoInfo will be like : {"q1":{"T1":10000000,"T2":20000000},"q2":....}
         """
         self._DecoInfo = {}
-        for idx in range(1,self.q_num+1):
+        for idx in range(self.q_num):
             self._DecoInfo[f"q{idx}"] = {"T1":0,"T2":0,"T2e":0,"T2s":0}
 
     def update_DecoInfo_for(self,target_q:str,**kwargs):
@@ -321,7 +321,7 @@ class ChannelInfo:
             initialize Zinfo with: {"q1":{"controller":"con1","con_channel":1,"offset":0.0,"OFFbias":0.0,"idle":0.0},"q2":....}
         """
         self._ZInfo = {}
-        for idx in range(1,self.q_num+1):
+        for idx in range(self.q_num):
             self._ZInfo[f"q{idx}"] = {
                 "offset":0.0,
                 "OFFbias":0.0,
@@ -356,7 +356,7 @@ class ChannelInfo:
     ### physical wiring info
     def init_wireInfo(self):
         self._WireInfo = {}
-        for idx in range(1,self.q_num+1):
+        for idx in range(self.q_num):
             self._WireInfo[f"q{idx}"] = {
                 "ro_mixer":f'octave1_ro', 
                 "xy_mixer":f'octave1_q{idx}',
@@ -372,11 +372,21 @@ class ChannelInfo:
     def update_WireInfo_for(self, target_q:str ,**kwargs):
         """
             target_q: "q3".\n
-            kwargs: ro_mixer='octave',\n xy_mixer='octave',\nup_I=('con1',1),\n up_Q=('con1',2),\ndown_I=('con1',2),\n down_Q=('con1',2),\nxy_I=('con1',3),\n xy_Q=('con1',4)
+            kwargs: 
+                "ro_mixer":f'octave1_ro',\n
+                "xy_mixer":f'octave1_q{idx}', \n
+                "rin_I":('con1',1),\n
+                "rin_Q":('con1',2),\n
+                "rout_I":('con1',1),\n
+                "rout_Q":('con1',2),\n
+                "xy_I":('con1',3),\n
+                "xy_Q":('con1',4),\n
+                "z":('con1',5)\n
+                
         """
         if kwargs != {}:
             for info in kwargs:
-                if info.lower() in ['ro_mixer','xy_mixer','up_i','up_q','down_i','down_q','xy_i','xy_q']:
+                if info.lower() in ['ro_mixer','xy_mixer','rin_I','rin_Q','rout_I','rout_Q','xy_I','xy_Q', 'z']:
                     self._WireInfo[target_q][info] = kwargs[info]
                 else:
                     raise KeyError("Check the wiring info key plz!")

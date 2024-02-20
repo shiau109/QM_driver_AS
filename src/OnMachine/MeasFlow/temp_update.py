@@ -7,11 +7,13 @@ spec = import_spec( spec_loca )
 config_obj = import_config( config_loca )
 
 from config_component.update import update_ReadoutFreqs, update_Readout
-new_LO = 6.0
+new_LO = 5.9
 # init_value of readout amp is 0.2
-cavities = [['q1',-278, 0.2*0.2]]
+# 0.065
+cavities = [['q0',+110+7, 0.1*0.6*0.2],['q1',+155+5, 0.1*0.6*0.2]]
 for i in cavities:
     f = spec.update_RoInfo_for(target_q=i[0],LO=new_LO,IF=i[1])
+    print(f)
     update_ReadoutFreqs(config_obj, f)
     spec.update_RoInfo_for(i[0],amp=i[2])
     update_Readout(config_obj, i[0], spec.get_spec_forConfig('ro'))
