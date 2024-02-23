@@ -44,40 +44,51 @@ def flux_qubit_spec_with_d(flux,v_period,max_freq,max_flux,Ec,d):
 def cosine_func(x, amplitude, frequency, phase, offset):
     return amplitude * np.cos(2 * np.pi * frequency * x + phase) + offset
 
-def errf(x, *p)->np.ndarray:
+def errf(*p)->np.ndarray:
     """
     return error function array
     x: array like, shape (n,)\n
     p[0]: amp \n
-    p[1]: center of edge \n
-    p[2]: edge sigma \n
+    p[1]: edge sigma \n
     """
-    return p[0] * (erf((x - p[1]) / (np.sqrt(2) * p[2])) + 1)/2
+    x = np.linspace(0,1,1001)
+    sigma = 1 / p[1]
+    return p[0] * (erf((x - 0.5) / (np.sqrt(2) * sigma)) + 1)/2
 
-def EERP(x, *p)->np.ndarray:
+def EERP(*p)->np.ndarray:
     """
     return Gaussian Edge Rectangular Pulse array
     x: array like, shape (n,) \n
     p[0]: amp \n
-    p[1]: center of edge \n. It also means half of the edge.
-    p[2]: edge sigma \n
-    p[3]: pulse length \n. The total length of the pulse including edge. 
-    p[4]: start time\n
+    p[1]: edge sigma \n
+    p[2]: erf width \n
+    p[3]: flat width \n
     """
-    total_t = p[3]
-    start_t = p[4]
-    Td = total_t - p[1]
-    f1 = errf(x, p[0], p[1] + start_t, p[2])
-    f2 = -errf(x, p[0], Td + start_t, p[2])
-    return f1 + f2
+    step = 1000 // p[2]
+    erf_up = errf(*p)[::step]
+    erf_dn = erf_up[::-1]
+    wf = np.append(erf_up, np.array([p[0]] * p[3]))
+    wf = np.append(wf,erf_dn)
+    return wf
 
 if __name__ == '__main__':
 
-    x = np.linspace(0,34,35)
-    p = (1,5,2.5,20,5) 
-    print(np.round(EERP(x,*p),3))
-    plt.plot(x, EERP(x,*p),'-o')
+    p = (1,4,10,20)  
+    wf = EERP(*p)
+    print(np.round(wf,3))
+    x = [i for i in range(len(wf))]
+    plt.plot(x, wf,'-o')
     plt.show()
+
+    # p = (1,0.5,4) 
+    # erf_up = errf(*p)[::100]
+    # erf_dn = erf_up[::-1]
+    # wf = np.append(erf_up, np.array([1.0] * 10))
+    # wf = np.append(wf,erf_dn)
+    # x = [i for i in range(len(wf))]
+    # print(np.round(wf,3))
+    # plt.plot(x, wf,'-o')
+    # plt.show()
     
     ### Test S21_notch
     # x = np.linspace(-48e6,-44e6,5000)

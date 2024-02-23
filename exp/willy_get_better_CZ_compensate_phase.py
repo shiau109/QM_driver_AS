@@ -22,13 +22,13 @@ for gate in gate_seq:
 n_avg = 2000
 state_0 =[]
 phase_list = []
-ticks = 50
+ticks = 25
 state_count_list = [3]
 for i in range(ticks):
     phase_list.append(i/ticks)
-## q1 0.524, q2 0.373
+## q1 0.36, q2 0.84
 for phase in phase_list:
-    mycompiler = TQCompile( 2, q1_frame_update= phase, q2_frame_update= 0.86, params={}, cz_type='eerp' )
+    mycompiler = TQCompile( 2, q1_frame_update= phase, q2_frame_update= 0.84, params={}, cz_type='square' )
     with program() as prog:
         n = declare(int)
         n_st = declare_stream()  

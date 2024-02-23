@@ -108,7 +108,7 @@ def filter_calc(exponential):
 # The QUA program #
 ###################
 # Index of the qubit to measure
-qubit = 1
+qubit = 2
 
 
 n_avg = 10_000  # Number of averages
@@ -151,10 +151,10 @@ with program() as cryoscope:
                     play("y90", f"q{qubit}_xy")
                 # Measure resonator state after the sequence
                 align()
-                multiplexed_readout(I, I_st, Q, Q_st, resonators=[1, 2], weights="rotated_")
+                multiplexed_readout(I, I_st, Q, Q_st, resonators=[2, 3], weights="rotated_")
                 # State discrimination
-                assign(state[0], I[0] > ge_threshold_q1)
-                assign(state[1], I[1] > ge_threshold_q2)
+                assign(state[0], I[0] > ge_threshold_q2)
+                assign(state[1], I[1] > ge_threshold_q3)
                 save(state[0], state_st[0])
                 save(state[1], state_st[1])
                 # Wait cooldown time and save the results
@@ -208,10 +208,10 @@ else:
         # Progress bar
         progress_counter(n, n_avg, start_time=results.start_time)
         # Bloch vector Sx + iSy
-        if qubit == 1:
+        if qubit == 2:
             Sxx = state1[:, 0] * 2 - 1
             Syy = state1[:, 1] * 2 - 1
-        elif qubit == 2:
+        elif qubit == 3:
             Sxx = state2[:, 0] * 2 - 1
             Syy = state2[:, 1] * 2 - 1
         else:
@@ -227,7 +227,7 @@ else:
         step_response_freq = detuning / np.average(detuning[-int(const_flux_len / 2) :])
         step_response_volt = np.sqrt(step_response_freq)
         # Plots
-        plt.suptitle(f"Cryoscope for qubit {qubit} (qubit 1 (2) displayed on top (bottom))")
+        plt.suptitle(f"Cryoscope for qubit {qubit} (qubit 2 (3) displayed on top (bottom))")
         plt.subplot(241)
         plt.cla()
         plt.plot(xplot, I1)
@@ -284,46 +284,46 @@ else:
         plt.pause(0.1)
 
     ## Fit step response with exponential
-    [A, tau], _ = optimize.curve_fit(
-        exponential_decay,
-        xplot,
-        step_response_volt,
-    )
-    print(f"A: {A}\ntau: {tau}")
+    # [A, tau], _ = optimize.curve_fit(
+    #     exponential_decay,
+    #     xplot,
+    #     step_response_volt,
+    # )
+    # print(f"A: {A}\ntau: {tau}")
 
-    ## Derive IIR and FIR corrections
-    fir, iir = filter_calc(exponential=[(A, tau)])
-    print(f"FIR: {fir}\nIIR: {iir}")
+    # ## Derive IIR and FIR corrections
+    # fir, iir = filter_calc(exponential=[(A, tau)])
+    # print(f"FIR: {fir}\nIIR: {iir}")
 
-    ## Derive responses and plots
-    # Response without filter
-    no_filter = exponential_decay(xplot, A, tau)
-    # Response with filters
-    with_filter = no_filter * signal.lfilter(fir, [1, iir[0]], step_response_th)  # Output filter , DAC Output
+    # ## Derive responses and plots
+    # # Response without filter
+    # no_filter = exponential_decay(xplot, A, tau)
+    # # Response with filters
+    # with_filter = no_filter * signal.lfilter(fir, [1, iir[0]], step_response_th)  # Output filter , DAC Output
 
-    # Plot all data
-    plt.rcParams.update({"font.size": 13})
-    plt.figure()
-    plt.suptitle("Cryoscope with filter implementation")
-    plt.plot(xplot, step_response_volt, "o-", label="Experimental data")
-    plt.plot(xplot, no_filter, label="Fitted response without filter")
-    plt.plot(xplot, with_filter, label="Fitted response with filter")
-    plt.plot(xplot, step_response_th, label="Ideal WF")  # pulse
-    plt.text(
-        max(xplot) // 2,
-        max(step_response_volt) / 2,
-        f"IIR = {iir}\nFIR = {fir}",
-        bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
-    )
-    plt.text(
-        max(xplot) // 4,
-        max(step_response_volt) / 2,
-        f"A = {A:.2f}\ntau = {tau:.2f}",
-        bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
-    )
-    plt.xlabel("Flux pulse duration [ns]")
-    plt.ylabel("Step response")
-    plt.legend(loc="upper right")
-    plt.tight_layout()
-    # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
-    qm.close()
+    # # Plot all data
+    # plt.rcParams.update({"font.size": 13})
+    # plt.figure()
+    # plt.suptitle("Cryoscope with filter implementation")
+    # plt.plot(xplot, step_response_volt, "o-", label="Experimental data")
+    # plt.plot(xplot, no_filter, label="Fitted response without filter")
+    # plt.plot(xplot, with_filter, label="Fitted response with filter")
+    # plt.plot(xplot, step_response_th, label="Ideal WF")  # pulse
+    # plt.text(
+    #     max(xplot) // 2,
+    #     max(step_response_volt) / 2,
+    #     f"IIR = {iir}\nFIR = {fir}",
+    #     bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
+    # )
+    # plt.text(
+    #     max(xplot) // 4,
+    #     max(step_response_volt) / 2,
+    #     f"A = {A:.2f}\ntau = {tau:.2f}",
+    #     bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
+    # )
+    # plt.xlabel("Flux pulse duration [ns]")
+    # plt.ylabel("Step response")
+    # plt.legend(loc="upper right")
+    # plt.tight_layout()
+    # # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
+    # qm.close()

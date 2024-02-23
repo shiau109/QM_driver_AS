@@ -127,21 +127,21 @@ def baked_waveform(waveform, pulse_duration, qubit_index):
 # The QUA program #
 ###################
 # Index of the qubit to measure
-qubit = 2
+qubit = 3
 
 n_avg = 1_000  # Number of averages
 # FLux pulse waveform generation
 # The zeros are just here to visualize the rising and falling times of the flux pulse. they need to be set to 0 before
 # fitting the step response with an exponential.
-zeros_before_pulse = 20  # Beginning of the flux pulse (before we put zeros to see the rising time)
-zeros_after_pulse = 20  # End of the flux pulse (after we put zeros to see the falling time)
+zeros_before_pulse = 0  # Beginning of the flux pulse (before we put zeros to see the rising time)
+zeros_after_pulse = 0  # End of the flux pulse (after we put zeros to see the falling time)
 total_zeros = zeros_after_pulse + zeros_before_pulse
-flux_waveform = np.array([0.0] * zeros_before_pulse + [const_flux_amp] * const_flux_len + [0.0] * zeros_after_pulse)
+flux_waveform = np.array([0.0] * zeros_before_pulse + [cryo_const_flux_amp] * cryo_const_flux_len + [0.0] * zeros_after_pulse)
 
 # Baked flux pulse segments with 1ns resolution
 square_pulse_segments = baked_waveform(flux_waveform, len(flux_waveform), qubit)
 step_response_th = (
-    [0.0] * zeros_before_pulse + [1.0] * (const_flux_len + 1) + [0.0] * zeros_after_pulse
+    [0.0] * zeros_before_pulse + [1.0] * (cryo_const_flux_len + 1) + [0.0] * zeros_after_pulse
 )  # Perfect step response (square)
 xplot = np.arange(0, len(flux_waveform) + 1, 1)  # x-axis for plotting - must be in ns
 
@@ -156,7 +156,7 @@ with program() as cryoscope:
     # Outer loop for averaging
     with for_(n, 0, n < n_avg, n + 1):
         # Loop over the truncated flux pulse
-        with for_(segment, 0, segment <= const_flux_len + total_zeros, segment + 1):
+        with for_(segment, 0, segment <= cryo_const_flux_len + total_zeros, segment + 1):
             # Alternate between X/2 and Y/2 pulses
             with for_each_(flag, [True, False]):
 
@@ -199,21 +199,21 @@ with program() as cryoscope:
         # for the progress counter
         n_st.save("n")
         # resonator 1
-        I_st[0].buffer(2).buffer(const_flux_len + total_zeros + 1).average().save("I1")
-        Q_st[0].buffer(2).buffer(const_flux_len + total_zeros + 1).average().save("Q1")
-        state_st[0].boolean_to_int().buffer(2).buffer(const_flux_len + total_zeros + 1).average().save("state1")
+        I_st[0].buffer(2).buffer(cryo_const_flux_len + total_zeros + 1).average().save("I1")
+        Q_st[0].buffer(2).buffer(cryo_const_flux_len + total_zeros + 1).average().save("Q1")
+        state_st[0].boolean_to_int().buffer(2).buffer(cryo_const_flux_len + total_zeros + 1).average().save("state1")
         # resonator 2
-        I_st[1].buffer(2).buffer(const_flux_len + total_zeros + 1).average().save("I2")
-        Q_st[1].buffer(2).buffer(const_flux_len + total_zeros + 1).average().save("Q2")
-        state_st[1].boolean_to_int().buffer(2).buffer(const_flux_len + total_zeros + 1).average().save("state2")
+        I_st[1].buffer(2).buffer(cryo_const_flux_len + total_zeros + 1).average().save("I2")
+        Q_st[1].buffer(2).buffer(cryo_const_flux_len + total_zeros + 1).average().save("Q2")
+        state_st[1].boolean_to_int().buffer(2).buffer(cryo_const_flux_len + total_zeros + 1).average().save("state2")
         # resonator 3
-        I_st[2].buffer(2).buffer(const_flux_len + total_zeros + 1).average().save("I3")
-        Q_st[2].buffer(2).buffer(const_flux_len + total_zeros + 1).average().save("Q3")
-        state_st[2].boolean_to_int().buffer(2).buffer(const_flux_len + total_zeros + 1).average().save("state3")
+        I_st[2].buffer(2).buffer(cryo_const_flux_len + total_zeros + 1).average().save("I3")
+        Q_st[2].buffer(2).buffer(cryo_const_flux_len + total_zeros + 1).average().save("Q3")
+        state_st[2].boolean_to_int().buffer(2).buffer(cryo_const_flux_len + total_zeros + 1).average().save("state3")
         # resonator 4
-        I_st[3].buffer(2).buffer(const_flux_len + total_zeros + 1).average().save("I4")
-        Q_st[3].buffer(2).buffer(const_flux_len + total_zeros + 1).average().save("Q4")
-        state_st[3].boolean_to_int().buffer(2).buffer(const_flux_len + total_zeros + 1).average().save("state4")
+        I_st[3].buffer(2).buffer(cryo_const_flux_len + total_zeros + 1).average().save("I4")
+        Q_st[3].buffer(2).buffer(cryo_const_flux_len + total_zeros + 1).average().save("Q4")
+        state_st[3].boolean_to_int().buffer(2).buffer(cryo_const_flux_len + total_zeros + 1).average().save("state4")
 
 
 #####################################
@@ -271,7 +271,7 @@ else:
         # Filtering and derivative of the phase to get the averaged frequency
         detuning = signal.savgol_filter(phase / 2 / np.pi, 21, 2, deriv=1, delta=0.001)
         # Flux line step response in freq domain and voltage domain
-        step_response_freq = detuning / np.average(detuning[-int(const_flux_len / 2) :])
+        step_response_freq = detuning / np.average(detuning[-int(cryo_const_flux_len / 2) :])
         step_response_volt = np.sqrt(step_response_freq)
         # Plots
         plt.suptitle(f"Cryoscope for qubit {qubit} (qubit 2 (3) displayed on top (bottom))")
@@ -330,52 +330,52 @@ else:
         plt.tight_layout()
         plt.pause(0.1)
     plt.close()
-    qm.close()
     print(step_response_volt.shape)
     print(step_response_volt)
     plt.plot(xplot,step_response_volt)
     plt.show()
-    ## Fit step response with exponential
-    # [A, tau], _ = optimize.curve_fit(
-    #     exponential_decay,
-    #     xplot,
-    #     step_response_volt,
-    # )
-    # print(f"A: {A}\ntau: {tau}")
+    # Fit step response with exponential
+    [A, tau], _ = optimize.curve_fit(
+        exponential_decay,
+        xplot,
+        step_response_volt,
+    )
+    print(f"A: {A}\ntau: {tau}")
 
-    # ## Derive IIR and FIR corrections
-    # fir, iir = filter_calc(exponential=[(A, tau)])
-    # print(f"FIR: {fir}\nIIR: {iir}")
+    ## Derive IIR and FIR corrections
+    fir, iir = filter_calc(exponential=[(A, tau)])
+    print(f"FIR: {fir}\nIIR: {iir}")
 
-    # ## Derive responses and plots
-    # # Response without filter
-    # no_filter = exponential_decay(xplot, A, tau)
-    # # Response with filters
-    # with_filter = no_filter * signal.lfilter(fir, [1, iir[0]], step_response_th)  # Output filter , DAC Output
+    ## Derive responses and plots
+    # Response without filter
+    no_filter = exponential_decay(xplot, A, tau)
+    # Response with filters
+    with_filter = no_filter * signal.lfilter(fir, [1, iir[0]], step_response_th)  # Output filter , DAC Output
 
-    # # Plot all data
-    # plt.rcParams.update({"font.size": 13})
-    # plt.figure()
-    # plt.suptitle("Cryoscope with filter implementation")
-    # plt.plot(xplot, step_response_volt, "o-", label="Experimental data")
-    # plt.plot(xplot, no_filter, label="Fitted response without filter")
-    # plt.plot(xplot, with_filter, label="Fitted response with filter")
-    # plt.plot(xplot, step_response_th, label="Ideal WF")  # pulse
-    # plt.text(
-    #     max(xplot) // 2,
-    #     max(step_response_volt) / 2,
-    #     f"IIR = {iir}\nFIR = {fir}",
-    #     bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
-    # )
-    # plt.text(
-    #     max(xplot) // 4,
-    #     max(step_response_volt) / 2,
-    #     f"A = {A:.2f}\ntau = {tau:.2f}",
-    #     bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
-    # )
-    # plt.xlabel("Flux pulse duration [ns]")
-    # plt.ylabel("Step response")
-    # plt.legend(loc="upper right")
-    # plt.tight_layout()
-    # # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
-    # qm.close()
+    # Plot all data
+    plt.rcParams.update({"font.size": 13})
+    plt.figure()
+    plt.suptitle("Cryoscope with filter implementation")
+    plt.plot(xplot, step_response_volt, "o-", label="Experimental data")
+    plt.plot(xplot, no_filter, label="Fitted response without filter")
+    plt.plot(xplot, with_filter, label="Fitted response with filter")
+    plt.plot(xplot, step_response_th, label="Ideal WF")  # pulse
+    plt.text(
+        max(xplot) // 2,
+        max(step_response_volt) / 2,
+        f"IIR = {iir}\nFIR = {fir}",
+        bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
+    )
+    plt.text(
+        max(xplot) // 4,
+        max(step_response_volt) / 2,
+        f"A = {A:.2f}\ntau = {tau:.2f}",
+        bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
+    )
+    plt.xlabel("Flux pulse duration [ns]")
+    plt.ylabel("Step response")
+    plt.legend(loc="upper right")
+    plt.tight_layout()
+    plt.show()
+    # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
+    qm.close()

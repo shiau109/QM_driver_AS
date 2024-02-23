@@ -47,40 +47,25 @@ def baked_waveform(waveform, pulse_duration, flux_qubit, type, paras = None):
             pulse_segments.append(b)
 
     elif type == 'eerp':
-        duration = np.linspace(0,pulse_duration-1,pulse_duration)
-        p = ( paras[0], paras[1]/2, paras[1]/paras[2], 2*paras[1], 5 ) # This 5 can make the pulse edge smooth in the begining.
-        eerp_up_wf = np.array(EERP(duration,*p)[:(paras[1]+5)]) 
-        eerp_dn_wf = eerp_up_wf[::-1]
         for i in range(0, pulse_duration + 1):
+            p = [paras[0],paras[1],paras[2]]
+            wf = EERP(*p,i).tolist()
             with baking(config, padding_method="symmetric_l") as b:
-                if i == 0: 
-                    wf = np.concatenate((eerp_up_wf, eerp_dn_wf)).tolist()
-                else:
-                    wf = np.concatenate((eerp_up_wf, waveform[:i], eerp_dn_wf)).tolist()
                 b.add_op("flux_pulse", f"q{flux_qubit}_z", wf)
                 b.play("flux_pulse", f"q{flux_qubit}_z")
             pulse_segments.append(b)
     return pulse_segments
 
-def CZ_1ns(q_id,Qi_list,flux_Qi,amps,const_flux_len,simulate,qmm):
-    res_IF = []
-    resonator_freq = [[] for _ in q_id]
+def CZ_1ns(resonator,flux_Qi,amps,const_flux_len,simulate,qmm):
     with program() as cz:
-        I, I_st, Q, Q_st, n, n_st = qua_declaration(nb_of_qubits=len(q_id))
+        I, I_st, Q, Q_st, n, n_st = qua_declaration(nb_of_qubits=len(resonator))
         a = declare(fixed)  
         segment = declare(int)  
-        for i in q_id:
-            res_F = cosine_func(idle_flux_point[i], *g1[i])
-            res_F = (res_F - resonator_LO)/1e6
-            res_IF.append(int(res_F * u.MHz))
-            resonator_freq[q_id.index(i)] = declare(int, value=res_IF[q_id.index(i)])
-            set_dc_offset(f"q{i+1}_z", "single", idle_flux_point[i])
-            update_frequency(f"rr{i+1}", resonator_freq[q_id.index(i)])
         wait(flux_settle_time * u.ns)
         with for_(n, 0, n < n_avg, n + 1):
             with for_(*from_array(a, amps)):
                 with for_(segment, 0, segment <= const_flux_len, segment + 1):
-                    wait(thermalization_time * u.ns)
+                    if not simulate: wait(thermalization_time * u.ns)
                     if excited_Qi_list != []: 
                         for excited_Qi in excited_Qi_list:
                             play("x180", f"q{excited_Qi}_xy")
@@ -89,16 +74,16 @@ def CZ_1ns(q_id,Qi_list,flux_Qi,amps,const_flux_len,simulate,qmm):
                     with switch_(segment):
                         for j in range(0, const_flux_len + 1):
                             with case_(j):
-                                square_pulse_segments[j].run(amp_array=[(f"q{flux_Qi}_z", a)])
+                                pulse_segments[j].run(amp_array=[(f"q{flux_Qi}_z", a)])
                     align()
                     wait(5)
-                    multiplexed_readout(I, I_st, Q, Q_st, resonators=[x+1 for x in q_id], weights="rotated_")
+                    multiplexed_readout(I, I_st, Q, Q_st, resonators=resonator, weights="rotated_")
             save(n, n_st)
         with stream_processing():
             n_st.save("n")
-            for i in q_id:
-                I_st[q_id.index(i)].buffer( len(amps),const_flux_len+1 ).average().save(f"I{i+1}")
-                Q_st[q_id.index(i)].buffer( len(amps),const_flux_len+1 ).average().save(f"Q{i+1}")
+            for i in resonator_index:
+                I_st[i].buffer( len(amps),const_flux_len+1 ).average().save(f"I{i}")
+                Q_st[i].buffer( len(amps),const_flux_len+1 ).average().save(f"Q{i}")
     if simulate:
         simulation_config = SimulationConfig(duration=10_000)  # In clock cycles = 4ns
         job = qmm.simulate(config, cz, simulation_config)
@@ -109,58 +94,54 @@ def CZ_1ns(q_id,Qi_list,flux_Qi,amps,const_flux_len,simulate,qmm):
         job = qm.execute(cz)
         fig = plt.figure()
         interrupt_on_close(fig, job)
-        I_list, Q_list = [f"I{i+1}" for i in q_id], [f"Q{i+1}" for i in q_id]
+        I_list, Q_list = [f"I{i}" for i in resonator_index], [f"Q{i}" for i in resonator_index]
         results = fetching_tool(job, I_list + Q_list + ["n"], mode="live")
         while results.is_processing():
             all_results = results.fetch_all()
             n = all_results[-1]
-            I, Q = all_results[0:len(q_id)], all_results[len(q_id):len(q_id)*2]
-            for i in q_id:
-                I[q_id.index(i)] = u.demod2volts(I[q_id.index(i)], readout_len)
-                Q[q_id.index(i)] = u.demod2volts(Q[q_id.index(i)], readout_len)
+            I, Q = all_results[0:len(resonator)], all_results[len(resonator):len(resonator)*2]
+            for i in resonator_index:
+                I[i] = u.demod2volts(I[i], readout_len)
+                Q[i] = u.demod2volts(Q[i], readout_len)            
             progress_counter(n, n_avg, start_time=results.start_time)
-            live_plotting(I,Q,Qi_list)
+            live_plotting(I,Q)
         qm.close()
         plt.show()
         return I, Q
     
 
-def live_plotting(I,Q,Qi_list):
+def live_plotting(I,Q):
     plt.suptitle(f"CZ chevron sweeping the flux on qubit {flux_Qi}")
-    for Qi in Qi_list:
-        for i in q_id: 
-            if i == Qi-1: plot_index = q_id.index(i)
-        plt.subplot(2,2,Qi_list.index(Qi)+1)
+    for i in range(len(resonator)):
+        plt.subplot(2,2,i+1)
         plt.cla()
-        plt.pcolor(amps * scale_reference, ts, I[plot_index].transpose())
-        plt.title(f"q{Qi} - I [V]")
+        plt.pcolor(amps * scale_reference, ts, I[i].transpose())
+        plt.title(f"q{i} - I [V]")
         plt.ylabel("Interaction time (ns)")
-        plt.subplot(2,2,Qi_list.index(Qi)+3)
+        plt.subplot(2,2,i+3)
         plt.cla()
-        plt.pcolor(amps * scale_reference, ts, Q[plot_index].transpose())
-        plt.title(f"q{Qi} - Q [V]")
+        plt.pcolor(amps * scale_reference, ts, Q[i].transpose())
+        plt.title(f"q{i} - Q [V]")
         plt.ylabel("Interaction time (ns)")
         plt.xlabel("Flux amplitude (V)")       
         plt.tight_layout()
         plt.pause(0.1)
 
+resonator = [2,3]   ###  [2,3] means measuring rr2 and rr3
+resonator_index = [resonator.index(i) for i in resonator]
 flux_Qi = 2  
-scale_reference = const_flux_amp 
-Qi_list = [2,3]
 excited_Qi_list = [2,3]
-n_avg = 500  
-amps = np.arange(0.32, 0.38, 0.001) 
-const_flux_len = 50
+scale_reference = const_flux_amp 
+type = 'eerp'
+n_avg = 100  
+amps = np.arange(0.31, 0.38, 0.001) 
+const_flux_len = 200
 flux_waveform = np.array([const_flux_amp] * const_flux_len)
-edge = 10
-sFactor = 4
-square_pulse_segments = baked_waveform(flux_waveform, const_flux_len, flux_Qi, 'eerp', paras=[const_flux_amp,edge,sFactor])
-# for list in square_pulse_segments:
-#     print('-'*20)
-#     print(list.get_waveforms_dict())
+edge_width = 10
+sFactor = 6
+pulse_segments = baked_waveform(flux_waveform, const_flux_len, flux_Qi, type, paras=[const_flux_amp,sFactor,edge_width])
 
 simulate = False
-q_id = [1,2,3,4]
 ts = np.arange(0,const_flux_len+0.1,1)
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)      
-I,Q = CZ_1ns(q_id,Qi_list,flux_Qi,amps,const_flux_len,simulate,qmm)
+I,Q = CZ_1ns(resonator,flux_Qi,amps,const_flux_len,simulate,qmm)

@@ -49,20 +49,24 @@ idle_gate = Gate("IDLE", 2)
 cz = Gate("CZ", controls=2, targets=3)
 
 def meas():
-    threshold1 = 9.613e-05 # threshold for state discrimination 0 <-> 1 using the I quadrature
-    threshold2 = -1.669e-05  # threshold for state discrimination 0 <-> 1 using the I quadrature
+    threshold1 = ge_threshold_q2 # threshold for state discrimination 0 <-> 1 using the I quadrature
+    threshold2 = ge_threshold_q3  # threshold for state discrimination 0 <-> 1 using the I quadrature
     I1 = declare(fixed)
     I2 = declare(fixed)
     Q1 = declare(fixed)
     Q2 = declare(fixed)
     state1 = declare(bool)
     state2 = declare(bool)
+    I1_st = declare_stream()
+    I2_st = declare_stream()
+    Q1_st = declare_stream()
+    Q2_st = declare_stream()
     multiplexed_readout(
-        [I1, I2], None, [Q1, Q2], None, resonators=[2, 3], weights="rotated_"
+        [I1, I2], [I1_st, I2_st], [Q1, Q2], [Q1_st, Q2_st], resonators=[2, 3], weights="rotated_"
     )  # readout macro for multiplexed readout
     assign(state1, I1 > threshold1)  # assume that all information is in I
     assign(state2, I2 > threshold2)  # assume that all information is in I
-    return state1, state2
+    return state1, state2, I1_st, I2_st, Q1_st, Q2_st
 
 class TQCompile(GateCompiler):
     """Custom compiler for generating pulses from gates using the base class 
@@ -171,7 +175,7 @@ class TQCompile(GateCompiler):
             b.align(q1_xy_element,q2_xy_element,q1_z_element)
             b.play("cz", q1_z_element)
             b.align(q1_xy_element,q2_xy_element,q1_z_element)
-            b.wait(23,q1_xy_element,q2_xy_element,q1_z_element)
+            b.wait(20,q1_xy_element,q2_xy_element,q1_z_element)
             b.frame_rotation_2pi(self.q1_frame_update, q1_xy_element)
             b.frame_rotation_2pi(self.q2_frame_update, q2_xy_element)
             b.align(q1_xy_element,q2_xy_element,q1_z_element)
@@ -212,7 +216,6 @@ if __name__ == '__main__':
         n_st = declare_stream()  
         state = declare(int)
         state_os = declare_stream()
-
         ####  TEST GATE
         with for_(n, 0, n < n_avg, n + 1):  
             # wait(thermalization_time)

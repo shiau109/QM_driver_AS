@@ -106,8 +106,8 @@ if __name__ == '__main__':
 
 
     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-    resonators = ["rr3"]
-    q_name = ["q3_xy"]
+    resonators = ["rr2"]
+    q_name = ["q2_xy"]
     n_runs = 20000
     reset = "cooldown"  # can be set to "cooldown" or "active"
 

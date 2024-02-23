@@ -152,6 +152,10 @@ class TwoQubitRb:
             state = declare(int)
             length = declare(int)
             progress = declare(int)
+            I1_st = declare_stream()
+            I2_st = declare_stream()
+            Q1_st = declare_stream()
+            Q2_st = declare_stream()
             progress_os = declare_stream()
             state_os = declare_stream()
             gates_len_is = declare_input_stream(int, name="__gates_len_is__", size=1)
@@ -159,7 +163,7 @@ class TwoQubitRb:
                 qe: declare_input_stream(int, name=f"{qe}_is", size=self._buffer_length)
                 for qe in self._rb_baker.all_elements
             }
-
+            print(gates_is)
             assign(progress, 0)
             with for_each_(sequence_depth, sequence_depths):
                 with for_(repeat, 0, repeat < num_repeats, repeat + 1):
@@ -172,14 +176,16 @@ class TwoQubitRb:
                     with for_(n_avg, 0, n_avg < num_averages, n_avg + 1):
                         self._prep_func()
                         self._rb_baker.run(gates_is, length)
-                        out1, out2 = self._measure_func()
+                        out1, out2, I1_st, I2_st, Q1_st, Q2_st = self._measure_func()
                         assign(state, (Cast.to_int(out2) << 1) + Cast.to_int(out1))
                         save(state, state_os)
 
             with stream_processing():
                 state_os.buffer(len(sequence_depths), num_repeats, num_averages).save("state")
-                # state_os.buffer(len(sequence_depths),num_averages,num_repeats).save("state")
-                # state_os.buffer(num_averages,num_repeats,len(sequence_depths)).save("state")
+                I1_st.buffer(len(sequence_depths), num_repeats, num_averages).save("I1")
+                I2_st.buffer(len(sequence_depths), num_repeats, num_averages).save("I2")
+                Q1_st.buffer(len(sequence_depths), num_repeats, num_averages).save("Q1")
+                Q2_st.buffer(len(sequence_depths), num_repeats, num_averages).save("Q2")
                 progress_os.save("progress")
         return prog
 
@@ -255,4 +261,8 @@ class TwoQubitRb:
             num_repeats=num_circuits_per_depth,
             num_averages=num_shots_per_circuit,
             state=job.result_handles.get("state").fetch_all(),
+            I1=job.result_handles.get("I1").fetch_all(),
+            I2=job.result_handles.get("I2").fetch_all(),
+            Q1=job.result_handles.get("Q1").fetch_all(),
+            Q2=job.result_handles.get("Q2").fetch_all(),
         )

@@ -31,19 +31,10 @@ def baked_waveform(waveform, pulse_duration, flux_qubit):
     return pulse_segments
 
 def CZ_1ns(q_id,Qi_list,flux_Qi,amps,const_flux_len,simulate,qmm):
-    res_IF = []
-    resonator_freq = [[] for _ in q_id]
     with program() as cz:
         I, I_st, Q, Q_st, n, n_st = qua_declaration(nb_of_qubits=len(q_id))
         a = declare(fixed)  
         segment = declare(int)  
-        for i in q_id:
-            res_F = cosine_func(idle_flux_point[i], *g1[i])
-            res_F = (res_F - resonator_LO)/1e6
-            res_IF.append(int(res_F * u.MHz))
-            resonator_freq[q_id.index(i)] = declare(int, value=res_IF[q_id.index(i)])
-            set_dc_offset(f"q{i+1}_z", "single", idle_flux_point[i])
-            update_frequency(f"rr{i+1}", resonator_freq[q_id.index(i)])
         wait(flux_settle_time * u.ns)
         with for_(n, 0, n < n_avg, n + 1):
             with for_(*from_array(a, amps)):
@@ -118,13 +109,10 @@ scale_reference = const_flux_amp
 Qi_list = [2,3]
 excited_Qi_list = [2,3]
 n_avg = 500  
-amps = np.arange(0.32, 0.38, 0.001) 
-const_flux_len = 50
+amps = np.arange(0.3, 0.4, 0.001) 
+const_flux_len =200
 flux_waveform = np.array([const_flux_amp] * const_flux_len)
 square_pulse_segments = baked_waveform(flux_waveform, const_flux_len, flux_Qi)
-# for list in square_pulse_segments:
-#     print('-'*20)
-#     print(list.get_waveforms_dict())
 
 simulate = False
 q_id = [1,2,3,4]

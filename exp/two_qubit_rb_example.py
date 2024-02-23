@@ -39,25 +39,25 @@ def multiplexed_readout(I, I_st, Q, Q_st, resonators, sequential=False, amplitud
 ##  Two-qubit RB functions  ##
 ##############################
 # assign a string to a variable to be able to call them in the functions
-q1 = "2"
-q2 = "3"
+q1_idx_str = "2"
+q2_idx_str = "3"
 
 
 # single qubit generic gate constructor Z^{z}Z^{a}X^{x}Z^{-a} that can reach any point on the Bloch sphere (starting from arbitrary points)
 def bake_phased_xz(baker: Baking, q, x, z, a):
     ot.register_phase_xz(q=q, x=x, z=z, a=a)
-    if q == 1: element = f"q{q1}_xy"
-    elif q ==2: element = f"q{q2}_xy"
+    if q == 1: element = f"q{q1_idx_str}_xy"
+    elif q == 2: element = f"q{q2_idx_str}_xy"
     else: raise Exception()
-    element = f"q{q}_xy"
+    # element = f"q{q}_xy"
     baker.frame_rotation_2pi(a/2, element)
     baker.play("x180", element, amp=x)
     baker.frame_rotation_2pi(-(a + z)/2, element)
 
 
 # single qubit phase corrections in units of 2pi applied after the CZ gate
-qubit1_frame_update = -93.047 / 360  # example values, should be taken from QPU parameters
-qubit2_frame_update = 24.683/ 360  # example values, should be taken from QPU parameters
+qubit1_frame_update =  -102.685 / 360  #-80.075 / 360 #-59.840 / 360  #0.3 # example values, should be taken from QPU parameters
+qubit2_frame_update = 5.427 / 360  #8.8 / 360  #-9.315 / 360  #0.88 # example values, should be taken from QPU parameters
 
 
 # defines the CZ gate that realizes the mapping |00> -> |00>, |01> -> |01>, |10> -> |10>, |11> -> -|11>
@@ -65,9 +65,9 @@ def bake_cz(baker: Baking, q1, q2):
     ot.register_cz()
     wf = np.array([cz_sqr_amp]*(cz_sqr_len+1)) # cz_len+1 is the exactly time of z pulse.
     wf = wf.tolist()
-    q1_xy_element = f"q{q1}_xy"  
-    q2_xy_element = f"q{q2}_xy"
-    q1_z_element = f"q{q1}_z"
+    q1_xy_element = f"q{q1_idx_str}_xy"
+    q2_xy_element = f"q{q2_idx_str}_xy"
+    q1_z_element = f"q{q1_idx_str}_z"
     baker.add_op("cz",q1_z_element,wf)
     baker.wait(20,q1_xy_element,q2_xy_element,q1_z_element) # The unit is 1 ns.
     baker.play("cz", q1_z_element)
@@ -85,20 +85,24 @@ def prep():
 
 
 def meas():
-    threshold1 = 5.003e-05 # threshold for state discrimination 0 <-> 1 using the I quadrature
-    threshold2 = -6.740e-07  # threshold for state discrimination 0 <-> 1 using the I quadrature
+    threshold1 = 2.203e-05 # threshold for state discrimination 0 <-> 1 using the I quadrature
+    threshold2 = 4.691e-06  # threshold for state discrimination 0 <-> 1 using the I quadrature
     I1 = declare(fixed)
     I2 = declare(fixed)
     Q1 = declare(fixed)
     Q2 = declare(fixed)
+    I1_st = declare_stream()
+    I2_st = declare_stream()
+    Q1_st = declare_stream()
+    Q2_st = declare_stream()
     state1 = declare(bool)
     state2 = declare(bool)
     multiplexed_readout(
-        [I1, I2], None, [Q1, Q2], None, resonators=[2, 3], weights="rotated_"
+        [I1, I2], [I1_st, I2_st], [Q1, Q2], [Q1_st, Q2_st], resonators=[2, 3], weights="rotated_"
     )  # readout macro for multiplexed readout
     assign(state1, I1 > threshold1)  # assume that all information is in I
     assign(state2, I2 > threshold2)  # assume that all information is in I
-    return state1, state2
+    return state1, state2, I1_st, I2_st, Q1_st, Q2_st
 
 
 ##############################
@@ -112,8 +116,8 @@ rb = TwoQubitRb(
 )  # create RB experiment from configuration and defined functions
 
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name)  # initialize qmm
-res = rb.run(qmm, circuit_depths=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], num_circuits_per_depth=10, num_shots_per_circuit=2000)
-st.print_sequences()
+res = rb.run(qmm, circuit_depths=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], num_circuits_per_depth=30, num_shots_per_circuit=2000)
+# st.print_sequences()
 # st.verify_sequences()
 # ot.print_operations()  
 # circuit_depths ~ how many consecutive Clifford gates within one executed circuit https://qiskit.org/documentation/apidoc/circuit.html
@@ -121,16 +125,20 @@ st.print_sequences()
 # num_shots_per_circuit ~ repetitions of the same circuit (averaging)
 
 
-res.plot_hist()
-plt.show()
+# res.plot_hist()
+# plt.show()
 
 res.plot_fidelity()
 plt.show()
 
 import xarray as xr
 ds = xr.Dataset()
-ds['data'] = res.data.state
-ds.to_netcdf("data.nc")
+ds['state'] = res.data.state
+ds['I1'] = res.data.I1
+ds['I2'] = res.data.I2
+ds['Q1'] = res.data.Q1
+ds['Q2'] = res.data.Q2
+ds.to_netcdf("test_two_qubit_RB.nc")
 
 print(res.data.state.mean("average"))
 
