@@ -131,30 +131,9 @@ def plot_power_dep_resonator( freqs, amp_ratio, data, ax=None ):
         fig, ax = plt.subplots()
         ax.set_title('pcolormesh')
         fig.show()
-    ax.pcolormesh(freqs, amp_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    pcm = ax.pcolormesh(freqs, amp_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    plt.colorbar(pcm, label='Value')
 
 
 if __name__ == '__main__':
-    import matplotlib.pyplot as plt
-    n_avg = 200  # The number of averages
-    # The frequency sweep around the resonators' frequency "resonator_IF_q"
-
-    freq_span = 5 * u.MHz
-    df = 0.1 * u.MHz
-    freqs_qua = np.arange(-freq_span, +freq_span + 0.1, df)
-
-
-    # The readout amplitude sweep (as a pre-factor of the readout amplitude) - must be within [-2; 2)
-    amp_ratio = np.linspace( 0.05, 1.5, 30)    # Linear
-    # amp_ratio = np.logspace(-1, 0, 10)  # Log
-    # amp_log_ratio = np.log10(amp_ratio)*10
-    qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-    
-    resonators = ["rr1","rr2","rr3","rr4"]
-    output_data = mRO_power_dep_resonator( resonators ,freqs_qua, amp_ratio,1000,n_avg,config,qmm)  
-    for r in resonators:
-        fig, ax = plt.subplots()
-        plot_power_dep_resonator(freqs_qua, amp_ratio, output_data[r], ax)
-        ax.set_title(r)
-    plt.show()
- 
+    pass

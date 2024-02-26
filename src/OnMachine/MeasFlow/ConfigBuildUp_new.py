@@ -59,20 +59,22 @@ if __name__ == '__main__':
     from config_component.controller import controller_read_dict
     config._controllers["con1"] = controller_read_dict("con1", opxp_hardware)
 
-    from config_component.construct import create_qubit, create_roChannel, create_zChannel
+    from config_component.construct import create_qubit, create_roChannel, create_zChannel, create_xyChannel
     # create_qubit( config,"q1",specs.get_spec_forConfig('ro'),specs.get_spec_forConfig('xy'),specs.get_spec_forConfig('wire'),specs.get_spec_forConfig('z'))
 
-    
-    for q_i, z_port in enumerate( [3,4,5,6,7] ):
+    specs.update_WireInfo_for("q1",xy_I=('con1',9),xy_Q=('con1',10))
+    for q_i, z_port in enumerate( [3,4,5,6,7,8,9,10,3] ):
         q_name = f"q{q_i}"
         specs.update_WireInfo_for(q_name,z=("con1",z_port))
         create_roChannel( config, f"{q_name}_ro", specs.get_spec_forConfig('ro')[q_name],specs.get_spec_forConfig('wire')[q_name] )
+        create_xyChannel( config, f"{q_name}_xy", specs.get_spec_forConfig('xy')[q_name],specs.get_spec_forConfig('wire')[q_name] )
         create_zChannel( config, f"{q_name}_z", specs.get_spec_forConfig('z')[q_name],specs.get_spec_forConfig('wire')[q_name] )
     
-    for q_i, z_port in enumerate( [8,9,10] ):
-        q_name = f"c{q_i}"
-        specs.update_WireInfo_for("q0",z=("con1",z_port))
-        create_zChannel( config, f"{q_name}_z", specs.get_spec_forConfig('z')["q0"],specs.get_spec_forConfig('wire')["q0"] )
+    # for q_i, z_port in enumerate( [8,9,10,3] ):
+    #     dq_name = f"q{q_i+5}"
+    #     q_name = f"c{q_i+5}"
+    #     specs.update_WireInfo_for(dq_name,z=("con1",z_port))
+    #     create_zChannel( config, f"{q_name}_z", specs.get_spec_forConfig('z')["q0"],specs.get_spec_forConfig('wire')[dq_name] )
 
     specs.export_spec(spec_loca)
     config.export_config(config_loca)

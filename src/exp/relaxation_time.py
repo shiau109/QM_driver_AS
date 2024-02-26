@@ -1,28 +1,32 @@
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.qua import *
 from qm import SimulationConfig
-from configuration import *
 import matplotlib.pyplot as plt
 from qualang_tools.loops import from_array
 from qualang_tools.results import fetching_tool
 from qualang_tools.plot import interrupt_on_close
 from qualang_tools.results import progress_counter
 from qualang_tools.plot.fitting import Fit
-from common_fitting_func import gaussian
+# from common_fitting_func import gaussian
 from scipy.optimize import curve_fit
 import warnings
-from RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
-
+from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
+import xarray as xr
 warnings.filterwarnings("ignore")
+from qualang_tools.units import unit
+u = unit(coerce_to_integer=True)
 
-# Qi = 1 stands for Q1
-
-def exp_relaxation_time(t_delay, q_name:list, ro_element:list, config, qmm:QuantumMachinesManager, n_avg=100 ):
+def exp_relaxation_time(max_time, time_resolution, q_name:list, ro_element:list, config, qmm:QuantumMachinesManager, n_avg=100, initializer=None ):
     """
     Return ductionary with value 2*N array
     N is t_delay length
+    max_time unit in us \n
     """
 
+    cc_max_qua = (max_time/4) * u.us
+    cc_resolution_qua = (time_resolution/4) * u.us
+    cc_delay_qua = np.arange( 4, cc_max_qua, cc_resolution_qua)
+    evo_time = cc_delay_qua*4
     evo_time_len = t_delay.shape[-1]
     # QUA program
     with program() as t1:
@@ -32,9 +36,16 @@ def exp_relaxation_time(t_delay, q_name:list, ro_element:list, config, qmm:Quant
         n = declare(int)
         n_st = declare_stream()
         with for_(n, 0, n < n_avg, n + 1):
-            with for_(*from_array(t, t_delay)):
-                # Initialize   
-                wait(thermalization_time * u.ns)
+            with for_(*from_array(t, cc_delay_qua)):
+                # initializaion
+                if initializer is None:
+                    wait(1*u.us,ro_element)
+                else:
+                    try:
+                        initializer[0](*initializer[1])
+                    except:
+                        wait(1*u.us,ro_element)
+
                 # Operation   
                 for q in q_name:
                     play("x180", q)
@@ -63,13 +74,16 @@ def exp_relaxation_time(t_delay, q_name:list, ro_element:list, config, qmm:Quant
     results = fetching_tool(job, data_list=data_list, mode="wait_for_all")
     fetch_data = results.fetch_all()
 
-    # Convert the results into Volts
     output_data = {}
-    for r_idx, r_name in enumerate(ro_element):
-        output_data[r_name] = np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]])
-    qm.close()
 
-    return output_data
+    for r_idx, r_name in enumerate(ro_element):
+        output_data[r_name] = ( ["mixer","time"],
+                               np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]]) )
+    dataset = xr.Dataset(
+        output_data,
+        coords={ "mixer":np.array(["I","Q"]), "time": evo_time }
+    )
+    return dataset
 
 
 
@@ -158,6 +172,7 @@ def T1_hist( data, T1_max, fig=None):
     return fig
 if __name__ == '__main__':
 
+    from configuration import *
 
     n_avg = 500
     tau_min = 4 // 4 # in clock cycles

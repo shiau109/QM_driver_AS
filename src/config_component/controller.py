@@ -40,7 +40,11 @@ class Controller:
         
     @property
     def analog_outputs( self )->Dict[int,Analog_output]:
+        """ Analog output on hardware"""
         return self._analog_outputs
+    @analog_outputs.setter
+    def analog_outputs( self, val:Analog_output ):
+        self._analog_outputs[val._channel_index] = val
     
     def to_dict( self ):
 

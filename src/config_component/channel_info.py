@@ -248,7 +248,6 @@ class ChannelInfo:
         ### If update info is related to freq return the dict for updating the config.
         '''
         new_freq = {}
-        print(kwargs)
         for name in list(kwargs.keys()):
             if name.lower() == 'amp':
                 self._XyInfo[target_q]["pi_amp"] = kwargs[name] 
@@ -256,10 +255,10 @@ class ChannelInfo:
                 self._XyInfo[target_q]["pi_len"] = kwargs[name]
             elif name.lower() == 'lo':
                 self._XyInfo[target_q]["qubit_LO"] = int(kwargs[name]*u.GHz)
-                # new_freq["qubit_LO_"+target_q] = int(kwargs[name]*u.GHz)
+                new_freq["qubit_LO_"+target_q] = int(kwargs[name]*u.GHz)
             elif name.lower() == 'if':
                 self._XyInfo[target_q]["qubit_IF"] = int(kwargs[name]*u.MHz)
-                # new_freq["qubit_IF_"+target_q] = int(kwargs[name]*u.MHz)
+                new_freq["qubit_IF_"+target_q] = int(kwargs[name]*u.MHz)
             elif name.lower() in ['draga','drag_coef'] :
                 self._XyInfo[target_q]["drag_coef"] = kwargs[name]
             elif name.lower() in ["delta","d","anh","anharmonicity"]:
@@ -273,8 +272,8 @@ class ChannelInfo:
             else:
                 print(name.lower())
                 raise KeyError("I don't know what you are talking about!")
-        
-        # return new_freq
+        print(new_freq)
+        return new_freq
     
     def export_spec( self, path ):
         import pickle
@@ -368,6 +367,7 @@ class ChannelInfo:
                 "xy_Q":('con1',4),
                 "z":('con1',5)
                 }
+         
     
     def update_WireInfo_for(self, target_q:str ,**kwargs):
         """
@@ -386,7 +386,8 @@ class ChannelInfo:
         """
         if kwargs != {}:
             for info in kwargs:
-                if info.lower() in ['ro_mixer','xy_mixer','rin_I','rin_Q','rout_I','rout_Q','xy_I','xy_Q', 'z']:
+                print(kwargs)
+                if info in ['ro_mixer','xy_mixer','rin_I','rin_Q','rout_I','rout_Q','xy_I','xy_Q', 'z']:
                     self._WireInfo[target_q][info] = kwargs[info]
                 else:
                     raise KeyError("Check the wiring info key plz!")

@@ -19,15 +19,16 @@ init_macro = initializer(1000,mode='wait')
 
 # Measurement
 n_avg = 100  # The number of averages
-ro_elements = ["q0_ro","q1_ro"]
+ro_elements = ["q1_ro"]
 from exp.freq_sweep_power_dep import *
+dataset = frequency_sweep_power_dep( ro_elements, config, qmm, n_avg=n_avg, freq_span=100, freq_resolution=0.2, amp_resolution=0.05, amp_max_ratio=0.2, amp_scale="log", initializer=init_macro)  
 
-dataset = frequency_sweep_power_dep( ro_elements, config, qmm, n_avg=n_avg, freq_span=40, freq_resolution=0.1, amp_resolution=0.05, amp_max_ratio=0.2, amp_scale="log", initializer=init_macro)  
+# dataset = frequency_sweep_power_dep( ro_elements, config, qmm, n_avg=n_avg, freq_span=100, freq_resolution=0.1, amp_resolution=0.05, amp_max_ratio=0.2, amp_scale="log", initializer=init_macro)  
 
 # Plot
 dfs = dataset.coords["frequency"].values
 amps = dataset.coords["amp_ratio"].values
-print(amps)
+print()
 for ro_name, data in dataset.data_vars.items():
     fig, ax = plt.subplots()
     plot_power_dep_resonator(dfs, amps, data.values, ax)
