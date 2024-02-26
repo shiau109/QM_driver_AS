@@ -20,11 +20,11 @@ init_macro = initializer(spec.give_depletion_time_for("q1"),mode='depletion')
 
 # Measurement
 from exp.freq_sweep import *
-dataset = frequency_sweep(config,qmm,n_avg=50,initializer=init_macro)  
+dataset = frequency_sweep(config,qmm,n_avg=100,initializer=init_macro)  
 
 # Plot
-idata = dataset["q1_ro"].sel(mixer='I').values
-qdata = dataset["q1_ro"].sel(mixer='Q').values
+idata = dataset["q0_ro"].sel(mixer='I').values
+qdata = dataset["q0_ro"].sel(mixer='Q').values
 zdata = idata+1j*qdata
 plt.plot(dataset.coords["frequency"].values,np.abs(zdata))
 plt.show()    

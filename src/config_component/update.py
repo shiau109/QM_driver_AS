@@ -16,21 +16,23 @@ def update_controlFreq( config:Configuration, updatedInfo:dict ):
         updatedInfo: from `Circuit_info.update_axyInfo_for()`
     """
     for info in updatedInfo:
+        print(info)
         if info.split("_")[1].lower() in ["lo","if"]: # this should be update in both elements and mixers
             target_q = info.split("_")[-1]
-            print(target_q)
+            target_q_idx = int(target_q[1:])
             element_name = f"{target_q}_xy"
             element = config.elements[element_name]
             mixer_name = element.input_map.mixer
             mixer = config.mixers[mixer_name]
-            
+            # print(mixer.iFChannels)
             # update LO or IF in elements and mixers
+            # TODO target_q_idx should replace 0
             if info.split("_")[1] == "LO":
                 element.input_map.lo_frequency = updatedInfo[info]
-                mixer[0].lo_frequency = updatedInfo[info]
+                mixer.iFChannels[0].lo_frequency = updatedInfo[info]
             else: 
                 element.intermediate_frequency = updatedInfo[info]
-                mixer[0].intermediate_frequency = updatedInfo[info]
+                mixer.iFChannels[0].intermediate_frequency = updatedInfo[info]
             
         else: 
             raise KeyError("Only surpport update frequenct related info to config!")
@@ -82,17 +84,17 @@ def update_controlWaveform(config:Configuration,updatedSpec:dict={},target_q:str
             config.__config["waveforms"]["saturation_wf"] = {"type": "constant", "sample":updatedSpec["saturation_amp"]}
 
 # ================= Update about Z ===================================
-def update_z_offset(config,zInfo:dict,mode:str="offset"):
+def update_z_offset(config:Configuration,zInfo:dict,wire:dict,mode:str="offset"):
     '''
         update the z offset in config controllers belongs to the target qubit.\n
         zInfo is the dict belongs to the target qubit returned by the func. `Circuit_info().update_zInfo_for()`\n
         mode for select the z info: 'offset' for maximum qubit freq. 'OFFbias' for tuned qubit away from sweetspot. 'idle' for idle point.\n
     '''
-    ctrler_name = zInfo["controller"]
-    z_output = config.__config["controllers"][ctrler_name]['analog_outputs']
-    channel = zInfo['con_channel']
+    ctrler_name, channel = wire["z"]
+    z_output = config.controllers[ctrler_name].analog_outputs
+
     if mode.lower() in ['offset','offbias','idle']:
-        z_output[channel] = {'offset':zInfo[mode]}   
+        z_output[channel].offset = zInfo[mode]   
     else:
         raise ValueError("mode argument should be one of 'offset', 'OFFbias' or 'idle'!")       
 
@@ -127,10 +129,10 @@ def update_ReadoutFreqs(config:Configuration,updatedInfo:dict):
         match info.split("_")[1].lower():
             case 'if':
                 elements.intermediate_frequency = updatedInfo[info]
-                config.mixers[mixer_name].iFChannels[int(target_q[-1])-1].intermediate_frequency = updatedInfo[info]
+                config.mixers[mixer_name].iFChannels[int(target_q[-1])].intermediate_frequency = updatedInfo[info]
             case 'lo' :
                 elements.input_map.lo_frequency = updatedInfo[info]
-                config.mixers[mixer_name].iFChannels[int(target_q[-1])-1].lo_frequency = updatedInfo[info]
+                config.mixers[mixer_name].iFChannels[int(target_q[-1])].lo_frequency = updatedInfo[info]
             case _:
                 raise KeyError(f"RO update keyname goes wrong: {info.split('_')[1].lower()}")
         

@@ -13,7 +13,7 @@ import exp.config_par as gc
 from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
 
-def flux_twotone_qubit( offset_arr, d_freq_arr, q_name:list, ro_element:list, z_name:list, config, qmm:QuantumMachinesManager, n_avg:int=100, saturation_len=5, saturation_ampRatio=0.1, flux_settle_time=10, simulate:bool=False):
+def constant_drive_z_pulse( offset_arr, d_freq_arr, q_name:list, ro_element:list, z_name:list, config, qmm:QuantumMachinesManager, n_avg:int=100, saturation_len=5, saturation_ampRatio=0.1, flux_settle_time=10, simulate:bool=False):
     """
     q_name is XY on
     z_name is Z
@@ -63,7 +63,7 @@ def flux_twotone_qubit( offset_arr, d_freq_arr, q_name:list, ro_element:list, z_
                     wait(25)
                     for xy in q_name:
                         update_frequency( xy, ref_xy_IF[xy] +df )
-                        play("saturation"*amp(saturation_ampRatio), xy, duration=(saturation_len/4) *u.us)
+                        play("const"*amp(saturation_ampRatio), xy, duration=(saturation_len/4) *u.us)
                     align()
                     for z in z_name:
                         set_dc_offset( z, "single", ref_z_offset[z])
@@ -180,7 +180,7 @@ def cw_twotone_qubit( offset_arr, d_freq_arr, q_name:list, ro_element:list, z_na
                     wait(250)
                     for xy in q_name:
                         update_frequency( xy, ref_xy_IF[xy] +df )
-                        play("saturation"*amp(saturation_ampRatio), xy, duration=(saturation_len/4) *u.us)
+                        play("const"*amp(saturation_ampRatio), xy, duration=(saturation_len/4) *u.us)
                     #align()
                     #for z in z_name:
                         #set_dc_offset( z, "single", ref_z_offset[z])
@@ -188,7 +188,7 @@ def cw_twotone_qubit( offset_arr, d_freq_arr, q_name:list, ro_element:list, z_na
                     #align()
                     # measurement
                     multiRO_measurement( iqdata_stream, ro_element, weights='rotated_'  )              
-                    
+                    align()
                     
 
                 # assign(index, index + 1)
@@ -399,16 +399,18 @@ def plot_ana_flux_dep_qubit( data, flux, dfs, freq_LO, freq_IF, abs_z, ax=None, 
         fig, ax = plt.subplots()
         ax.set_title('pcolormesh')
         fig.show()
-    ax[0].pcolormesh( abs_freq, abs_z+flux, np.real(zdata), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    pcm = ax[0].pcolormesh( abs_freq, abs_z+flux, np.real(zdata), cmap='RdBu')# , vmin=z_min, vmax=z_max)
     ax[0].axvline(x=freq_LO+freq_IF, color='b', linestyle='--', label='ref IF')
     ax[0].axvline(x=freq_LO, color='r', linestyle='--', label='LO')
     ax[0].axhline(y=abs_z, color='black', linestyle='--', label='idle z')
-
+    plt.colorbar(pcm, label='Value')
+    # Add a color bar
     ax[0].legend()
-    ax[1].pcolormesh( abs_freq, abs_z+flux, np.imag(zdata), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    pcm = ax[1].pcolormesh( abs_freq, abs_z+flux, np.imag(zdata), cmap='RdBu')# , vmin=z_min, vmax=z_max)
     ax[1].axvline(x=freq_LO+freq_IF, color='b', linestyle='--', label='ref IF')
     ax[1].axvline(x=freq_LO, color='r', linestyle='--', label='LO')
     ax[1].axhline(y=abs_z, color='black', linestyle='--', label='idle z')
+    plt.colorbar(pcm, label='Value')
 
     ax[1].legend()
 

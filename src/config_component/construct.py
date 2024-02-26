@@ -34,7 +34,7 @@ def create_roChannel( config:Configuration, name, roInfo:dict, wireInfo:dict ):
     pulse.waveforms.Q = "zero_wf"
     pulse._digital_marker = "ON"
     
-    # Build Mixer
+    # Build Mixer TODO check previous mixer status for other qubit, final one will cover others
     mixer_name = element.input_map.mixer
     mixer = Mixer(mixer_name)
     from config_component.mixer import IFChannel
@@ -42,7 +42,12 @@ def create_roChannel( config:Configuration, name, roInfo:dict, wireInfo:dict ):
     iFChannel._lo_frequency = element.input_map.lo_frequency
     iFChannel._intermediate_frequency = element.intermediate_frequency
     iFChannel._correction = (1, 0, 0, 1)
-    mixer._iFChannels.append( iFChannel )
+    
+    if mixer_name in config._mixers.keys():
+        config._mixers[mixer_name]._iFChannels.append( iFChannel )
+    else: # the mixer not exist yet
+        mixer._iFChannels.append( iFChannel )
+        config._mixers[mixer_name] = mixer
 
     # Build waveform
     waveform = Waveform(waveform_name)
@@ -62,11 +67,10 @@ def create_roChannel( config:Configuration, name, roInfo:dict, wireInfo:dict ):
         config._integration_weights[complete_integ_name] = integration_weight_obj
 
     config._elements[name] = element
-    config._mixers[mixer_name] = mixer
     config._pulses[pulse_name] = pulse
     config._waveforms[waveform_name] = waveform
 
-def creat_zChannel(config:Configuration, name:str, zInfo, wireInfo:dict):
+def create_zChannel(config:Configuration, name:str, zInfo:dict, wireInfo:dict):
     """
         create the z elements for target_q, includes elements, pulses, waveforms.
     """  
@@ -199,13 +203,7 @@ def create_qubit( config:Configuration, name:str, roInfo:dict, xyInfo:dict, wire
     create_xyChannel( config, f"{name}_xy", xyInfo[name], wireInfo[name])
 
     # Build Z line
-    creat_zChannel( config, f"{name}_z", zInfo[name], wireInfo[name] )
-
-    # Build Zero waveform
-    waveform = Waveform("zero_wf")
-    waveform.type = "constant"
-    waveform.sample = 0
-    config._waveforms["zero_wf"] = waveform
+    create_zChannel( config, f"{name}_z", zInfo[name], wireInfo[name] )
 
 # Control related shows below
 

@@ -19,4 +19,4 @@ def save_nc( save_dir, file_name, output_data:xr.Dataset, suffix_time:bool=True 
         save_time = str(datetime.now().strftime("%Y%m%d_%H%M"))
         save_time = "_"+save_time
     save_path = save_path+save_time+".nc" 
-    output_data.to_netcdf(save_path, **output_data)
+    output_data.to_netcdf(save_path, output_data)

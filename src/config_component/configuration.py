@@ -20,6 +20,11 @@ class Configuration():
         self._integration_weights = {}
         self._mixers = {}
 
+        # Build Zero waveform
+        waveform = Waveform("zero_wf")
+        waveform.type = "constant"
+        waveform.sample = 0
+        self._waveforms["zero_wf"] = waveform
     def get_config( self ) -> dict :
 
         config_dict = {"version": self.version}

@@ -15,11 +15,12 @@ import sys
 import xarray as xr
 
 
-def frequency_sweep_power_dep( ro_element:list, config:dict, qm_machine:QuantumMachinesManager, n_avg:int=100, freq_span:int=5, freq_resolution:float=0.05, amp_max_ratio:float=1.5,amp_resolu:float=0.01, initializer:tuple=None)->xr.Dataset:
+def frequency_sweep_power_dep( ro_element:list, config:dict, qm_machine:QuantumMachinesManager, n_avg:int=100, freq_span:int=5, freq_resolution:float=0.05, amp_max_ratio:float=1.5,amp_resolution:float=0.01, amp_scale:str='lin', initializer:tuple=None)->xr.Dataset:
     """
     freq_span:\n
         Unit in MHz, \n
-
+    amp_scale: \n
+        lin or log \n
     output: xarray dataset
         coords : frequency, amp_ratio
     """
@@ -27,8 +28,11 @@ def frequency_sweep_power_dep( ro_element:list, config:dict, qm_machine:QuantumM
     freq_resolution_qua = freq_resolution * u.MHz
 
     freqs_qua = np.arange(-freq_span_qua/2,freq_span_qua/2,freq_resolution_qua )
-    amp_ratio = np.arange(0.01,amp_max_ratio+0.01,amp_resolu)
-    
+    if amp_scale == "log":
+        amp_num = int((amp_max_ratio+2)/amp_resolution)
+        amp_ratio = np.logspace(-2, amp_max_ratio, amp_num)
+    else:
+        amp_ratio = np.arange(amp_max_ratio/100,amp_max_ratio,amp_resolution)
     freqs_mhz = freqs_qua/1e6 #  Unit in MHz
 
     center_IF = {}
@@ -127,30 +131,9 @@ def plot_power_dep_resonator( freqs, amp_ratio, data, ax=None ):
         fig, ax = plt.subplots()
         ax.set_title('pcolormesh')
         fig.show()
-    ax.pcolormesh(freqs, amp_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    pcm = ax.pcolormesh(freqs, amp_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    plt.colorbar(pcm, label='Value')
 
 
 if __name__ == '__main__':
-    import matplotlib.pyplot as plt
-    n_avg = 200  # The number of averages
-    # The frequency sweep around the resonators' frequency "resonator_IF_q"
-
-    freq_span = 5 * u.MHz
-    df = 0.1 * u.MHz
-    freqs_qua = np.arange(-freq_span, +freq_span + 0.1, df)
-
-
-    # The readout amplitude sweep (as a pre-factor of the readout amplitude) - must be within [-2; 2)
-    amp_ratio = np.linspace( 0.05, 1.5, 30)    # Linear
-    # amp_ratio = np.logspace(-1, 0, 10)  # Log
-    # amp_log_ratio = np.log10(amp_ratio)*10
-    qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-    
-    resonators = ["rr1","rr2","rr3","rr4"]
-    output_data = mRO_power_dep_resonator( resonators ,freqs_qua, amp_ratio,1000,n_avg,config,qmm)  
-    for r in resonators:
-        fig, ax = plt.subplots()
-        plot_power_dep_resonator(freqs_qua, amp_ratio, output_data[r], ax)
-        ax.set_title(r)
-    plt.show()
- 
+    pass
