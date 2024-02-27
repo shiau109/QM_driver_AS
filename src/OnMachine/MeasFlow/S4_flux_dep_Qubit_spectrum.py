@@ -12,10 +12,10 @@ import sys
 
 
 # Dynamic config
-from OnMachine.MeasFlow.ConfigBuildUp_new import spec_loca, config_loca
+from OnMachine.SetConfig.ConfigBuildUp_new import spec_loca, config_loca
 from config_component.configuration import import_config
 from config_component.channel_info import import_spec
-from OnMachine.Octave_Config.QM_config_dynamic import initializer
+from ab.QM_config_dynamic import initializer
 
 spec = import_spec( spec_loca )
 config = import_config( config_loca ).get_config()

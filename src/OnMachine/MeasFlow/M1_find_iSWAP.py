@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from OnMachine.Octave_Config.QM_config_dynamic import Circuit_info, QM_config, initializer
+from ab.QM_config_dynamic import Circuit_info, QM_config, initializer
 from OnMachine.MeasFlow.ConfigBuildUp_old import spec_loca, config_loca, qubit_num
 spec = Circuit_info(qubit_num)
 config = QM_config()

@@ -1,7 +1,7 @@
 from numpy import array, cos, sin, pi, arange
 from qm.octave import QmOctaveConfig
 from qm.QuantumMachinesManager import QuantumMachinesManager
-from OnMachine.Octave_Config.set_octave import OctaveUnit, octave_declaration
+from OnMachine.SetConfig.set_octave import OctaveUnit, octave_declaration
 
 #######################
 # AUXILIARY FUNCTIONS #

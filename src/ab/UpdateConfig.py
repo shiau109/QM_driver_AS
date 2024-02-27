@@ -1,4 +1,4 @@
-from OnMachine.Octave_Config.QM_config_dynamic import Circuit_info, QM_config
+from ab.QM_config_dynamic import Circuit_info, QM_config
 from OnMachine.MeasFlow.ConfigBuildUp_old import spec_loca, config_loca
 import numpy as np
 spec = Circuit_info(q_num=4)

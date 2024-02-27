@@ -9,8 +9,8 @@ import sys
 from exp.rabi import freq_time_rabi, plot_ana_freq_time_rabi, freq_power_rabi
 import numpy as np
 
-from OnMachine.Octave_Config.QM_config_dynamic import Circuit_info, QM_config, initializer
-from OnMachine.MeasFlow.ConfigBuildUp_old import spec_loca, config_loca, qubit_num
+from ab.QM_config_dynamic import Circuit_info, QM_config, initializer
+from OnMachine.SetConfig.ConfigBuildUp_old import spec_loca, config_loca, qubit_num
 spec = Circuit_info(qubit_num)
 config = QM_config()
 spec.import_spec(spec_loca)

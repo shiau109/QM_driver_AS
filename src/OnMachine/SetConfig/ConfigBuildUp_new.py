@@ -25,6 +25,7 @@ port_mapping = {
 }
 
 if __name__ == '__main__':
+
     qubit_num = 9   
 
     specs = ChannelInfo(qubit_num)
@@ -69,7 +70,7 @@ if __name__ == '__main__':
         create_roChannel( config, f"{q_name}_ro", specs.get_spec_forConfig('ro')[q_name],specs.get_spec_forConfig('wire')[q_name] )
         create_xyChannel( config, f"{q_name}_xy", specs.get_spec_forConfig('xy')[q_name],specs.get_spec_forConfig('wire')[q_name] )
         create_zChannel( config, f"{q_name}_z", specs.get_spec_forConfig('z')[q_name],specs.get_spec_forConfig('wire')[q_name] )
-    
+
     # for q_i, z_port in enumerate( [8,9,10,3] ):
     #     dq_name = f"q{q_i+5}"
     #     q_name = f"c{q_i+5}"
