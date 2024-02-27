@@ -1,5 +1,5 @@
 
-from OnMachine.Octave_Config.QM_config_dynamic import QM_config, Circuit_info
+from ab.QM_config_dynamic import QM_config, Circuit_info
 from qm.QuantumMachinesManager import QuantumMachinesManager
 
 from exp.SQGate_calibration import amp_calibration, DRAG_calibration_Yale, StarkShift_scout, StarkShift_program
@@ -446,7 +446,7 @@ u = unit(coerce_to_integer=True)
 if __name__ == '__main__':
     # from RB20ns_dConfig import RB_executor, plot_SQRB_result
     from OnMachine.SQRB_dConfig import single_qubit_RB
-    from OnMachine.Octave_Config.QM_config_dynamic import QM_config, Circuit_info, initializer
+    from ab.QM_config_dynamic import QM_config, Circuit_info, initializer
 
     import os
     SpecConfig_path = os.getcwd()+'/config/'

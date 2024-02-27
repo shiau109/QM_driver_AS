@@ -2,7 +2,7 @@
 This file is used to configure the Octave ports (gain, switch_mode, down-conversion) and calibrate the up-conversion mixers.
 You need to run this file in order to update the Octaves with the new parameters.
 """
-from OnMachine.Octave_Config.set_octave import ElementsSettings, octave_settings
+from OnMachine.SetConfig.set_octave import ElementsSettings, octave_settings
 
 # Configure the Octave parameters for each element
 rr1 = ElementsSettings("q0_ro", gain=0, rf_in_port=["octave1", 1], down_convert_LO_source="Internal")

@@ -1,5 +1,5 @@
 
-from OnMachine.Octave_Config.QM_config_dynamic import Circuit_info, QM_config
+from ab.QM_config_dynamic import Circuit_info, QM_config
 import os
 SpecConfig_path = os.getcwd()+'/config/'
 ########### For other import ################
