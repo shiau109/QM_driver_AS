@@ -14,24 +14,39 @@ u = unit(coerce_to_integer=True)
 warnings.filterwarnings("ignore")
 import xarray as xr
 
-def freq_sweep_flux_dep( ro_element:list, z_element:list, config:dict, qm_machine:QuantumMachinesManager, n_avg:int=100, flux_settle_time:int=1000, freq_span:float=3, flux_span:float=0.3, flux_resolution:float=0.015, freq_resolution:float=0.05, initializer:tuple=None )->xr.Dataset:
+def freq_sweep_flux_dep( ro_element:list, z_element:list, config:dict, qm_machine:QuantumMachinesManager, n_avg:int=100, flux_settle_time:int=1000, freq_range:tuple=(-3,3), flux_range:float=(-0.3,0.3), flux_resolution:float=0.015, freq_resolution:float=0.05, initializer:tuple=None )->xr.Dataset:
     """
-    flux_settle_time unit in ns\n    
-    return is dataset with coords\n
-    ["mixer","flux","frequency"]\n
+    Parameters: \n
+
+    flux_settle_time: \n
+        unit in us \n 
+    freq_range: \n
+        a tuple ( upper, lower ), unit in MHz. \n
+    freq_resolution:
+        unit in MHz. \n
+    flux_range:\n
+        unit in voltage.\n
+    flux_resolution: \n
+        unit in voltage.\n
+    return:
+    xarray dataset with \n
+    coords: ["mixer","flux","frequency"]\n
 
     """
-    freq_span_qua = freq_span * u.MHz
+    freq_r1_qua = freq_range[0] * u.MHz
+    freq_r2_qua = freq_range[1] * u.MHz
+
     freq_resolution_qua = freq_resolution * u.MHz
 
-    freqs_qua = np.arange(-freq_span_qua/2,freq_span_qua/2,freq_resolution_qua)
-    fluxes = np.arange(-flux_span,flux_span+flux_resolution,flux_resolution)
+    freqs_qua = np.arange( freq_r1_qua, freq_r2_qua, freq_resolution_qua )
+    fluxes = np.arange( flux_range[0], flux_range[1], flux_resolution )
 
     freqs_mhz = freqs_qua/1e6 #  Unit in MHz
 
     freqs_len = freqs_qua.shape[0]
     flux_len = fluxes.shape[0]
 
+    flux_settle_time_qua = (flux_settle_time/4) *u.us
     with program() as multi_res_spec_vs_flux:
         # QUA macro to declare the measurement variables and their corresponding streams for a given number of resonators
         iqdata_stream = multiRO_declare( ro_element )
@@ -48,7 +63,7 @@ def freq_sweep_flux_dep( ro_element:list, z_element:list, config:dict, qm_machin
                     update_frequency(ro, df + resonator_IF)
                 for z in z_element:
                     set_dc_offset(z, "single", fluxes[0])
-                wait(flux_settle_time*10 * u.ns)  
+                wait(flux_settle_time_qua)  
                 with for_(*from_array(dc, fluxes)):
                     # initializaion
                     if initializer is None:
@@ -63,7 +78,7 @@ def freq_sweep_flux_dep( ro_element:list, z_element:list, config:dict, qm_machin
                     for z in z_element:
                         set_dc_offset(z, "single", dc)
 
-                    wait(flux_settle_time * u.ns)  
+                    wait(flux_settle_time_qua)  
 
                     # Readout
                     multiRO_measurement( iqdata_stream, ro_element, weights='rotated_')
@@ -94,10 +109,10 @@ def freq_sweep_flux_dep( ro_element:list, z_element:list, config:dict, qm_machin
         # Progress bar
         progress_counter(iteration, n_avg, start_time=results.get_start_time()) 
     # Close the quantum machines at the end in order to put all fluxes biases to 0 so that the fridge doesn't heat-up
+    fetch_data = results.fetch_all()
     qm.close()
     
     # Creating an xarray dataset
-    fetch_data = results.fetch_all()
     for r_idx, r_name in enumerate(ro_element):
         output_data[r_name] = ( ["mixer","frequency","flux"],
                                np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]]) )
@@ -109,20 +124,31 @@ def freq_sweep_flux_dep( ro_element:list, z_element:list, config:dict, qm_machin
 
 
 
-def freq_sweep_flux_dep_stable( ro_element:list, z_element:list, config:dict, qm_machine:QuantumMachinesManager, n_avg:int=100, flux_settle_time:int=1000, freq_span:float=3, flux_span:float=0.3, flux_resolution:float=0.015, freq_resolution:float=0.05, initializer:tuple=None )->xr.Dataset:
+def freq_sweep_flux_dep_stable( ro_element:list, z_element:list, config:dict, qm_machine:QuantumMachinesManager, n_avg:int=100, flux_settle_time:int=1000, freq_range:tuple=(-3,3), flux_range:tuple=(-0.3,0.3), flux_resolution:float=0.015, freq_resolution:float=0.05, initializer:tuple=None )->xr.Dataset:
     """
-    flux_settle_time unit in ns\n    
-    return is dataset with coords\n
-    ["mixer","flux","frequency"]\n
+    flux_settle_time: \n
+        unit in us \n 
+    freq_range: \n
+        a tuple ( upper, lower ), unit in MHz. \n
+    freq_resolution:
+        unit in MHz. \n
+    flux_range:\n
+        unit in voltage.\n
+    flux_resolution: \n
+        unit in voltage.\n
+    return:
+    xarray dataset with \n
+    coords: ["mixer","flux","frequency"]\n
+    """
+    freq_r1_qua = freq_range[0] * u.MHz
+    freq_r2_qua = freq_range[1] * u.MHz
 
-    """
-    freq_span_qua = freq_span * u.MHz
     freq_resolution_qua = freq_resolution * u.MHz
 
-    freqs_qua = np.arange(-freq_span_qua/2,freq_span_qua/2,freq_resolution_qua)
-    fluxes = np.arange(-flux_span,flux_span+flux_resolution,flux_resolution)
+    freqs_qua = np.arange( freq_r1_qua, freq_r2_qua, freq_resolution_qua)
+    fluxes = np.arange( flux_range[0], flux_range[1], flux_resolution)
 
-    flux_settle_time_qua = flux_settle_time/4*u.ns
+    flux_settle_time_qua = flux_settle_time/4*u.us
     freqs_mhz = freqs_qua/1e6 #  Unit in MHz
 
     freqs_len = freqs_qua.shape[0]

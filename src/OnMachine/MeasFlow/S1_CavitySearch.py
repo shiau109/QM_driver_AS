@@ -16,10 +16,12 @@ from OnMachine.Octave_Config.QM_config_dynamic import initializer
 spec = import_spec( spec_loca )
 config = import_config( config_loca ).get_config()
 qmm, _ = spec.buildup_qmm()
-init_macro = initializer(spec.give_depletion_time_for("q1"),mode='depletion')
+init_macro = initializer(10000,mode='wait')
 
 # Measurement
-from exp.freq_sweep import *
+from exp.rofreq_sweep import *
+freq_range = (-400,400)
+resolution = 2
 dataset = frequency_sweep(config,qmm,n_avg=100,initializer=init_macro)  
 
 # Plot

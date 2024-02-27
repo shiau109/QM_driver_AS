@@ -7,7 +7,7 @@ for k, v in raw_data.items():
     print(k, v.shape)
     if k in ["paras","setting"]:
         other_info[k]=v.item()
-from exp.rabi_J import freq_time_rabi, plot_ana_freq_time_rabi, freq_power_rabi
+from exp.rabi import freq_time_rabi, plot_ana_freq_time_rabi, freq_power_rabi
 
 setting = other_info["setting"]
 xy_LO = setting["xy_freq_LO"]

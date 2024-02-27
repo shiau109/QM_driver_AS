@@ -10,7 +10,7 @@ from config_component.update import update_ReadoutFreqs, update_Readout, update_
 new_LO = 5.9
 # init_value of readout amp is 0.2
 # 0.065
-cavities = [['q0',+150, 0.01, 0],['q1',+150+2, 0.05, -0.15],['q8',+150+3, 0.01, -0.05],['q5',+150-36, 0.3*0.05, 0.3]]
+cavities = [['q0',+150, 0.01, 0],['q1',+150+1.8, 0.3*0.1, 0.01],['q8',+150+3, 0.01, -0.35],['q5',+150-36, 0.3*0.05, -0.35]]
 for i in cavities:
     wiring = spec.get_spec_forConfig('wire')
 

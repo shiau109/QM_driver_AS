@@ -4,7 +4,7 @@ from qm.qua import *
 import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings("ignore")
-from exp.freq_sweep_flux_dep import *
+from exp.rofreq_sweep_flux_dep import *
 
 # 20231218 Test complete: Ratis
 # 20230217 Test complete: Jacky
@@ -22,8 +22,13 @@ init_macro = initializer(1000,mode='wait')
 
 ro_elements = ['q0_ro']
 z_elements = ['q1_z']
-# dataset = freq_sweep_flux_dep(ro_elements, z_elements, config, qmm, freq_span=100, freq_resolution=0.1, flux_settle_time=1000, flux_span=0.4, flux_resolution=0.01, n_avg=100, initializer=init_macro)
-dataset = freq_sweep_flux_dep_stable(ro_elements, z_elements, config, qmm, freq_span=100, freq_resolution=0.1, flux_settle_time=1000, flux_span=0.4, flux_resolution=0.01, n_avg=100, initializer=init_macro)
+n_avg = 100
+freq_range = (-50,50)
+freq_resolution = 0.1
+flux_range = (-0.3,0.3)
+flux_resolution = 0.1
+# dataset = freq_sweep_flux_dep(ro_elements, z_elements, config, qmm, freq_range=freq_range, freq_resolution=freq_resolution, flux_settle_time=1, flux_range=flux_range, flux_resolution=flux_resolution, n_avg=n_avg, initializer=init_macro)
+dataset = freq_sweep_flux_dep_stable(ro_elements, z_elements, config, qmm, freq_range=freq_range, freq_resolution=freq_resolution, flux_settle_time=1, flux_range=flux_range, flux_resolution=flux_resolution, n_avg=n_avg, initializer=init_macro)
 
 # Plot
 dfs = dataset.coords["frequency"].values
