@@ -15,19 +15,23 @@ import sys
 import xarray as xr
 
 
-def frequency_sweep_power_dep( ro_element:list, config:dict, qm_machine:QuantumMachinesManager, n_avg:int=100, freq_span:int=5, freq_resolution:float=0.05, amp_max_ratio:float=1.5,amp_resolution:float=0.01, amp_scale:str='lin', initializer:tuple=None)->xr.Dataset:
+def frequency_sweep_power_dep( ro_element:list, config:dict, qm_machine:QuantumMachinesManager, n_avg:int=100, freq_range:tuple=(-5,5), freq_resolution:float=0.05, amp_max_ratio:float=1.5,amp_resolution:float=0.01, amp_scale:str='lin', initializer:tuple=None)->xr.Dataset:
     """
+    Parameters:\n
     freq_span:\n
-        Unit in MHz, \n
+        a tuple (upper, lower) Unit in MHz, \n
+    amp_max_ratio: \n
+
     amp_scale: \n
         lin or log \n
-    output: xarray dataset
+    Return: xarray dataset
         coords : frequency, amp_ratio
     """
-    freq_span_qua = freq_span * u.MHz
+    freq_r1_qua = freq_range[0] * u.MHz
+    freq_r2_qua = freq_range[1] * u.MHz
     freq_resolution_qua = freq_resolution * u.MHz
 
-    freqs_qua = np.arange(-freq_span_qua/2,freq_span_qua/2,freq_resolution_qua )
+    freqs_qua = np.arange(freq_r1_qua,freq_r2_qua,freq_resolution_qua )
     if amp_scale == "log":
         amp_num = int((amp_max_ratio+2)/amp_resolution)
         amp_ratio = np.logspace(-2, amp_max_ratio, amp_num)

@@ -18,15 +18,44 @@ from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
 
 import exp.config_par as gc
+import xarray as xr
 
-def freq_time_rabi( dfs, time, q_name, ro_element, config, qmm, n_avg = 100, initializer = None, simulate=False):
+def xyfreq_time_rabi( freq_range:tuple, freq_resolution:float, time_range:tuple, time_resolution:float, q_name, ro_element, config, qmm, n_avg = 100, initializer = None, simulate=False):
+    """
+    Time Rabi Chavron. \n
+    The excitation is using "x180" operation. \n
+    Parameters: \n
+    freq_range \n
+    ( upper, lower )\n
+    freq_resolution: \n
+    unit in MHz. \n
+    time_range: \n
+    ( upper, lower )\n
+    time_resolution:\n
+    unit in ns. \n
+    """
+    time_r1_qua = (time_range[0]/4) *u.ns
+    time_r2_qua = (time_range[1]/4) *u.ns
+
+    if time_resolution < 4:
+        print( "Warning!! time resolution < 4 ns.")
+    time_resolution_qua = (time_resolution/4) *u.ns
+    driving_time_qua = np.arange(time_r1_qua, time_r2_qua, time_resolution_qua)
+    driving_time = driving_time_qua *4
+
+    freq_r1_qua = freq_range[0] * u.MHz
+    freq_r2_qua = freq_range[1] * u.MHz
+    freq_resolution_qua = freq_resolution * u.MHz
+    freqs = np.arange(freq_r1_qua, freq_r2_qua, freq_resolution_qua)
+
+    freqs_mhz = freqs/1e6 # Unit in MHz
 
     ref_xy_IF = {}
     for xy in q_name:
         ref_xy_IF[xy] = gc.get_IF(xy, config)
 
-    freq_len = len(dfs)
-    time_len = len(time)
+    freq_len = len(freqs)
+    time_len = len(driving_time_qua)
     with program() as rabi:
 
         iqdata_stream = multiRO_declare(ro_element)
@@ -35,9 +64,9 @@ def freq_time_rabi( dfs, time, q_name, ro_element, config, qmm, n_avg = 100, ini
         n_st = declare_stream()
         df = declare(int)  # QUA variable for the readout frequency
         with for_(n, 0, n < n_avg, n + 1):
-            with for_(*from_array(df, dfs)):
+            with for_(*from_array(df, freqs)):
                 # Update the frequency of the xy elements
-                with for_( *from_array(t, time) ):  
+                with for_( *from_array(t, driving_time_qua) ):  
                     # Init
                     if initializer is None:
                         wait(100*u.us)
@@ -96,7 +125,7 @@ def freq_time_rabi( dfs, time, q_name, ro_element, config, qmm, n_avg = 100, ini
 
                 # Plot I
                 # ax[0][r_idx].set_ylabel("I quadrature [V]")
-                plot_freq_dep_time_rabi(output_data[r_name], dfs, time, [ax[0][r_idx],ax[1][r_idx]])
+                plot_freq_dep_time_rabi(output_data[r_name], freqs, driving_time, [ax[0][r_idx],ax[1][r_idx]])
                 # # Plot Q
                 # ax[0][r_idx].set_ylabel("Q quadrature [V]")
                 # plot_flux_dep_qubit(output_data[r_name][1], offset_arr, d_freq_arr,ax[1][r_idx]) 
@@ -112,8 +141,21 @@ def freq_time_rabi( dfs, time, q_name, ro_element, config, qmm, n_avg = 100, ini
         for r_idx, r_name in enumerate(ro_element):
             output_data[r_name] = np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]])
 
+        fetch_data = results.fetch_all()
         qm.close()
-        return output_data
+        # Creating an xarray dataset
+        output_data = {}
+        for r_idx, r_name in enumerate(ro_element):
+            output_data[r_name] = ( ["mixer","frequency","time"],
+                                    np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]]) )
+        dataset = xr.Dataset(
+            output_data,
+            coords={ "mixer":np.array(["I","Q"]), "frequency": freqs_mhz, "time": driving_time }
+        )
+        dataset.attrs["ref_xy_IF"] = ref_xy_IF
+        dataset.attrs["ref_xy_LO"] = ref_xy_LO
+        dataset.attrs["ref_z"] = ref_z_offset
+    return output_data
 
 
 def freq_power_rabi( dfs, amps, q_name, ro_element, config, qmm, n_avg = 100, initializer = None, simulate=False):

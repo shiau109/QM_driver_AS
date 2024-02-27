@@ -7,7 +7,7 @@ for k, v in raw_data.items():
     print(k, v.shape)
     if k in ["paras","setting"]:
         other_info[k]=v.item()
-from exp.flux_dep_qubit_spec_J import *
+from exp.xyfreq_sweep_flux_dep import *
 setting = other_info["setting"]
 xy_LO = setting["xy_freq_LO"]
 xy_IF_idle = setting["xy_freq_Idle"]

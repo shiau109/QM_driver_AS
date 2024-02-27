@@ -245,6 +245,7 @@ class ChannelInfo:
         delta or anh or d(anharmonicity, MHz)=-200,\n
         AC(AC_stark_detuning, MHz)=8,func='gauss' or 'drag',\n
         half_scale or half(half_pi_ampScale)=0.012.\n
+        const_amp default 0.1\n
         ### If update info is related to freq return the dict for updating the config.
         '''
         new_freq = {}
@@ -269,6 +270,8 @@ class ChannelInfo:
                 self._XyInfo[target_q]["waveform_func"] = kwargs[name]
             elif name.lower() in ['half_scale','half']:
                 self._XyInfo[target_q]["pi_ampScale"]["90"] = kwargs[name]
+            elif name.lower() in ['const_amp']:
+                self._XyInfo[target_q]["const_amp"] = kwargs[name]
             else:
                 print(name.lower())
                 raise KeyError("I don't know what you are talking about!")

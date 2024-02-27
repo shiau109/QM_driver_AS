@@ -18,7 +18,12 @@ u = unit(coerce_to_integer=True)
 
 def exp_relaxation_time(max_time, time_resolution, q_name:list, ro_element:list, config, qmm:QuantumMachinesManager, n_avg=100, initializer=None ):
     """
-    Return ductionary with value 2*N array
+    parameters: \n
+    max_time: unit in us, can't < 20 ns \n
+    time_resolution: unit in us, can't < 4 ns \n
+
+    Return: \n
+    ductionary with value 2*N array
     N is t_delay length
     max_time unit in us \n
     """

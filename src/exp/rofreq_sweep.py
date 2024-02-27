@@ -10,25 +10,35 @@ import warnings
 from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 
 warnings.filterwarnings("ignore")
-
+import exp.config_par as gc
 import xarray as xr
 # 20240202 Test complete :Jacky
 
-def frequency_sweep( config:dict, qm_machine:QuantumMachinesManager, ro_element:list=["q0_ro"], span:int=600, resolution:int=2, n_avg:int=100, initializer:tuple=None)->xr.Dataset:
+def frequency_sweep( config:dict, qm_machine:QuantumMachinesManager, ro_element:list=["q0_ro"], freq_range:tuple=(-400,400), resolution:int=2, n_avg:int=100, initializer:tuple=None)->xr.Dataset:
     """
-        Search cavities with the given IF span range (LO+/-span/2) along the given ro_element's LO.\n
+    Parameters:
+    Search cavities with the given IF range along the given ro_element's LO, (LO+freq_range[0],LO+freq_range[1]) .\n
 
-        span:\n
-        Unit in MHz, \n
-        ro_element: ["q1_ro"], temporarily support only 1 element in the list.\n
-        initializer: from `initializer(paras,mode='depletion')`, and use paras return from `Circuit_info.give_depletion_time_for()`  
+    freq_range:\n
+    is a tuple ( upper, lower ), Unit in MHz.\n
+    resolution:\n
+    unit in MHz.\n
+    ro_element: ["q1_ro"], temporarily support only 1 element in the list.\n
+    initializer: from `initializer(paras,mode='depletion')`, and use paras return from `Circuit_info.give_depletion_time_for()`  
+    Return: \n
+
     """
-    span_qua = span * u.MHz
+    freq_r1_qua = freq_range[0] * u.MHz
+    freq_r2_qua = freq_range[1] * u.MHz
     resolution_qua = resolution * u.MHz
 
-    frequencies_qua = np.arange(-span_qua/2,span_qua/2,resolution_qua )
+    frequencies_qua = np.arange( freq_r1_qua, freq_r2_qua, resolution_qua )
     frequencies_mhz = frequencies_qua/1e6 #  Unit in MHz
     freq_len = frequencies_qua.shape[-1]
+
+    ref_xy_LO = {}
+    for xy in ro_element:
+        ref_xy_LO[xy] = gc.get_LO(ro_element[0],config)
 
     # The QUA program #
     with program() as resonator_spec:
@@ -43,7 +53,7 @@ def frequency_sweep( config:dict, qm_machine:QuantumMachinesManager, ro_element:
                 # Initialization
                 # Wait for the resonator to deplete
                 if initializer is None:
-                    wait(1 * u.us, ro_element[0])
+                    wait(10 * u.us, ro_element[0])
                 else:
                     try:
                         initializer[0](*initializer[1])

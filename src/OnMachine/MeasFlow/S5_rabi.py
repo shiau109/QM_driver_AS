@@ -6,7 +6,7 @@ warnings.filterwarnings("ignore")
 from datetime import datetime
 import sys
 
-from exp.rabi_J import freq_time_rabi, plot_ana_freq_time_rabi, freq_power_rabi
+from exp.rabi import freq_time_rabi, plot_ana_freq_time_rabi, freq_power_rabi
 import numpy as np
 
 from OnMachine.Octave_Config.QM_config_dynamic import Circuit_info, QM_config, initializer
@@ -21,8 +21,8 @@ from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
 init_macro = initializer( 100*u.us,mode='wait')
 
-ro_elements = ['q1_ro','q2_ro','q3_ro','q4_ro']
-q_name = ['q2_xy']
+ro_elements = ['q1_ro']
+q_name = ['q1_xy']
 n_avg = 100
 
 dfs = np.arange(-100e6, 100e6, 1e6)
