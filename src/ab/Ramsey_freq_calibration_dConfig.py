@@ -251,7 +251,7 @@ def plot_ana_result( evo_time, data, detuning, ax=None ):
 
 if __name__ == '__main__':
     # qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-    from OnMachine.Octave_Config.QM_config_dynamic import Circuit_info, QM_config, initializer
+    from ab.QM_config_dynamic import Circuit_info, QM_config, initializer
     from OnMachine.MeasFlow.ConfigBuildUp_old import spec_loca, config_loca, qubit_num
     spec = Circuit_info(qubit_num)
     config = QM_config()

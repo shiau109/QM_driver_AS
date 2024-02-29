@@ -161,7 +161,7 @@ def qua_constant_drive_z_pulse( ro_element, n_avg, fluxes, freqs, saturation_amp
                     align()
                     for z_name, ref_z in ref_z_offset.items():
                         set_dc_offset( z_name, "single", ref_z)
-                    wait(25)
+                    wait(250)
                     align()
                     # measurement
                     multiRO_measurement( iqdata_stream, ro_element, weights='rotated_'  )

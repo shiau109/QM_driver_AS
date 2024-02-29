@@ -9,7 +9,7 @@ from qualang_tools.plot import interrupt_on_close
 from qualang_tools.loops import from_array
 import matplotlib.pyplot as plt
 import warnings
-from OnMachine.Octave_Config.QM_config_dynamic import QM_config, Circuit_info
+from ab.QM_config_dynamic import QM_config, Circuit_info
 
 from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 

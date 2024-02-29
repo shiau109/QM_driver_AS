@@ -1,12 +1,6 @@
-from config_component.controller import Controller, controller_read_dict
-from config_component.element import Element, element_read_dict
-from config_component.pulse import Pulse, pulse_read_dict
-from config_component.waveform import Waveform, waveform_read_dict
-from config_component.digital_waveform import DigitalWaveform, digitalWaveform_read_dict
-from config_component.integration_weight import IntegrationWeights, integrationWeight_read_dict
-from config_component.mixer import Mixer, mixer_read_list
-from config_component.configuration import Configuration
 
+from config_component.configuration import Configuration
+from config_component.channel_info import Waveform
 
 # ===================== Update about XY =====================================
 ### directly update the frequency info into config ### 
@@ -29,10 +23,10 @@ def update_controlFreq( config:Configuration, updatedInfo:dict ):
             # TODO target_q_idx should replace 0
             if info.split("_")[1] == "LO":
                 element.input_map.lo_frequency = updatedInfo[info]
-                mixer.iFChannels[target_q_idx].lo_frequency = updatedInfo[info]
+                mixer.iFChannels[0].lo_frequency = updatedInfo[info]
             else: 
                 element.intermediate_frequency = updatedInfo[info]
-                mixer.iFChannels[target_q_idx].intermediate_frequency = updatedInfo[info]
+                mixer.iFChannels[0].intermediate_frequency = updatedInfo[info]
             
         else: 
             raise KeyError("Only surpport update frequenct related info to config!")
@@ -51,34 +45,33 @@ def update_controlWaveform(config:Configuration,updatedSpec:dict={},target_q:str
         raise ValueError("The updated spec should be given!")
     qs = [target_q] if target_q != 'all' else updatedSpec["register"]
     for q in qs:
+        element_name = f"{q}_xy"
         print(f"{q} update controlWaveform")
-        for waveform in config.elements[f"{q}_xy"].operations:
-            if waveform not in ["cw", "saturation", "const"]:
-                for waveform_basis in config.pulses[f"{waveform}_pulse_{q}"].waveforms:
-                    ''' waveform_basis is "I" or "Q" '''
-                    waveform_name = config.pulses[f"{waveform}_pulse_{q}"].waveforms[waveform_basis]
-                    match waveform_name.split('_')[0]:
-                        case "x180": a = "x"
-                        case "-x180": a = "-x"
-                        case "y180": a = "y"
-                        case "x90": a = "x/2"
-                        case "-x90": a = "-x/2"
-                        case "y90": a = "y/2"
-                        case "-y90": a = "-y/2"
-                        case _: a = None
+        # Default constant pulse
+        config.waveforms[f"{q}_xy_const_wf"].sample = updatedSpec[q]["const_amp"]
 
-                    wf = waveform_remaker.build_XYwaveform(target_q=q,axis=a)
-                    
-                    config.waveforms[waveform_name].sample = wf[waveform_basis].tolist()
-        
+        for opration in config.elements[element_name].operations: 
+            
+           
+            pulse_name = f"{q}_xy_{opration}_pulse"
+            # Single Q operation
+            if opration in ["x180", "-x180", "y180", "x90", "-x90", "y90", "-y90"]: 
+                conv_table = {
+                    "x180": "x",
+                    "-x180": "-x",
+                    "y180": "y",
+                    "x90": "x/2",
+                    "-x90": "-x/2",
+                    "y90": "y/2",
+                    "-y90": "-y/2"
+                }
+                wf = waveform_remaker.build_XYwaveform(target_q=q,axis=conv_table[opration])
+                for if_port in ["I","Q"]:
+                    waveform_name = f"{q}_xy_{opration}_wf_{if_port}"
+                    config.waveforms[waveform_name].sample = wf[if_port].tolist()
                 # pi_len check
-                old_len = config.pulses[f"{waveform}_pulse_{q}"].length
-                new_len = updatedSpec[q]['pi_len']
-                print(f"new pi len{new_len}")
-                if old_len != new_len:
-                    config.pulses[f"{waveform}_pulse_{q}"].length = new_len
+                config.pulses[pulse_name].length = updatedSpec[q]['pi_len']
 
-            config.waveforms[f"{q}_xy_const_wf"].sample = updatedSpec["const_amp"]
 
 # ================= Update about Z ===================================
 def update_z_offset(config:Configuration,zInfo:dict,wire:dict,mode:str="offset"):
