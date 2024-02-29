@@ -26,7 +26,7 @@ elements_settings = [q1_xy]
 # Configure the Octave according to the elements settings and calibrate
 
 # Dynamic config
-from OnMachine.MeasFlow.ConfigBuildUp_new import spec_loca, config_loca
+from OnMachine.SetConfig.ConfigBuildUp_new import spec_loca, config_loca
 from config_component.configuration import import_config
 from config_component.channel_info import import_spec
 spec = import_spec(spec_loca)

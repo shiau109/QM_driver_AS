@@ -51,8 +51,10 @@ def xyfreq_time_rabi( freq_range:tuple, freq_resolution:float, time_range:tuple,
     freqs_mhz = freqs/1e6 # Unit in MHz
 
     ref_xy_IF = {}
+    ref_xy_LO = {}
     for xy in q_name:
         ref_xy_IF[xy] = gc.get_IF(xy, config)
+        ref_xy_LO[xy] = gc.get_LO(xy, config)
 
     freq_len = len(freqs)
     time_len = len(driving_time_qua)
@@ -154,18 +156,38 @@ def xyfreq_time_rabi( freq_range:tuple, freq_resolution:float, time_range:tuple,
         )
         dataset.attrs["ref_xy_IF"] = ref_xy_IF
         dataset.attrs["ref_xy_LO"] = ref_xy_LO
-        dataset.attrs["ref_z"] = ref_z_offset
-    return output_data
+    return dataset
 
 
-def freq_power_rabi( dfs, amps, q_name, ro_element, config, qmm, n_avg = 100, initializer = None, simulate=False):
+def xyfreq_power_rabi( freq_range:tuple, freq_resolution:float, amp_range:tuple, amp_resolution:float, q_name, ro_element, config, qmm, n_avg = 100, initializer = None, simulate=False):
+    """
+    Power Rabi Chavron. \n
+    The excitation is using "x180" operation. \n
+    Parameters: \n
+    freq_range \n
+    ( upper, lower )\n
+    freq_resolution: \n
+    unit in MHz. \n
+    amp_range \n
+    ( upper, lower )\n
+    amp_resolution: \n
+    dimensionless ratio. \n
+    """
+    freq_r1_qua = freq_range[0] * u.MHz
+    freq_r2_qua = freq_range[1] * u.MHz
+    freq_resolution_qua = freq_resolution * u.MHz
+    freqs = np.arange(freq_r1_qua, freq_r2_qua, freq_resolution_qua)
 
+    freqs_mhz = freqs/1e6 # Unit in MHz
+    r_amps = np.arange(amp_range[0], amp_range[1], amp_resolution)
     ref_xy_IF = {}
+    ref_xy_LO = {}
     for xy in q_name:
         ref_xy_IF[xy] = gc.get_IF(xy, config)
+        ref_xy_LO[xy] = gc.get_LO(xy, config)
 
-    freq_len = len(dfs)
-    amp_len = len(amps)
+    freq_len = len(freqs)
+    amp_len = len(r_amps)
     with program() as rabi:
 
         iqdata_stream = multiRO_declare(ro_element)
@@ -174,9 +196,9 @@ def freq_power_rabi( dfs, amps, q_name, ro_element, config, qmm, n_avg = 100, in
         n_st = declare_stream()
         df = declare(int)  # QUA variable for the readout frequency
         with for_(n, 0, n < n_avg, n + 1):
-            with for_(*from_array(df, dfs)):
+            with for_(*from_array(df, freqs)):
                 # Update the frequency of the xy elements
-                with for_( *from_array(ra, amps) ):  
+                with for_( *from_array(ra, r_amps) ):  
                     # Init
                     if initializer is None:
                         wait(100*u.us)
@@ -235,7 +257,7 @@ def freq_power_rabi( dfs, amps, q_name, ro_element, config, qmm, n_avg = 100, in
 
                 # Plot I
                 # ax[0][r_idx].set_ylabel("I quadrature [V]")
-                plot_freq_dep_time_rabi(output_data[r_name], dfs, amps, [ax[0][r_idx],ax[1][r_idx]])
+                plot_freq_dep_time_rabi(output_data[r_name], freqs, r_amps, [ax[0][r_idx],ax[1][r_idx]])
                 # # Plot Q
                 # ax[0][r_idx].set_ylabel("Q quadrature [V]")
                 # plot_flux_dep_qubit(output_data[r_name][1], offset_arr, d_freq_arr,ax[1][r_idx]) 
@@ -247,12 +269,19 @@ def freq_power_rabi( dfs, amps, q_name, ro_element, config, qmm, n_avg = 100, in
             plt.pause(1)
 
         fetch_data = results.fetch_all()
+        qm.close()
+        # Creating an xarray dataset
         output_data = {}
         for r_idx, r_name in enumerate(ro_element):
-            output_data[r_name] = np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]])
-
-        qm.close()
-        return output_data
+            output_data[r_name] = ( ["mixer","frequency","amplitude"],
+                                    np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]]) )
+        dataset = xr.Dataset(
+            output_data,
+            coords={ "mixer":np.array(["I","Q"]), "frequency": freqs_mhz, "amplitude": r_amps }
+        )
+        dataset.attrs["ref_xy_IF"] = ref_xy_IF
+        dataset.attrs["ref_xy_LO"] = ref_xy_LO
+        return dataset
 
 def plot_freq_dep_time_rabi( data, dfs, time, ax=None ):
     """

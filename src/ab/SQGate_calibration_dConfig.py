@@ -10,7 +10,7 @@ from qualang_tools.plot import interrupt_on_close
 from qualang_tools.loops import from_array
 import matplotlib.pyplot as plt
 import warnings
-from OnMachine.Octave_Config.QM_config_dynamic import QM_config, Circuit_info
+from ab.QM_config_dynamic import QM_config, Circuit_info
 
 from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 
@@ -364,7 +364,7 @@ if __name__ == '__main__':
     # drag_coef = drag_coef_q1
     # Check that the DRAG coefficient is not 0
     # assert drag_coef != 0, "The DRAG coefficient 'drag_coef' must be different from 0 in the config."
-    from OnMachine.Octave_Config.QM_config_dynamic import Circuit_info, QM_config, initializer
+    from ab.QM_config_dynamic import Circuit_info, QM_config, initializer
     from OnMachine.MeasFlow.ConfigBuildUp_old import spec_loca, config_loca, qubit_num
     spec = Circuit_info(qubit_num)
     config = QM_config()

@@ -1,4 +1,4 @@
-from OnMachine.MeasFlow.ConfigBuildUp_new import spec_loca, config_loca
+from OnMachine.SetConfig.ConfigBuildUp_new import spec_loca, config_loca
 from config_component.configuration import import_config, configuration_read_dict
 from config_component.channel_info import import_spec
 
@@ -10,7 +10,7 @@ from config_component.update import update_ReadoutFreqs, update_Readout, update_
 new_LO = 5.9
 # init_value of readout amp is 0.2
 # 0.065
-cavities = [['q0',+150, 0.01, 0],['q1',+150+1.8, 0.3*0.1, 0.01],['q8',+150+3, 0.01, -0.35],['q5',+150-36, 0.3*0.05, -0.35]]
+cavities = [['q0',+150-33, 0.3*0.1, 0],['q1',+150+1.8, 0.3*0.1, 0.035],['q8',+150+3, 0.01, 0.1],['q5',+150-36, 0.3*0.05, -0.1]]
 for i in cavities:
     wiring = spec.get_spec_forConfig('wire')
 
