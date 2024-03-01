@@ -94,28 +94,45 @@ def exp_relaxation_time(max_time, time_resolution, q_name:list, ro_element:list,
 
 
 
-def plot_T1( x, y, y_label:list=["I","Q"], fig=None ):
+def plot_T1( x, y ):
     """
     x shape (M,) 1D array
     y shape (N,M)
     N is 1(I only) or 2(both IQ)
     """
-    signal_num = y.shape[0]
-    if fig == None:
-        fig, ax = plt.subplots(nrows=signal_num)
+    fig, ax = plt.subplots(2)
+    fig.suptitle("T1 measurement")
+
     # c = ax.pcolormesh(dfs, amp_log_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
     # ax.set_title('pcolormesh')
     # fig.show()
     # Plot
-    fig.suptitle("T1 measurement")
-    for i in range(signal_num):
+    for i, port in enumerate(["I", "Q"]):
         ax[i].plot( x, y[i], label="data")
-        ax[i].set_ylabel(f"{y_label[i]} quadrature [V]")
+        ax[i].set_ylabel(f"{port} quadrature [V]")
         ax[i].set_xlabel("Wait time (ns)")
 
         fit_T1_par, fit_func = fit_T1(x, y[i])
         ax[i].plot( x, fit_func(x), label="fit")
         print("T1",fit_T1_par)
+    return fig
+
+def plot_multiT1( data, rep, time ):
+    """
+    data shape ( 2, N, M )
+    2 is I,Q
+    N is rep
+    M is time
+    """
+    idata = data[0]
+    qdata = data[1]
+    zdata = idata +1j*qdata
+
+    fig, ax = plt.subplots(2)
+    ax[0].set_title('I signal')
+    ax[0].pcolormesh( time, rep, idata, cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    ax[1].set_title('Q signal')
+    ax[1].pcolormesh( time, rep, qdata, cmap='RdBu')# , vmin=z_min, vmax=z_max)
     return fig
 
 def fit_T1( evo_time, signal ):
@@ -125,7 +142,7 @@ def fit_T1( evo_time, signal ):
     fit_func = decay_fit["fit_func"]
     return relaxation_time, fit_func
         
-def statistic_T1_exp( repeat:int, t_delay, q_name, ro_element, config, qmm, n_avg:int=100 ):
+def statistic_T1_exp( repeat:int, max_time, time_resolution, q_name:list, ro_element:list, config, qmm:QuantumMachinesManager, n_avg=100, initializer=None ):
     """
     repeat is the measurement times for statistic
     n_avg is the measurement times for getting relaxation time (T1)
@@ -135,39 +152,43 @@ def statistic_T1_exp( repeat:int, t_delay, q_name, ro_element, config, qmm, n_av
     """
     statistic_T1 = {}
     raw_data = {}
+    repetition = np.arange(repeat)
     for r in ro_element:
         statistic_T1[r] = []
         raw_data[r] = []
     for i in range(repeat):
         print(f"{i}th T1")
-        data = exp_relaxation_time(t_delay, q_name, ro_element, config, qmm, n_avg)
-        for r in ro_element:
-            T1_i = fit_T1(t_delay*4, data[r][0])[0]
-            print(f"{r} T1 = {T1_i}")
-            statistic_T1[r].append( [T1_i, 0])
-            raw_data[r].append(data[r])
+        dataset = exp_relaxation_time(max_time, time_resolution, q_name, ro_element, config, qmm, n_avg, initializer)
+        time = dataset.coords["time"].values
+        for ro_name, data in dataset.data_vars.items():
+            T1_i = fit_T1( time, data[0])[0]
+            print(f"{ro_name} T1 = {T1_i}")
+            statistic_T1[ro_name].append( [T1_i])
+            raw_data[ro_name].append(data)
 
+    output_data = {}
     for r in ro_element:
-        statistic_T1[r] = np.array(statistic_T1[r]).transpose()
-        raw_data[r] = np.array(raw_data[r])
+        statistic_T1[r] = np.array(statistic_T1[r]).transpose()[0]
+        output_data[r] = (["repetition","mixer","time"], np.array(raw_data[r]))
 
-    return statistic_T1, raw_data
+    dataset = xr.Dataset(
+        output_data,
+        coords={ "mixer":np.array(["I","Q"]), "time": time, "repetition": repetition }
+    )    
+    dataset = dataset.transpose("mixer","repetition","time")
+    return statistic_T1, dataset
 
-def T1_hist( data, T1_max, fig=None):
+def T1_hist( data, fig=None):
 
     if fig == None:
         fig, ax = plt.subplots()
     new_data = data/1000 # change ns to us
-
-    bin_width = 0.5
+    mean_t1 = np.mean(new_data)
+    bin_width = mean_t1 *0.05
     start_value = np.mean(new_data)*0.5
     end_value = np.mean(new_data)*1.5
     custom_bins = [start_value + i * bin_width for i in range(int((end_value - start_value) / bin_width) + 1)]
-    hist_values, bin_edges = np.histogram(new_data, bins=custom_bins, density=True)
-    bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
-    # params, covariance = curve_fit(gaussian, bin_centers, hist_values)
-    # mu, sigma = params
-    ax.hist(new_data, 20, density=False, alpha=0.7, color='blue', label='Histogram')
+    ax.hist(new_data, custom_bins, density=False, alpha=0.7, label='Histogram')# color='blue', 
     xmin, xmax = ax.get_xlim()
     x = np.linspace(xmin, xmax, 100)
     # p = gaussian(x, mu, sigma)
