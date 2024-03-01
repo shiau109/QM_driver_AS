@@ -9,26 +9,37 @@ config_obj = import_config( config_loca )
 from config_component.update import update_controlFreq, update_controlWaveform
 
 import numpy as np
+
+xy_infos = [
+    {
+        "name":"q1",
+        "q_freq": 4.526-0.005, # GHz
+        "LO": 4.6, # GHz
+        "pi_amp": 0.2*0.9*1.05*1.01,
+        "pi_len": 40,
+        "90_corr": 1.03
+    },
+
+]
 # name, q_freq(GHz), LO(GHz), amp, len, half
-update_info = [['q1', 4.526-0.005, 4.60, 0.2*0.9*1.05*1.01, 40, 1.03 ]]
-for i in update_info:
+# update_info = [['q1', 4.526-0.005, 4.60, 0.2*0.9*1.05*1.01, 40, 1.03 ]]
+for i in xy_infos:
     # wiring = spec.get_spec_forConfig('wire')
-    q_name = i[0]
-    qubit_LO = i[2]
-    qubit_RF = i[1]
+    q_name = i["name"]
+    qubit_LO = i["LO"]
+    qubit_RF = i["q_freq"]
     ref_IF = (qubit_RF-qubit_LO)*1000
 
     print(f"center {ref_IF} MHz")
-    pi_amp = i[3]
-    print(f"amp {pi_amp}")
-    pi_len = i[4]
+    pi_amp = i["pi_amp"]
+    pi_len = i["pi_len"]
 
     update_controlFreq(config_obj, spec.update_aXyInfo_for(target_q=q_name,IF=ref_IF,LO=qubit_LO))
     if np.abs(ref_IF) > 350:
         print("Warning IF > +/-350 MHz, IF is set 350 MHz")
         ref_IF = np.sign(ref_IF)*350
 
-    spec.update_aXyInfo_for(target_q=q_name, amp=pi_amp, len=pi_len, half=i[5])
+    spec.update_aXyInfo_for(target_q=q_name, amp=pi_amp, len=pi_len, half=i["90_corr"])
     update_controlWaveform(config_obj, spec.get_spec_forConfig("xy"), target_q=q_name )
 
 import json
