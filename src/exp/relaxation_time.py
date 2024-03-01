@@ -23,8 +23,8 @@ def exp_relaxation_time(max_time, time_resolution, q_name:list, ro_element:list,
     time_resolution: unit in us, can't < 4 ns \n
 
     Return: \n
-    ductionary with value 2*N array
-    N is t_delay length
+    xarray with value 2*N array
+    coords: ["mixer","time"]
     max_time unit in us \n
     """
 
@@ -32,7 +32,7 @@ def exp_relaxation_time(max_time, time_resolution, q_name:list, ro_element:list,
     cc_resolution_qua = (time_resolution/4) * u.us
     cc_delay_qua = np.arange( 4, cc_max_qua, cc_resolution_qua)
     evo_time = cc_delay_qua*4
-    evo_time_len = t_delay.shape[-1]
+    evo_time_len = cc_delay_qua.shape[-1]
     # QUA program
     with program() as t1:
 
@@ -77,8 +77,10 @@ def exp_relaxation_time(max_time, time_resolution, q_name:list, ro_element:list,
     data_list = ro_ch_name + ["iteration"]   
 
     results = fetching_tool(job, data_list=data_list, mode="wait_for_all")
-    fetch_data = results.fetch_all()
 
+    # Measurement finished
+    fetch_data = results.fetch_all()
+    qm.close()
     output_data = {}
 
     for r_idx, r_name in enumerate(ro_element):
@@ -98,7 +100,7 @@ def plot_T1( x, y, y_label:list=["I","Q"], fig=None ):
     y shape (N,M)
     N is 1(I only) or 2(both IQ)
     """
-    signal_num = y.shape[-1]
+    signal_num = y.shape[0]
     if fig == None:
         fig, ax = plt.subplots(nrows=signal_num)
     # c = ax.pcolormesh(dfs, amp_log_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
@@ -108,12 +110,12 @@ def plot_T1( x, y, y_label:list=["I","Q"], fig=None ):
     fig.suptitle("T1 measurement")
     for i in range(signal_num):
         ax[i].plot( x, y[i], label="data")
-        ax[i].set_ylabel(f"{y_label} quadrature [V]")
+        ax[i].set_ylabel(f"{y_label[i]} quadrature [V]")
         ax[i].set_xlabel("Wait time (ns)")
 
         fit_T1_par, fit_func = fit_T1(x, y[i])
         ax[i].plot( x, fit_func(x), label="fit")
-
+        print("T1",fit_T1_par)
     return fig
 
 def fit_T1( evo_time, signal ):

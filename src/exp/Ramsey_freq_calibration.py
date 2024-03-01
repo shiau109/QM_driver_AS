@@ -42,7 +42,7 @@ u = unit(coerce_to_integer=True)
 # The QUA program #
 ###################
 
-def Ramsey_freq_calibration( virtial_detune_freq, q_name:list, ro_element:list, config, qmm:QuantumMachinesManager, n_avg:int=100, simulate = False, initializer:tuple=None ):
+def ramsey_freq_calibration( virtial_detune_freq, q_name:list, ro_element:list, config, qmm:QuantumMachinesManager, n_avg:int=100, simulate = False, initializer:tuple=None ):
     """
     Use positive and nagative detuning refence to freq in config to get measured ramsey oscillation frequency.
     evo_time unit is tick (4ns)
