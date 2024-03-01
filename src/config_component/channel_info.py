@@ -178,17 +178,17 @@ class ChannelInfo:
                         self._RoInfo[target_q][f'resonator_LO'] = int(kwargs[info]*u.GHz)
                         few_freq[f'resonator_LO_{target_q}'] = int(kwargs[info]*u.GHz)
                     case "len":
-                        self._RoInfo['readout_len'] = kwargs[info]
+                        self._RoInfo[target_q]['readout_len'] = kwargs[info]
                     case "time":
-                        self._RoInfo['time_of_flight'] = kwargs[info]
+                        self._RoInfo[target_q]['time_of_flight'] = kwargs[info]
                     case "depletion":
-                        self._RoInfo["depletion_time"] = int(kwargs[info]*u.ns)
+                        self._RoInfo[target_q]["depletion_time"] = int(kwargs[info]*u.ns)
                     case "ge_hold":
                         self._RoInfo[target_q][f'ge_threshold'] = kwargs[info]
                     case "origin":
                         self._RoInfo[target_q][f"RO_weights"]["origin"] = kwargs[info]
                     case "rotated":
-                        self._RoInfo[target_q][f"RO_weights"]["rotated"] = kwargs[info]
+                        self._RoInfo[target_q]["rotated"] = kwargs[info]
                     case "optimal":
                         self._RoInfo[target_q][f"RO_weights"]["optimal"] = kwargs[info]    
                     case _:

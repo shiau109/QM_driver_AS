@@ -1,7 +1,7 @@
 
 from config_component.configuration import Configuration
 from config_component.channel_info import Waveform
-
+import numpy as np
 # ===================== Update about XY =====================================
 ### directly update the frequency info into config ### 
 def update_controlFreq( config:Configuration, updatedInfo:dict ):
@@ -142,12 +142,25 @@ def update_Readout(config:Configuration,target_q:str='all',roInfo:dict={},integr
     for q in qs:
         element_name = f'{q}_ro'
         wf_name = f'{element_name}_readout_wf'
-        pulse_name = f'{element_name}_readout_pulse'
+        pulse_name = config.elements[element_name].operations["readout"]
         # if integration_weights_from.lower() in ['origin', 'rotated', 'optimal']:
         #     # integration Weight
-        #     config.update_integrationWeight(target_q=q,updated_RO_spec=roInfo,from_which_value=integration_weights_from)
+        #     config.update_integrationWeight(target_q=q,updated_RO_spec=roInfo,from_which_value=integration_weights_from)        
         # pulses length
         config.pulses[pulse_name].length = roInfo[q]['readout_len']
+        
+        w_name = f"{q}_ro_rotated_weight_"
+        config.integration_weights[w_name+"cos"].cosine = [(np.cos(roInfo[q]['rotated']),roInfo[q]['readout_len'])]
+        config.integration_weights[w_name+"cos"].sine = [(np.sin(roInfo[q]['rotated']),roInfo[q]['readout_len'])]
+
+        config.integration_weights[w_name+"sin"].cosine = [(-np.sin(roInfo[q]['rotated']),roInfo[q]['readout_len'])]
+        config.integration_weights[w_name+"sin"].sine = [(np.cos(roInfo[q]['rotated']),roInfo[q]['readout_len'])]
+
+        config.integration_weights[w_name+"minus_sin"].cosine = [(np.sin(roInfo[q]['rotated']),roInfo[q]['readout_len'])]
+        config.integration_weights[w_name+"minus_sin"].sine = [(-np.cos(roInfo[q]['rotated']),roInfo[q]['readout_len'])]
+
+
+
         # time_of_flights
         config.elements[element_name].time_of_flight = roInfo[q]['time_of_flight']        
         # waveforms values
