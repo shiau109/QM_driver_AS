@@ -1,31 +1,28 @@
 
 
 
-# Scan the DRAG coefficient pre-factor
+# Dynamic config
+from OnMachine.SetConfig.ConfigBuildUp_new import spec_loca, config_loca
+from config_component.configuration import import_config
+from config_component.channel_info import import_spec
+from ab.QM_config_dynamic import initializer
 
-# drag_coef = drag_coef_q1
-# Check that the DRAG coefficient is not 0
-# assert drag_coef != 0, "The DRAG coefficient 'drag_coef' must be different from 0 in the config."
-from ab.QM_config_dynamic import Circuit_info, QM_config, initializer
-from OnMachine.MeasFlow.ConfigBuildUp_old import spec_loca, config_loca, qubit_num
-spec = Circuit_info(qubit_num)
-config = QM_config()
-spec.import_spec(spec_loca)
-config.import_config(config_loca)
+spec = import_spec( spec_loca )
+config = import_config( config_loca ).get_config()
+qmm, _ = spec.buildup_qmm()
+init_macro = initializer(100000,mode='wait')
 
-qmm,_ = spec.buildup_qmm()
-from qualang_tools.units import unit
-u = unit(coerce_to_integer=True)
-init_macro = initializer( 100*u.us,mode='wait')    
+
 n_avg = 400
 
-ro_element = ["q2_ro"]
-q_name =  "q2_xy"
-sequence_repeat = 1
-amp_modify_range = 0.25/float(sequence_repeat)
+ro_element = ["q1_ro"]
+q_name =  "q1_xy"
+sequence_repeat = 3
+amp_modify_range = 0.4/float(sequence_repeat)
 from exp.SQGate_calibration import *
-# output_data = DRAG_calibration_Yale( drag_coef, q_name, ro_element, config, qmm, n_avg=n_avg)
-output_data =  amp_calibration( amp_modify_range, q_name, ro_element, config.get_config(), qmm, n_avg=n_avg, sequence_repeat=sequence_repeat, simulate=False, mode='live')
+drag_coef = 0.5
+output_data = DRAG_calibration_Yale( drag_coef, q_name, ro_element, config, qmm, n_avg=n_avg)
+# output_data = amp_calibration( amp_modify_range, q_name, ro_element, config, qmm, n_avg=n_avg, sequence_repeat=sequence_repeat, simulate=False, mode='live')
 
     #   Data Saving   # 
 save_data = False
