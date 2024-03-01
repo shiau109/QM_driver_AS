@@ -10,11 +10,18 @@ class IntegrationWeights:
         self._sine = []
 
     @property
-    def cosine( self )->List[Tuple[int,int]]:
+    def cosine( self )->List[Tuple[float,int]]:
         return self._cosine
+    @cosine.setter
+    def cosine( self, val:List[Tuple[float,int]] ):
+        self._cosine = val
+    
     @property
-    def sine( self )->List[Tuple[int,int]]:
+    def sine( self )->List[Tuple[float,int]]:
         return self._sine 
+    @sine.setter
+    def sine( self, val:List[Tuple[float,int]] ):
+        self._sine = val
     
     def to_dict( self ):
 

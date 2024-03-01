@@ -27,7 +27,7 @@ def DRAG_calibration_Yale( drag_coef, q_name:str, ro_element:list, config, qmm:Q
     """
     a_min = 0
     a_max = 1.5
-    fit_point = 4
+    fit_point = 40
     da = (a_max-a_min)/fit_point
     amps = np.arange(a_min, a_max + da, da)  # + da/2 to add a_max to amplitudes
     amp_len = len(amps)
