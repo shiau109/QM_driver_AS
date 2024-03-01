@@ -1,19 +1,18 @@
+# Dynamic config
+from OnMachine.SetConfig.ConfigBuildUp_new import spec_loca, config_loca
+from config_component.configuration import import_config
+from config_component.channel_info import import_spec
+from ab.QM_config_dynamic import initializer
 
-from ab.QM_config_dynamic import Circuit_info, QM_config, initializer
-from OnMachine.MeasFlow.ConfigBuildUp_old import spec_loca, config_loca, qubit_num
-spec = Circuit_info(qubit_num)
-config = QM_config()
-spec.import_spec(spec_loca)
-config.import_config(config_loca)
+spec = import_spec( spec_loca )
+config = import_config( config_loca ).get_config()
+qmm, _ = spec.buildup_qmm()
+init_macro = initializer(100000,mode='wait')
 
-qmm,_ = spec.buildup_qmm()
-from qualang_tools.units import unit
-u = unit(coerce_to_integer=True)
-init_macro = initializer( 100*u.us,mode='wait')
 
-resonators = ["q2_ro"]
-q_name = ["q2_xy"]
-shot_num = 10000
+resonators = ["q1_ro"]
+q_name = ["q1_xy"]
+shot_num = 100000
 
 import matplotlib.pyplot as plt
 import time
@@ -23,7 +22,7 @@ from analysis.state_distribution import train_model, create_img
 from exp.readout_fidelity import readout_fidelity
 from qualang_tools.analysis import two_state_discriminator
 import numpy as np
-output_data = readout_fidelity( q_name, resonators, shot_num, config.get_config(), qmm, init_macro)  
+output_data = readout_fidelity( q_name, resonators, shot_num, config, qmm, init_macro)  
 end_time = time.time()
 # elapsed_time = np.round(end_time-start_time, 1)
 for r in resonators:

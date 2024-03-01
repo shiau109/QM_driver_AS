@@ -24,15 +24,18 @@ ro_elements = ['q1_ro']
 operate_qubit = ['q1_xy']
 n_avg = 500
 
-dfs = np.arange(-5e6, 5e6, 0.1e6)
-output_data = freq_dep_signal( dfs, operate_qubit, ro_elements, n_avg, config, qmm, initializer=init_macro)
+
+amps = np.arange( 0.2, 1.5, 0.05)
+output_data = power_dep_signal( amps, operate_qubit, ro_elements, n_avg, config, qmm, initializer=init_macro)
+
 for r in ro_elements:
     fig = plt.figure()
-    ax = fig.subplots(3,1)
-    plot_freq_signal( dfs, output_data[r], r, ax )
-    fig.suptitle(f"{r} RO freq")
-
+    ax = fig.subplots(1,2,sharex=True)
+    plot_amp_signal( amps, output_data[r], r, ax[0] )
+    plot_amp_signal_phase( amps, output_data[r], r, ax[1] )
+    fig.suptitle(f"{r} RO amplitude")
 plt.show()
+    
 
 #   Data Saving   # 
 save_data = False
