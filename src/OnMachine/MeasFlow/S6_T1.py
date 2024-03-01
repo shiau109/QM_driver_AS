@@ -3,38 +3,56 @@ import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings("ignore")
 
-from datetime import datetime
-import sys
-
 from exp.relaxation_time import exp_relaxation_time
 import numpy as np
 
-from ab.QM_config_dynamic import Circuit_info, QM_config, initializer
-from OnMachine.SetConfig.ConfigBuildUp_old import spec_loca, config_loca, qubit_num
-spec = Circuit_info(qubit_num)
-config = QM_config()
-spec.import_spec(spec_loca)
-config.import_config(config_loca)
+# Dynamic config
+from OnMachine.SetConfig.ConfigBuildUp_new import spec_loca, config_loca
+from config_component.configuration import import_config
+from config_component.channel_info import import_spec
+from ab.QM_config_dynamic import initializer
 
-qmm,_ = spec.buildup_qmm()
-from qualang_tools.units import unit
-u = unit(coerce_to_integer=True)
-init_macro = initializer( 100*u.us,mode='wait')
+spec = import_spec( spec_loca )
+config = import_config( config_loca ).get_config()
+qmm, _ = spec.buildup_qmm()
+init_macro = initializer(100000,mode='wait')
+
 
 ro_elements = ['q1_ro']
-q_name = ['q2_xy']
-n_avg = 100
+q_name = ['q1_xy']
+n_avg = 50
+repeat = 100
+max_time = 30 #us
+time_resolution = 0.3 #us
+from exp.relaxation_time import *
 
-from exp.config_par import *
+if repeat == 1:
+    dataset = exp_relaxation_time( max_time, time_resolution, q_name, ro_elements, config, qmm, n_avg=n_avg, initializer=init_macro)
+else:
+    acc_T1, dataset = statistic_T1_exp( repeat, max_time, time_resolution, q_name, ro_elements, config, qmm, n_avg=n_avg, initializer=init_macro )
 
-dataset = exp_relaxation_time( 20, 0.1, q_name, ro_elements, config.get_config(), qmm, n_avg=n_avg)
+# Plot
+time = dataset.coords["time"].values
+
+if repeat == 1:
+    from exp.relaxation_time import plot_T1
+    for ro_name, data in dataset.data_vars.items():
+        fig, ax = plt.subplots(2)
+        plot_T1(time, data)
+else:
+    from exp.relaxation_time import plot_multiT1, T1_hist
+    rep = dataset.coords["repetition"].values
+
+    for ro_name, data in dataset.data_vars.items():
+        plot_multiT1( data, rep, time)
+        print(acc_T1[ro_name].shape)
+        T1_hist( acc_T1[ro_name] )
+plt.show()
 
 
 
-
-
-save_data = False
+save_data = True
 if save_data:
     from exp.save_data import save_nc
     import sys
-    save_nc(r"D:\Data\DR2_5Q", "Q1_idle_Rabi", dataset) 
+    save_nc(r"D:\Data\5Q4C", "Q1_T1", dataset) 
