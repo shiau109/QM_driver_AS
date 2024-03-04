@@ -8,6 +8,7 @@ config_obj = import_config( config_loca )
 
 from config_component.update import update_ReadoutFreqs, update_Readout, update_z_offset
 new_LO = 5.9
+rin_offset = (+0.0156,+0.0067) # I,Q
 # init_value of readout amp is 0.2
 # 
 # name, IF, amp, z, len, angle
@@ -35,7 +36,7 @@ ro_infos = [
     },
     {
         "name":"q8",
-        "IF":+150+3,
+        "IF":+10,
         "amp":0.3*0.1,
         "length":2000,
         "phase":0
@@ -51,8 +52,8 @@ for i in ro_infos:
     f = spec.update_RoInfo_for(target_q=i["name"],LO=new_LO,IF=i["IF"])
     update_ReadoutFreqs(config_obj, f)
     ro_rotated_rad = i["phase"]/180*np.pi
-    spec.update_RoInfo_for(i["name"],amp=i["amp"], len=i["length"],rotated=ro_rotated_rad)
-    update_Readout(config_obj, i["name"], spec.get_spec_forConfig('ro'))
+    spec.update_RoInfo_for(i["name"],amp=i["amp"], len=i["length"],rotated=ro_rotated_rad, offset=rin_offset)
+    update_Readout(config_obj, i["name"], spec.get_spec_forConfig('ro'),wiring)
     # print(spec.get_spec_forConfig('ro')["q1"])
 
     config_dict = config_obj.get_config() 

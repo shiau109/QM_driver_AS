@@ -31,8 +31,17 @@ class Controller:
         """
         self._name = name
         self._analog_outputs = {}
-        self.digital_outputs = {} # TODO
-        self.analog_inputs = {} 
+        self.digital_outputs =  {  # TODO
+            1: {},
+            3: {},
+            5: {},
+            7: {},
+            10: {},
+        }
+        self.analog_inputs = {  # TODO
+            1: {"offset": 0, "gain_db": 0},  # I from down-conversion
+            2: {"offset": 0, "gain_db": 0},  # Q from down-conversion
+        } 
 
     @property
     def name( self )->str:
@@ -55,17 +64,8 @@ class Controller:
         return {
             self._name:{
                 "analog_outputs":analog_outputs,
-                "digital_outputs": {  # TODO
-                    1: {},
-                    3: {},
-                    5: {},
-                    7: {},
-                    10: {},
-                },
-                "analog_inputs": {  # TODO
-                    1: {"offset": 0, "gain_db": 0},  # I from down-conversion
-                    2: {"offset": 0, "gain_db": 0},  # Q from down-conversion
-                }
+                "digital_outputs": self.digital_outputs,
+                "analog_inputs": self.analog_inputs,
             }
         }
     
