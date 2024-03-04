@@ -8,29 +8,56 @@ config_obj = import_config( config_loca )
 
 from config_component.update import update_ReadoutFreqs, update_Readout, update_z_offset
 new_LO = 5.9
+rin_offset = (+0.0156,+0.0067) # I,Q
 # init_value of readout amp is 0.2
 # 
 # name, IF, amp, z, len, angle
-cavities = [['q0',+150-33, 0.3*0.1, 0, 2000,0],['q1',+150+0.8, 0.3*0.1*1.5*1.5*1.4, 0.038, 560,84.7],['q8',+150+3, 0.01, 0.1, 2000,0],['q5',+150-36, 0.3*0.05, -0.11, 2000,0]]
-for i in cavities:
+ro_infos = [
+    {
+        "name":"q0",
+        "IF":+150-33,
+        "amp":0.3*0.1,
+        "length":2000,
+        "phase":0
+    },
+    {
+        "name":"q1",
+        "IF":+150+0.8,
+        "amp": 0.3*0.1*1.5*1.5*1.4,
+        "length":560,
+        "phase":84.7+19
+    },
+    {
+        "name":"q5",
+        "IF":+150-56,
+        "amp":0.3*0.1,
+        "length":2000,
+        "phase":0
+    },
+    {
+        "name":"q8",
+        "IF":+10,
+        "amp":0.3*0.1,
+        "length":2000,
+        "phase":0
+    },
+
+
+
+]
+# cavities = [['q0',+150-33, 0.3*0.1, 0, 2000,0],['q1',+150+0.8, 0.3*0.1*1.5*1.5*1.4, 0.038, 560,84.7],['q8',+150+3, 0.01, 0.1, 2000,0],['q5',+150-36, 0.3*0.05, -0.11, 2000,0]]
+for i in ro_infos:
     wiring = spec.get_spec_forConfig('wire')
 
-    f = spec.update_RoInfo_for(target_q=i[0],LO=new_LO,IF=i[1])
+    f = spec.update_RoInfo_for(target_q=i["name"],LO=new_LO,IF=i["IF"])
     update_ReadoutFreqs(config_obj, f)
-    ro_rotated_rad = i[5]/180*np.pi
-    spec.update_RoInfo_for(i[0],amp=i[2], len=i[4],rotated=ro_rotated_rad)
-    update_Readout(config_obj, i[0], spec.get_spec_forConfig('ro'))
-    print(spec.get_spec_forConfig('ro')["q1"])
+    ro_rotated_rad = i["phase"]/180*np.pi
+    spec.update_RoInfo_for(i["name"],amp=i["amp"], len=i["length"],rotated=ro_rotated_rad, offset=rin_offset)
+    update_Readout(config_obj, i["name"], spec.get_spec_forConfig('ro'),wiring)
+    # print(spec.get_spec_forConfig('ro')["q1"])
 
-    # Tune Z offset
-    z_info = spec.update_ZInfo_for(target_q=i[0],offset=i[3])
-    # print(wiring[i[0]])
-    update_z_offset( config_obj, z_info, wiring[i[0]], mode='offset')
     config_dict = config_obj.get_config() 
 
-# f = spec.update_RoInfo_for(target_q="q2",len=800, rotated=(269.5/180)*np.pi )
-# config.update_Readout("q2", spec.get_spec_forConfig("ro") ) 
-# print(config.get_config()['mixers'])
 import json
 file_path = 'output.json'
 # Open the file in write mode and use json.dump() to export the dictionary to JSON

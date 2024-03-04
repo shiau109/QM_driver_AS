@@ -161,7 +161,7 @@ class ChannelInfo:
     def update_RoInfo_for(self, target_q:str, **kwargs):
         """
             target_q: "q4"\n
-            kwargs: LO=6, IF=150, amp=0.08, len=2000, time(time_of_flight)= 280, ge_hold(ge_threshold)=0.05, depletion(depletion_time)= 700 in ns 
+            kwargs: LO=6, IF=150, amp=0.08, len=2000, time(time_of_flight)= 280, ge_hold(ge_threshold)=0.05, depletion(depletion_time)= 700, offset=0 in ns 
             origin(ROweights) and rotated(ROweights) = (40/180)*pi, optimal(ROweights) = from `self.optimal_ROweights_generator()`.\n
             ### *** time_of_flight and len are shared with each qubits. *** 
         """
@@ -191,6 +191,8 @@ class ChannelInfo:
                         self._RoInfo[target_q]["rotated"] = kwargs[info]
                     case "optimal":
                         self._RoInfo[target_q][f"RO_weights"]["optimal"] = kwargs[info]    
+                    case "offset":
+                        self._RoInfo[target_q]["offset"] = kwargs[info]  
                     case _:
                         raise KeyError("kwargs key goes wrong!")
         else:

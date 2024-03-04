@@ -127,7 +127,7 @@ def update_ReadoutFreqs(config:Configuration,updatedInfo:dict):
                 raise KeyError(f"RO update keyname goes wrong: {info.split('_')[1].lower()}")
         
 
-def update_Readout(config:Configuration,target_q:str='all',roInfo:dict={},integration_weights_from:str='rotated'):
+def update_Readout(config:Configuration,target_q:str='all',roInfo:dict={}, wiring:dict={}):
     """
         Beside frequency, other info will need to update the waveform or integration weights,\n
         update the other info for dynamic configuration like amp, len.... for the specific qubit\n
@@ -159,6 +159,11 @@ def update_Readout(config:Configuration,target_q:str='all',roInfo:dict={},integr
         config.integration_weights[w_name+"minus_sin"].cosine = [(np.sin(roInfo[q]['rotated']),roInfo[q]['readout_len'])]
         config.integration_weights[w_name+"minus_sin"].sine = [(-np.cos(roInfo[q]['rotated']),roInfo[q]['readout_len'])]
 
+        con_I_name, ch_I_idx = wiring[q]["rin_I"]
+        con_Q_name, ch_Q_idx = wiring[q]["rin_Q"]
+        # print(roInfo[q]['offset'], (con_I_name, ch_I_idx), (con_Q_name, ch_Q_idx),config.controllers[con_I_name].analog_inputs)
+        config.controllers[con_I_name].analog_inputs[ch_I_idx]["offset"] = roInfo[q]['offset'][0]      
+        config.controllers[con_Q_name].analog_inputs[ch_Q_idx]["offset"] = roInfo[q]['offset'][1]      
 
 
         # time_of_flights
