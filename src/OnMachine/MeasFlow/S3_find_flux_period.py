@@ -10,7 +10,7 @@ from exp.rofreq_sweep_flux_dep import *
 # 20230217 Test complete: Jacky
 
 # Dynamic config
-from OnMachine.SetConfig.ConfigBuildUp_new import spec_loca, config_loca
+from OnMachine.SetConfig.config_path import spec_loca, config_loca
 from config_component.configuration import import_config
 from config_component.channel_info import import_spec
 from ab.QM_config_dynamic import initializer
@@ -20,13 +20,13 @@ config = import_config( config_loca ).get_config()
 qmm, _ = spec.buildup_qmm()
 init_macro = initializer(1000,mode='wait')
 
-ro_elements = ['q0_ro']
+ro_elements = ['q5_ro']
 z_elements = ['q1_z']
 n_avg = 100
-freq_range = (-50,50)
+freq_range = (-100,100)
 freq_resolution = 0.1
 flux_range = (-0.3,0.3)
-flux_resolution = 0.1
+flux_resolution = 0.01
 # dataset = freq_sweep_flux_dep(ro_elements, z_elements, config, qmm, freq_range=freq_range, freq_resolution=freq_resolution, flux_settle_time=1, flux_range=flux_range, flux_resolution=flux_resolution, n_avg=n_avg, initializer=init_macro)
 dataset = freq_sweep_flux_dep_stable(ro_elements, z_elements, config, qmm, freq_range=freq_range, freq_resolution=freq_resolution, flux_settle_time=1, flux_range=flux_range, flux_resolution=flux_resolution, n_avg=n_avg, initializer=init_macro)
 

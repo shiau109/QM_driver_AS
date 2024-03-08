@@ -3,6 +3,8 @@ from OnMachine.SetConfig.config_path import *
 cluster_name = "Cluster_1"  # Write your cluster_name if version >= QOP220
 qop_ip = "192.168.50.92"  # Write the QM router IP address
 qop_port = None 
+
+# Default
 port_mapping = {
 ("con1", 1): ("octave1", "I1"),
 ("con1", 2): ("octave1", "Q1"),
@@ -30,11 +32,13 @@ port_mapping = {
 qubit_num = 9   
 
 specs = ChannelInfo(qubit_num)
-specs.update_HardwareInfo(qop_ip=qop_ip, qop_port=qop_port, cluster_name=cluster_name)
-specs.update_octave( "octave1", ip=qop_ip, port=11249, con="con1", port_map=port_mapping, clock="External_1000MHz")
-specs.update_octave( "octave2", ip=qop_ip, port=11250, con="con2", port_map=port_mapping, clock="External_1000MHz")
 
-config = Configuration()
+# Set QMM
+specs.update_HardwareInfo(qop_ip=qop_ip, qop_port=qop_port, cluster_name=cluster_name)
+# Set Octave
+specs.update_octave( "octave1", ip=qop_ip, port=11250, con="con1", port_map=port_mapping, clock="External_1000MHz")
+specs.update_octave( "octave2", ip=qop_ip, port=11249, con="con2", port_map=port_mapping, clock="External_1000MHz")
+
 # Only for opx+
 opxp_hardware = {
     "analog_outputs": {
@@ -61,26 +65,30 @@ opxp_hardware = {
         2: {"offset": 0, "gain_db": 0},  # Q from down-conversion
     },
 }
+
+config = Configuration()
+
+# Create controller
 from config_component.controller import controller_read_dict
 config._controllers["con1"] = controller_read_dict("con1", opxp_hardware)
 config._controllers["con2"] = controller_read_dict("con2", opxp_hardware)
 
+# Create qubit
 from config_component.construct import create_qubit, create_roChannel, create_zChannel, create_xyChannel
 
-for x_wire in [("q1",("con1",3),("con1",4)), ("q0",("con1",7),("con1",8))]:
+for x_wire in [("q0",("con1",3),("con1",4)), ("q1",("con1",7),("con1",8)), ("q2",("con2",1),("con2",2))]:
     specs.update_WireInfo_for(x_wire[0],xy_I=x_wire[1],xy_Q=x_wire[2])
 
 for z_wire in [("q1",("con1",5)), ("q2",("con1",6)), ("q3",("con1",9)), ("q4",("con1",10))]:
     specs.update_WireInfo_for(z_wire[0],z=z_wire[1])
 
-for z_wire in [("q5",("con2",1)), ("q6",("con2",2)), ("q7",("con2",3)), ("q8",("con2",4))]:
+for z_wire in [("q5",("con2",3)), ("q6",("con2",4)), ("q7",("con2",5)), ("q8",("con2",6))]:
     specs.update_WireInfo_for(z_wire[0],z=z_wire[1])
 
 for q_idx in range(qubit_num):
     q_name = f"q{q_idx}"
     create_qubit( config,q_name,specs.get_spec_forConfig('ro'),specs.get_spec_forConfig('xy'),specs.get_spec_forConfig('wire'),specs.get_spec_forConfig('z'))
 
-#     specs.update_WireInfo_for(q_name,z=("con1",z_port))
 #     create_roChannel( config, f"{q_name}_ro", specs.get_spec_forConfig('ro')[q_name],specs.get_spec_forConfig('wire')[q_name] )
 #     create_xyChannel( config, f"{q_name}_xy", specs.get_spec_forConfig('xy')[q_name],specs.get_spec_forConfig('wire')[q_name] )
 #     create_zChannel( config, f"{q_name}_z", specs.get_spec_forConfig('z')[q_name],specs.get_spec_forConfig('wire')[q_name] )

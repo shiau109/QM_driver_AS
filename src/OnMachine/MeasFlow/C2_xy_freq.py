@@ -1,7 +1,7 @@
 
 
 # Dynamic config
-from OnMachine.SetConfig.ConfigBuildUp_new import spec_loca, config_loca
+from OnMachine.SetConfig.config_path import spec_loca, config_loca
 from config_component.configuration import import_config
 from config_component.channel_info import import_spec
 from ab.QM_config_dynamic import initializer
@@ -23,10 +23,9 @@ output_data, evo_time = ramsey_freq_calibration( virtual_detune, q_name, ro_elem
 #   Data Saving   # 
 save_data = False
 if save_data:
-    from exp.save_data import save_npz
+    from exp.save_data import save_nc
     import sys
-    save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
-    # save_npz(save_dir, save_progam_name, output_data)
+    save_nc(save_dir, save_progam_name, output_data)
 
 plot_ana_result(evo_time,output_data[ro_element[0]][0],virtual_detune)
 # # Plot

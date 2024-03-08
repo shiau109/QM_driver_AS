@@ -1,5 +1,5 @@
 # Dynamic config
-from OnMachine.SetConfig.ConfigBuildUp_new import spec_loca, config_loca
+from OnMachine.SetConfig.config_path import spec_loca, config_loca
 from config_component.configuration import import_config
 from config_component.channel_info import import_spec
 from ab.QM_config_dynamic import initializer
@@ -10,9 +10,10 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(100000,mode='wait')
 
 
-resonators = ["q1_ro"]
-q_name = ["q1_xy"]
-shot_num = 100000
+# resonators = ["q0_ro","q1_ro","q2_ro"]
+resonators = ["q1_ro","q2_ro"]
+q_name = ["q1_xy","q2_xy"]
+shot_num = 10000
 
 import matplotlib.pyplot as plt
 import time
@@ -33,17 +34,11 @@ for r in resonators:
     # fig.show()
     # plt.show()
     two_state_discriminator(output_data[r][0][0], output_data[r][1][0], output_data[r][0][1], output_data[r][1][1], True, True)
-    # if save_data:
-    #     figure = plt.gcf() # get current figure
-    #     figure.set_size_inches(12, 10)
-    #     plt.tight_layout()
-    #     plt.pause(0.1)
-    #     plt.savefig(f"{save_path}-{r}.png", dpi = 500)
+
 
 plt.show()
-save_data = True
+save_data = False
 if save_data:
-    from exp.save_data import save_npz
+    from exp.save_data import save_nc
     import sys
-    save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
-    save_npz(r"D:\Data\DR2_5Q", "ro_fidelity", output_data)   
+    save_nc(r"D:\Data\DR2_5Q", "ro_fidelity", output_data)   

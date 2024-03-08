@@ -29,7 +29,7 @@ def xyfreq_sweep_flux_dep( flux_range:tuple, flux_resolution:float, freq_range:t
     return: \n
     dataset \n
     coors: ["mixer","flux","frequency"]\n
-    attrs: ref_xy_IF, ref_xy_LO, ref_z\n
+    attrs: ref_xy_IF, ref_xy_LO, z_offset\n
     """
 
     fluxes = np.arange(flux_range[0], flux_range[1], flux_resolution)
@@ -119,9 +119,11 @@ def xyfreq_sweep_flux_dep( flux_range:tuple, flux_resolution:float, freq_range:t
             output_data,
             coords={ "mixer":np.array(["I","Q"]), "frequency": freqs_mhz, "flux": fluxes }
         )
-        dataset.attrs["ref_xy_IF"] = ref_xy_IF
-        dataset.attrs["ref_xy_LO"] = ref_xy_LO
-        dataset.attrs["ref_z"] = ref_z_offset
+
+        dataset.attrs["ro_IF"] = list(ref_ro_IF.values())
+        dataset.attrs["xy_IF"] = list(ref_xy_IF.values())
+        dataset.attrs["xy_LO"] =  list(ref_xy_LO.values())
+        dataset.attrs["z_offset"] = list(ref_z_offset.values())
 
         return dataset
 

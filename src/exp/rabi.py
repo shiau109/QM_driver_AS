@@ -153,8 +153,8 @@ def xyfreq_time_rabi( freq_range:tuple, freq_resolution:float, time_range:tuple,
             output_data,
             coords={ "mixer":np.array(["I","Q"]), "frequency": freqs_mhz, "time": driving_time }
         )
-        dataset.attrs["ref_xy_IF"] = ref_xy_IF
-        dataset.attrs["ref_xy_LO"] = ref_xy_LO
+        dataset.attrs["ref_xy_IF"] = list(ref_xy_IF.values())
+        dataset.attrs["ref_xy_LO"] = list(ref_xy_LO.values())
     return dataset
 
 
@@ -278,8 +278,8 @@ def xyfreq_power_rabi( freq_range:tuple, freq_resolution:float, amp_range:tuple,
             output_data,
             coords={ "mixer":np.array(["I","Q"]), "frequency": freqs_mhz, "amplitude": r_amps }
         )
-        dataset.attrs["ref_xy_IF"] = ref_xy_IF
-        dataset.attrs["ref_xy_LO"] = ref_xy_LO
+        dataset.attrs["ref_xy_IF"] = list(ref_xy_IF.values())
+        dataset.attrs["ref_xy_LO"] = list(ref_xy_LO.values())
         return dataset
 
 def plot_freq_dep_time_rabi( data, dfs, time, ax=None ):

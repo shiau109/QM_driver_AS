@@ -10,7 +10,7 @@ import sys
 
 
 # Dynamic config
-from OnMachine.SetConfig.ConfigBuildUp_new import spec_loca, config_loca
+from OnMachine.SetConfig.config_path import spec_loca, config_loca
 from config_component.configuration import import_config
 from config_component.channel_info import import_spec
 from ab.QM_config_dynamic import initializer
@@ -20,24 +20,28 @@ config = import_config( config_loca ).get_config()
 qmm, _ = spec.buildup_qmm()
 init_macro = initializer(100000,mode='wait')
 
-ro_elements = ['q1_ro']
-operate_qubit = ['q1_xy']
-n_avg = 500
+# ro_elements = ['q0_ro','q1_ro','q2_ro']
+ro_elements = ['q2_ro']
+operate_qubit = ['q2_xy']
+n_avg = 1000
 
-dfs = np.arange(-5e6, 5e6, 0.1e6)
-output_data = freq_dep_signal( dfs, operate_qubit, ro_elements, n_avg, config, qmm, initializer=init_macro)
-for r in ro_elements:
+freq_range = (-20, 20)
+freq_resolution = 0.2
+dataset = freq_dep_signal( freq_range, freq_resolution, operate_qubit, ro_elements, n_avg, config, qmm, initializer=init_macro)
+transposed_data = dataset.transpose("mixer", "state", "frequency")
+
+dfs = transposed_data.coords["frequency"].values
+for ro_name, data in transposed_data.data_vars.items():  
     fig = plt.figure()
     ax = fig.subplots(3,1)
-    plot_freq_signal( dfs, output_data[r], r, ax )
-    fig.suptitle(f"{r} RO freq")
+    plot_freq_signal( dfs, data, ro_name, ax )
+    fig.suptitle(f"{ro_name} RO freq")
 
 plt.show()
 
 #   Data Saving   # 
 save_data = False
 if save_data:
-    from exp.save_data import save_npz
+    from exp.save_data import save_nc
     import sys
-    save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
-    # save_npz(save_dir, save_progam_name, output_data)
+    save_npz(r"D:\Data\5Q4C\chi_eff", "ge_resonator", dataset)

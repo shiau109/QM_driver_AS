@@ -1,35 +1,47 @@
-from OnMachine.SetConfig.ConfigBuildUp_new import spec_loca, config_loca
-from config_component.configuration import import_config, configuration_read_dict
+from OnMachine.SetConfig.config_path import spec_loca, config_loca
+from config_component.configuration import import_config
 from config_component.channel_info import import_spec
 import numpy as np
 
 spec = import_spec( spec_loca )
 config_obj = import_config( config_loca )
 
-from config_component.update import update_ReadoutFreqs, update_Readout, update_z_offset
+from config_component.update import update_ReadoutFreqs, update_Readout
 new_LO = 5.9
-rin_offset = (+0.0156,+0.0067) # I,Q
+# rin_offset = (+0.0156,+0.0067) # I,Q
+rin_offset = (+0,+0) # I,Q
+tof = 300
 # init_value of readout amp is 0.2
 # 
 # name, IF, amp, z, len, angle
 ro_infos = [
     {
         "name":"q0",
-        "IF":+150-33,
-        "amp":0.3*0.1,
+        "IF":+150-33.8,
+        "amp":0.3*0.05 *1.5,
         "length":2000,
         "phase":0
-    },
-    {
+    },{
         "name":"q1",
-        "IF":+150+0.8,
-        "amp": 0.3*0.1*1.5*1.5*1.4,
-        "length":560,
+        "IF":+150+1.3+0.3,
+        "amp": 0.3*0.05 *1.5*1.4,
+        "length":1500,
+        "phase":84.7+19+ 110.6
+    },{
+        "name":"q2",
+        "IF":+150+10+8.7,
+        "amp": 0.3*0.05 *1.5*1.2,
+        "length":1500,
         "phase":84.7+19
-    },
-    {
+    },{
+        "name":"q3",
+        "IF":+150+2+2,
+        "amp": 0.3*0.05,
+        "length":2000,
+        "phase":84.7+19
+    },{
         "name":"q5",
-        "IF":+150-56,
+        "IF":+150,
         "amp":0.3*0.1,
         "length":2000,
         "phase":0
@@ -52,7 +64,7 @@ for i in ro_infos:
     f = spec.update_RoInfo_for(target_q=i["name"],LO=new_LO,IF=i["IF"])
     update_ReadoutFreqs(config_obj, f)
     ro_rotated_rad = i["phase"]/180*np.pi
-    spec.update_RoInfo_for(i["name"],amp=i["amp"], len=i["length"],rotated=ro_rotated_rad, offset=rin_offset)
+    spec.update_RoInfo_for(i["name"],amp=i["amp"], len=i["length"],rotated=ro_rotated_rad, offset=rin_offset, time=tof)
     update_Readout(config_obj, i["name"], spec.get_spec_forConfig('ro'),wiring)
     # print(spec.get_spec_forConfig('ro')["q1"])
 

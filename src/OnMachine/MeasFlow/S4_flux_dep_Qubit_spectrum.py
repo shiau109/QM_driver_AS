@@ -12,7 +12,7 @@ import sys
 
 
 # Dynamic config
-from OnMachine.SetConfig.ConfigBuildUp_new import spec_loca, config_loca
+from OnMachine.SetConfig.config_path import spec_loca, config_loca
 from config_component.configuration import import_config
 from config_component.channel_info import import_spec
 from ab.QM_config_dynamic import initializer
@@ -23,15 +23,15 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(10000,mode='wait')
 
 
-ro_elements = ['q1_ro']
+ro_elements = ['q0_ro','q1_ro','q2_ro','q3_ro']
 q_name = ['q1_xy'] 
-z_name = ['q1_z']
+z_name = ['q5_z']
 
 saturation_len = 1  # In us (should be < FFT of df)
-saturation_ampRatio = 0.1  # pre-factor to the value defined in the config - restricted to [-2; 2)
-n_avg = 200
+saturation_ampRatio = 0.5  # pre-factor to the value defined in the config - restricted to [-2; 2)
+n_avg = 400
 
-flux_range = (-0.1,0.1)
+flux_range = (-0.15,0.15)
 flux_resolution = 0.005
 
 freq_range = (-400,400)
@@ -48,9 +48,9 @@ from exp.config_par import *
 freqs = dataset.coords["frequency"].values
 flux = dataset.coords["flux"].values
 for ro_name, data in dataset.data_vars.items():
-    xy_LO = dataset.attrs["ref_xy_LO"][q_name[0]]
-    xy_IF_idle = dataset.attrs["ref_xy_IF"][q_name[0]]
-    z_offset = dataset.attrs["ref_z"][z_name[0]]
+    xy_LO = dataset.attrs["xy_LO"][0]/1e6
+    xy_IF_idle = dataset.attrs["xy_IF"][0]/1e6
+    z_offset = dataset.attrs["z_offset"][0]
     print(ro_name, xy_LO, xy_IF_idle, z_offset, data.shape)
     fig, ax = plt.subplots(2)
     plot_ana_flux_dep_qubit(data, flux, freqs, xy_LO, xy_IF_idle, z_offset, ax)
@@ -59,7 +59,7 @@ for ro_name, data in dataset.data_vars.items():
 
 plt.show()
 
-save_data = False
+save_data = True
 if save_data:
     from exp.save_data import save_nc  
-    save_nc()
+    save_nc(r"D:\Data\5Q4C\Qspect",f"Spectrum_{q_name[0]}_{z_name[0]}",dataset)

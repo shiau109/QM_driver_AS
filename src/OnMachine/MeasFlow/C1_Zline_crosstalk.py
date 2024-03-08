@@ -10,15 +10,16 @@ import sys
 
 
 
-from ab.QM_config_dynamic import Circuit_info, QM_config, initializer
-from OnMachine.MeasFlow.ConfigBuildUp_old import spec_loca, config_loca, qubit_num
-spec = Circuit_info(qubit_num)
-d_config = QM_config()
-spec.import_spec(spec_loca)
-d_config.import_config(config_loca)
-config = d_config.get_config()
-qmm,_ = spec.buildup_qmm()
-init_macro = initializer( 100*u.us,mode='wait')
+# Dynamic config
+from OnMachine.SetConfig.config_path import spec_loca, config_loca
+from config_component.configuration import import_config
+from config_component.channel_info import import_spec
+from ab.QM_config_dynamic import initializer
+
+spec = import_spec( spec_loca )
+config = import_config( config_loca ).get_config()
+qmm, _ = spec.buildup_qmm()
+init_macro = initializer(100000,mode='wait')
 
 
 n_avg = 200

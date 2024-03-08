@@ -7,7 +7,7 @@ from exp.relaxation_time import exp_relaxation_time
 import numpy as np
 
 # Dynamic config
-from OnMachine.SetConfig.ConfigBuildUp_new import spec_loca, config_loca
+from OnMachine.SetConfig.config_path import spec_loca, config_loca
 from config_component.configuration import import_config
 from config_component.channel_info import import_spec
 from ab.QM_config_dynamic import initializer
@@ -15,15 +15,15 @@ from ab.QM_config_dynamic import initializer
 spec = import_spec( spec_loca )
 config = import_config( config_loca ).get_config()
 qmm, _ = spec.buildup_qmm()
-init_macro = initializer(100000,mode='wait')
+init_macro = initializer(150000,mode='wait')
 
 
 ro_elements = ['q1_ro']
 q_name = ['q1_xy']
-n_avg = 50
+n_avg = 100
 repeat = 100
-max_time = 30 #us
-time_resolution = 0.3 #us
+max_time = 40 #us
+time_resolution = 0.4 #us
 from exp.relaxation_time import *
 
 if repeat == 1:
@@ -55,4 +55,4 @@ save_data = True
 if save_data:
     from exp.save_data import save_nc
     import sys
-    save_nc(r"D:\Data\5Q4C", "Q1_T1", dataset) 
+    save_nc(r"D:\Data\5Q4C\T1", f"{q_name}_T1", dataset) 
