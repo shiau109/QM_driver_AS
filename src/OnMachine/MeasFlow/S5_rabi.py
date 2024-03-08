@@ -10,7 +10,7 @@ from exp.rabi import xyfreq_time_rabi, plot_ana_freq_time_rabi, xyfreq_power_rab
 import numpy as np
 
 # Dynamic config
-from OnMachine.SetConfig.ConfigBuildUp_new import spec_loca, config_loca
+from OnMachine.SetConfig.config_path import spec_loca, config_loca
 from config_component.configuration import import_config
 from config_component.channel_info import import_spec
 from ab.QM_config_dynamic import initializer
@@ -21,9 +21,9 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(100000,mode='wait')
 
 
-ro_elements = ['q1_ro']
-q_name = ['q1_xy']
-n_avg = 100
+ro_elements = ['q0_ro','q1_ro','q2_ro']
+q_name = ['q0_xy']
+n_avg = 200
 
 freq_range = (-50,50)
 freq_resolution = 1
@@ -31,7 +31,7 @@ time_range = (16,400) # ns
 time_resolution = 4
 
 amps_range = (0,1.5)
-amps_resolution = 0.01
+amps_resolution = 0.02
 
 from exp.config_par import *
 
@@ -47,8 +47,8 @@ else:
 freqs = dataset.coords["frequency"].values
 # Plot 
 for ro_name, data in dataset.data_vars.items():
-    xy_LO = dataset.attrs["ref_xy_LO"][q_name[0]]/1e6
-    xy_IF_idle = dataset.attrs["ref_xy_IF"][q_name[0]]/1e6
+    xy_LO = dataset.attrs["ref_xy_LO"][0]/1e6
+    xy_IF_idle = dataset.attrs["ref_xy_IF"][0]/1e6
     fig, ax = plt.subplots(2)
     plot_ana_freq_time_rabi( data, freqs, y, xy_LO, xy_IF_idle, ax )
     ax[0].set_title(ro_name)
@@ -70,9 +70,8 @@ plt.show()
 
 #   Data Saving   # 
 
-save_data = False
+save_data = True
 if save_data:
-    from exp.save_data import save_npz
+    from exp.save_data import save_nc
     import sys
-    save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
-    save_npz(r"D:\Data\DR2_5Q", "Q1_idle_Rabi", output_data) 
+    save_nc(r"D:\Data\5Q4C\Rabi", f"{q_name[0]}_idle_Rabi", dataset) 

@@ -1,12 +1,45 @@
+from OnMachine.SetConfig.config_path import *
 
+cluster_name = "Cluster_1"  # Write your cluster_name if version >= QOP220
+qop_ip = "192.168.50.92"  # Write the QM router IP address
+qop_port = None 
 
+# Default
+port_mapping = {
+("con1", 1): ("octave1", "I1"),
+("con1", 2): ("octave1", "Q1"),
+("con1", 3): ("octave1", "I2"),
+("con1", 4): ("octave1", "Q2"),
+("con1", 5): ("octave1", "I3"),
+("con1", 6): ("octave1", "Q3"),
+("con1", 7): ("octave1", "I4"),
+("con1", 8): ("octave1", "Q4"),
+("con1", 9): ("octave1", "I5"),
+("con1", 10): ("octave1", "Q5"),
+
+("con2", 1): ("octave2", "I1"),
+("con2", 2): ("octave2", "Q1"),
+("con2", 3): ("octave2", "I2"),
+("con2", 4): ("octave2", "Q2"),
+("con2", 5): ("octave2", "I3"),
+("con2", 6): ("octave2", "Q3"),
+("con2", 7): ("octave2", "I4"),
+("con2", 8): ("octave2", "Q4"),
+("con2", 9): ("octave2", "I5"),
+("con2", 10): ("octave2", "Q5"),
+}
 
 qubit_num = 9   
 
 specs = ChannelInfo(qubit_num)
-specs.update_HardwareInfo(qop_ip=qop_ip, qop_port=qop_port, octave_port=11250, cluster_name=cluster_name, ctrl_name=("octave1","con1"), port_map=port_mapping, clock="Internal")
 
-config = Configuration()
+# Set QMM
+specs.update_HardwareInfo(qop_ip=qop_ip, qop_port=qop_port, cluster_name=cluster_name)
+# Set Octave
+specs.update_octave( "octave1", ip=qop_ip, port=11250, con="con1", port_map=port_mapping, clock="External_1000MHz")
+specs.update_octave( "octave2", ip=qop_ip, port=11249, con="con2", port_map=port_mapping, clock="External_1000MHz")
+
+# Only for opx+
 opxp_hardware = {
     "analog_outputs": {
         1: {"offset": 0.0},  # I readout line
@@ -32,25 +65,33 @@ opxp_hardware = {
         2: {"offset": 0, "gain_db": 0},  # Q from down-conversion
     },
 }
+
+config = Configuration()
+
+# Create controller
 from config_component.controller import controller_read_dict
 config._controllers["con1"] = controller_read_dict("con1", opxp_hardware)
+config._controllers["con2"] = controller_read_dict("con2", opxp_hardware)
 
+# Create qubit
 from config_component.construct import create_qubit, create_roChannel, create_zChannel, create_xyChannel
-# create_qubit( config,"q1",specs.get_spec_forConfig('ro'),specs.get_spec_forConfig('xy'),specs.get_spec_forConfig('wire'),specs.get_spec_forConfig('z'))
 
-specs.update_WireInfo_for("q1",xy_I=('con1',9),xy_Q=('con1',10))
-for q_i, z_port in enumerate( [3,4,5,6,7,8,9,10,3] ):
-    q_name = f"q{q_i}"
-    specs.update_WireInfo_for(q_name,z=("con1",z_port))
-    create_roChannel( config, f"{q_name}_ro", specs.get_spec_forConfig('ro')[q_name],specs.get_spec_forConfig('wire')[q_name] )
-    create_xyChannel( config, f"{q_name}_xy", specs.get_spec_forConfig('xy')[q_name],specs.get_spec_forConfig('wire')[q_name] )
-    create_zChannel( config, f"{q_name}_z", specs.get_spec_forConfig('z')[q_name],specs.get_spec_forConfig('wire')[q_name] )
+for x_wire in [("q0",("con1",3),("con1",4)), ("q1",("con1",7),("con1",8)), ("q2",("con2",1),("con2",2))]:
+    specs.update_WireInfo_for(x_wire[0],xy_I=x_wire[1],xy_Q=x_wire[2])
 
-# for q_i, z_port in enumerate( [8,9,10,3] ):
-#     dq_name = f"q{q_i+5}"
-#     q_name = f"c{q_i+5}"
-#     specs.update_WireInfo_for(dq_name,z=("con1",z_port))
-#     create_zChannel( config, f"{q_name}_z", specs.get_spec_forConfig('z')["q0"],specs.get_spec_forConfig('wire')[dq_name] )
+for z_wire in [("q1",("con1",5)), ("q2",("con1",6)), ("q3",("con1",9)), ("q4",("con1",10))]:
+    specs.update_WireInfo_for(z_wire[0],z=z_wire[1])
+
+for z_wire in [("q5",("con2",3)), ("q6",("con2",4)), ("q7",("con2",5)), ("q8",("con2",6))]:
+    specs.update_WireInfo_for(z_wire[0],z=z_wire[1])
+
+for q_idx in range(qubit_num):
+    q_name = f"q{q_idx}"
+    create_qubit( config,q_name,specs.get_spec_forConfig('ro'),specs.get_spec_forConfig('xy'),specs.get_spec_forConfig('wire'),specs.get_spec_forConfig('z'))
+
+#     create_roChannel( config, f"{q_name}_ro", specs.get_spec_forConfig('ro')[q_name],specs.get_spec_forConfig('wire')[q_name] )
+#     create_xyChannel( config, f"{q_name}_xy", specs.get_spec_forConfig('xy')[q_name],specs.get_spec_forConfig('wire')[q_name] )
+#     create_zChannel( config, f"{q_name}_z", specs.get_spec_forConfig('z')[q_name],specs.get_spec_forConfig('wire')[q_name] )
 
 specs.export_spec(spec_loca)
 config.export_config(config_loca)

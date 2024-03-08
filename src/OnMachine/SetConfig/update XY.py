@@ -1,4 +1,4 @@
-from OnMachine.SetConfig.ConfigBuildUp_new import spec_loca, config_loca
+from OnMachine.SetConfig.config_path import spec_loca, config_loca
 from config_component.configuration import import_config, configuration_read_dict
 from config_component.channel_info import import_spec
 
@@ -12,13 +12,27 @@ import numpy as np
 
 xy_infos = [
     {
-        "name":"q1",
-        "q_freq": 4.526-0.005, # GHz
-        "LO": 4.6, # GHz
+        "name":"q0",
+        "q_freq": 4.291, # GHz
+        "LO": 4.110, # GHz
         "pi_amp": 0.2*0.9*1.05*1.01,
         "pi_len": 40,
         "90_corr": 1.03
-    },
+    },{
+        "name":"q1",
+        "q_freq": 4.524, # GHz
+        "LO": 4.6, # GHz
+        "pi_amp": 0.2*0.9*1.05*1.01*0.7,
+        "pi_len": 40,
+        "90_corr": 1.03
+    },{
+        "name":"q2",
+        "q_freq": 4.247, # GHz
+        "LO": 4.110, # GHz
+        "pi_amp": 0.2*0.9*1.05*1.01*0.55,
+        "pi_len": 40,
+        "90_corr": 1.03
+    }
 
 ]
 # name, q_freq(GHz), LO(GHz), amp, len, half

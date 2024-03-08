@@ -15,12 +15,14 @@ from scipy.optimize import curve_fit
 ##############
 # QUA macros #
 ##############
-def multiRO_declare( resonators:list ):
+def multiRO_declare( resonators:list, save_stream:str="ave" ):
     """
     Macro to declare the necessary QUA variables
 
-    :param resonators: name of the element for resonator
-    :return: I, I_st, Q, Q_st
+    Parameters: 
+    resonators: name of the element for resonator
+    save_stream: ave, shot, (trace is not avalible yet)
+    return: I, I_st, Q, Q_st
     """
     if type(resonators) is not list:
         resonators = [resonators]
@@ -29,54 +31,85 @@ def multiRO_declare( resonators:list ):
 
     I = [declare(fixed) for _ in range(ro_channel_num)]
     Q = [declare(fixed) for _ in range(ro_channel_num)]
-    I_st = [declare_stream() for _ in range(ro_channel_num)]
-    Q_st = [declare_stream() for _ in range(ro_channel_num)]
+
+    match save_stream:
+        case "trace":
+            I_st = [declare_stream(adc_trace=True) for _ in range(ro_channel_num)]
+            Q_st = [declare_stream(adc_trace=True) for _ in range(ro_channel_num)]
+        case _:
+            I_st = [declare_stream() for _ in range(ro_channel_num)]
+            Q_st = [declare_stream() for _ in range(ro_channel_num)]
     # Workaround to manually assign the results variables to the readout elements
     for idx, ele_name in enumerate(resonators):
         assign_variables_to_element( ele_name, I[idx], Q[idx])
     return I, I_st, Q, Q_st
 
-def multiRO_measurement( iqdata_stream, resonators:list, sequential=False, amp_modify=1.0, weights=""):
+def multiRO_measurement( iqdata_stream, resonators:list, sequential=False, amp_modify=1.0, weights="", save_stream:str="ave"):
     """
         RO pulse
     """
-    (I, I_st, Q, Q_st) = iqdata_stream
     if type(resonators) is not list:
         resonators = [resonators] 
     ro_channel_num = len(resonators)
+    
+    match save_stream:
+        case "trace":
+            measure(
+                "readout" * amp(amp_modify),
+                f"{res}",
+                iqdata_stream,
+            )
+        case _:
+            (I, I_st, Q, Q_st) = iqdata_stream
 
-    for idx, res in enumerate(resonators):
-        measure(
-            "readout" * amp(amp_modify),
-            f"{res}",
-            None,
-            dual_demod.full(weights + "cos", "out1", weights + "sin", "out2", I[idx]),
-            dual_demod.full(weights + "minus_sin", "out1", weights + "cos", "out2", Q[idx]),
-        )
+            for idx, res in enumerate(resonators):
+                measure(
+                    "readout" * amp(amp_modify),
+                    f"{res}",
+                    None,
+                    dual_demod.full(weights + "cos", "out1", weights + "sin", "out2", I[idx]),
+                    dual_demod.full(weights + "minus_sin", "out1", weights + "cos", "out2", Q[idx]),
+                )
 
-        if I_st is not None:
-            save(I[idx], I_st[idx])
-        if Q_st is not None:
-            save(Q[idx], Q_st[idx])
+                if I_st is not None:
+                    save(I[idx], I_st[idx])
+                if Q_st is not None:
+                    save(Q[idx], Q_st[idx])
 
-        if sequential and idx < ro_channel_num -1:
-            align(f"{res}", f"{resonators[idx+1]}")
+                if sequential and idx < ro_channel_num -1:
+                    align(f"{res}", f"{resonators[idx+1]}")
 
 
 
-def multiRO_pre_save( iqdata_stream, resonators:list, buffer_shape:tuple, suffix:str='' ):
+def multiRO_pre_save( iqdata_stream, resonators:list, buffer_shape:tuple, suffix:str='', save_stream:str="ave" ):
     """
+    Parameters:
+
     Save RO pulse signal on FPGA
+    Parameters:
+    save_stream: ave, shot, (trace is no avalible yet)
     """
     (I, I_st, Q, Q_st) = iqdata_stream
     if type(resonators) is not list:
         resonators = [resonators]
         
-    ro_channel_num = len(resonators)
-    for idx_res, res in enumerate(resonators):
-        I_st[idx_res].buffer(*buffer_shape).average().save(f"{res}_I{suffix}")
-        Q_st[idx_res].buffer(*buffer_shape).average().save(f"{res}_Q{suffix}") 
-
+    match save_stream:
+        case "ave":
+            for idx_res, res in enumerate(resonators):
+                I_st[idx_res].buffer(*buffer_shape).average().save(f"{res}_I{suffix}")
+                Q_st[idx_res].buffer(*buffer_shape).average().save(f"{res}_Q{suffix}") 
+        case "shot":
+            for idx_res, res in enumerate(resonators):
+                I_st[idx_res].buffer(*buffer_shape).save_all(f"{res}_I{suffix}")    
+                Q_st[idx_res].buffer(*buffer_shape).save_all(f"{res}_Q{suffix}") 
+        case "trace":
+            for idx_res, res in enumerate(resonators):
+                I_st[idx_res].buffer(*buffer_shape).average().save(f"{res}_I{suffix}")
+                Q_st[idx_res].buffer(*buffer_shape).average().save(f"{res}_Q{suffix}") 
+        case _:
+            for idx_res, res in enumerate(resonators):
+                I_st[idx_res].buffer(*buffer_shape).average().save(f"{res}_I{suffix}")
+                Q_st[idx_res].buffer(*buffer_shape).average().save(f"{res}_Q{suffix}") 
 def multiRO_pre_save_singleShot( iqdata_stream, resonators:list, buffer_shape:tuple, suffix:str='' ):
     """
     Save RO pulse signal on FPGA

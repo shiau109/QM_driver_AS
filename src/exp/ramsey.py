@@ -23,10 +23,12 @@ def exp_ramsey(time_max,time_resolution,ro_element,xy_element,n_avg,config,qmm,v
     time_resolution unit in us.\n
     """
     v_detune_qua = virtual_detune *u.MHz
-
+    print(virtual_detune)
     cc_resolution = (time_resolution/4.) *u.us
     cc_max_qua = (time_max/4.) *u.us
     cc_qua = np.arange( 4, cc_max_qua, cc_resolution)
+    print(cc_qua)
+
     evo_time = cc_qua*4
     time_len = len(cc_qua)
     with program() as ramsey:
@@ -35,14 +37,12 @@ def exp_ramsey(time_max,time_resolution,ro_element,xy_element,n_avg,config,qmm,v
         n_st = declare_stream()
         cc = declare(int)  # QUA variable for the idle time, unit in clock cycle
         phi = declare(fixed)  # Phase to apply the virtual Z-rotation
-        phi_idx = declare(bool,)
         with for_(n, 0, n < n_avg, n + 1):
             with for_( *from_array(cc, cc_qua) ):
                 
                     # Init
                     if initializer is None:
                         wait(100*u.us)
-                        #wait(thermalization_time * u.ns)
                     else:
                         try:
                             initializer[0](*initializer[1])
@@ -51,12 +51,9 @@ def exp_ramsey(time_max,time_resolution,ro_element,xy_element,n_avg,config,qmm,v
                             wait(100*u.us)
 
                     # Operation
-                    True_value = Cast.mul_fixed_by_int( virtual_detune/1e3, 4 *cc)
-                    False_value = Cast.mul_fixed_by_int( virtual_detune/1e3, 4 *cc)
+                    phi = Cast.mul_fixed_by_int( virtual_detune/1e3, 4 *cc)
                     # True_value =  v_detune_qua*4*cc
                     # False_value = v_detune_qua*4*cc
-
-                    assign(phi, Util.cond(phi_idx, True_value, False_value))
 
                     for xy in xy_element:
                         play("x90", xy)  # 1st x90 gate

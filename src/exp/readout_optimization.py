@@ -30,13 +30,30 @@ warnings.filterwarnings("ignore")
 
 from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
+import xarray as xr
 
-def freq_dep_signal( dfs, q_name:list, ro_element:list, n_avg, config, qmm:QuantumMachinesManager, simulate=False, initializer:tuple=None ):
+def freq_dep_signal( freq_range, freq_resolution, q_name:list, ro_element:list, n_avg, config, qmm:QuantumMachinesManager, amp_mod=0.5, simulate=False, initializer:tuple=None )->xr.Dataset:
+    """
+    Parameters:\n
+    freq_range: readout frequency, unit in MHz.\n
+    freq_resolution: unit in MHz.\n
+    amp_mod: The modification ratio of RO pulse amplitude default is 0.5 
+
+    Return:
+    ["mixer", "frequency", "state"]
+    """
+    freq_r1_qua = freq_range[0] * u.MHz
+    freq_r2_qua = freq_range[1] * u.MHz
+
+    freq_resolution_qua = freq_resolution * u.MHz
+
+    freqs_qua = np.arange( freq_r1_qua, freq_r2_qua, freq_resolution_qua )
+    freqs_mhz = freqs_qua/1e6 #  Unit in MHz
 
     center_IF = {}
     for r in ro_element:
         center_IF[r] = config["elements"][r]["intermediate_frequency"]
-    freq_len = dfs.shape[-1]
+    freq_len = freqs_qua.shape[-1]
     ###################
     # The QUA program #
     ###################
@@ -47,7 +64,7 @@ def freq_dep_signal( dfs, q_name:list, ro_element:list, n_avg, config, qmm:Quant
         df = declare(int)  # QUA variable for the readout frequency
         p_idx = declare(int)
         with for_(n, 0, n < n_avg, n + 1):
-            with for_(*from_array(df, dfs)):
+            with for_(*from_array(df, freqs_qua)):
                 # Update the frequency of the two resonator elements
                 with for_each_( p_idx, [0, 1]):  
                     # Init
@@ -62,7 +79,6 @@ def freq_dep_signal( dfs, q_name:list, ro_element:list, n_avg, config, qmm:Quant
                             wait(100*u.us)
                         
                     # Operation
-
                     with switch_(p_idx, unsafe=True):
                         with case_(0):
                             pass
@@ -72,8 +88,8 @@ def freq_dep_signal( dfs, q_name:list, ro_element:list, n_avg, config, qmm:Quant
                     align()
                     # Measurement
                     for r in ro_element:
-                        update_frequency(r, df + center_IF[r])
-                    multiRO_measurement(iqdata_stream, ro_element, weights="rotated_",amp_modify=0.5)
+                        update_frequency(r, df +center_IF[r])
+                    multiRO_measurement(iqdata_stream, ro_element, weights="rotated_",amp_modify=amp_mod)
                     # Save the averaging iteration to get the progress bar
             save(n, n_st)
 
@@ -94,24 +110,32 @@ def freq_dep_signal( dfs, q_name:list, ro_element:list, n_avg, config, qmm:Quant
         data_list.append(f"{r}_Q")
 
     results = fetching_tool(job, data_list=data_list, mode="wait_for_all")
+    
+    
     fetch_data = results.fetch_all()
+    qm.close()
+    # Creating an xarray dataset
     output_data = {}
     for r_idx, r_name in enumerate(ro_element):
-        print(np.array(fetch_data[r_idx*2]).shape)
-        i_data = np.moveaxis(np.array(fetch_data[r_idx*2]), 0,-1)
-        q_data = np.moveaxis(np.array(fetch_data[r_idx*2+1]), 0,-1)
+        output_data[r_name] = ( ["mixer","frequency","state"],
+                                np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]]) )
+    dataset = xr.Dataset(
+        output_data,
+        coords={ "mixer":np.array(["I","Q"]), "frequency": freqs_mhz, "state":[0,1] }
+    )
+    # dataset.attrs["ref_xy_IF"] = ref_xy_IF
+    # dataset.attrs["ref_xy_LO"] = ref_xy_LO
 
-        output_data[r_name] = np.array([i_data,q_data])
+    return dataset
+
+def power_dep_signal( amp_range, amp_resolution, q_name:list, ro_element:list, n_avg, config, qmm:QuantumMachinesManager, initializer=None, simulate=False )->xr.Dataset:
+    """
     
-    # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
-    qm.close()
-    return output_data
+    Return:
+    dataset ["mixer", "state", "amplitude_ratio"]
+    """
 
-def power_dep_signal( amp_ratio, q_name:list, ro_element:list, n_avg, config, qmm:QuantumMachinesManager, initializer=None, simulate=False ):
-
-    center_IF = {}
-    for r in ro_element:
-        center_IF[r] = config["elements"][r]["intermediate_frequency"]
+    amp_ratio = np.arange( amp_range[0] , amp_range[1], amp_resolution )
     amp_len = amp_ratio.shape[-1]
     ###################
     # The QUA program #
@@ -126,7 +150,7 @@ def power_dep_signal( amp_ratio, q_name:list, ro_element:list, n_avg, config, qm
             with for_(*from_array(a, amp_ratio)):
 
                 with for_each_( p_idx, [0, 1]):  
-                                        # Init
+                    # Init
                     if initializer is None:
                         wait(100*u.us)
                         #wait(thermalization_time * u.ns)
@@ -167,17 +191,19 @@ def power_dep_signal( amp_ratio, q_name:list, ro_element:list, n_avg, config, qm
         data_list.append(f"{r}_Q")
 
     results = fetching_tool(job, data_list=data_list, mode="wait_for_all")
+    
     fetch_data = results.fetch_all()
+    qm.close()
+    # Creating an xarray dataset
     output_data = {}
     for r_idx, r_name in enumerate(ro_element):
-        i_data = np.moveaxis(np.array(fetch_data[r_idx*2]), 0,-1)
-        q_data = np.moveaxis(np.array(fetch_data[r_idx*2+1]), 0,-1)
-
-        output_data[r_name] = np.array([i_data,q_data])
-    
-    # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
-    qm.close()
-    return output_data
+        output_data[r_name] = ( ["mixer","amplitude_ratio","state"],
+                                np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]]) )
+    dataset = xr.Dataset(
+        output_data,
+        coords={ "mixer":np.array(["I","Q"]), "amplitude_ratio": amp_ratio, "state":[0,1] }
+    )
+    return dataset
 
 def plot_freq_signal( x, data, label:str, ax ):
     print(data.shape)

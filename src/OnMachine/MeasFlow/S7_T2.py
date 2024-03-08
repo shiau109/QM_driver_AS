@@ -6,7 +6,7 @@ warnings.filterwarnings("ignore")
 import numpy as np
 
 # Dynamic config
-from OnMachine.SetConfig.ConfigBuildUp_new import spec_loca, config_loca
+from OnMachine.SetConfig.config_path import spec_loca, config_loca
 from config_component.configuration import import_config
 from config_component.channel_info import import_spec
 from ab.QM_config_dynamic import initializer
@@ -20,7 +20,7 @@ init_macro = initializer(100000,mode='wait')
 ro_elements = ['q1_ro']
 q_name = ['q1_xy']
 n_avg = 200
-virtual_detune = 0
+virtual_detune = 5.
 
 from exp.ramsey import exp_ramsey,plot_ramsey_oscillation
 dataset = exp_ramsey( 20, 0.2, ro_elements, q_name, n_avg, config, qmm, virtual_detune=virtual_detune, initializer=init_macro)

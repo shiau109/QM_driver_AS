@@ -34,7 +34,7 @@ class ChannelInfo:
         self._HardwareInfo = {}
         self._HardwareInfo["qop_ip"] = ""
         self._HardwareInfo["qop_port"] = None
-        self._HardwareInfo["octave_port"] = 0
+        self._HardwareInfo["octave"] = {}
         self._HardwareInfo["cluster_name"] = ''
         self._HardwareInfo["controller_name"] = ("","")
         self._HardwareInfo["port_mapping"] = {}
@@ -44,8 +44,8 @@ class ChannelInfo:
         """
             Update the hardware information for this chip.\n
             **kwargs are the following:\n
-            ip(qop_ip):str, qop_port: for QMmanager, octave_port:int=port for octave, cluster_name:str="QPX_2",
-            ctrl_name:tuple=("octave1","con1"), port_map:dict, clock:str="Internal"
+            ip(qop_ip):str, qop_port: for QMmanager, cluster_name:str="QPX_2",
+            ctrl_name:tuple=("octave1","con1")
         """
         if not hasattr(self,'_HardwareInfo'):
             self.init_hardwareInfo()
@@ -55,27 +55,50 @@ class ChannelInfo:
                     self._HardwareInfo["qop_ip"] = kwargs[info]
                 elif info.lower() in ["qop_port"]:
                     self._HardwareInfo["qop_port"] = kwargs[info]
-                elif info.lower() in ["octave_port"]:
-                    self._HardwareInfo["octave_port"] = kwargs[info]
                 elif info.lower() in ["cluster_name"]:
                     self._HardwareInfo["cluster_name"] = kwargs[info]
-                elif info.lower() in ["ctrl_name"]:
-                    self._HardwareInfo["controller_name"] = kwargs[info]
-                elif info.lower() in ["port_map"]:
-                    self._HardwareInfo["port_mapping"] = kwargs[info]
-                elif info.lower() in ["clock"]:
-                    self._HardwareInfo["clock"] = kwargs[info]
                 else:
                     raise KeyError(f"Can't recognize the key with name='{info}'")
+    def update_octave( self, name, **kwargs):
+        """
+        ip: ip of cluster in LAN.\n
+        port:11XXX, XXX is last section of ip in cluster subnet.\n
+        clock: "Internal", "External_10MHz", "External_100MHz" or "External_1000MHz".\n
+        con: controller name in cluster.\n
+        port_map:dict\n
+        """
+        if not hasattr(self,'_HardwareInfo'):
+            self.init_hardwareInfo()
+        # octave_info = {}
+        octave_info = {"name":name}
+        if kwargs != {}:
+            for info in list(kwargs.keys()):
+                match info:
+                    case 'ip':
+                        octave_info["ip"] = kwargs[info]
+                    case "clock":
+                        octave_info["clock"] = kwargs[info]
+                    case "port":
+                        octave_info["port"] = kwargs[info]
+                    case "con":
+                        octave_info["con"] = kwargs[info]
+                    case "port_map":
+                        octave_info["port_mapping"] = kwargs[info]
+                    case _:
+                        raise KeyError(f"Can't recognize the key with name='{info}'")
+        self._HardwareInfo["octave"][name]=octave_info
+        # print(self._HardwareInfo["octave"])
 
     def buildup_qmm(self):
         '''
             Build up the QuantumMachinesManager by the HardwareInfo.\n
             return QuantumMachinesManager -> for program executing, [OctaveUnit]-> for octave calibration
         '''
-        octave_1 = OctaveUnit(self._HardwareInfo["controller_name"][0], self._HardwareInfo["qop_ip"], port=self._HardwareInfo["octave_port"], con=self._HardwareInfo["controller_name"][1], clock=self._HardwareInfo["clock"], port_mapping=self._HardwareInfo["port_mapping"])
-        # Add the octaves
-        octaves = [octave_1]
+        # print(self._HardwareInfo["octave"])
+        octaves = []
+        for n, info in self._HardwareInfo["octave"].items():
+            # Add the octaves
+            octaves.append( OctaveUnit( n, self._HardwareInfo["qop_ip"], port=info["port"], con=info["con"], clock=info["clock"], port_mapping=info["port_mapping"]) )
         # Configure the Octaves
         octave_config = octave_declaration(octaves)
         qmm = QuantumMachinesManager(host=self._HardwareInfo["qop_ip"], port=self._HardwareInfo["qop_port"], cluster_name=self._HardwareInfo["cluster_name"], octave=octave_config)

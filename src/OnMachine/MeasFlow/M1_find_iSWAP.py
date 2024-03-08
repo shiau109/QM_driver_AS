@@ -1,39 +1,40 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from ab.QM_config_dynamic import Circuit_info, QM_config, initializer
-from OnMachine.MeasFlow.ConfigBuildUp_old import spec_loca, config_loca, qubit_num
-spec = Circuit_info(qubit_num)
-config = QM_config()
-spec.import_spec(spec_loca)
-config.import_config(config_loca)
+# Dynamic config
+from OnMachine.SetConfig.config_path import spec_loca, config_loca
+from config_component.configuration import import_config
+from config_component.channel_info import import_spec
+from ab.QM_config_dynamic import initializer
 
-qmm,_ = spec.buildup_qmm()
+spec = import_spec( spec_loca )
+config = import_config( config_loca ).get_config()
+qmm, _ = spec.buildup_qmm()
+init_macro = initializer(150000,mode='wait')
 
 from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
-init_macro = initializer( 100*u.us,mode='wait')
 
 
-ro_elements = ['q1_ro','q2_ro','q3_ro','q4_ro']
+ro_elements = ['q0_ro','q1_ro','q2_ro']
 excited_q = 'q1_xy'
-z_name = ['q3_z']
-# Adjust the pulse duration and amplitude to drive the qubit into a mixed state
-# saturation_len = 1 * u.us  # In ns (should be < FFT of df)
-# saturation_amp = 0.01  # pre-factor to the value defined in the config - restricted to [-2; 2)
+z_name = ['q1_z']
 
 
-n_avg = 1000  # The number of averages
-amps = np.arange(-0.046, -0.041, 0.0002)  # The abs flux amplitude absZvolt-offset
-time = np.arange(40, 10000, 40) # The flux pulse durations in clock cycles (4ns) - Must be larger than 4 clock cycles.
+n_avg = 200  # The number of averages
 
-# amps = np.arange(-0.06, -0.02, 0.0005)  # The abs flux amplitude absZvolt-offset
-# time = np.arange(40, 2000, 40) # The flux pulse durations in clock cycles (4ns) - Must be larger than 4 clock cycles.
+# amps = np.arange(0.10, 0.14, 0.002)  # The abs flux amplitude absZvolt-offset
+# time = np.arange(40, 8000, 200) # The flux pulse durations in clock cycles (4ns) - Must be larger than 4 clock cycles.
+
+mid = 0.126
+ra = 0.002
+amps = np.arange(mid-ra, mid+ra, ra/25)  # The abs flux amplitude absZvolt-offset
+time = np.arange(40, 800, 8) # The flux pulse durations in clock cycles (4ns) - Must be larger than 4 clock cycles.
 
 cc = time/4
 
 from exp.iSWAP_J import exp_coarse_iSWAP, plot_ana_iSWAP_chavron
-output_data = exp_coarse_iSWAP( amps, cc, excited_q, ro_elements, z_name, config.get_config(), qmm, n_avg=n_avg, simulate=False, initializer=init_macro )
+output_data = exp_coarse_iSWAP( amps, cc, excited_q, ro_elements, z_name, config, qmm, n_avg=n_avg, simulate=False, initializer=init_macro )
 
 
 for r in ro_elements:
@@ -45,7 +46,7 @@ for r in ro_elements:
 plt.show()
 
 from exp.config_par import *
-z_offset = get_offset(z_name[0],config.get_config())
+z_offset = get_offset(z_name[0],config)
 
 
 output_data["setting"] = {
@@ -63,5 +64,5 @@ if save_data:
     from exp.save_data import save_npz
     import sys
     save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
-    save_npz(r"D:\Data\DR2_5Q", "iSWAP", output_data)    
+    save_npz(r"D:\Data\5Q4C\swap", "Q1Q2", output_data)    
 

@@ -1,4 +1,4 @@
-from OnMachine.SetConfig.ConfigBuildUp_new import spec_loca, config_loca
+from OnMachine.SetConfig.config_path import spec_loca, config_loca
 from config_component.configuration import import_config, configuration_read_dict
 from config_component.channel_info import import_spec
 import numpy as np
@@ -12,18 +12,21 @@ z_infos = [
     {
         "name":"q0",
         "offset":0,
-    },
-    {
+    },{
         "name":"q1",
-        "offset":0.038,
-    },
-    {
+        "offset":0.033,
+    },{
+        "name":"q2",
+        "offset":0.122,
+    },{
         "name":"q5",
-        "offset":-0.11,
-    },
-    {
-        "name":"q8",
+        "offset":-0.04,
+    },{
+        "name":"q6",
         "offset":0.1,
+    },{
+        "name":"q8",
+        "offset":0.2,
     },
 
 ]

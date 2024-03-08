@@ -39,9 +39,10 @@ def freq_sweep_flux_dep( ro_element:list, z_element:list, config:dict, qm_machin
     freq_resolution_qua = freq_resolution * u.MHz
 
     freqs_qua = np.arange( freq_r1_qua, freq_r2_qua, freq_resolution_qua )
+    freqs_mhz = freqs_qua/1e6 #  Unit in MHz
+
     fluxes = np.arange( flux_range[0], flux_range[1], flux_resolution )
 
-    freqs_mhz = freqs_qua/1e6 #  Unit in MHz
 
     freqs_len = freqs_qua.shape[0]
     flux_len = fluxes.shape[0]
