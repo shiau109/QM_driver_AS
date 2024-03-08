@@ -11,8 +11,8 @@ init_macro = initializer(100000,mode='wait')
 
 
 # resonators = ["q0_ro","q1_ro","q2_ro"]
-resonators = ["q1_ro","q2_ro"]
-q_name = ["q1_xy","q2_xy"]
+resonators = ["q3_ro"]
+q_name = ["q3_xy"]
 shot_num = 10000
 
 import matplotlib.pyplot as plt

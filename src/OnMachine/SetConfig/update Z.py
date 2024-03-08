@@ -13,22 +13,15 @@ z_infos = [
         "name":"q0",
         "offset":0,
     },{
-        "name":"q1",
-        "offset":0.033,
-    },{
         "name":"q2",
-        "offset":0.122,
+        "offset":0,
     },{
-        "name":"q5",
-        "offset":-0.04,
+        "name":"q3",
+        "offset":-0.25,
     },{
-        "name":"q6",
-        "offset":0.1,
-    },{
-        "name":"q8",
-        "offset":0.2,
-    },
-
+        "name":"q4",
+        "offset":0,
+    }
 ]
 for i in z_infos:
     wiring = spec.get_spec_forConfig('wire')

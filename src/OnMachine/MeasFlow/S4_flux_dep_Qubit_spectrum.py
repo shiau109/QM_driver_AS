@@ -23,18 +23,18 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(10000,mode='wait')
 
 
-ro_elements = ['q0_ro','q1_ro','q2_ro','q3_ro']
-q_name = ['q1_xy'] 
-z_name = ['q5_z']
+ro_elements = ['q3_ro']
+q_name = ['q3_xy'] 
+z_name = ['q3_z']
 
 saturation_len = 1  # In us (should be < FFT of df)
 saturation_ampRatio = 0.5  # pre-factor to the value defined in the config - restricted to [-2; 2)
 n_avg = 400
 
-flux_range = (-0.15,0.15)
-flux_resolution = 0.005
+flux_range = (-0.05,0.05)
+flux_resolution = 0.001
 
-freq_range = (-400,400)
+freq_range = (-200,200)
 freq_resolution = 1
 
 dataset = xyfreq_sweep_flux_dep( flux_range, flux_resolution, freq_range, freq_resolution, q_name, ro_elements, z_name, config, qmm, saturation_ampRatio=saturation_ampRatio, saturation_len=saturation_len, n_avg=n_avg, sweep_type="z_pulse", simulate=False)
