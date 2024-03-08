@@ -19,10 +19,10 @@ init_macro = initializer(1000,mode='wait')
 
 # Measurement
 n_avg = 200  # The number of averages
-ro_elements = ["q0_ro","q1_ro","q2_ro","q3_ro"]
+ro_elements = ["q3_ro"]
 from exp.rofreq_sweep_power_dep import *
-freq_range = (-15,10)
-freq_resolution = 0.2
+freq_range = (-5,5)
+freq_resolution = 0.1
 dataset = frequency_sweep_power_dep( ro_elements, config, qmm, n_avg=n_avg, freq_range=freq_range, freq_resolution=freq_resolution, amp_resolution=0.05, amp_max_ratio=0.2, amp_scale="log", initializer=init_macro)  
 
 # dataset = frequency_sweep_power_dep( ro_elements, config, qmm, n_avg=n_avg, freq_span=100, freq_resolution=0.1, amp_resolution=0.05, amp_max_ratio=0.2, amp_scale="log", initializer=init_macro)  

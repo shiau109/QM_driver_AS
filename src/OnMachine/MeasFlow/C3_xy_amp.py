@@ -15,14 +15,14 @@ init_macro = initializer(100000,mode='wait')
 
 n_avg = 400
 
-ro_element = ["q1_ro"]
-q_name =  "q1_xy"
-sequence_repeat = 3
+ro_element = ["q3_ro"]
+q_name =  "q3_xy"
+sequence_repeat = 1
 amp_modify_range = 0.4/float(sequence_repeat)
 from exp.SQGate_calibration import *
 drag_coef = 0.5
-output_data = DRAG_calibration_Yale( drag_coef, q_name, ro_element, config, qmm, n_avg=n_avg)
-# output_data = amp_calibration( amp_modify_range, q_name, ro_element, config, qmm, n_avg=n_avg, sequence_repeat=sequence_repeat, simulate=False, mode='live')
+# output_data = DRAG_calibration_Yale( drag_coef, q_name, ro_element, config, qmm, n_avg=n_avg)
+output_data = amp_calibration( amp_modify_range, q_name, ro_element, config, qmm, n_avg=n_avg, sequence_repeat=sequence_repeat, simulate=False, mode='live')
 
     #   Data Saving   # 
 save_data = False

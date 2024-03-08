@@ -21,8 +21,8 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(100000,mode='wait')
 
 # ro_elements = ['q0_ro','q1_ro','q2_ro']
-ro_elements = ['q1_ro']
-operate_qubit = ['q1_xy']
+ro_elements = ['q3_ro']
+operate_qubit = ['q3_xy']
 n_avg = 500
 
 

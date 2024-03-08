@@ -21,12 +21,12 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(100000,mode='wait')
 
 # ro_elements = ['q0_ro','q1_ro','q2_ro']
-ro_elements = ['q2_ro']
-operate_qubit = ['q2_xy']
-n_avg = 1000
+ro_elements = ['q3_ro']
+operate_qubit = ['q3_xy']
+n_avg = 500
 
-freq_range = (-20, 20)
-freq_resolution = 0.2
+freq_range = (-5, 5)
+freq_resolution = 0.1
 dataset = freq_dep_signal( freq_range, freq_resolution, operate_qubit, ro_elements, n_avg, config, qmm, initializer=init_macro)
 transposed_data = dataset.transpose("mixer", "state", "frequency")
 

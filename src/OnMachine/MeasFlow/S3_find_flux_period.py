@@ -20,10 +20,10 @@ config = import_config( config_loca ).get_config()
 qmm, _ = spec.buildup_qmm()
 init_macro = initializer(1000,mode='wait')
 
-ro_elements = ['q5_ro']
-z_elements = ['q1_z']
+ro_elements = ['q3_ro']
+z_elements = ['q3_z']
 n_avg = 100
-freq_range = (-100,100)
+freq_range = (-10,10)
 freq_resolution = 0.1
 flux_range = (-0.3,0.3)
 flux_resolution = 0.01
