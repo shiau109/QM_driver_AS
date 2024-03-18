@@ -21,8 +21,8 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(100000,mode='wait')
 
 # ro_elements = ['q0_ro','q1_ro','q2_ro']
-ro_elements = ['q3_ro']
-operate_qubit = ['q3_xy']
+ro_elements = ['q1_ro']
+operate_qubit = ['q1_xy']
 n_avg = 500
 
 freq_range = (-5, 5)
@@ -40,8 +40,7 @@ for ro_name, data in transposed_data.data_vars.items():
 plt.show()
 
 #   Data Saving   # 
-save_data = False
+save_data = True
 if save_data:
     from exp.save_data import save_nc
-    import sys
-    save_npz(r"D:\Data\5Q4C\chi_eff", "ge_resonator", dataset)
+    save_nc(r"D:\Data\5Q4C\20240314", f"ro_freq_{operate_qubit[0]}", dataset)

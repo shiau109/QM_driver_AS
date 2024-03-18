@@ -20,10 +20,10 @@ config = import_config( config_loca ).get_config()
 qmm, _ = spec.buildup_qmm()
 init_macro = initializer(1000,mode='wait')
 
-ro_elements = ['q3_ro']
-z_elements = ['q3_z']
-n_avg = 100
-freq_range = (-10,10)
+ro_elements = ['q0_ro']
+z_elements = ['q5_z']
+n_avg = 200
+freq_range = (-50,50)
 freq_resolution = 0.1
 flux_range = (-0.3,0.3)
 flux_resolution = 0.01
@@ -39,7 +39,7 @@ for ro_name, data in dataset.data_vars.items():
     ax.set_title(ro_name)
 plt.show()
 
-save_data = False
+save_data = True
 if save_data:
     from exp.save_data import save_nc  
-    save_nc(r"D:\Data\5Q4C",f"flux_{ro_elements[0]}_{z_elements[0]}_C1_3",dataset)
+    save_nc(r"D:\Data\5Q4C\20240314",f"flux_resonator_{z_elements[0]}",dataset)

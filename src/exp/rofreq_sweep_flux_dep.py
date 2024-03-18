@@ -121,6 +121,7 @@ def freq_sweep_flux_dep( ro_element:list, z_element:list, config:dict, qm_machin
         output_data,
         coords={ "mixer":np.array(["I","Q"]), "frequency": freqs_mhz, "flux": fluxes }
     )
+
     return dataset
 
 
@@ -157,7 +158,7 @@ def freq_sweep_flux_dep_stable( ro_element:list, z_element:list, config:dict, qm
     output_data = []
     for flux_amp in fluxes:
         print("flux", flux_amp)
-        qua_script = freq_sweep_qua( ro_element, z_element, freqs_qua, flux_amp, n_avg, config, initializer, flux_settle_time_qua )
+        qua_script = qua_freq_sweep( ro_element, z_element, freqs_qua, flux_amp, n_avg, config, initializer, flux_settle_time_qua )
         fetch_data = run_qua( qm_machine, config, qua_script, ro_element, n_avg)
         output_data.append(np.array(fetch_data[0:-1]))
         
@@ -177,9 +178,12 @@ def freq_sweep_flux_dep_stable( ro_element:list, z_element:list, config:dict, qm
         dataset_data,
         coords={ "mixer":np.array(["I","Q"]), "frequency": freqs_mhz, "flux": fluxes }
     )   
+    #     ref_ro_IF = {}
+    # for r in ro_element:
+    #     ref_ro_IF[r] = gc.get_IF(r, config)
     return dataset  
 
-def freq_sweep_qua( ro_element:list, z_element:list, freqs_qua, z_amp, n_avg, config, initializer, flux_settle_time_qua ):
+def qua_freq_sweep( ro_element:list, z_element:list, freqs_qua, z_amp, n_avg, config, initializer, flux_settle_time_qua ):
     
     with program() as multi_res_spec_vs_flux:
         # QUA macro to declare the measurement variables and their corresponding streams for a given number of resonators

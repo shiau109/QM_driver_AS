@@ -30,11 +30,12 @@ from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 
 from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
-
+import xarray as xr
 def readout_fidelity( q_name:list, ro_element, shot_num, config, qmm:QuantumMachinesManager, initializer=None):
     """
     Single shot detect
     """
+    
     with program() as iq_blobs:
 
         iqdata_stream = multiRO_declare( ro_element )
@@ -85,16 +86,17 @@ def readout_fidelity( q_name:list, ro_element, shot_num, config, qmm:QuantumMach
     
     results = fetching_tool(job, data_list=data_list, mode="wait_for_all")
     fetch_data = results.fetch_all()
+    qm.close()
+    # Creating an xarray dataset
     output_data = {}
     for r_idx, r_name in enumerate(ro_element):
-        print(np.array(fetch_data[r_idx*2]).shape)
-        i_data = np.moveaxis(np.array(fetch_data[r_idx*2][0]), 0,-1)
-        q_data = np.moveaxis(np.array(fetch_data[r_idx*2+1][0]), 0,-1)
-
-        output_data[r_name] = np.array([i_data,q_data])
-    
-    qm.close()
-    return output_data
+        output_data[r_name] = ( ["mixer","index","state"],
+                                np.array([ fetch_data[r_idx*2][0], fetch_data[r_idx*2+1][0] ]) )
+    dataset = xr.Dataset(
+        output_data,
+        coords={ "mixer":np.array(["I","Q"]), "index": np.arange(shot_num), "state":[0,1] }
+    )
+    return dataset
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
