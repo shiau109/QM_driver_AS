@@ -13,14 +13,14 @@ z_infos = [
         "name":"q0",
         "offset":0,
     },{
-        "name":"q2",
-        "offset":0,
+        "name":"q1",
+        "offset":0.027,
     },{
         "name":"q3",
-        "offset":-0.25,
-    },{
-        "name":"q4",
         "offset":0,
+    },{
+        "name":"q5",
+        "offset":-0.12,
     }
 ]
 for i in z_infos:

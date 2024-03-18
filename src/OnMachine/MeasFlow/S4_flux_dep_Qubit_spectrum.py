@@ -23,26 +23,24 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(10000,mode='wait')
 
 
-ro_elements = ['q3_ro']
-q_name = ['q3_xy'] 
-z_name = ['q3_z']
+ro_elements = ['q0_ro','q1_ro']
+q_name = ['q1_xy'] 
+z_name = ['q1_z']
 
 saturation_len = 1  # In us (should be < FFT of df)
-saturation_ampRatio = 0.5  # pre-factor to the value defined in the config - restricted to [-2; 2)
+saturation_ampRatio = 0.2  # pre-factor to the value defined in the config - restricted to [-2; 2)
 n_avg = 400
 
 flux_range = (-0.05,0.05)
 flux_resolution = 0.001
 
-freq_range = (-200,200)
+freq_range = (-300,300)
 freq_resolution = 1
 
 dataset = xyfreq_sweep_flux_dep( flux_range, flux_resolution, freq_range, freq_resolution, q_name, ro_elements, z_name, config, qmm, saturation_ampRatio=saturation_ampRatio, saturation_len=saturation_len, n_avg=n_avg, sweep_type="z_pulse", simulate=False)
 
 
 plt.show()
-
-from exp.config_par import *
 
 # Plot
 freqs = dataset.coords["frequency"].values
@@ -62,4 +60,4 @@ plt.show()
 save_data = True
 if save_data:
     from exp.save_data import save_nc  
-    save_nc(r"D:\Data\5Q4C\Qspect",f"Spectrum_{q_name[0]}_{z_name[0]}",dataset)
+    save_nc(r"D:\Data\5Q4C\20240314",f"Spectrum_{q_name[0]}_{z_name[0]}",dataset)

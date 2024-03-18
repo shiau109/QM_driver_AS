@@ -13,6 +13,7 @@ u = unit(coerce_to_integer=True)
 from datetime import datetime
 import sys
 import xarray as xr
+import exp.config_par as gc
 
 
 def frequency_sweep_power_dep( ro_element:list, config:dict, qm_machine:QuantumMachinesManager, n_avg:int=100, freq_range:tuple=(-5,5), freq_resolution:float=0.05, amp_max_ratio:float=1.5,amp_resolution:float=0.01, amp_scale:str='lin', initializer:tuple=None)->xr.Dataset:
@@ -39,10 +40,13 @@ def frequency_sweep_power_dep( ro_element:list, config:dict, qm_machine:QuantumM
         amp_ratio = np.arange(amp_max_ratio/100,amp_max_ratio,amp_resolution)
     freqs_mhz = freqs_qua/1e6 #  Unit in MHz
 
-    center_IF = {}
+    ref_ro_IF = {}
+    ref_ro_LO = {}
     for r in ro_element:
-        center_IF[r] = config["elements"][r]["intermediate_frequency"]
-    
+        ref_ro_IF[r] = gc.get_IF(r,config)
+        ref_ro_LO[r] = gc.get_LO(r,config)
+
+
     freq_len = freqs_qua.shape[-1]
     amp_ratio_len = amp_ratio.shape[-1]
 
@@ -74,7 +78,7 @@ def frequency_sweep_power_dep( ro_element:list, config:dict, qm_machine:QuantumM
 
                     # Operation    
                     for r in ro_element:
-                        update_frequency( r, center_IF[r]+df)
+                        update_frequency( r, ref_ro_IF[r]+df)
                     
                     # Readout
                     multiRO_measurement( iqdata_stream, ro_element, amp_modify=a, weights='rotated_' )
@@ -117,6 +121,11 @@ def frequency_sweep_power_dep( ro_element:list, config:dict, qm_machine:QuantumM
         output_data,
         coords={ "mixer":np.array(["I","Q"]), "frequency": freqs_mhz, "amp_ratio": amp_ratio }
     )
+
+    dataset.attrs["ro_LO"] = list(ref_ro_IF.values())
+    dataset.attrs["ro_IF"] = list(ref_ro_IF.values())
+
+
     return dataset
 
 def plot_power_dep_resonator( freqs, amp_ratio, data, ax=None, yscale="lin" ):

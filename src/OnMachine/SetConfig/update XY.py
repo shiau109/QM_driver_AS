@@ -12,21 +12,29 @@ import numpy as np
 
 xy_infos = [
     {
-        "name":"q2",
-        "q_freq": 4.524, # GHz
-        "LO": 4.75, # GHz
-        "pi_amp": 0.2*0.9*1.05*1.01*0.7,
+        "name":"q1",
+        "q_freq": 4.550, # GHz
+        "LO": 4.6, # GHz
+        "pi_amp": 0.2*0.9*1.05*1.01*0.7*0.75,
         "pi_len": 40,
         "90_corr": 1.03
-    },{
-        "name":"q3",
-        "q_freq": 4.695-0.002, # GHz
-        "LO": 4.75, # GHz
+    },
+    {
+        "name":"q2",
+        "q_freq": 4.2, # GHz
+        "LO": 4.11, # GHz
         "pi_amp": 0.3*1.1*1.02*0.7*1.2*1.02,
         "pi_len": 40,
         "90_corr": 1.2*0.92
+    },
+    {
+        "name":"q5",
+        "q_freq": 5.0, # GHz
+        "LO": 5.0, # GHz
+        "pi_amp": 0.2*0.9*1.05*1.01*0.7,
+        "pi_len": 40,
+        "90_corr": 1.03
     }
-
 ]
 # name, q_freq(GHz), LO(GHz), amp, len, half
 # update_info = [['q1', 4.526-0.005, 4.60, 0.2*0.9*1.05*1.01, 40, 1.03 ]]

@@ -70,7 +70,7 @@ def ramsey_freq_calibration( virtial_detune_freq, q_name:list, ro_element:list, 
                     # Rotate the frame of the second x90 gate to implement a virtual Z-rotation
                     # 4*tau because tau was in clock cycles and 1e-9 because tau is ns
                     
-                                        # Init
+                    # Init
                     if initializer is None:
                         wait(100*u.us)
                         #wait(thermalization_time * u.ns)
