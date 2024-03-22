@@ -12,10 +12,10 @@ from TQRB.TQClifford import get_TQcircuit_random_clifford
 from TQCompiler import *
 import warnings
 
-mycompiler = TQCompile( 2, q1_frame_update= 0.64, q2_frame_update= 0.86, params={}, cz_type='eerp' )
+mycompiler = TQCompile( 2, q1_frame_update= 0.15, q2_frame_update= 0.82, params={}, cz_type='square' )
 
-circuit_depths = [0,1,2,3,4,5,6,7,8,9,10,11]
-circuit_repeats = 7
+circuit_depths = [0,1,2,3,4,5,6]
+circuit_repeats = 5
 n_avg = 2000
 circuit = [[[] for _ in range(circuit_repeats)] for _ in range(len(circuit_depths))]
 result = [[[] for _ in range(circuit_repeats)] for _ in range(len(circuit_depths))]

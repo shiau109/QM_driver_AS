@@ -13,8 +13,8 @@ import warnings
 # cnot:q2_y90,q2_x180,cz,q2_y90,q2_x180
 # cnot:q3_y90,q3_x180,cz,q3_y90,q3_x180
 gate_seq = [
-    q3_x180,q2_y90,q2_x180,cz,q2_y90,q2_x180
-    # q2_x180,q3_y90,q3_x180,cz,q3_y90,q3_x180
+    # q3_x180,q2_y90,q2_x180,cz,q2_y90,q2_x180
+    q2_x180,q3_y90,q3_x180,cz,q3_y90,q3_x180
 ]
 circuit = QubitCircuit(2)
 for gate in gate_seq:
@@ -22,13 +22,13 @@ for gate in gate_seq:
 n_avg = 2000
 state_0 =[]
 phase_list = []
-ticks = 25
+ticks = 40
 state_count_list = [3]
 for i in range(ticks):
     phase_list.append(i/ticks)
 ## q1 0.36, q2 0.84
 for phase in phase_list:
-    mycompiler = TQCompile( 2, q1_frame_update= phase, q2_frame_update= 0.84, params={}, cz_type='square' )
+    mycompiler = TQCompile( 2, q1_frame_update= 0.15, q2_frame_update= phase, params={}, cz_type='square' )
     with program() as prog:
         n = declare(int)
         n_st = declare_stream()  

@@ -23,8 +23,8 @@ num_of_sequences = 30
 n_avg = 200
 seed = 345323
 cooldown_time = 12000
-qb = "q2_xy"
-rr = "rr2"
+qb = "q3_xy"
+rr = "rr3"
 # qmm = QuantumMachinesManager(host=qop_ip, port=80)
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config) 
 

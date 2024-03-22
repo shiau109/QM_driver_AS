@@ -275,23 +275,23 @@ if __name__ == '__main__':
     ro_element = ["rr3"]
 
     # The frequency sweep around the resonators' frequency "resonator_IF_q"
-    dfs = np.arange(-1e6, 1e6, 0.02e6)
-    output_data = freq_dep_signal( dfs, operate_qubit, ro_element, n_avg, config, qmm)
-    for r in ro_element:
-        fig = plt.figure()
-        ax = fig.subplots(3,1)
-        plot_freq_signal( dfs, output_data[r], r, ax )
-    plt.show()
-    
-    # amps = np.linspace(0, 1.8, 180)
-    # data = power_dep_signal( amps, operate_qubit, ro_element, n_avg, config, qmm)
+    # dfs = np.arange(-1e6, 1e6, 0.02e6)
+    # output_data = freq_dep_signal( dfs, operate_qubit, ro_element, n_avg, config, qmm)
     # for r in ro_element:
     #     fig = plt.figure()
-    #     ax = fig.subplots(1,2,sharex=True)
-    #     plot_amp_signal( amps, data[r], r, ax[0] )
-    #     plot_amp_signal_phase( amps, data[r], r, ax[1] )
-    #     fig.suptitle(f"{r} RO amplitude")
+    #     ax = fig.subplots(3,1)
+    #     plot_freq_signal( dfs, output_data[r], r, ax )
     # plt.show()
+    
+    amps = np.linspace(0, 1.8, 90)
+    data = power_dep_signal( amps, operate_qubit, ro_element, n_avg, config, qmm)
+    for r in ro_element:
+        fig = plt.figure()
+        ax = fig.subplots(1,2,sharex=True)
+        plot_amp_signal( amps, data[r], r, ax[0] )
+        plot_amp_signal_phase( amps, data[r], r, ax[1] )
+        fig.suptitle(f"{r} RO amplitude")
+    plt.show()
 
     #   Data Saving   # 
     save_data = False

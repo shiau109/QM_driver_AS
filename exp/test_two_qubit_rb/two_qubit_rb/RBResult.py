@@ -25,18 +25,7 @@ class RBResult:
                        "Q1": (["circuit_depth", "repeat", "average"], self.Q1),
                        "Q2": (["circuit_depth", "repeat", "average"], self.Q2),                       
                        },
-            # data_vars={"state": (["circuit_depth","average","repeat"], self.state)},
-            # data_vars={"state": (["average", "repeat", "circuit_depth"], self.state)},
             coords={
-
-                # "average": range(self.num_averages),
-                # "repeat": range(self.num_repeats),
-                # "circuit_depth": self.circuit_depths,
-
-                # "circuit_depth": self.circuit_depths,
-                # "average": range(self.num_averages),
-                # "repeat": range(self.num_repeats),
-
                 "circuit_depth": self.circuit_depths,
                 "repeat": range(self.num_repeats),
                 "average": range(self.num_averages),
@@ -53,9 +42,6 @@ class RBResult:
             self.data.state.sel(circuit_depth=circuit_depth).plot.hist(ax=ax, xticks=range(4))
         plt.tight_layout()
 
-    # def plot_fidelity(self):
-    #     fidelity = (self.data.state == 0).sum(("repeat", "average")) / (self.num_repeats * self.num_averages)
-    #     fidelity.rename("fidelity").plot.line()
     def plot_fidelity(self):    
         counts_0 = (self.data.state == 0).sum('average') / self.num_averages
         fidelity = (self.data.state == 0).sum(("repeat", "average")) / (self.num_repeats * self.num_averages)
@@ -85,17 +71,17 @@ class RBResult:
         print(f"A = {pars[0]:.3}, B = {pars[1]:.3}, p = {pars[2]:.3}")
         print(f'Reference Error Rate: {ref_r:.4f}')
         print(f'Reference Fidelity: {ref_f:.4f}')
-        print('-------------------------')
-        print('state 00: ',data[-1])
-        print('state 10: ',data10[-1])
-        print('state 01: ',data01[-1])
-        print('state 11: ',data11[-1])
+        # print('-------------------------')
+        # print('state 00: ',data[-1])
+        # print('state 10: ',data10[-1])
+        # print('state 01: ',data01[-1])
+        # print('state 11: ',data11[-1])
         plt.figure()
         plt.plot(x, power_law(x, *pars), linestyle="--", linewidth=2, label='fitting')
         plt.errorbar(x, fidelity, yerr=std_repeat, fmt='o', label='exp with error bar')    
-        state_10.rename("state_10").plot.line(label='state 10')
-        state_01.rename("state_01").plot.line(label='state 01')
-        state_11.rename("state_11").plot.line(label='state 11')
+        # state_10.rename("state_10").plot.line(label='state 10')
+        # state_01.rename("state_01").plot.line(label='state 01')
+        # state_11.rename("state_11").plot.line(label='state 11')
         fidelity.rename("fidelity").plot.line(label='exp')
         plt.title(f'Two-Qubit Gate Reference Fidelity: {ref_f:.4f}')
         plt.legend()

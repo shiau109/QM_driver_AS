@@ -9,33 +9,16 @@ from qualang_tools.plot import interrupt_on_close
 from qualang_tools.results import progress_counter
 from common_fitting_func import *
 import numpy as np
-from common_fitting_func import *
 from macros import qua_declaration, multiplexed_readout
 from qualang_tools.bakery import baking
 import warnings
-from qm import generate_qua_script
-from common_fitting_func import *
 warnings.filterwarnings("ignore")
 
-# x = np.linspace(0,49,50)
-# p = (1,5,1.5,20,0) 
-# print(np.round(EERP(x,*p),3))
-# eerp_up_wf = const_flux_amp*np.array(EERP(x,*p)[:10])
-# eerp_dn_wf = eerp_up_wf[::-1]
-# waveform = np.array([const_flux_amp] * const_flux_len)
-# # print(np.round(eerp_up_wf,3))
-# # print(np.round(eerp_dn_wf,3))
-# # flat_wf = np.array([1.0] * 10)
-# eerp_wf = np.concatenate((eerp_up_wf, waveform[:30], eerp_dn_wf))
-# print(eerp_wf)
-# plt.plot(x,eerp_wf,'-o')
-# plt.show()
 
-
-
-def baked_waveform(waveform, pulse_duration, flux_qubit, type, paras = None):
+def baked_waveform(pulse_duration, flux_qubit, type, paras = None):
     pulse_segments = []
-    if type == 'square':  
+    if type == 'square':
+        waveform = np.array([const_flux_amp] * const_flux_len)
         for i in range(0, pulse_duration + 1):
             with baking(config, padding_method="symmetric_l") as b:
                 if i == 0:  # Otherwise, the baking will be empty and will not be created
@@ -48,8 +31,7 @@ def baked_waveform(waveform, pulse_duration, flux_qubit, type, paras = None):
 
     elif type == 'eerp':
         for i in range(0, pulse_duration + 1):
-            p = [paras[0],paras[1],paras[2]]
-            wf = EERP(*p,i).tolist()
+            wf = EERP(*paras,i).tolist()
             with baking(config, padding_method="symmetric_l") as b:
                 b.add_op("flux_pulse", f"q{flux_qubit}_z", wf)
                 b.play("flux_pulse", f"q{flux_qubit}_z")
@@ -115,12 +97,12 @@ def live_plotting(I,Q):
     for i in range(len(resonator)):
         plt.subplot(2,2,i+1)
         plt.cla()
-        plt.pcolor(amps * scale_reference, ts, I[i].transpose())
+        plt.pcolor(amps * scale_reference, t_delay, I[i].transpose())
         plt.title(f"q{i} - I [V]")
         plt.ylabel("Interaction time (ns)")
         plt.subplot(2,2,i+3)
         plt.cla()
-        plt.pcolor(amps * scale_reference, ts, Q[i].transpose())
+        plt.pcolor(amps * scale_reference, t_delay, Q[i].transpose())
         plt.title(f"q{i} - Q [V]")
         plt.ylabel("Interaction time (ns)")
         plt.xlabel("Flux amplitude (V)")       
@@ -132,16 +114,31 @@ resonator_index = [resonator.index(i) for i in resonator]
 flux_Qi = 2  
 excited_Qi_list = [2,3]
 scale_reference = const_flux_amp 
-type = 'eerp'
-n_avg = 100  
-amps = np.arange(0.31, 0.38, 0.001) 
+type = 'square'
+n_avg = 200  
+amps = np.arange(0.31, 0.36, 0.001) 
 const_flux_len = 200
-flux_waveform = np.array([const_flux_amp] * const_flux_len)
 edge_width = 10
-sFactor = 6
-pulse_segments = baked_waveform(flux_waveform, const_flux_len, flux_Qi, type, paras=[const_flux_amp,sFactor,edge_width])
+edge_sigma = 6
+paras = [const_flux_amp,edge_sigma,edge_width]
+pulse_segments = baked_waveform(const_flux_len, flux_Qi, type, paras=paras)
 
 simulate = False
-ts = np.arange(0,const_flux_len+0.1,1)
+t_delay = np.arange(0,const_flux_len+0.1,1)
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)      
-I,Q = CZ_1ns(resonator,flux_Qi,amps,const_flux_len,simulate,qmm)
+I, Q = CZ_1ns(resonator,flux_Qi,amps,const_flux_len,simulate,qmm)
+
+import xarray as xr
+
+coords = {'qubit index': resonator, 'flux amp': amps, 'flux duration': t_delay}  # 定义坐标
+dims = ['qubit index', 'flux amp', 'flux duration']  # 定义维度
+I = xr.DataArray(I, coords=coords, dims=dims)
+Q = xr.DataArray(Q, coords=coords, dims=dims)
+
+ds = xr.Dataset({
+    'I':I,
+    'Q':Q   
+    },
+    coords=coords
+) 
+ds.to_netcdf("find_CZ_Chevron.nc", engine='netcdf4', format='NETCDF4')

@@ -25,16 +25,22 @@ for i in range(5):
 cz_sqr_wf = np.array([cz_sqr_amp]*(cz_sqr_len+1)) # cz_sqr_len+1 is the exactly time of z pulse.
 cz_sqr_wf = cz_sqr_wf.tolist()
 
-edge = 10
-sFactor = 4
-duration = np.linspace(0,49,50)
-paras = [cz_eerp_amp, edge, sFactor]
-p = ( paras[0], paras[1]/2, paras[1]/paras[2], 2*paras[1], 5 ) # This 5 can make the pulse edge smooth in the begining.
-eerp_up_wf = np.array(EERP(duration,*p)[:(paras[1]+5)]) 
-eerp_dn_wf = eerp_up_wf[::-1]
-waveform = np.array([cz_eerp_amp]*(cz_eerp_len+1))
-eerp_wf = np.concatenate((eerp_up_wf, waveform, eerp_dn_wf))
-eerp_wf = eerp_wf.tolist()
+edge_width = 10
+edge_sigma = 6
+paras=[cz_eerp_amp,edge_sigma,edge_width]
+p = [paras[0],paras[1],paras[2]]
+eerp_wf = EERP(*p,cz_eerp_len).tolist() # maybe it need +1 on eerp len
+
+# edge = 10
+# sFactor = 4
+# duration = np.linspace(0,49,50)
+# paras = [cz_eerp_amp, edge, sFactor]
+# p = ( paras[0], paras[1]/2, paras[1]/paras[2], 2*paras[1], 5 ) # This 5 can make the pulse edge smooth in the begining.
+# eerp_up_wf = np.array(EERP(duration,*p)[:(paras[1]+5)]) 
+# eerp_dn_wf = eerp_up_wf[::-1]
+# waveform = np.array([cz_eerp_amp]*(cz_eerp_len+1))
+# eerp_wf = np.concatenate((eerp_up_wf, waveform, eerp_dn_wf))
+# eerp_wf = eerp_wf.tolist()
 
 q2_x180 = Gate("RX", 2, arg_value=np.pi)
 q3_x180 = Gate("RX", 3, arg_value=np.pi)
@@ -66,7 +72,7 @@ def meas():
     )  # readout macro for multiplexed readout
     assign(state1, I1 > threshold1)  # assume that all information is in I
     assign(state2, I2 > threshold2)  # assume that all information is in I
-    return state1, state2, I1_st, I2_st, Q1_st, Q2_st
+    return state1, state2
 
 class TQCompile(GateCompiler):
     """Custom compiler for generating pulses from gates using the base class 

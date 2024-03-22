@@ -181,16 +181,16 @@ def live_plotting(signal_g, signal_e, control_Qi, ramsey_Qi,row,col,ax):
 type = "square"
 simulate = False
 Phi = np.arange(0, 5, 0.05) # 5 rotations
-n_avg = 1500
+n_avg = 50
 q_id = [1,2,3,4]
 control_Qi = 2
 ramsey_Qi = 3
 flux_Qi = 2
-t_min, t_max = 22, 28
+t_min, t_max = 20, 27
 t_delay = np.arange(t_min, t_max + 0.1, 1) 
 edge = 10
 sFactor = 4
-amps = np.arange(0.3351, 0.3391, 0.0008) 
+amps = np.arange(0.325, 0.335, 0.002) 
 signal_mode = 'I'
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
 CZ_phase_diff(q_id,flux_Qi,control_Qi,ramsey_Qi,idle_flux_point,signal_mode,simulate,qmm)

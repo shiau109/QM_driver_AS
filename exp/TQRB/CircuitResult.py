@@ -11,18 +11,18 @@ def power_law(m, a, b, p):
 class CircuitResult:
     num_averages: int
     state: np.ndarray
-    I1: np.ndarray
-    I2: np.ndarray
-    Q1: np.ndarray
-    Q2: np.ndarray
+    # I1: np.ndarray
+    # I2: np.ndarray
+    # Q1: np.ndarray
+    # Q2: np.ndarray
 
     def __post_init__(self):
         self.data = xr.Dataset(
             data_vars={"state": (["average"], self.state),
-                       "I1": (["average"], self.I1),
-                       "I2": (["average"], self.I2),
-                       "Q1": (["average"], self.Q1),
-                       "Q2": (["average"], self.Q2),     
+                    #    "I1": (["average"], self.I1),
+                    #    "I2": (["average"], self.I2),
+                    #    "Q1": (["average"], self.Q1),
+                    #    "Q2": (["average"], self.Q2),     
                        },
             coords={
                 "average": range(self.num_averages),

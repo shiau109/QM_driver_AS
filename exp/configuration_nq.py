@@ -71,19 +71,19 @@ qubit_LO[4] = (4.75) * u.GHz
 # Qubits IF
 qubit_IF = np.zeros(5)
 qubit_IF[0] = (-116.8+0.245) * u.MHz       # Q1
-qubit_IF[1] = (-101.616+0.1-0.056-0.024+0.054-0.023) * u.MHz      # Q2
-qubit_IF[2] = (-317.332+0.309-0.06+0.05-0.042-0.012) * u.MHz
+qubit_IF[1] = (-101.565-0.043+0.001-0.018+0.001) * u.MHz      # Q2
+qubit_IF[2] = (-317.064+0.04-0.049) * u.MHz
 qubit_IF[3] = (-89.5911-0.272) * u.MHz     # Q4
 qubit_IF[4] = (-92) * u.MHz                # Q5
 # For comparing 2q:
 # qubit_IF[1] = qubit_IF[0]
 
 # Relaxation time
-qubit1_T1 = int(12000 * u.ns)
+qubit1_T1 = int(15000 * u.ns)
 qubit2_T1 = int(12000 * u.ns)
-qubit3_T1 = int(12000 * u.ns)
-qubit4_T1 = int(12000 * u.ns)
-qubit5_T1 = int(12000 * u.ns)
+qubit3_T1 = int(26000 * u.ns)
+qubit4_T1 = int(24000 * u.ns)
+qubit5_T1 = int(8000 * u.ns)
 thermalization_time = 10 * max(qubit1_T1, qubit2_T1, qubit3_T1, qubit4_T1, qubit5_T1)
 
 # CW pulse parameter
@@ -96,14 +96,14 @@ saturation_amp = 0.1
 pi_len = 20
 pi_sigma = pi_len / 4
 pi_amp_q1 = 0.0412347
-pi_amp_q2 = 0.10322*0.99223*1.0233*0.99857
-pi_amp_q3 = 0.33377*1.00127*0.9988*1.0012
+pi_amp_q2 = 0.102748*0.99885*1.002*1.0117*0.998*0.99916
+pi_amp_q3 = 0.34186*1.0008*0.997*1.00035
 pi_amp_q4 = 0.15365
 pi_amp_q5 = 0.5
 
 r90_amp_q1 = pi_amp_q1/2 
-r90_amp_q2 = pi_amp_q2/2*1.00496*0.9992
-r90_amp_q3 = pi_amp_q3/2*1.232*0.997*1.0025
+r90_amp_q2 = pi_amp_q2/2*1.00496*0.9992*1.001*0.99878
+r90_amp_q3 = pi_amp_q3/2*1.24218*0.9984*1.0026*0.9975
 r90_amp_q4 = pi_amp_q4/2 *1.104*0.99
 # pi_amp_q4 = 0.1*1.135*1.005*0.805
 r90_amp_q5 = pi_amp_q5/2
@@ -111,7 +111,7 @@ r90_amp_q5 = pi_amp_q5/2
 # DRAG coefficients (# No DRAG when drag_coef_qi=0, it's just a gaussian.)
 drag_coef_q1 = 0.68
 drag_coef_q2 = -0.45
-drag_coef_q3 = 1.3
+drag_coef_q3 = 1.37
 drag_coef_q4 = 1.0
 drag_coef_q5 = 0
 anharmonicity_q1 = -(220.8) * u.MHz
@@ -252,13 +252,10 @@ g1[4] = [1.42510392e+06, 1.46039739e+00, 3.08277727e+00, 5.92422529e+09]
 const_flux_len = 200
 const_flux_amp = 0.5 #0.45
 
-cryo_const_flux_len = 200
-cryo_const_flux_amp = 0.15
-
-fir_2 = [ 1.07763342, -1.00071262]
+fir_2 = [ 1.08518533, -1.00247594]#[ 1.07763342, -1.00071262]
 fir_3 = [1.08210062, -1.00413141]
 
-iir_2 = [(-1) * -0.9230792]
+iir_2 = [(-1)*-0.91729061]#[(-1) * -0.9230792]
 iir_3 = [-0.9220308]
 
 ##########################################
@@ -267,8 +264,8 @@ iir_3 = [-0.9220308]
 cz_point_1_2_q2 = 0.14519591 # q1 - q2 = Ec
 gft_cz_1_2_q2 = flattop_gaussian_waveform(cz_point_1_2_q2-idle_q2, 8 * u.ns, 8 * u.ns)
 g_cz_1_2_q2 = 0.5 * abs(0.5-idle_q2) * gaussian(16, 16/4)
-cz_sqr_len = 25
-cz_sqr_amp = 0.16835
+cz_sqr_len = 23
+cz_sqr_amp = 0.163555
 cz_eerp_len = 22
 cz_eerp_amp = 0.16740
 #############################################
@@ -278,19 +275,19 @@ resonator_LO = 5.95 * u.GHz
 # Resonators IF
 resonator_IF = np.zeros(5)
 resonator_IF[0] = int((-214.21) * u.MHz)
-resonator_IF[1] = int((75.137-0.2+0.131-0.0014-0.058) * u.MHz)
-resonator_IF[2] = int((-103.3368+0.04) * u.MHz) 
+resonator_IF[1] = int((75.0086) * u.MHz)
+resonator_IF[2] = int((-103.3368+0.04-0.6) * u.MHz) 
 resonator_IF[3] = int((163.06) * u.MHz)
 resonator_IF[4] = int((-25.8) * u.MHz)
 # Above is for verifying wide-sweep results: -156, -38, 39, 137, 231
 
 # Readout pulse parameters (optimal input for IQ-mixer: 125mV)
-readout_len = 1500
+readout_len = 2000
 readout_zero_len = 100
 readout_amp = np.zeros(5)
 readout_amp[0] = 0.03
 readout_amp[1] = 0.03*0.95*1.5*1.35
-readout_amp[2] = 0.03*1.3*1.2
+readout_amp[2] = 0.03*1.3*1.2*0.95
 readout_amp[3] = 0.03
 # readout_amp[3] = 0.02
 readout_amp[4] = 0.02
@@ -352,15 +349,16 @@ else:
 
 # state discrimination
 rotation_angle_q1 = (148.6 / 180) * np.pi
-rotation_angle_q2 = ((111.6+144.4+213.6+142.9) / 180) * np.pi
-rotation_angle_q3 = ((113.7) / 180) * np.pi
+rotation_angle_q2 = ((26.3+3.9+214.0) / 180) * np.pi
+rotation_angle_q3 = ((143.3) / 180) * np.pi
 rotation_angle_q4 = (0 / 180) * np.pi
 rotation_angle_q5 = (0 / 180) * np.pi
-ge_threshold_q1 = 0.000909
-ge_threshold_q2 = 2.685e-05
-ge_threshold_q3 = 1.126e-06
-ge_threshold_q4 = 2.419e-04
-ge_threshold_q5 = 0
+ge_threshold = np.zeros(5)
+ge_threshold[0] = 0.000909
+ge_threshold[1] = 2.220e-05
+ge_threshold[2] = -3.057e-04
+ge_threshold[3] = 2.419e-04
+ge_threshold[4] = 0
 
 #############################################
 #                  Config                   #

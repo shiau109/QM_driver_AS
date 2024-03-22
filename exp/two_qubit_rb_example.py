@@ -49,15 +49,14 @@ def bake_phased_xz(baker: Baking, q, x, z, a):
     if q == 1: element = f"q{q1_idx_str}_xy"
     elif q == 2: element = f"q{q2_idx_str}_xy"
     else: raise Exception()
-    # element = f"q{q}_xy"
     baker.frame_rotation_2pi(a/2, element)
     baker.play("x180", element, amp=x)
     baker.frame_rotation_2pi(-(a + z)/2, element)
 
 
 # single qubit phase corrections in units of 2pi applied after the CZ gate
-qubit1_frame_update =  -102.685 / 360  #-80.075 / 360 #-59.840 / 360  #0.3 # example values, should be taken from QPU parameters
-qubit2_frame_update = 5.427 / 360  #8.8 / 360  #-9.315 / 360  #0.88 # example values, should be taken from QPU parameters
+qubit1_frame_update =  0.15 #-42.070 / 360  #-80.075 / 360 #-59.840 / 360  #0.3 # example values, should be taken from QPU parameters
+qubit2_frame_update = 0.82 #-327.584 / 360  #8.8 / 360  #-9.315 / 360  #0.88 # example values, should be taken from QPU parameters
 
 
 # defines the CZ gate that realizes the mapping |00> -> |00>, |01> -> |01>, |10> -> |10>, |11> -> -|11>
@@ -79,14 +78,13 @@ def bake_cz(baker: Baking, q1, q2):
 
 
 def prep():
-    # wait(int(16* u.ns))
-    wait(int(10 * 12000 * u.ns))  # thermal preparation in clock cycles (time = 10 x T1 x 4ns)
+    wait(thermalization_time * u.ns) # thermal preparation in clock cycles (time = 10 x T1 x 4ns)
     align()
 
 
 def meas():
-    threshold1 = 2.203e-05 # threshold for state discrimination 0 <-> 1 using the I quadrature
-    threshold2 = 4.691e-06  # threshold for state discrimination 0 <-> 1 using the I quadrature
+    threshold1 = ge_threshold_q2 # threshold for state discrimination 0 <-> 1 using the I quadrature
+    threshold2 = ge_threshold_q3  # threshold for state discrimination 0 <-> 1 using the I quadrature
     I1 = declare(fixed)
     I2 = declare(fixed)
     Q1 = declare(fixed)
@@ -116,7 +114,7 @@ rb = TwoQubitRb(
 )  # create RB experiment from configuration and defined functions
 
 qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name)  # initialize qmm
-res = rb.run(qmm, circuit_depths=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20], num_circuits_per_depth=30, num_shots_per_circuit=2000)
+res = rb.run(qmm, circuit_depths=[0,1,2,3,4,5,6,7,8,9,10,11,12], num_circuits_per_depth=20, num_shots_per_circuit=2000)
 # st.print_sequences()
 # st.verify_sequences()
 # ot.print_operations()  
@@ -138,7 +136,7 @@ ds['I1'] = res.data.I1
 ds['I2'] = res.data.I2
 ds['Q1'] = res.data.Q1
 ds['Q2'] = res.data.Q2
-ds.to_netcdf("test_two_qubit_RB.nc")
+ds.to_netcdf("two_qubit_RB.nc")
 
-print(res.data.state.mean("average"))
+# print(res.data.state.mean("average"))
 

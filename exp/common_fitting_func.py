@@ -73,12 +73,12 @@ def EERP(*p)->np.ndarray:
 
 if __name__ == '__main__':
 
-    p = (1,4,10,20)  
-    wf = EERP(*p)
-    print(np.round(wf,3))
-    x = [i for i in range(len(wf))]
-    plt.plot(x, wf,'-o')
-    plt.show()
+    # p = (1,4,10,20)  
+    # wf = EERP(*p)
+    # print(np.round(wf,3))
+    # x = [i for i in range(len(wf))]
+    # plt.plot(x, wf,'-o')
+    # plt.show()
 
     # p = (1,0.5,4) 
     # erf_up = errf(*p)[::100]
@@ -91,10 +91,10 @@ if __name__ == '__main__':
     # plt.show()
     
     ### Test S21_notch
-    # x = np.linspace(-48e6,-44e6,5000)
-    # print(type(S21_notch(x)))
-    # plt.plot(x, S21_notch(x, -46.5e6, 9.0e+02, 1.0e+03, 0.0e+00, 0.035))
-    # plt.show()
+    x = np.linspace(-48e6,-44e6,5000)
+    print(type(S21_notch(x)))
+    plt.plot(x, S21_notch(x, -46.5e6, 9.0e+02, 1.0e+03, 0.0e+00, 0.035))
+    plt.show()
 
     ### Test resonator_flux
     # Qi = 3
