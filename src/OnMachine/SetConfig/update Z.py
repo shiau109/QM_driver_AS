@@ -11,16 +11,19 @@ from config_component.update import update_z_offset
 z_infos = [
     {
         "name":"q0",
-        "offset":0,
+        "offset":-0.119,
     },{
         "name":"q1",
-        "offset":0.027,
+        "offset":-0.018,
     },{
-        "name":"q3",
-        "offset":0,
+        "name":"q2",
+        "offset":-0.115,
     },{
         "name":"q5",
-        "offset":-0.12,
+        "offset":0.4,
+    },{
+        "name":"q6",
+        "offset":0,
     }
 ]
 for i in z_infos:

@@ -50,7 +50,7 @@ def xyfreq_sweep_flux_dep( flux_range:tuple, flux_resolution:float, freq_range:t
     ref_xy_LO = {}
     for xy in q_name:
         ref_xy_IF[xy] = gc.get_IF(xy, config)
-        ref_xy_LO[xy] = gc.get_LO(q_name[0],config)
+        ref_xy_LO[xy] = gc.get_LO(xy,config)
 
     ref_z_offset = {}
     for z in z_name:
@@ -75,10 +75,10 @@ def xyfreq_sweep_flux_dep( flux_range:tuple, flux_resolution:float, freq_range:t
         qm = qmm.open_qm(config)
         job = qm.execute(qua_prog)
 
-        fig, ax = plt.subplots(2, len(ro_element))
-        if len(ro_element) == 1:
-            ax = [[ax[0]],[ax[1]]]
-        interrupt_on_close(fig, job)
+        # fig, ax = plt.subplots(2, len(ro_element))
+        # if len(ro_element) == 1:
+        #     ax = [[ax[0]],[ax[1]]]
+        # interrupt_on_close(fig, job)
 
         ro_ch_name = []
         for r_name in ro_element:
@@ -90,14 +90,14 @@ def xyfreq_sweep_flux_dep( flux_range:tuple, flux_resolution:float, freq_range:t
         output_data = {}
         while results.is_processing():
             fetch_data = results.fetch_all()
-            for r_idx, r_name in enumerate(ro_element):
-                ax[0][r_idx].cla()
-                ax[1][r_idx].cla()
-                output_data[r_name] = np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]])
+            # for r_idx, r_name in enumerate(ro_element):
+            #     ax[0][r_idx].cla()
+            #     ax[1][r_idx].cla()
+            #     output_data[r_name] = np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]])
 
-                # Plot I
-                ax[0][r_idx].set_ylabel("I quadrature [V]")
-                plot_flux_dep_qubit(output_data[r_name], fluxes, freqs, [ax[0][r_idx],ax[1][r_idx]])
+            #     # Plot I
+            #     ax[0][r_idx].set_ylabel("I quadrature [V]")
+            #     plot_flux_dep_qubit(output_data[r_name], fluxes, freqs, [ax[0][r_idx],ax[1][r_idx]])
                 # # Plot Q
                 # ax[0][r_idx].set_ylabel("Q quadrature [V]")
                 # plot_flux_dep_qubit(output_data[r_name][1], offset_arr, d_freq_arr,ax[1][r_idx]) 
@@ -106,7 +106,7 @@ def xyfreq_sweep_flux_dep( flux_range:tuple, flux_resolution:float, freq_range:t
             # Progress bar
             progress_counter(iteration, n_avg, start_time=results.get_start_time()) 
 
-            plt.pause(1)
+            # plt.pause(1)
 
         fetch_data = results.fetch_all()
         qm.close()

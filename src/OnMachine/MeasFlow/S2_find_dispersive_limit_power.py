@@ -19,7 +19,7 @@ init_macro = initializer(1000,mode='wait')
 
 # Measurement
 n_avg = 200  # The number of averages
-ro_elements = ["q0_ro","q1_ro"]
+ro_elements = ["q0_ro","q1_ro","q2_ro","q3_ro","q4_ro"]
 from exp.rofreq_sweep_power_dep import *
 freq_range = (-10,10)
 freq_resolution = 0.1
@@ -41,4 +41,4 @@ plt.show()
 save_data = True
 if save_data:
     from exp.save_data import save_nc  
-    save_nc(r"D:\Data\5Q4C\20240314",f"power_dep_resonator",dataset)
+    save_nc(r"D:\Data\03205Q4C_6",f"power_dep_resonator",dataset)

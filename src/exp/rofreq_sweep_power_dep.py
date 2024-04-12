@@ -122,7 +122,7 @@ def frequency_sweep_power_dep( ro_element:list, config:dict, qm_machine:QuantumM
         coords={ "mixer":np.array(["I","Q"]), "frequency": freqs_mhz, "amp_ratio": amp_ratio }
     )
 
-    dataset.attrs["ro_LO"] = list(ref_ro_IF.values())
+    dataset.attrs["ro_LO"] = list(ref_ro_LO.values())
     dataset.attrs["ro_IF"] = list(ref_ro_IF.values())
 
 

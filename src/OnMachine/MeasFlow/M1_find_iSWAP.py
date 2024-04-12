@@ -10,59 +10,47 @@ from ab.QM_config_dynamic import initializer
 spec = import_spec( spec_loca )
 config = import_config( config_loca ).get_config()
 qmm, _ = spec.buildup_qmm()
-init_macro = initializer(150000,mode='wait')
+init_macro = initializer(10000,mode='wait')
 
-from qualang_tools.units import unit
-u = unit(coerce_to_integer=True)
 
 
 ro_elements = ['q0_ro','q1_ro','q2_ro']
-excited_q = 'q1_xy'
-z_name = ['q1_z']
+excited_q = 'q0_xy'
+z_name = ['q0_z']
 
 
-n_avg = 200  # The number of averages
+n_avg = 400  # The number of averages
 
-# amps = np.arange(0.10, 0.14, 0.002)  # The abs flux amplitude absZvolt-offset
+# amps = np.arange(0.10, 0.14, 0.002)  # The relative flux amplitude absZvolt-offset
 # time = np.arange(40, 8000, 200) # The flux pulse durations in clock cycles (4ns) - Must be larger than 4 clock cycles.
 
-mid = 0.126
-ra = 0.002
-amps = np.arange(mid-ra, mid+ra, ra/25)  # The abs flux amplitude absZvolt-offset
-time = np.arange(40, 800, 8) # The flux pulse durations in clock cycles (4ns) - Must be larger than 4 clock cycles.
-
+mid = -0.013
+ra = 0.005
+amps = np.arange(mid-ra, mid+ra, ra/50)  # The relative flux amplitude absZvolt-offset
+time = np.arange(16, 400, 4) # The flux pulse durations in clock cycles (4ns) - Must be larger than 4 clock cycles.
+coupler_z = "q5_z"
+coupler_amp = -0.09
 cc = time/4
 
 from exp.iSWAP_J import exp_coarse_iSWAP, plot_ana_iSWAP_chavron
-output_data = exp_coarse_iSWAP( amps, cc, excited_q, ro_elements, z_name, config, qmm, n_avg=n_avg, simulate=False, initializer=init_macro )
+dataset = exp_coarse_iSWAP( coupler_z, coupler_amp, amps, cc, excited_q, ro_elements, z_name, config, qmm, n_avg=n_avg, simulate=False, initializer=init_macro )
 
 
-for r in ro_elements:
+time = dataset.coords["time"].values
+amps = dataset.coords["amplitude"].values
+for ro_name, data in dataset.data_vars.items():
 
     fig, ax = plt.subplots(2)
-    plot_ana_iSWAP_chavron( output_data[r], amps, time, ax )
-    ax[0].set_title(r)
-    ax[1].set_title(r)
+    plot_ana_iSWAP_chavron( data.values, amps, time, ax )
+    ax[0].set_title(ro_name)
+    ax[1].set_title(ro_name)
 plt.show()
 
-from exp.config_par import *
-z_offset = get_offset(z_name[0],config)
-
-
-output_data["setting"] = {
-    "z_offset":z_offset,
-}
-
-output_data["paras"] = {
-    "d_z_amp":amps,
-    "z_time":time
-}
 
 
 save_data = True
 if save_data:
-    from exp.save_data import save_npz
+    from exp.save_data import save_nc
     import sys
-    save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
-    save_npz(r"D:\Data\5Q4C\swap", "Q1Q2", output_data)    
+    save_nc(r"D:\Data\03205Q4C_6", f"iSWAP_{excited_q}_{z_name[0]}_{coupler_z}_{coupler_amp}", dataset)    
 

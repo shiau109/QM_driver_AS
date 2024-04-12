@@ -144,28 +144,33 @@ def ramsey_freq_calibration( virtial_detune_freq, q_name:list, ro_element:list, 
         while results.is_processing():
             # Fetch results
             fetch_data = results.fetch_all()
-            output_data = {}
-            for r_idx, r_name in enumerate(ro_element):
-                ax[r_idx*2].cla()
-                ax[r_idx*2+1].cla()
-                output_data[r_name] = np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]])
+            # output_data = {}
+            # for r_idx, r_name in enumerate(ro_element):
+            #     ax[r_idx*2].cla()
+            #     ax[r_idx*2+1].cla()
+            #     output_data[r_name] = np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]])
 
-                # Plot I
-                ax[r_idx*2].set_ylabel("I quadrature [V]")
-                plot_dual_Ramsey_oscillation(evo_time, output_data[r_name][0], ax[r_idx*2])
-                # Plot Q
-                ax[r_idx*2+1].set_ylabel("Q quadrature [V]")
-                plot_dual_Ramsey_oscillation(evo_time, output_data[r_name][1], ax[r_idx*2+1])
+            #     # Plot I
+            #     ax[r_idx*2].set_ylabel("I quadrature [V]")
+            #     plot_dual_Ramsey_oscillation(evo_time, output_data[r_name][0], ax[r_idx*2])
+            #     # Plot Q
+            #     ax[r_idx*2+1].set_ylabel("Q quadrature [V]")
+            #     plot_dual_Ramsey_oscillation(evo_time, output_data[r_name][1], ax[r_idx*2+1])
 
     
             # Progress bar
             iteration = fetch_data[-1]
             progress_counter(iteration, n_avg, start_time=results.start_time)
             # Plot
-            plt.tight_layout()
-            plt.pause(1)
+            # plt.tight_layout()
+            # plt.pause(1)
         # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
         qm.close()
+
+        output_data = {}
+        for r_idx, r_name in enumerate(ro_element):
+            output_data[r_name] = np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]])
+
         return output_data, evo_time
         # try:
         #     fit = Fit()

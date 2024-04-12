@@ -84,11 +84,13 @@ def frequency_sweep( config:dict, qm_machine:QuantumMachinesManager, ro_element:
     while results.is_processing():
         fetch_data = results.fetch_all()
         progress_counter(fetch_data[-1], n_avg, start_time=results.get_start_time())
-    # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
-    qm.close()
+
 
     # Creating an xarray dataset
     fetch_data = results.fetch_all()
+    # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
+    qm.close()
+    
     output_data = np.array([fetch_data[0],fetch_data[1]])
     dataset = xr.Dataset(
         {

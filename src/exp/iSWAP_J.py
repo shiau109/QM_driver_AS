@@ -1,26 +1,4 @@
-"""
-        iSWAP CHEVRON - 4ns granularity
-The goal of this protocol is to find the parameters of the iSWAP gate between two flux-tunable qubits.
-The protocol consists in flux tuning one qubit (the one with the highest frequency) so that it becomes resonant with the second qubit.
-If one qubit is excited, then they will start swapping their states by exchanging one photon when they are on resonance.
-The process can be seen as an energy exchange between |10> and |01>.
 
-By scanning the flux pulse amplitude and duration, the iSWAP chevron can be obtained and post-processed to extract the
-iSWAP gate parameters corresponding to half an oscillation so that the states are fully swapped (flux pulse amplitude
-and interation time).
-
-This version sweeps the flux pulse duration using real-time QUA, which means that the flux pulse can be arbitrarily long
-but the step must be larger than 1 clock cycle (4ns) and the minimum pulse duration is 4 clock cycles (16ns).
-
-Prerequisites:
-    - Having found the resonance frequency of the resonator coupled to the qubit under study (resonator_spectroscopy).
-    - Having found the qubits maximum frequency point (qubit_spectroscopy_vs_flux).
-    - Having calibrated qubit gates (x180) by running qubit spectroscopy, rabi_chevron, power_rabi, Ramsey and updated the configuration.
-    - (Optional) having corrected the flux line distortions by running the Cryoscope protocol and updating the filter taps in the configuration.
-
-Next steps before going to the next node:
-    - Update the iSWAP gate parameters in the configuration.
-"""
 
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.qua import *
@@ -38,9 +16,12 @@ import exp.config_par as gc
 from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
 
+import xarray as xr
 
-def exp_coarse_iSWAP(  z_amp, z_time, excited_q:str, ro_element:list, z_name:list, config, qmm:QuantumMachinesManager, n_avg:int=100, simulate:bool=False, initializer=None ):
+def exp_coarse_iSWAP(  coupler_z, coupler_amp, z_amp, z_time, excited_q:str, ro_element:list, z_name:list, config, qmm:QuantumMachinesManager, n_avg:int=100, simulate:bool=False, initializer=None ):
 
+
+    c_offset = gc.get_offset(coupler_z, config)
     ref_z_offset = {}
     for z in z_name:
         ref_z_offset[z] = gc.get_offset(z, config)
@@ -81,12 +62,15 @@ def exp_coarse_iSWAP(  z_amp, z_time, excited_q:str, ro_element:list, z_name:lis
                     for z in z_name:
                         set_dc_offset( z, "single", ref_z_offset[z] +a)
                         wait(t, z)
+                    set_dc_offset( coupler_z, "single", c_offset +coupler_amp)
                     align()
                     # Wait some time to ensure that the flux pulse will end before the readout pulse
                     
                     for z in z_name:
                         set_dc_offset( z, "single", ref_z_offset[z])
                     # Align the elements to measure after having waited a time "tau" after the qubit pulses.
+                    set_dc_offset( coupler_z, "single", c_offset)
+
                     align()
                     wait(25)
                     # Readout
@@ -131,30 +115,26 @@ def exp_coarse_iSWAP(  z_amp, z_time, excited_q:str, ro_element:list, z_name:lis
         while results.is_processing():
             # Fetch results
             fetch_data = results.fetch_all()
-            for r_idx, r_name in enumerate(ro_element):
-                ax[0][r_idx].cla()
-                ax[1][r_idx].cla()
-                output_data[r_name] = np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]])
-
-                # Plot I
-                ax[0][r_idx].set_ylabel("I quadrature [V]")
-                plot_iSWAP_chavron(output_data[r_name], z_amp, z_time, [ax[0][r_idx],ax[1][r_idx]])
-                # # Plot Q
-                # ax[0][r_idx].set_ylabel("Q quadrature [V]")
-                # plot_flux_dep_qubit(output_data[r_name][1], offset_arr, d_freq_arr,ax[1][r_idx]) 
+ 
 
             iteration = fetch_data[-1]
             # Progress bar
             progress_counter(iteration, n_avg, start_time=results.get_start_time()) 
 
-            plt.pause(1)
         fetch_data = results.fetch_all()
+        qm.close()
+        # Creating an xarray dataset
         output_data = {}
         for r_idx, r_name in enumerate(ro_element):
-            output_data[r_name] = np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]])
-        # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
-        qm.close()
-    return output_data
+            output_data[r_name] = ( ["mixer","time","amplitude"],
+                                    np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]]) )
+        dataset = xr.Dataset(
+            output_data,
+            coords={ "mixer":np.array(["I","Q"]), "time": z_time, "amplitude": z_amp }
+        )
+
+        dataset.attrs["z_offset"] = list(ref_z_offset.values())
+    return dataset
     # np.savez(save_dir / 'iswap', I1=I1, Q1=Q1, I2=I2, ts=ts, amps=amps)
 
 def plot_iSWAP_chavron( data, amp, time, ax=None ):

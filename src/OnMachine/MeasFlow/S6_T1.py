@@ -18,12 +18,12 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(150000,mode='wait')
 
 
-ro_elements = ['q3_ro']
-q_name = ['q3_xy']
+ro_elements = ["q0_ro","q1_ro","q2_ro"]
+q_name = ['q0_xy','q1_xy','q2_xy']
 n_avg = 100
 repeat = 1
-max_time = 40 #us
-time_resolution = 0.4 #us
+max_time = 4 #us
+time_resolution = 0.04 #us
 from exp.relaxation_time import *
 
 if repeat == 1:
@@ -37,6 +37,7 @@ time = dataset.coords["time"].values
 if repeat == 1:
     from exp.relaxation_time import plot_T1
     for ro_name, data in dataset.data_vars.items():
+        print(ro_name)
         fig, ax = plt.subplots(2)
         plot_T1(time, data)
 else:
@@ -55,4 +56,4 @@ save_data = True
 if save_data:
     from exp.save_data import save_nc
     import sys
-    save_nc(r"D:\Data\5Q4C\T1", f"{q_name}_T1", dataset) 
+    save_nc(r"D:\Data\03205Q4C_6", f"{q_name}_T1", dataset) 
