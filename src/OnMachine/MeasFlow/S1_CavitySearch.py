@@ -16,13 +16,13 @@ from ab.QM_config_dynamic import initializer
 spec = import_spec( spec_loca )
 config = import_config( config_loca ).get_config()
 qmm, _ = spec.buildup_qmm()
-init_macro = initializer(10000,mode='wait')
+init_macro = initializer(1000,mode='wait')
 
 # Measurement
 from exp.rofreq_sweep import *
-freq_range = (-400,400)
+freq_range = (-300,300)
 resolution = 2
-dataset = frequency_sweep(config,qmm,n_avg=100,initializer=init_macro)  
+dataset = frequency_sweep(config,qmm,n_avg=1000,freq_range=freq_range,initializer=init_macro)  
 
 # Plot
 idata = dataset["q0_ro"].sel(mixer='I').values

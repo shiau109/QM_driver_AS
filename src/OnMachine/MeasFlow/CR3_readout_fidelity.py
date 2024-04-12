@@ -11,8 +11,8 @@ init_macro = initializer(100000,mode='wait')
 
 
 # resonators = ["q0_ro","q1_ro","q2_ro"]
-resonators = ["q1_ro"]
-q_name = ["q1_xy"]
+resonators =  ["q0_ro","q1_ro","q2_ro"]
+q_name = ["q2_xy"]
 shot_num = 10000
 
 import matplotlib.pyplot as plt
@@ -41,4 +41,4 @@ save_data = True
 if save_data:
     from exp.save_data import save_nc
     import sys
-    save_nc(r"D:\Data\5Q4C\20240314", "ro_fidelity", dataset)   
+    save_nc(r"D:\Data\03205Q4C_6", "ro_fidelity", dataset)   

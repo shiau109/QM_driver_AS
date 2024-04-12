@@ -21,14 +21,14 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(100000,mode='wait')
 
 
-ro_elements = ['q3_ro']
-q_name = ['q3_xy']
+ro_elements = ["q0_ro","q1_ro","q2_ro"]
+q_name = ['q0_xy']
 n_avg = 200
 
-freq_range = (-50,50)
-freq_resolution = 1
-time_range = (16,400) # ns
-time_resolution = 4
+freq_range = (-100,100)
+freq_resolution = 2
+time_range = (16,800) # ns
+time_resolution = 8
 
 amps_range = (0,1.5)
 amps_resolution = 0.02
@@ -74,4 +74,4 @@ save_data = True
 if save_data:
     from exp.save_data import save_nc
     import sys
-    save_nc(r"D:\Data\5Q4C\Rabi", f"{q_name[0]}_idle_Rabi", dataset) 
+    save_nc(r"D:\Data\03205Q4C_6", f"{q_name[0]}_idle_Rabi", dataset) 

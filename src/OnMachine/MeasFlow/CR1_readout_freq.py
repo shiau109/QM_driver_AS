@@ -21,8 +21,8 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(100000,mode='wait')
 
 # ro_elements = ['q0_ro','q1_ro','q2_ro']
-ro_elements = ['q1_ro']
-operate_qubit = ['q1_xy']
+ro_elements = ["q0_ro","q1_ro","q2_ro"]
+operate_qubit = ['q0_xy']
 n_avg = 500
 
 freq_range = (-5, 5)
@@ -43,4 +43,4 @@ plt.show()
 save_data = True
 if save_data:
     from exp.save_data import save_nc
-    save_nc(r"D:\Data\5Q4C\20240314", f"ro_freq_{operate_qubit[0]}", dataset)
+    save_nc(r"D:\Data\03205Q4C_6", f"ro_freq_{operate_qubit[0]}", dataset)

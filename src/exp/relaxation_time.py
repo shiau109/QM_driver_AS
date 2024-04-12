@@ -108,14 +108,13 @@ def plot_T1( x, y ):
     # fig.show()
     # Plot
     for i, port in enumerate(["I", "Q"]):
-        ax[i].plot( x, y[i], label="data")
-        ax[i].set_ylabel(f"{port} quadrature [V]")
-        ax[i].set_xlabel("Wait time (ns)")
+        ax[i].plot( x, y[i],"o", label="data",markersize=1)
+        ax[i].set_ylabel(f"{port} quadrature (mV)")
+        ax[i].set_xlabel("Wait time (us)")
 
         fit_T1_par, fit_func = fit_T1(x, y[i])
         ax[i].plot( x, fit_func(x), label="fit")
-        print("T1",fit_T1_par)
-    return fig
+        print("T1",port,fit_T1_par)
 
 def plot_multiT1( data, rep, time ):
     """

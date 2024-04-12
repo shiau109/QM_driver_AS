@@ -16,6 +16,8 @@ from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 warnings.filterwarnings("ignore")
 from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
+
+import xarray as xr
 ###################
 # The QUA program #
 ###################
@@ -224,31 +226,31 @@ def amp_calibration( amp_modify_range, q_name:str, ro_element:list, config, qmm:
         results = fetching_tool(job, data_list=data_list, mode='live')
         # Live plotting
         if mode == 'live':
-            fig, ax = plt.subplots(2, len(ro_element))
-            interrupt_on_close(fig, job)  # Interrupts the job when closing the figure
+            # fig, ax = plt.subplots(2, len(ro_element))
+            # interrupt_on_close(fig, job)  # Interrupts the job when closing the figure
 
-            fig.suptitle("Amp pre factor calibration (AS)")
+            # fig.suptitle("Amp pre factor calibration (AS)")
             while results.is_processing():
                 # Fetch results
                 fetch_data = results.fetch_all()
-                output_data = {}
-                for r_idx, r_name in enumerate(ro_element):
-                    ax[r_idx*2].cla()
-                    ax[r_idx*2+1].cla()
-                    output_data[r_name] = np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]])
+                # output_data = {}
+                # for r_idx, r_name in enumerate(ro_element):
+                #     ax[r_idx*2].cla()
+                #     ax[r_idx*2+1].cla()
+                #     output_data[r_name] = np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]])
 
-                    for op_idx, op in enumerate(["x90","x180"]):
-                        ax[r_idx*2].plot(amps, output_data[r_name][0].transpose()[op_idx], label=op)
-                        ax[r_idx*2+1].plot(amps, output_data[r_name][1].transpose()[op_idx], label=op)
+                #     for op_idx, op in enumerate(["x90","x180"]):
+                #         ax[r_idx*2].plot(amps, output_data[r_name][0].transpose()[op_idx], label=op)
+                #         ax[r_idx*2+1].plot(amps, output_data[r_name][1].transpose()[op_idx], label=op)
                 
 
                 iteration = fetch_data[-1]
                 # Progress bar
                 progress_counter(iteration, n_avg, start_time=results.get_start_time())      
 
-                plt.legend()
-                plt.tight_layout()
-                plt.pause(1)
+                # plt.legend()
+                # plt.tight_layout()
+                # plt.pause(1)
         else:
             while results.is_processing():
             # Fetch results
@@ -257,14 +259,22 @@ def amp_calibration( amp_modify_range, q_name:str, ro_element:list, config, qmm:
                 # Progress bar
                 progress_counter(iteration, n_avg, start_time=results.get_start_time())      
 
-            output_data = {}
-            for r_idx, r_name in enumerate(ro_element):
-                    output_data[r_name] = np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]])
-            output_data['x'] = amps
-
-        # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
+        # Close the quantum machines at the end in order to put all fluxes biases to 0 so that the fridge doesn't heat-up
+        fetch_data = results.fetch_all()
         qm.close()
-        return output_data
+
+        # Creating an xarray dataset
+        output_data = {}
+        for r_idx, r_name in enumerate(ro_element):
+            output_data[r_name] = ( ["mixer","amplitude_ratio","sequence"],
+                                np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]]) )
+        dataset = xr.Dataset(
+            output_data,
+            coords={ "mixer":np.array(["I","Q"]), "sequence":np.array(["x90","x180"]), "amplitude_ratio": amps }
+        )
+        transposed_data = dataset.transpose("mixer", "sequence", "amplitude_ratio")
+
+        return dataset
     
 
 def StarkShift_program(q_name:str, ro_element:list, sequence_repeat:int=1, n_avg=100, initializer:tuple=None):

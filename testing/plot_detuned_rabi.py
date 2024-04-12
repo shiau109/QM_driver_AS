@@ -1,43 +1,39 @@
-import numpy as np
+import xarray as xr
 import matplotlib.pyplot as plt
-raw_data = np.load(r'D:\Data\DR2_5Q\Qc3500\Q1_idle_Rabi_20240108_214206.npz', allow_pickle=True)# ["arr_0"].item()
-# tomo_data =
-other_info = {}
-for k, v in raw_data.items():
-    print(k, v.shape)
-    if k in ["paras","setting"]:
-        other_info[k]=v.item()
-from exp.rabi import freq_time_rabi, plot_ana_freq_time_rabi, freq_power_rabi
+import numpy as np
+from exp.rabi import plot_ana_freq_time_rabi
 
-setting = other_info["setting"]
-xy_LO = setting["xy_freq_LO"]
-xy_IF_idle = setting["xy_freq_Idle"]
 
-paras = other_info["paras"]
-dfs = paras["d_xy_freq"]
-time = paras["xy_time"]
 
-iq_rotate = np.array([ 0.1,0.17,0.4,0.25 ])*np.pi
-target_dfs = 3.54
-print( (dfs+xy_IF_idle+xy_LO)/1e9 )
-target_idx = np.searchsorted( (dfs+xy_IF_idle+xy_LO)/1e9, target_dfs, side="left")
-print(target_idx)
+def plot_sub( x, y, data, ro_name ):
 
-for i, (r, data) in enumerate(raw_data.items()):
-    if r not in ["paras","setting"]:
-        fig, ax = plt.subplots(2)
-        plot_ana_freq_time_rabi(data, dfs, time, xy_LO, xy_IF_idle, ax, iq_rotate[i])
-        ax[0].set_title(r)
-        # ax[1].set_title(r)
+    idata = data[0]
+    qdata = data[1]
+    zdata = idata +1j*qdata
+    s21 = zdata
+    print(x.shape, y.shape, zdata.shape)
 
-        zdata = (data[0]+1j*data[1])*np.exp(1j*iq_rotate[i])
-        # fig_2D, ax_2D = plt.subplots(2)
-        # ax_2D[0].scatter( time, np.real(zdata)[target_idx])
-        # ax_2D[1].scatter( time, np.imag(zdata)[target_idx])
+    fig, ax = plt.subplots()
+    # Add color bar to the axes
+    ax.set_title(ro_name)
+    pcm = ax.pcolormesh( x, y, np.transpose(idata), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    fig.colorbar(pcm)
 
-        # fig_iq, ax_iq = plt.subplots()
-        # ax_iq.scatter( 0, 0 )
-        # ax_iq.scatter( np.real(zdata)[target_idx], np.imag(zdata)[target_idx])
 
+
+dataset = xr.open_dataset(r"D:\Data\03205Q4C_6\q0_xy_idle_Rabi_20240404_1911.nc")
+
+# y = dataset.coords["amplitude"].values
+y = dataset.coords["time"].values
+
+freqs = dataset.coords["frequency"].values
+# Plot 
+for ro_name, data in dataset.data_vars.items():
+    xy_LO = dataset.attrs["ref_xy_LO"]/1e6
+    xy_IF_idle = dataset.attrs["ref_xy_IF"]/1e6
+    fig, ax = plt.subplots(2)
+    plot_ana_freq_time_rabi( data, freqs, y, xy_LO, xy_IF_idle, ax )
+    ax[0].set_title(ro_name)
+    ax[1].set_title(ro_name)
 plt.show()
 

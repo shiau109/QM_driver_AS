@@ -44,13 +44,13 @@ for i, (r, data) in enumerate(raw_data.items()):
 
 
 plt.show()
-from exp.save_data import *
-save_data = True
-if save_data:
-    from exp.save_data import save_npz
-    import sys
-    save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
-    save_npz(r"D:\Data\DR2_5Q", "Qc3450_iSWAP", osc_data) 
+# from exp.save_data import *
+# save_data = True
+# if save_data:
+#     from exp.save_data import save_npz
+#     import sys
+#     save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
+#     save_npz(r"D:\Data\DR2_5Q", "Qc3450_iSWAP", osc_data) 
 # def find_nearest_index(sorted_array, target):
 #     index = np.searchsorted(sorted_array, target, side="left")
     
