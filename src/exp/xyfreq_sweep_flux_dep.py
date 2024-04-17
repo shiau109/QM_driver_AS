@@ -21,6 +21,8 @@ def xyfreq_sweep_flux_dep( flux_range:tuple, flux_resolution:float, freq_range:t
 
     flux_range: \n
         is a tuple ( upper bound, lower bound), unit in voltage, ref to idle offset \n
+    flux_resolution: \n
+        unit in voltage.\n
     freq_range: \n
         is a tuple ( upper bound, lower bound), unit in MHz, ref to idle IF \n
     sweep_type: \n

@@ -18,12 +18,12 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(150000,mode='wait')
 
 
-ro_elements = ["q0_ro","q1_ro","q2_ro"]
-q_name = ['q0_xy','q1_xy','q2_xy']
+ro_elements = ["q0_ro"]
+q_name = ['q0_xy']
 n_avg = 100
 repeat = 1
-max_time = 4 #us
-time_resolution = 0.04 #us
+max_time = 2 #us
+time_resolution = 0.008 #us
 from exp.relaxation_time import *
 
 if repeat == 1:
