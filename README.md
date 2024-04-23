@@ -1,4 +1,9 @@
 pip install -e .
+
+
+
+
+
 # To add the module path into python site-packages with ***.pth*** file
 1. Add the whole QM_opt module path into the python site-packages folder. 
 2. Check the root to the QM_opt folder use: 

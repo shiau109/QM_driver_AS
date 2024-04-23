@@ -202,8 +202,8 @@ def single_timetrace(  ro_element, ref_ro_IF, freq:float, depletion_time:float, 
             # Measure the resonator (send a readout pulse and record the raw ADC trace)
             reset_phase(ro_element)
             play("readout",ro_element,duration=deplition_cc)
-            measure("readout" * amp(0), ro_element, adc_st)
-            # measure("readout", res, adc_st)
+            measure("readout" *amp(0), ro_element, adc_st)
+            # measure("readout", ro_element, adc_st)
 
 
 
@@ -263,9 +263,9 @@ if __name__ == '__main__':
 
     freq_range = ( -5, 5 )
     resolution = 0.1
-    depletion_time = 10
-    n_avg = 2000
-    ro_element = ['q0_ro']
+    depletion_time = 5
+    n_avg = 10000
+    ro_element = ['q4_ro']
     dataset = frequency_sweep_timetrace_outloop(freq_range,resolution,depletion_time, config, qmm, ro_element, n_avg)
     
     
@@ -293,7 +293,7 @@ if __name__ == '__main__':
     if save_data:
         from exp.save_data import save_nc
         import sys
-        save_nc(r"D:\Data\03205Q4C_6", f"{ro_element[0]}_res_decay", dataset)     
+        save_nc(r"D:\Data\03205Q4C_6", f"{ro_element[0]}_res_decay_dt{depletion_time}", dataset)     
 # Plot data
 # plt.figure()
 # plt.subplot(121)
