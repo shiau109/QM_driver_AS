@@ -4,6 +4,7 @@ from scipy.stats import norm
 from scipy.optimize import curve_fit
 from common_fitting_func import *
 
+
 def T2_hist(data, T2_max, signal_name):
     try:
         new_data = [x / 1000 for x in data]  # 將數據轉換成微秒
@@ -39,3 +40,15 @@ def T2_hist(data, T2_max, signal_name):
 your_data = [749,1000,1251,1480,320,2100,249]
 # 假设 T2_max = 3000
 T2_hist(your_data, 3, "your_signal_name")
+
+# # Assume ds1, ds2, and ds3 are xarray.Dataset objects you have previously created or loaded
+# ds1 = xr.Dataset()
+# datasets = [ds1, ds2, ds3]
+
+# # Merging the datasets
+# merged_dataset = xr.merge(datasets)
+# # Concatenating datasets along a new dimension (e.g., 'time')
+# concatenated_dataset = xr.concat(datasets, dim='time')
+# # Now, merged_dataset is a single xarray.Dataset containing all the data from ds1, ds2, and ds3
+# print(merged_dataset)
+
