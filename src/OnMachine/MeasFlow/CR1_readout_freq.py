@@ -21,13 +21,13 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(100000,mode='wait')
 
 # ro_elements = ['q0_ro','q1_ro','q2_ro']
-ro_elements = ["q0_ro","q1_ro","q2_ro"]
-operate_qubit = ['q0_xy']
-n_avg = 500
+ro_elements = ["q0_ro","q1_ro","q2_ro","q3_ro","q4_ro"]
+operate_qubit = ['q3_xy','q4_xy']
+n_avg = 400
 
 freq_range = (-5, 5)
 freq_resolution = 0.1
-dataset = freq_dep_signal( freq_range, freq_resolution, operate_qubit, ro_elements, n_avg, config, qmm, initializer=init_macro)
+dataset = freq_dep_signal( freq_range, freq_resolution, operate_qubit, ro_elements, n_avg, config, qmm, initializer=init_macro, amp_mod=1.0)
 transposed_data = dataset.transpose("mixer", "state", "frequency")
 
 dfs = transposed_data.coords["frequency"].values
@@ -40,7 +40,7 @@ for ro_name, data in transposed_data.data_vars.items():
 plt.show()
 
 #   Data Saving   # 
-save_data = True
+save_data = 0
 if save_data:
     from exp.save_data import save_nc
     save_nc(r"D:\Data\03205Q4C_6", f"ro_freq_{operate_qubit[0]}", dataset)
