@@ -10,10 +10,11 @@ from qualang_tools.plot.fitting import Fit
 # from common_fitting_func import gaussian
 from scipy.optimize import curve_fit
 import warnings
-from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
+from src.exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 import xarray as xr
 warnings.filterwarnings("ignore")
 from qualang_tools.units import unit
+import numpy as np
 u = unit(coerce_to_integer=True)
 
 def exp_relaxation_time(max_time, time_resolution, q_name:list, ro_element:list, config, qmm:QuantumMachinesManager, n_avg=100, initializer=None ):
