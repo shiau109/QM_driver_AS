@@ -10,13 +10,13 @@ from ab.QM_config_dynamic import initializer
 spec = import_spec( spec_loca )
 config = import_config( config_loca ).get_config()
 qmm, _ = spec.buildup_qmm()
-init_macro = initializer(100000,mode='wait')
+init_macro = initializer(300000,mode='wait')
 
 
-n_avg = 400
+n_avg = 200
 
-ro_element = ["q0_ro","q1_ro","q2_ro"]
-q_name =  "q0_xy"
+ro_element = ["q0_ro","q1_ro","q2_ro","q3_ro","q4_ro"]
+q_name =  "q4_xy"
 sequence_repeat = 1
 amp_modify_range = 0.4/float(sequence_repeat)
 from exp.SQGate_calibration import *
@@ -46,5 +46,5 @@ for ro_name, data in transposed_data.data_vars.items():
 
     ax.plot(amps,data[0][0], label="x90")
     ax.plot(amps,data[0][1], label="x180")
-
+    fig.legend()
 plt.show()

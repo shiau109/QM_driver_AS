@@ -14,11 +14,11 @@ from ab.QM_config_dynamic import initializer
 spec = import_spec( spec_loca )
 config = import_config( config_loca ).get_config()
 qmm, _ = spec.buildup_qmm()
-init_macro = initializer(100000,mode='wait')
+init_macro = initializer(300000,mode='wait')
 
 
-ro_elements = ['q1_ro']
-q_name = ['q1_xy']
+ro_elements = ["q0_ro","q1_ro","q2_ro","q3_ro","q4_ro"]
+q_name = ['q4_xy']
 n_avg = 200
 virtual_detune = 5.
 
