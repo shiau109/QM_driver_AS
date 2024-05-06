@@ -21,12 +21,12 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(1000,mode='wait')
 
 ro_elements = ["q0_ro","q1_ro","q2_ro","q3_ro","q4_ro"]
-z_elements = ['q4_z']
+z_elements = ['q2_z']
 n_avg = 200
-freq_range = (0,15)
+freq_range = (-10,10)
 freq_resolution = 0.1
 flux_range = (-0.3,0.3)
-flux_resolution = 0.02
+flux_resolution = 0.01
 dataset = freq_sweep_flux_dep(ro_elements, z_elements, config, qmm, freq_range=freq_range, freq_resolution=freq_resolution, flux_settle_time=1, flux_range=flux_range, flux_resolution=flux_resolution, n_avg=n_avg, initializer=init_macro)
 # dataset = freq_sweep_flux_dep_stable(ro_elements, z_elements, config, qmm, freq_range=freq_range, freq_resolution=freq_resolution, flux_settle_time=1, flux_range=flux_range, flux_resolution=flux_resolution, n_avg=n_avg, initializer=init_macro)
 
@@ -42,4 +42,4 @@ plt.show()
 save_data = True
 if save_data:
     from exp.save_data import save_nc  
-    save_nc(r"D:\Data\5Q4C_0411_3_DR4",f"flux_resonator_{z_elements[0]}",dataset)
+    save_nc(r"D:\Data\03205Q4C_6",f"flux_resonator_{z_elements[0]}",dataset)

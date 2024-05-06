@@ -109,18 +109,18 @@ def exp_ramsey(time_max,time_resolution,ro_element,xy_element,n_avg,config,qmm,v
         while results.is_processing():
             # Fetch results
             fetch_data = results.fetch_all()
-            # output_data = {}
-            # for r_idx, r_name in enumerate(ro_element):
-            #     ax[r_idx*2].cla()
-            #     ax[r_idx*2+1].cla()
-            #     output_data[r_name] = np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]])
+            output_data = {}
+            for r_idx, r_name in enumerate(ro_element):
+                ax[r_idx*2].cla()
+                ax[r_idx*2+1].cla()
+                output_data[r_name] = np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]])
 
-            #     # Plot I
-            #     ax[r_idx*2].set_ylabel("I quadrature [V]")
-            #     plot_ramsey_oscillation(evo_time, output_data[r_name][0], ax[r_idx*2])
-            #     # Plot Q
-            #     ax[r_idx*2+1].set_ylabel("Q quadrature [V]")
-            #     plot_ramsey_oscillation(evo_time, output_data[r_name][1], ax[r_idx*2+1])
+                # Plot I
+                ax[r_idx*2].set_ylabel("I quadrature [V]")
+                plot_ramsey_oscillation(evo_time, output_data[r_name][0], ax[r_idx*2])
+                # Plot Q
+                ax[r_idx*2+1].set_ylabel("Q quadrature [V]")
+                plot_ramsey_oscillation(evo_time, output_data[r_name][1], ax[r_idx*2+1])
 
     
             # Progress bar
@@ -172,7 +172,7 @@ def plot_ramsey_oscillation( x, y, ax=None ):
     """
     if ax == None:
         fig, ax = plt.subplots()
-    ax.plot(x, y, "-",label="positive")
+    ax.plot(x, y, "o",label="positive")
     ax.set_xlabel("Free Evolution Times [ns]")
     ax.legend()
     if ax == None:

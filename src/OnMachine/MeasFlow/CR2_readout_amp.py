@@ -18,16 +18,16 @@ from ab.QM_config_dynamic import initializer
 spec = import_spec( spec_loca )
 config = import_config( config_loca ).get_config()
 qmm, _ = spec.buildup_qmm()
-init_macro = initializer(200000,mode='wait')
+init_macro = initializer(100000,mode='wait')
 
 # ro_elements = ['q0_ro','q1_ro','q2_ro']
-ro_elements = ["q0_ro","q1_ro","q2_ro","q3_ro","q4_ro"]
-operate_qubit = ['q4_xy']
-n_avg = 400
+ro_elements = ["q0_ro","q1_ro","q2_ro"]
+operate_qubit = ['q0_xy','q1_xy','q2_xy']
+n_avg = 500
 
 
 amp_range = (0.1, 1.8)
-amp_resolution = 0.01
+amp_resolution = 0.02
 dataset = power_dep_signal( amp_range, amp_resolution, operate_qubit, ro_elements, n_avg, config, qmm, initializer=init_macro)
 
 transposed_data = dataset.transpose("mixer", "state", "amplitude_ratio")
@@ -43,7 +43,7 @@ plt.show()
     
 
 #   Data Saving   # 
-save_data = 0
+save_data = True
 if save_data:
     from exp.save_data import save_nc
     import sys

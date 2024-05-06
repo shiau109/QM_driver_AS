@@ -20,21 +20,21 @@ from ab.QM_config_dynamic import initializer
 spec = import_spec( spec_loca )
 config = import_config( config_loca ).get_config()
 qmm, _ = spec.buildup_qmm()
-init_macro = initializer(100000,mode='wait')
+init_macro = initializer(10000,mode='wait')
 
 
-ro_elements = ["q0_ro","q1_ro","q2_ro","q3_ro","q4_ro"]
-q_name = ['q4_xy'] 
-z_name = ['q3_z']
+ro_elements = ["q0_ro","q1_ro","q2_ro"]
+q_name = ['q0_xy'] 
+z_name = ['q5_z']
 
-saturation_len = 20  # In us (should be < FFT of df)
-saturation_ampRatio = 0.2 # pre-factor to the value defined in the config - restricted to [-2; 2)
+saturation_len = 10  # In us (should be < FFT of df)
+saturation_ampRatio = 0.1 # pre-factor to the value defined in the config - restricted to [-2; 2)
 n_avg = 200
 
-flux_range = (-0.1,0.1)
-flux_resolution = 0.01
+flux_range = (-0.5,0.05)
+flux_resolution = 0.005
 
-freq_range = (-300,+300)
+freq_range = (-200,200)
 freq_resolution = 2
 
 sweep_type = "z_pulse"# "z_pulse", "const_z", "two_tone"
@@ -58,4 +58,4 @@ plt.show()
 save_data = True
 if save_data:
     from exp.save_data import save_nc  
-    save_nc(r"D:\Data\5Q4C_0411_3_DR4",f"Spectrum_{q_name[0]}_{z_name[0]}",dataset)
+    save_nc(r"D:\Data\03205Q4C_6",f"Spectrum_{q_name[0]}_{z_name[0]}",dataset)

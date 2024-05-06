@@ -7,43 +7,43 @@ spec = import_spec( spec_loca )
 config_obj = import_config( config_loca )
 
 from config_component.update import update_ReadoutFreqs, update_Readout
-new_LO = 6.07
-rin_offset = (+0.01502-0.00016+7.9e-5,+0.01300+1.5e-5) # I,Q
+new_LO = 6.1
+rin_offset = (+0.01502-0.00016+7.9e-5,+0.01300+2.5e-5) # I,Q
 # rin_offset = (+0,+0) # I,Q
-tof = 280
+tof = 80
 # init_value of readout amp is 0.2
 # ,#
 # name, IF, amp, z, len, angle
 ro_infos = [
 {
         "name":"q0",
-        "IF": -161.2+4.71,
-        "amp": 0.2 *0.1*2,#*0.3*0.5*4*1.1 *0.8,#*0.65,
-        "length":400,
+        "IF": -164-0.3-2-0.1-0.1 -3.55,
+        "amp": 0.2,#*0.3*0.5*4*1.1 *0.8,#*0.65,
+        "length":2000,
         "phase": 345+11
     },{
         "name":"q1",
-        "IF": -58.1+2.3,
-        "amp": 0.2 *0.1,#*0.3*0.5*4*0.75 *0.8,
-        "length":400,
+        "IF": -62+0.7+0.15-0.3 -3.04,
+        "amp": 0.2,#*0.3*0.5*4*0.75 *0.8,
+        "length":2000,
         "phase": 17-33-7
     },{
         "name":"q2",
-        "IF": -213.1+0.28,
-        "amp": 0.2 *0.1,#*0.15*2*2*1.1 *0.8,
-        "length":400,
+        "IF": -207-1.6-1 -3.60,
+        "amp": 0.2,#*0.15*2*2*1.1 *0.8,
+        "length":2000,
         "phase": 291.7+86+10
     },{
         "name":"q3",
-        "IF": -34.7+4.2-0.4,
-        "amp": 0.2 *0.1*2*1.5*1.3,#*0.3*0.5 *0.8,
-        "length":400,
+        "IF": -45-0.5 +0.74,
+        "amp": 0.2,#*0.3*0.5 *0.8,
+        "length":2000,
         "phase": 0
     },{
         "name":"q4",
-        "IF":-127.4+1-0.5,
-        "amp": 0.2 *0.1*1.5*1.8*1.5*1.15*1.2*0.6,#*0.3*0.5 *0.8,
-        "length":400,
+        "IF":-118+0.2 -5.01,
+        "amp": 0.2,#*0.3*0.5 *0.8,
+        "length":2000,
         "phase": 0
     }
 ]

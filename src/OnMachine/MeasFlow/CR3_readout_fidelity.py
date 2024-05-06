@@ -7,13 +7,13 @@ from ab.QM_config_dynamic import initializer
 spec = import_spec( spec_loca )
 config = import_config( config_loca ).get_config()
 qmm, _ = spec.buildup_qmm()
-init_macro = initializer(300000,mode='wait')
+init_macro = initializer(100000,mode='wait')
 
 
 # resonators = ["q0_ro","q1_ro","q2_ro"]
-resonators =  ["q0_ro","q1_ro","q2_ro","q3_ro","q4_ro"]
-q_name = ["q1_xy","q2_xy","q3_xy","q4_xy"]
-shot_num = 20000
+resonators =  ["q0_ro","q1_ro","q2_ro"]
+q_name = ["q2_xy"]
+shot_num = 10000
 
 import matplotlib.pyplot as plt
 from analysis.state_distribution import train_model, create_img
@@ -37,8 +37,8 @@ for ro_name, data in transposed_data.data_vars.items(): # elapsed_time = np.roun
 
 
 plt.show()
-save_data = 1
+save_data = True
 if save_data:
     from exp.save_data import save_nc
     import sys
-    save_nc(r"D:\Data\5Q4C_0411_3_DR4", "ro_fidelity", dataset)   
+    save_nc(r"D:\Data\03205Q4C_6", "ro_fidelity", dataset)   

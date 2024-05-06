@@ -15,15 +15,15 @@ from ab.QM_config_dynamic import initializer
 spec = import_spec( spec_loca )
 config = import_config( config_loca ).get_config()
 qmm, _ = spec.buildup_qmm()
-init_macro = initializer(200000,mode='wait')
+init_macro = initializer(150000,mode='wait')
 
 
-ro_elements = ["q0_ro","q1_ro","q2_ro","q3_ro","q4_ro"]
-q_name = ['q3_xy','q4_xy']
+ro_elements = ["q0_ro"]
+q_name = ['q0_xy']
 n_avg = 100
 repeat = 1
-max_time = 80 #us
-time_resolution = 0.4 #us
+max_time = 2 #us
+time_resolution = 0.008 #us
 from exp.relaxation_time import *
 
 if repeat == 1:

@@ -13,39 +13,25 @@ import numpy as np
 xy_infos = [
     {
         "name":"q0",
-        "q_freq": 4.5,#5.0574, # GHz
-        "LO": 4.45, # GHz
-        "pi_amp": 0.1,
+        "q_freq": 4.15+0.001, # GHz
+        "LO": 4.25, # GHz
+        "pi_amp": 0.1*0.5*0.96*1.2*0.95*0.97,
         "pi_len": 40,
         "90_corr": 1.0
     },{
         "name":"q1",
-        "q_freq": 4.4, # GHz
-        "LO": 4.45, # GHz
-        "pi_amp": 0.1,
+        "q_freq": 4.070+0.011, # GHz
+        "LO": 3.8, # GHz
+        "pi_amp": 0.1*0.6*0.8*0.66,
         "pi_len": 40,
         "90_corr": 1.0*1.02
     },{
         "name":"q2",
-        "q_freq": 4.423, # GHz
-        "LO": 4.45, # GHz
-        "pi_amp": 0.1,
+        "q_freq": 4.17, # GHz
+        "LO": 4.25, # GHz
+        "pi_amp": 0.1*1.15,
         "pi_len": 40,
         "90_corr": 1.0
-    },{
-        "name":"q3",
-        "q_freq": 4.369+4e-3, # GHz
-        "LO": 4.45, # GHz
-        "pi_amp": 0.1*1.1*1.05*0.8,
-        "pi_len": 40,
-        "90_corr": 1.0/1.05
-    },{
-        "name":"q4",
-        "q_freq": 4.33-0e-3, # GHz
-        "LO": 4.45, # GHz
-        "pi_amp": 0.1*0.94*0.75,
-        "pi_len": 40,
-        "90_corr": 1.0*1.02
     }
 ]
 # name, q_freq(GHz), LO(GHz), amp, len, half
