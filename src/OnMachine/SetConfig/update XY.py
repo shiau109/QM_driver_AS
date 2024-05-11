@@ -13,7 +13,7 @@ import numpy as np
 xy_infos = [
     {
         "name":"q0",
-        "q_freq": 4.5,#5.0574, # GHz
+        "q_freq": 4.52,#5.0574, # GHz
         "LO": 4.45, # GHz
         "pi_amp": 0.1,
         "pi_len": 40,
@@ -27,7 +27,7 @@ xy_infos = [
         "90_corr": 1.0*1.02
     },{
         "name":"q2",
-        "q_freq": 4.423, # GHz
+        "q_freq": 4.422, # GHz
         "LO": 4.45, # GHz
         "pi_amp": 0.1,
         "pi_len": 40,
@@ -46,7 +46,40 @@ xy_infos = [
         "pi_amp": 0.1*0.94*0.75,
         "pi_len": 40,
         "90_corr": 1.0*1.02
-    }
+    },
+    
+    # {
+    #     "name":"q5",
+    #     "q_freq": 6.5, # GHz
+    #     "LO": 6.55, # GHz
+    #     "pi_amp": 0.2,
+    #     "pi_len": 40,
+    #     "90_corr": 1.0*1.02
+    # },
+    # {
+    #     "name":"q6",
+    #     "q_freq": 6.5, # GHz
+    #     "LO": 6.55, # GHz
+    #     "pi_amp": 0.2,
+    #     "pi_len": 40,
+    #     "90_corr": 1.0*1.02
+    # },
+    {
+        "name":"q7",
+        "q_freq": 4.15, # GHz
+        "LO": 4.2, # GHz
+        "pi_amp": 0.2,
+        "pi_len": 40,
+        "90_corr": 1.0*1.02
+    },
+    # {
+    #     "name":"q8",
+    #     "q_freq": 6.5, # GHz
+    #     "LO": 6.55, # GHz
+    #     "pi_amp": 0.2,
+    #     "pi_len": 40,
+    #     "90_corr": 1.0*1.02
+    # }
 ]
 # name, q_freq(GHz), LO(GHz), amp, len, half
 # update_info = [['q1', 4.526-0.005, 4.60, 0.2*0.9*1.05*1.01, 40, 1.03 ]]

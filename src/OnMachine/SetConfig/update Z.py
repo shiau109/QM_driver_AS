@@ -11,13 +11,13 @@ from config_component.update import update_z_offset
 z_infos = [
     {
         "name":"q0",
-        "offset":-0.02,
+        "offset":0.03,
     },{
         "name":"q1",
         "offset":0.07,
     },{
         "name":"q2",
-        "offset":0.035,
+        "offset":-0.02,
     },{
         "name":"q3",
         "offset":0.033,
@@ -26,13 +26,13 @@ z_infos = [
         "offset":0.025,
     },{
         "name":"q5",
-        "offset":0,
+        "offset":0.06,
     },{
         "name":"q6",
-        "offset":0.25,
+        "offset":-0.02,
     },{
         "name":"q7",
-        "offset":0.26,
+        "offset":-0.05,
     },{
         "name":"q8",
         "offset":0.205,

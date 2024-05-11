@@ -19,7 +19,7 @@ init_macro = initializer(1000,mode='wait')
 
 # Measurement
 n_avg = 100  # The number of averages
-ro_elements = ["q0_ro","q1_ro","q2_ro","q3_ro","q4_ro"]
+ro_elements = ["q2_ro"]
 from exp.rofreq_sweep_power_dep import *
 freq_range = (-15,15)
 freq_resolution = 0.1
@@ -36,9 +36,14 @@ for ro_name, data in dataset.data_vars.items():
     ax.set_title(ro_name)
     ax.set_xlabel("additional IF freq (MHz)")
     ax.set_ylabel("amp scale")
-plt.show()
+
+
 
 save_data = True
 if save_data:
-    from exp.save_data import save_nc  
-    save_nc(r"D:\Data\5Q4C_0411_6",f"power_dep_resonator",dataset)
+    from exp.save_data import save_nc, save_fig
+    save_dir = r"C:\Users\admin\SynologyDrive\09 Data\Fridge Data\Qubit\20240510_DR4_5Q4C_0411#6"
+    save_nc(save_dir, f"power_dep_resonator", dataset)
+    save_fig(save_dir, f"power_dep_resonator")
+
+plt.show()

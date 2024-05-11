@@ -1,6 +1,7 @@
 from datetime import datetime
 import sys
 import numpy as np
+import matplotlib.pyplot as plt
 
 def save_npz( save_dir, file_name, output_data:dict, suffix_time:bool=True ):
     save_path = f"{save_dir}/{file_name}"
@@ -18,5 +19,16 @@ def save_nc( save_dir, file_name, output_data:xr.Dataset, suffix_time:bool=True 
     if suffix_time:
         save_time = str(datetime.now().strftime("%Y%m%d_%H%M"))
         save_time = "_"+save_time
-    save_path = save_path+save_time+".nc" 
-    output_data.to_netcdf(save_path, output_data)
+    save_path = save_path+save_time+".nc"
+    output_data.to_netcdf(save_path)
+    # output_data.to_zarr(save_path)
+
+def save_fig( save_dir, file_name, suffix_time:bool=True):
+    save_path = f"{save_dir}/{file_name}"
+    save_time = ""
+    if suffix_time:
+        save_time = str(datetime.now().strftime("%Y%m%d_%H%M"))
+        save_time = "_"+save_time
+    save_path = save_path+save_time+".png"
+
+    plt.savefig(f"{save_path}", dpi = 500)
