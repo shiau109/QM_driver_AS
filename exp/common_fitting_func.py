@@ -2,7 +2,7 @@ import numpy as np
 from scipy.stats import norm
 from scipy.optimize import fsolve
 import matplotlib.pyplot as plt
-from configuration import *
+from exp.configuration import *
 
 def gaussian(x, mu, sigma):
     return norm.pdf(x, mu, sigma)
