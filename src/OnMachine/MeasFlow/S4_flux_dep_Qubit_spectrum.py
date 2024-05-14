@@ -23,18 +23,18 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(100000,mode='wait')
 
 
-ro_elements = ["q2_ro"]
+ro_elements = ["q7_ro"]
 q_name = ['q7_xy']
 z_name = ['q7_z']
 
 saturation_len = 20  # In us (should be < FFT of df)
-saturation_ampRatio = 0.1 # pre-factor to the value defined in the config - restricted to [-2; 2)
-n_avg = 200
+saturation_ampRatio = 1 # pre-factor to the value defined in the config - restricted to [-2; 2)
+n_avg = 100
 
 flux_range = (-0.4,0.4)
 flux_resolution = 0.01
 
-freq_range = (-100,50)
+freq_range = (-350,50)
 freq_resolution = 1
 
 sweep_type = "z_pulse"# "z_pulse", "const_z", "two_tone"
@@ -58,7 +58,7 @@ for i, (ro_name, data) in enumerate(dataset.data_vars.items()):
 save_data = True
 if save_data:
     from exp.save_data import save_nc, save_fig
-    save_dir = r"C:\Users\admin\SynologyDrive\09 Data\Fridge Data\Qubit\20240510_DR4_5Q4C_0411#6"
+    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240510_DR4_5Q4C_0411#6\00 raw data"
     save_nc(save_dir, f"Spectrum_{q_name[0]}_{z_name[0]}", dataset)
     save_fig(save_dir, f"Spectrum_{q_name[0]}_{z_name[0]}")
 

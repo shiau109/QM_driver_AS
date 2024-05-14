@@ -30,5 +30,7 @@ def save_fig( save_dir, file_name, suffix_time:bool=True):
         save_time = str(datetime.now().strftime("%Y%m%d_%H%M"))
         save_time = "_"+save_time
     save_path = save_path+save_time+".png"
-
+    figure = plt.gcf()
+    figure.set_size_inches(16, 8)
+    plt.tight_layout()
     plt.savefig(f"{save_path}", dpi = 500)

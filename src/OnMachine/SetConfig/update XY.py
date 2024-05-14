@@ -66,8 +66,8 @@ xy_infos = [
     # },
     {
         "name":"q7",
-        "q_freq": 4.15, # GHz
-        "LO": 4.2, # GHz
+        "q_freq": 5.3, # GHz
+        "LO": 5.35, # GHz
         "pi_amp": 0.2,
         "pi_len": 40,
         "90_corr": 1.0*1.02
