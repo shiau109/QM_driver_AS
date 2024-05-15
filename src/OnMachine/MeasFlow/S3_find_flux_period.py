@@ -23,9 +23,9 @@ init_macro = initializer(1000,mode='wait')
 ro_elements = ["q7_ro"]
 z_elements = ['q7_z']
 n_avg = 100
-freq_range = (-5,5)
+freq_range = (-10,10)
 freq_resolution = 0.1
-flux_range = (-0.4,0.4)
+flux_range = (-0.5,0.5)
 flux_resolution = 0.001
 dataset = freq_sweep_flux_dep(ro_elements, z_elements, config, qmm, freq_range=freq_range, freq_resolution=freq_resolution, flux_settle_time=1, flux_range=flux_range, flux_resolution=flux_resolution, n_avg=n_avg, initializer=init_macro)
 # dataset = freq_sweep_flux_dep_stable(ro_elements, z_elements, config, qmm, freq_range=freq_range, freq_resolution=freq_resolution, flux_settle_time=1, flux_range=flux_range, flux_resolution=flux_resolution, n_avg=n_avg, initializer=init_macro)
@@ -43,8 +43,8 @@ save_data = True
 if save_data:
     from exp.save_data import save_nc, save_fig
     save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240510_DR4_5Q4C_0411#6\00 raw data"
-    save_nc(save_dir, f"flux_resonator_{z_elements[0]}", dataset)
-    save_fig(save_dir, f"flux_resonator_{z_elements[0]}")
+    save_nc(save_dir, f"flux_resonator_{ro_elements[0]}_{z_elements[0]}", dataset)
+    save_fig(save_dir, f"flux_resonator_{ro_elements[0]}_{z_elements[0]}")
 
 
 plt.show()

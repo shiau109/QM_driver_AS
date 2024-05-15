@@ -56,18 +56,18 @@ xy_infos = [
     #     "pi_len": 40,
     #     "90_corr": 1.0*1.02
     # },
-    # {
-    #     "name":"q6",
-    #     "q_freq": 6.5, # GHz
-    #     "LO": 6.55, # GHz
-    #     "pi_amp": 0.2,
-    #     "pi_len": 40,
-    #     "90_corr": 1.0*1.02
-    # },
+    {
+        "name":"q6",
+        "q_freq": 6.638, # GHz
+        "LO": 6.7, # GHz
+        "pi_amp": 0.2,
+        "pi_len": 40,
+        "90_corr": 1.0*1.02
+    },
     {
         "name":"q7",
-        "q_freq": 5.3, # GHz
-        "LO": 5.35, # GHz
+        "q_freq": 6.1, # GHz
+        "LO": 6.15, # GHz
         "pi_amp": 0.2,
         "pi_len": 40,
         "90_corr": 1.0*1.02
