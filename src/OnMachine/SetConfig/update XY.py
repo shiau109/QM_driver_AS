@@ -61,7 +61,7 @@ xy_infos = [
         "q_freq": 6.638, # GHz
         "LO": 6.7, # GHz
         "pi_amp": 0.2,
-        "pi_len": 40,
+        "pi_len": 100,
         "90_corr": 1.0*1.02
     },
     {

@@ -17,13 +17,13 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(300000,mode='wait')
 
 
-ro_elements = ["q0_ro","q1_ro","q2_ro","q3_ro","q4_ro"]
-q_name = ['q4_xy']
-n_avg = 200
-virtual_detune = 5.
+ro_elements = ["q6_ro"]
+q_name = ['q6_xy']
+n_avg = 1000
+virtual_detune = 1
 
 from exp.ramsey import exp_ramsey,plot_ramsey_oscillation
-dataset = exp_ramsey( 20, 0.2, ro_elements, q_name, n_avg, config, qmm, virtual_detune=virtual_detune, initializer=init_macro)
+dataset = exp_ramsey( 20, 0.04, ro_elements, q_name, n_avg, config, qmm, virtual_detune=virtual_detune, initializer=init_macro)
 
 
 # Plot
@@ -36,12 +36,15 @@ for ro_name, data in dataset.data_vars.items():
     plot_ramsey_oscillation(time, data[0], ax[0])
     plot_ramsey_oscillation(time, data[1], ax[1])
 
-plt.show()
 
 
 
-save_data = False
+save_data = True
 if save_data:
-    from exp.save_data import save_nc
-    import sys
-    save_nc(r"D:\Data\DR2_5Q", "Q1_idle_Rabi", dataset) 
+    from exp.save_data import save_nc, save_fig
+    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240510_DR4_5Q4C_0411#6\00 raw data"
+    save_name = f"{q_name[0]}_T2"
+    save_nc(save_dir, save_name, dataset)
+    save_fig(save_dir, save_name)
+
+plt.show()

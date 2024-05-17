@@ -21,8 +21,8 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(200000,mode='wait')
 
 # ro_elements = ['q0_ro','q1_ro','q2_ro']
-ro_elements = ["q0_ro","q1_ro","q2_ro","q3_ro","q4_ro"]
-operate_qubit = ['q4_xy']
+ro_elements = ["q6_ro"]
+operate_qubit = ['q6_xy']
 n_avg = 400
 
 
@@ -39,12 +39,18 @@ for ro_name, data in transposed_data.data_vars.items():
     plot_amp_signal( amps, data, ro_name, ax[0] )
     plot_amp_signal_phase( amps, data, ro_name, ax[1] )
     fig.suptitle(f"{ro_name} RO amplitude")
-plt.show()
+
     
 
 #   Data Saving   # 
-save_data = 0
+save_data = True
 if save_data:
-    from exp.save_data import save_nc
+    from exp.save_data import save_nc, save_fig
     import sys
-    save_nc(r"D:\Data\03205Q4C_6", f"ro_amp_{operate_qubit[0]}", dataset)
+    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240510_DR4_5Q4C_0411#6\00 raw data"
+    save_name = f"ro_amp_{operate_qubit[0]}"
+    save_nc(save_dir, save_name, dataset)
+    save_fig(save_dir, save_name)
+
+plt.show()
+

@@ -21,26 +21,26 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(100000,mode='wait')
 
 
-ro_elements = ["q0_ro","q1_ro","q2_ro","q3_ro","q4_ro"]
-q_name = ['q0_xy']
-n_avg = 200
+ro_elements = ["q6_ro"]
+q_name = ['q6_xy']
+n_avg = 1000
 
-freq_range = (-50,50)
-freq_resolution = 2
-time_range = (16,400) # ns
-time_resolution = 8
+freq_range = (-5,5)
+freq_resolution = 0.5
+time_range = (16,1600) # ns
+time_resolution = 4
 
-amps_range = (0,1.5)
-amps_resolution = 0.02
+amps_range = (0,2.5)
+amps_resolution = 0.01
 
 from exp.config_par import *
 
-isPower = 1
+mode = "time" 
 
-if isPower:
+if mode == "power":
     dataset = xyfreq_power_rabi( freq_range, freq_resolution, amps_range, amps_resolution, q_name, ro_elements, config, qmm, initializer=init_macro, n_avg=n_avg, simulate=False)
     y = dataset.coords["amplitude"].values
-else:
+elif mode == "time":
     dataset = xyfreq_time_rabi( freq_range, freq_resolution, time_range, time_resolution, q_name, ro_elements, config, qmm, n_avg=n_avg, initializer=init_macro)
     y = dataset.coords["time"].values
 
@@ -53,7 +53,7 @@ for ro_name, data in dataset.data_vars.items():
     plot_ana_freq_time_rabi( data, freqs, y, xy_LO, xy_IF_idle, ax )
     ax[0].set_title(ro_name)
     ax[1].set_title(ro_name)
-plt.show()
+
 
 
 # output_data = freq_power_rabi( dfs, amps, q_name, ro_elements, config.get_config(), qmm, initializer=init_macro, n_avg=n_avg, simulate=False)
@@ -72,6 +72,11 @@ plt.show()
 
 save_data = True
 if save_data:
-    from exp.save_data import save_nc
+    from exp.save_data import save_nc, save_fig
     import sys
-    save_nc(r"D:\Data\5Q4C_0411_3_DR4", f"{q_name[0]}_idle_Rabi", dataset) 
+    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240510_DR4_5Q4C_0411#6\00 raw data"
+    save_name = f"{q_name[0]}_{mode}_Rabi"
+    save_nc(save_dir, save_name, dataset)
+    save_fig(save_dir, save_name)
+
+plt.show()
