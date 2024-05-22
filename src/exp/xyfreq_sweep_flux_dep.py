@@ -294,7 +294,7 @@ def plot_ana_flux_dep_qubit( data, flux, dfs, freq_LO, freq_IF, abs_z, ax=None, 
     """
     idata = data[0]
     qdata = data[1]
-    zdata = (idata +1j*qdata)*np.exp(iq_rotate)
+    zdata = (idata +1j*qdata)*np.exp(1j*(iq_rotate/180)*np.pi)
     s21 = zdata
 
     abs_freq = freq_LO+freq_IF+dfs
