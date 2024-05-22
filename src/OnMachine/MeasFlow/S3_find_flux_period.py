@@ -20,8 +20,12 @@ config = import_config( config_loca ).get_config()
 qmm, _ = spec.buildup_qmm()
 init_macro = initializer(1000,mode='wait')
 
-ro_elements = ["q7_ro"]
+# ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
+# z_elements = ['q0_z', 'q1_z', 'q2_z', 'q3_z', 'q4_z']
+
+ro_elements = ["q2_ro"]
 z_elements = ['q7_z']
+
 n_avg = 100
 freq_range = (-10,10)
 freq_resolution = 0.1
@@ -42,9 +46,11 @@ for ro_name, data in dataset.data_vars.items():
 save_data = True
 if save_data:
     from exp.save_data import save_nc, save_fig
-    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240510_DR4_5Q4C_0411#6\00 raw data"
-    save_nc(save_dir, f"flux_resonator_{ro_elements[0]}_{z_elements[0]}", dataset)
-    save_fig(save_dir, f"flux_resonator_{ro_elements[0]}_{z_elements[0]}")
+    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240521_DR4_5Q4C_0430#7\00 raw data"
+    save_name = f"flux_resonator_{ro_elements[0]}_{z_elements[0]}"
+
+    save_nc(save_dir, save_name, dataset)
+    save_fig(save_dir, save_name)
 
 
 plt.show()

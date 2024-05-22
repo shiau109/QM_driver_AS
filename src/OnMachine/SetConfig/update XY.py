@@ -13,73 +13,70 @@ import numpy as np
 xy_infos = [
     {
         "name":"q0",
-        "q_freq": 4.52,#5.0574, # GHz
-        "LO": 4.45, # GHz
+        "q_freq": 4.50, # GHz
+        "LO": 4.55, # GHz
         "pi_amp": 0.1,
         "pi_len": 40,
         "90_corr": 1.0
     },{
         "name":"q1",
-        "q_freq": 4.4, # GHz
-        "LO": 4.45, # GHz
+        "q_freq": 4.740, # GHz
+        "LO": 4.760, # GHz
         "pi_amp": 0.1,
         "pi_len": 40,
-        "90_corr": 1.0*1.02
+        "90_corr": 1.0
     },{
         "name":"q2",
-        "q_freq": 4.422, # GHz
-        "LO": 4.45, # GHz
+        "q_freq": 5.073, # GHz
+        "LO": 5.1, # GHz
         "pi_amp": 0.1,
         "pi_len": 40,
         "90_corr": 1.0
     },{
         "name":"q3",
-        "q_freq": 4.369+4e-3, # GHz
-        "LO": 4.45, # GHz
-        "pi_amp": 0.1*1.1*1.05*0.8,
+        "q_freq": 4.823, # GHz
+        "LO": 4.850, # GHz
+        "pi_amp": 0.1,
         "pi_len": 40,
-        "90_corr": 1.0/1.05
+        "90_corr": 1.0
     },{
         "name":"q4",
-        "q_freq": 4.33-0e-3, # GHz
-        "LO": 4.45, # GHz
-        "pi_amp": 0.1*0.94*0.75,
+        "q_freq": 5.207, # GHz
+        "LO": 5.25, # GHz
+        "pi_amp": 0.1,
         "pi_len": 40,
-        "90_corr": 1.0*1.02
-    },
-    
-    # {
-    #     "name":"q5",
-    #     "q_freq": 6.5, # GHz
-    #     "LO": 6.55, # GHz
-    #     "pi_amp": 0.2,
-    #     "pi_len": 40,
-    #     "90_corr": 1.0*1.02
-    # },
+        "90_corr": 1.0
+    }
+    ,
     {
+        "name":"q5",
+        "q_freq": 4.50, # GHz
+        "LO": 4.55, # GHz
+        "pi_amp": 0.1,
+        "pi_len": 40,
+        "90_corr": 1.0
+    },{
         "name":"q6",
-        "q_freq": 6.638, # GHz
-        "LO": 6.7, # GHz
-        "pi_amp": 0.2,
-        "pi_len": 100,
-        "90_corr": 1.0*1.02
-    },
-    {
-        "name":"q7",
-        "q_freq": 6.1, # GHz
-        "LO": 6.15, # GHz
-        "pi_amp": 0.2,
+        "q_freq": 7.323, # GHz
+        "LO": 7.36, # GHz
+        "pi_amp": 0.1,
         "pi_len": 40,
-        "90_corr": 1.0*1.02
+        "90_corr": 1.0
+    },{
+        "name":"q7",
+        "q_freq": 4.50, # GHz
+        "LO": 4.55, # GHz
+        "pi_amp": 0.1,
+        "pi_len": 40,
+        "90_corr": 1.0
+    },{
+        "name":"q8",
+        "q_freq": 4.50, # GHz
+        "LO": 4.55, # GHz
+        "pi_amp": 0.1,
+        "pi_len": 40,
+        "90_corr": 1.0
     },
-    # {
-    #     "name":"q8",
-    #     "q_freq": 6.5, # GHz
-    #     "LO": 6.55, # GHz
-    #     "pi_amp": 0.2,
-    #     "pi_len": 40,
-    #     "90_corr": 1.0*1.02
-    # }
 ]
 # name, q_freq(GHz), LO(GHz), amp, len, half
 # update_info = [['q1', 4.526-0.005, 4.60, 0.2*0.9*1.05*1.01, 40, 1.03 ]]

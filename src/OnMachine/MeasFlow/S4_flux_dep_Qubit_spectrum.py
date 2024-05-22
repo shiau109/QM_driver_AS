@@ -28,14 +28,14 @@ q_name = ['q6_xy']
 z_name = ['q6_z']
 
 saturation_len = 20  # In us (should be < FFT of df)
-saturation_ampRatio = 0.1 # pre-factor to the value defined in the config - restricted to [-2; 2)
-n_avg = 300
+saturation_ampRatio = 0.7 # pre-factor to the value defined in the config - restricted to [-2; 2)
+n_avg = 100
 
-flux_range = (-0.10,0.10)
-flux_resolution = 0.0001
+flux_range = (-0.1,0.1)
+flux_resolution = 0.001
 
-freq_range = (-350,20)
-freq_resolution = 0.2
+freq_range = (-350,50)
+freq_resolution = 1
 
 sweep_type = "two_tone"      # "z_pulse", "const_z", "two_tone"
 dataset = xyfreq_sweep_flux_dep( flux_range, flux_resolution, freq_range, freq_resolution, q_name, ro_elements, z_name, config, qmm, saturation_ampRatio=saturation_ampRatio, saturation_len=saturation_len, n_avg=n_avg, sweep_type=sweep_type, simulate=False)
@@ -58,9 +58,10 @@ for i, (ro_name, data) in enumerate(dataset.data_vars.items()):
 save_data = True
 if save_data:
     from exp.save_data import save_nc, save_fig
-    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240510_DR4_5Q4C_0411#6\00 raw data"
-    save_nc(save_dir, f"Spectrum_{q_name[0]}_{z_name[0]}_{sweep_type}", dataset)
-    save_fig(save_dir, f"Spectrum_{q_name[0]}_{z_name[0]}_{sweep_type}")
+    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240521_DR4_5Q4C_0430#7\00 raw data"
+    save_name = f"Spectrum_{q_name[0]}_{z_name[0]}_{sweep_type}"
+    save_nc(save_dir, save_name, dataset)
+    save_fig(save_dir, save_name)
 
 
 
