@@ -21,8 +21,8 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(100000,mode='wait')
 
 
-ro_elements = ["q6_ro"]
-q_name = ['q6_xy']
+ro_elements = ["q0_ro"]
+q_name = ['q0_xy']
 n_avg = 1000
 
 freq_range = (-5,5)
@@ -35,7 +35,7 @@ amps_resolution = 0.01
 
 from exp.config_par import *
 
-mode = "time" 
+mode = "power" #"power", "time"
 
 if mode == "power":
     dataset = xyfreq_power_rabi( freq_range, freq_resolution, amps_range, amps_resolution, q_name, ro_elements, config, qmm, initializer=init_macro, n_avg=n_avg, simulate=False)
@@ -74,7 +74,7 @@ save_data = True
 if save_data:
     from exp.save_data import save_nc, save_fig
     import sys
-    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240510_DR4_5Q4C_0411#6\00 raw data"
+    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240521_DR4_5Q4C_0430#7\00 raw data"
     save_name = f"{q_name[0]}_{mode}_Rabi"
     save_nc(save_dir, save_name, dataset)
     save_fig(save_dir, save_name)

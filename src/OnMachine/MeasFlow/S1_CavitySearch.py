@@ -20,9 +20,10 @@ init_macro = initializer(1000,mode='wait')
 
 # Measurement
 from exp.rofreq_sweep import *
-freq_range = (-300, 0)
-resolution = 1
-dataset = frequency_sweep(config,qmm,n_avg=1000,freq_range=freq_range, resolution=resolution,initializer=init_macro)  
+n_avg = 1000
+freq_range = (-170, -150)
+resolution = 0.1
+dataset = frequency_sweep(config,qmm,n_avg=n_avg,freq_range=freq_range, resolution=resolution,initializer=init_macro)  
 
 # Plot
 idata = dataset["q0_ro"].sel(mixer='I').values

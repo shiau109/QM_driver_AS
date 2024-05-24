@@ -12,24 +12,31 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(300000,mode='wait')
 
 
-from exp.ramsey_freq_calibration import *
-n_avg = 400  # Number of averages
+from exp.Ramsey_freq_calibration import *
+n_avg = 100  # Number of averages
 
 
-ro_element = ["q0_ro","q1_ro","q2_ro","q3_ro","q4_ro"]
-q_name =  ["q4_xy"]
+ro_element = ["q0_ro"]
+q_name =  ["q0_xy"]
 virtual_detune = 5 # Unit in MHz
 output_data, evo_time = ramsey_freq_calibration( virtual_detune, q_name, ro_element, config, qmm, n_avg=n_avg, simulate=False, initializer=init_macro)
-#   Data Saving   # 
-save_data = False
-if save_data:
-    from exp.save_data import save_nc
-    import sys
-    # save_nc(save_dir, save_progam_name, output_data)
+
 
 # for ro_element, data in output_data.items():
 #     plot_ana_result(evo_time,data[0],virtual_detune)
-plot_ana_result(evo_time,output_data[ro_element[4]][0],virtual_detune)
+plot_ana_result(evo_time,output_data[ro_element[0]][0],virtual_detune)
 
-# # Plot
+# #   Data Saving   # 
+
+save_data = True
+if save_data:
+    from exp.save_data import save_npz, save_nc, save_fig
+    import sys
+    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240521_DR4_5Q4C_0430#7\00 raw data"
+    save_name = f"{q_name[0]}_XYfreqCali"
+    # save_nc(save_dir, save_name, output_data)
+    # save_nc(save_dir, save_name+"_evo_line", evo_time)
+    save_fig(save_dir, save_name)
+
 plt.show()
+

@@ -11,10 +11,10 @@ from config_component.update import update_z_offset
 z_infos = [
     {
         "name":"q0",
-        "offset":0.23,
+        "offset":0.167,#0.175,
     },{
         "name":"q1",
-        "offset":0.18,
+        "offset":0.18 + 0.1,
     },{
         "name":"q2",
         "offset":0.2,
@@ -26,17 +26,18 @@ z_infos = [
         "offset":0.174,
     },{
         "name":"q5",
-        "offset":0.21,
+        "offset":0.152,
     },{
         "name":"q6",
         "offset":0.18,
     },{
         "name":"q7",
-        "offset":0.16,
-    },{
-        "name":"q8",
-        "offset":0.17,
+        "offset":0.1726,
     }
+    # ,{
+    #     "name":"q8",
+    #     "offset":0.184,
+    # }
 ]
 for i in z_infos:
     wiring = spec.get_spec_forConfig('wire')

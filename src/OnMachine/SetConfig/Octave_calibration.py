@@ -6,9 +6,7 @@ from OnMachine.SetConfig.set_octave import ElementsSettings, octave_settings
 
 # Configure the Octave parameters for each element
 rr0 = ElementsSettings("q0_ro", gain=0, rf_in_port=["octave1", 1], down_convert_LO_source="Internal")
-rr2 = ElementsSettings("q2_ro", gain=0, rf_in_port=["octave1", 1], down_convert_LO_source="Internal")
-rr6 = ElementsSettings("q6_ro", gain=0, rf_in_port=["octave1", 1], down_convert_LO_source="Internal")
-rr7 = ElementsSettings("q7_ro", gain=0, rf_in_port=["octave1", 1], down_convert_LO_source="Internal")
+
 
 q0_xy = ElementsSettings("q0_xy", gain=18)
 q1_xy = ElementsSettings("q1_xy", gain=18)
@@ -23,8 +21,8 @@ q8_xy = ElementsSettings("q8_xy", gain=18)
 # q2_xy = ElementsSettings("q2_xy", gain=15)
 
 # Add the "octave" elements
-# elements_settings = [rr6]
-elements_settings = [q6_xy]
+# elements_settings = [rr0]
+elements_settings = [q0_xy]
 
 
 ###################
