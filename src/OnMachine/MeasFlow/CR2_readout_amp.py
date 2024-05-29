@@ -21,8 +21,8 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(200000,mode='wait')
 
 # ro_elements = ['q0_ro','q1_ro','q2_ro']
-ro_elements = ["q6_ro"]
-operate_qubit = ['q6_xy']
+ro_elements = ["q3_ro"]
+operate_qubit = ['q3_xy']
 n_avg = 400
 
 
@@ -47,7 +47,7 @@ save_data = True
 if save_data:
     from exp.save_data import save_nc, save_fig
     import sys
-    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240510_DR4_5Q4C_0411#6\00 raw data"
+    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240521_DR4_5Q4C_0430#7\00 raw data"
     save_name = f"ro_amp_{operate_qubit[0]}"
     save_nc(save_dir, save_name, dataset)
     save_fig(save_dir, save_name)

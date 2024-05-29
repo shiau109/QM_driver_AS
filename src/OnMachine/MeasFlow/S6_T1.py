@@ -18,8 +18,8 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(200000,mode='wait')
 
 
-ro_elements = ["q6_ro"]
-q_name = ["q6_xy"]
+ro_elements = ["q0_ro"]
+q_name = ["q0_xy"]
 n_avg = 10000
 repeat = 1
 max_time = 50 #us
@@ -54,7 +54,7 @@ else:
 save_data = True
 if save_data:
     from exp.save_data import save_nc, save_fig
-    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240510_DR4_5Q4C_0411#6\00 raw data"
+    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240521_DR4_5Q4C_0430#7\00 raw data"
     save_name = f"{q_name[0]}_T1"
     save_nc(save_dir, save_name, dataset)
     save_fig(save_dir, save_name)

@@ -21,11 +21,11 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(100000,mode='wait')
 
 # ro_elements = ['q0_ro','q1_ro','q2_ro']
-ro_elements = ["q6_ro"]
-operate_qubit = ['q6_xy']
-n_avg = 500
+ro_elements = ["q3_ro"]
+operate_qubit = ['q3_xy']
+n_avg = 100
 
-freq_range = (-3, 3)
+freq_range = (-10, 10)
 freq_resolution = 0.01
 dataset = freq_dep_signal( freq_range, freq_resolution, operate_qubit, ro_elements, n_avg, config, qmm, initializer=init_macro, amp_mod=1.0)    # no progress (n/n_avg) showing
 transposed_data = dataset.transpose("mixer", "state", "frequency")
@@ -45,7 +45,7 @@ save_data = True
 if save_data:
     from exp.save_data import save_nc, save_fig
     import sys
-    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240510_DR4_5Q4C_0411#6\00 raw data"
+    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240521_DR4_5Q4C_0430#7\00 raw data"
     save_name = f"ro_freq_{operate_qubit[0]}"
     save_nc(save_dir, save_name, dataset)
     save_fig(save_dir, save_name)

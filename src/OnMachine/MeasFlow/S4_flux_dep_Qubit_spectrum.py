@@ -23,13 +23,13 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(100000,mode='wait')
 
 
-ro_elements = ["q0_ro"]
-q_name = ['q0_xy']
-z_name = ['q0_z']
+ro_elements = ["q4_ro"]
+q_name = ['q4_xy']
+z_name = ['q4_z']
 
 
 saturation_len = 2  # In us (should be < FFT of df)
-saturation_ampRatio = 0.1 # pre-factor to the value defined in the config - restricted to [-2; 2)
+saturation_ampRatio = 2 # pre-factor to the value defined in the config - restricted to [-2; 2)
 n_avg = 100
 
 flux_range = (-0.05,0.05)

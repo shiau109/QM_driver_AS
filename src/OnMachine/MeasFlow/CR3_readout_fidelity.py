@@ -11,8 +11,8 @@ init_macro = initializer(300000,mode='wait')
 
 
 # resonators = ["q0_ro","q1_ro","q2_ro"]
-resonators =  ["q6_ro"]
-q_name = ["q6_xy"]
+resonators =  ["q3_ro"]
+q_name = ["q3_xy"]
 shot_num = 20000
 
 import matplotlib.pyplot as plt
@@ -41,7 +41,7 @@ save_data = True
 if save_data:
     from exp.save_data import save_nc, save_fig
     import sys
-    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240510_DR4_5Q4C_0411#6\00 raw data"
+    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240521_DR4_5Q4C_0430#7\00 raw data"
     save_name = f"ro_fidelity_{q_name[0]}"
     save_nc(save_dir, save_name, dataset)
     save_fig(save_dir, save_name)

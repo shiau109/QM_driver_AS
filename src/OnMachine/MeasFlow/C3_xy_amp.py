@@ -15,8 +15,8 @@ init_macro = initializer(300000,mode='wait')
 
 n_avg = 1000
 
-ro_element = ["q0_ro"]
-q_name =  "q0_xy"
+ro_element = ["q3_ro"]
+q_name =  "q3_xy"
 sequence_repeat = 1
 amp_modify_range = 0.4/float(sequence_repeat)
 from exp.SQGate_calibration import *

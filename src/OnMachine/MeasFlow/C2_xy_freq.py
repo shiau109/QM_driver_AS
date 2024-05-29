@@ -16,8 +16,8 @@ from exp.Ramsey_freq_calibration import *
 n_avg = 100  # Number of averages
 
 
-ro_element = ["q0_ro"]
-q_name =  ["q0_xy"]
+ro_element = ["q3_ro"]
+q_name =  ["q3_xy"]
 virtual_detune = 5 # Unit in MHz
 output_data, evo_time = ramsey_freq_calibration( virtual_detune, q_name, ro_element, config, qmm, n_avg=n_avg, simulate=False, initializer=init_macro)
 
