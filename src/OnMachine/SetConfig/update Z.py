@@ -23,7 +23,7 @@ z_infos = [
         "offset":0.1957,
     },{
         "name":"q4",
-        "offset":0.1876,
+        "offset":0.1876     -0.01,
     },{
         "name":"q5",
         "offset":0.152,
