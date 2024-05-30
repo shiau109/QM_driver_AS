@@ -317,21 +317,28 @@ def plot_ana_flux_dep_qubit( data, flux, dfs, freq_LO, freq_IF, abs_z, ax=None, 
 
     ax[1].legend()
 
-def plot_ana_flux_dep_qubit_1D( data, flux, dfs, freq_LO, freq_IF, abs_z, ax=None, iq_rotate=0 ):
+
+
+def plot_ana_flux_dep_qubit_1D( data, flux, dfs, freq_LO, freq_IF, abs_z, ax=None, iq_rotate=0 ):   # 20240530 test by Sean
     """
     data shape ( 2, N, M )
     2 is I,Q
-    N is freq
-    M is flux
+    N is flux
+    M is freq
     """
     idata = data[0]
     qdata = data[1]
     zdata = (idata +1j*qdata)*np.exp(1j*(iq_rotate/180)*np.pi)  # data shape ( N, M )
     s21 = zdata
 
-    mid_flux_index = (len(flux)+1)//2
+    # print(np.shape(data))
+    # print(np.shape(flux))
+    # print(np.shape(dfs))
+    # print(np.shape(zdata))
+
+    mid_flux_index = (len(flux))//2
     mid_flux = abs_z + flux[mid_flux_index]
-    mid_zdata = zdata.transpose()[mid_flux_index]    # data shape ( N )
+    mid_zdata = zdata[mid_flux_index]    # data shape ( N )
 
     abs_freq = freq_LO+freq_IF+dfs
 
@@ -341,25 +348,12 @@ def plot_ana_flux_dep_qubit_1D( data, flux, dfs, freq_LO, freq_IF, abs_z, ax=Non
         fig.show()
 
     
-    ax[0].plot( abs_freq, np.real(mid_zdata), color='b' )
-    ax[1].plot( abs_freq, np.imag(mid_zdata), color='b' )
+    ax[0].plot( abs_freq, np.real(mid_zdata), color='b', label=f"flux = {mid_flux:.3f}V" )
+    ax[1].plot( abs_freq, np.imag(mid_zdata), color='b', label=f"flux = {mid_flux:.3f}V" )
 
-    ax[0].set_title(f"Flux = {mid_flux:.3f}V")
+    ax[1].set_xlabel('XY frequency [MHz]')
+    ax[0].set_ylabel('Amplitude [V]')
+    ax[1].set_ylabel('Amplitude [V]')
 
-
-
-
-    # pcm = ax[0].pcolormesh( abs_freq, abs_z+flux, np.real(zdata), cmap='RdBu')# , vmin=z_min, vmax=z_max)
-    # ax[0].axvline(x=freq_LO+freq_IF, color='b', linestyle='--', label='ref IF')
-    # ax[0].axvline(x=freq_LO, color='r', linestyle='--', label='LO')
-    # ax[0].axhline(y=abs_z, color='black', linestyle='--', label='idle z')
-    # plt.colorbar(pcm, label='Value')
-    # # Add a color bar
-    # ax[0].legend()
-    # pcm = ax[1].pcolormesh( abs_freq, abs_z+flux, np.imag(zdata), cmap='RdBu')# , vmin=z_min, vmax=z_max)
-    # ax[1].axvline(x=freq_LO+freq_IF, color='b', linestyle='--', label='ref IF')
-    # ax[1].axvline(x=freq_LO, color='r', linestyle='--', label='LO')
-    # ax[1].axhline(y=abs_z, color='black', linestyle='--', label='idle z')
-    # plt.colorbar(pcm, label='Value')
-
-    # ax[1].legend()
+    ax[0].legend()
+    ax[1].legend()
