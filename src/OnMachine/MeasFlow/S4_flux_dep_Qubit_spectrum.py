@@ -38,6 +38,8 @@ flux_resolution = 0.001
 freq_range = (-150,50)
 freq_resolution = 0.1
 
+# test
+
 sweep_type = "z_pulse"      # "z_pulse", "const_z", "two_tone"
 dataset = xyfreq_sweep_flux_dep( flux_range, flux_resolution, freq_range, freq_resolution, q_name, ro_elements, z_name, config, qmm, saturation_ampRatio=saturation_ampRatio, saturation_len=saturation_len, n_avg=n_avg, sweep_type=sweep_type, simulate=False)
 
