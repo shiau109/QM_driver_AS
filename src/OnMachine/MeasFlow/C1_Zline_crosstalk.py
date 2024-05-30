@@ -35,7 +35,7 @@ z_line = [f"{target}_z", f"{crosstalk}_z"]
 print(f"Z {target} offset {get_offset(z_line[0],config)} +/- {flux_modify_range*expect_crosstalk}")
 print(f"Z {crosstalk} offset {get_offset(z_line[1],config)} +/- {flux_modify_range}")
 if mode=="ramsey":
-    evo_time = 1
+    evo_time = 3
     output_data, f_t, f_c = ramsey_z_pulse( flux_modify_range, prob_q_name, ro_element, z_line, config, qmm, expect_crosstalk=expect_crosstalk, n_avg=n_avg, initializer=init_macro, simulate=False, evo_time=evo_time)
 elif mode=="long":
     evo_time = 10
