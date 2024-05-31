@@ -88,6 +88,17 @@ def update_z_offset(config:Configuration,zInfo:dict,wire:dict,mode:str="offset")
     else:
         raise ValueError("mode argument should be one of 'offset', 'OFFbias' or 'idle'!")       
 
+def update_z_crosstalk(config:Configuration,zInfo:dict,wire:dict):
+    '''
+        update the z crosstalk in config controllers belongs to the target qubit.\n
+        zInfo is the dict belongs to the target qubit returned by the func. `Circuit_info().update_zInfo_for()`\n
+    '''
+    ctrler_name, channel = wire["z"]
+    z_output = config.controllers[ctrler_name].analog_outputs
+
+    z_output[channel].crosstalk = zInfo["crosstalk"]   
+   
+
 def update_zConstWaveform(config,updatedZspec:dict):
     """
         Update the waveforms about 'const_flux_wf' in config.waveforms by the given updated z spec.
