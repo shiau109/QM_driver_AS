@@ -22,11 +22,11 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(100000,mode='wait')
 
 
-n_avg = 100
+n_avg = 1000
 expect_crosstalk = 0.01
 flux_modify_range = 0.3
 target = "q4"
-crosstalk = "q0"
+crosstalk = "q3"
 mode="ramsey"   #"long"
 prob_q_name = f"{target}_xy"
 ro_element = f"{target}_ro"
@@ -36,7 +36,7 @@ print(f"Z {target} offset {get_offset(z_line[0],config)} +/- {flux_modify_range*
 print(f"Z {crosstalk} offset {get_offset(z_line[1],config)} +/- {flux_modify_range}")
 if mode=="ramsey":
     evo_time = 3
-    output_data, f_t, f_c = ramsey_z_pulse( flux_modify_range, prob_q_name, ro_element, z_line, config, qmm, expect_crosstalk=expect_crosstalk, n_avg=n_avg, initializer=init_macro, simulate=True, evo_time=evo_time)
+    output_data, f_t, f_c = ramsey_z_pulse( flux_modify_range, prob_q_name, ro_element, z_line, config, qmm, expect_crosstalk=expect_crosstalk, n_avg=n_avg, initializer=init_macro, simulate=False, evo_time=evo_time)
 elif mode=="long":
     evo_time = 10
     amp_ratio = 0.05

@@ -78,10 +78,10 @@ from config_component.construct import create_qubit, create_roChannel, create_zC
 for x_wire in [("q0",("con2",7),("con2",8)), ("q1",("con1",7),("con1",8)), ("q2",("con2",1),("con2",2)), ("q3",("con2",3),("con2",4)), ("q4",("con2",7),("con2",8)), ("q5",("con1",3),("con1",4)), ("q6",("con1",7),("con1",8)), ("q7",("con2",1),("con2",2)), ("q8",("con2",3),("con2",4))]:
     specs.update_WireInfo_for(x_wire[0],xy_I=x_wire[1],xy_Q=x_wire[2])
 
-for z_wire in [("q0",("con1",5)), ("q1",("con1",6)), ("q2",("con1",9)), ("q3",("con1",10)), ("q4",("con1",4))]:
+for z_wire in [("q0",("con1",5)), ("q1",("con1",6)), ("q2",("con1",9)), ("q3",("con1",10)), ("q4",("con2",5))]:
     specs.update_WireInfo_for(z_wire[0],z=z_wire[1])
 
-for z_wire in [("q5",("con2",6)), ("q6",("con2",9)), ("q7",("con2",10)), ("q8",("con2",5))]:
+for z_wire in [("q5",("con2",6)), ("q6",("con2",9)), ("q7",("con2",10)), ("q8",("con1",4))]:
     specs.update_WireInfo_for(z_wire[0],z=z_wire[1])
 
 for q_idx in range(qubit_num):
