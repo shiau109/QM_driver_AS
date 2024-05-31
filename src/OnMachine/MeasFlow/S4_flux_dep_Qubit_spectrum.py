@@ -23,9 +23,9 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(100000,mode='wait')
 
 
-ro_elements = ["q2_ro"]
-q_name = ['q2_xy']
-z_name = ['q2_z']
+ro_elements = ["q4_ro"]
+q_name = ['q4_xy']
+z_name = ['q4_z']
 
 
 saturation_len = 2  # In us (should be < FFT of df)
