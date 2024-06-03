@@ -21,8 +21,8 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(100000,mode='wait')
 
 
-ro_elements = ["q7_ro"]
-q_name = ['q7_xy']
+ro_elements = ["q2_ro"]
+q_name = ['q2_xy']
 n_avg = 1000
 
 freq_range = (-5,5)

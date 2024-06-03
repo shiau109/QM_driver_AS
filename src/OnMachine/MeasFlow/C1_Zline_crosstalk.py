@@ -25,7 +25,7 @@ init_macro = initializer(100000,mode='wait')
 n_avg = 1000
 expect_crosstalk = 0.01
 flux_modify_range = 0.3
-target = "q4"
+target = "q2"
 crosstalk = "q3"
 mode="ramsey"   #"long"
 prob_q_name = f"{target}_xy"

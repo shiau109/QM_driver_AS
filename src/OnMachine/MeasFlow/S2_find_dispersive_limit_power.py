@@ -19,7 +19,7 @@ init_macro = initializer(1000,mode='wait')
 
 # Measurement
 n_avg = 100  # The number of averages
-ro_elements = ["q0_ro"]
+ro_elements = ["q1_ro"]
 from exp.rofreq_sweep_power_dep import *
 freq_range = (-15,15)
 freq_resolution = 0.1

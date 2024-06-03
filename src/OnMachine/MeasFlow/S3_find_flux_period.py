@@ -23,8 +23,8 @@ init_macro = initializer(1000,mode='wait')
 # ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
 # z_elements = ['q0_z', 'q1_z', 'q2_z', 'q3_z', 'q4_z']
 
-ro_elements = ["q7_ro"]
-z_elements = ['q7_z']
+ro_elements = ["q2_ro"]
+z_elements = ['q2_z']
 
 n_avg = 100
 freq_range = (-5,5)
