@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 from sklearn.mixture import GaussianMixture
+from scipy import constants
 
 
 class GMM_model():
@@ -101,7 +102,7 @@ def train_model( data ):
     my_model.relabel_model(data[0])
     return my_model
 
-def create_img( data, dist_model, fig=None, label="" ):
+def create_img( data, dist_model, f01_Hz:float=0, fig=None, label="" ) -> tuple[plt.Figure, float, float]:
 
     """
     data type
@@ -109,6 +110,9 @@ def create_img( data, dist_model, fig=None, label="" ):
     shape[0] is prepare state
     shape[1] is I and Q
     shape[2] is N times single shot
+    --------------------------------
+    ## Return\n
+    Fig, T_eff (mK) and thermal population
     
     """
 
@@ -180,8 +184,12 @@ def create_img( data, dist_model, fig=None, label="" ):
     print(centers)
     pos = get_proj_distance(centers,centers.transpose())
     dis = np.abs(pos[1]-pos[0])
-    make_distribution( pos, sigma, get_proj_distance(centers,prepare_0_data), 0, ax_hist_0)
-    make_distribution( pos, sigma, get_proj_distance(centers,prepare_1_data), 1, ax_hist_1)
+    p0in0, p0in1 = make_distribution( pos, sigma, get_proj_distance(centers,prepare_0_data), 0, ax_hist_0)
+    p1in0, p1in1 = make_distribution( pos, sigma, get_proj_distance(centers,prepare_1_data), 1, ax_hist_1)
+    if f01_Hz != 0:
+        T_eff = 1000*constants.h*(f01_Hz)/constants.Boltzmann/np.log((1-2*p0in1)/p0in1+1)
+        fig.test(0.05,0.15,f"T_eff={T_eff:.3f} mK", fontsize=20)
+
 
     snr = dis/sigma
     fig.text(0.05,0.35,f"Readout Fidelity={1-(prepare_0_dist[1]+prepare_1_dist[0])/2:.3f}", fontsize = 20)
@@ -193,7 +201,7 @@ def create_img( data, dist_model, fig=None, label="" ):
     # img_buf = io.BytesIO()
     # fig.savefig(img_buf, format='png')
     # plt.close(fig)
-    return fig
+    return fig, T_eff, p0in1
 
 import matplotlib as mpl
 colors = ["blue", "red"]
@@ -246,7 +254,7 @@ def make_scatter_dist(data, ax):
 
 from lmfit.models import GaussianModel
 from lmfit.model import ModelResult
-def make_distribution( mu, sigma, data, prepare_state:int, ax):
+def make_distribution( mu, sigma, data, prepare_state:int, ax)->tuple[float, float]:
 
     dis = np.abs(mu[1]-mu[0])
     est_peak_h = 1/sigma
@@ -283,6 +291,8 @@ def make_distribution( mu, sigma, data, prepare_state:int, ax):
     ax.text(0.07,0.9,f"P({prepare_state}|0)={probability[0]:.3f}", fontsize = 20, transform=ax.transAxes)
     ax.text(0.07,0.8,f"P({prepare_state}|1)={probability[1]:.3f}", fontsize = 20, transform=ax.transAxes)
     ax.set_xlabel('Projected Voltage Signal', fontsize=20)
+
+    return probability[0], probability[1]
 
 def make_histogram(bin_center, data, ax):
     """
