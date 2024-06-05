@@ -780,7 +780,7 @@ def plot_DR_tempera(start_date:str="",start_time:str="",temp_chennel:int=6,DR_lo
         dr_info["yerr"] = zeros(dr_temp_array.shape[0]).tolist()
     return axDR, dr_info
 
-def scat_DR_avg_temp(need_log_info:dict,DR_log_folder_path:str="",ax:plt.Axes=None,temp_chennel:int=6)->tuple[plt.Axes, plt.Axes]:
+def scat_DR_avg_temp(need_log_info:dict,sample_folder_name:str="",conditional_folder_name:str="",DR_log_folder_path:str="",ax:plt.Axes=None,temp_chennel:int=6)->tuple[plt.Axes, plt.Axes]:
     """ 
     `need_log_info` follows the form: {temp:{"keep_time_min", "start_date", "start_time", "avg_min_from_the_end"}}
     """
@@ -799,9 +799,16 @@ def scat_DR_avg_temp(need_log_info:dict,DR_log_folder_path:str="",ax:plt.Axes=No
     x_axis = []
     for temperature in need_log_info:
         exp_keep_time_min:int = need_log_info[temperature]["keep_time_min"]
-        start_date:str = need_log_info[temperature]["start_date"]
-        start_time:str = need_log_info[temperature]["start_time"]
         avg_min_from_the_end:int = need_log_info[temperature]["avg_min_from_the_end"]
+        try:
+            other_info = {}
+            with open(os.path.join(meas_raw_dir,sample_folder_name,conditional_folder_name,temperature,"otherInfo.json")) as JJ:
+                other_info = json.load(JJ)
+            start_date:str = other_info[target_q]["start_time"].split(" ")[0]
+            start_time:str = other_info[target_q]["start_time"].split(" ")[-1]
+        except:
+            start_date:str = need_log_info[temperature]["start_date"]
+            start_time:str = need_log_info[temperature]["start_time"]
 
         if DR_log_folder_path == "" or start_date == "" or start_time == "":
             pass
@@ -924,8 +931,17 @@ def scat_ref_temp_dep(ax:plt.Axes,ref_dict_b4:dict={},ref_dict_recover:dict={}, 
 #                         ==============
 
 def time_trend_artist(tempera_folder:str, target_q:str, exp_catas:list, time_past_sec_array:ndarray, ref_before:dict, ref_recove:dict, DR_time_info:dict, log_folder:str, DRtemp_che:int=6, show:bool=0):
-    start_date = DR_time_info["start_date"]
-    start_time = DR_time_info["start_time"]
+    try:
+        other_info = {}
+        with open(os.path.join(tempera_folder,"otherInfo.json")) as JJ:
+            other_info = json.load(JJ)
+        start_date = other_info[target_q]["start_time"].split(" ")[0]
+        start_time = other_info[target_q]["start_time"].split(" ")[-1]
+    except:
+        print("OtherInfo.json didn't work!")
+        start_date = DR_time_info["start_date"]
+        start_time = DR_time_info["start_time"]
+
     temperature = os.path.split(tempera_folder)[-1]
     if temperature[:2] == "re":
         action = "OFF"
