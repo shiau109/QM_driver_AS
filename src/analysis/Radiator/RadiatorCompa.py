@@ -1,5 +1,5 @@
 """
-This program is only for analyzing a series of radiation tests like 0K, 20K 40K 60K and re0K with/without shielding. This didn't support comparison between with and without shielding
+This program supports comparison between with / without shielding, or other conditional comparisom.
 """
 import os, sys, time, json
 from pandas import DataFrame as DF
