@@ -807,8 +807,12 @@ def scat_DR_avg_temp(need_log_info:dict,sample_folder_name:str="",conditional_fo
             start_date:str = other_info[target_q]["start_time"].split(" ")[0]
             start_time:str = other_info[target_q]["start_time"].split(" ")[-1]
         except:
-            start_date:str = need_log_info[temperature]["start_date"]
-            start_time:str = need_log_info[temperature]["start_time"]
+            try:
+                start_date:str = need_log_info[temperature]["start_date"]
+                start_time:str = need_log_info[temperature]["start_time"]
+            except:
+                start_date = ""
+                start_time = ""
 
         if DR_log_folder_path == "" or start_date == "" or start_time == "":
             pass
@@ -939,8 +943,12 @@ def time_trend_artist(tempera_folder:str, target_q:str, exp_catas:list, time_pas
         start_time = other_info[target_q]["start_time"].split(" ")[-1]
     except:
         print("OtherInfo.json didn't work!")
-        start_date = DR_time_info["start_date"]
-        start_time = DR_time_info["start_time"]
+        try:
+            start_date = DR_time_info["start_date"]
+            start_time = DR_time_info["start_time"]
+        except:
+            start_date = ""
+            start_time = ""
 
     temperature = os.path.split(tempera_folder)[-1]
     if temperature[:2] == "re":
