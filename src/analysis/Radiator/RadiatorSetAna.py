@@ -972,8 +972,15 @@ def time_trend_artist(tempera_folder:str, target_q:str, exp_catas:list, time_pas
             plt.show()
 
 def temp_depen_artist(temperature_list:list, target_q:str, sample_folder:str, conditional_folder:str, log_info_dict:dict, exp_catas:list, ref_before:dict={}, ref_recove:dict={}, log_folder="", tempera_che:int=6):
+    avg_time_list = []
+    for temp in temperature_list: 
+        try:
+            avg_time_list.append(log_info_dict[temp]["avg_min_from_the_end"])
+        except:
+            avg_time_list.append(60)
+    
     for exp in exp_item_translator(exp_catas):
-        ax, keep_time_info, conditional_folder_path, axes_info = plot_stable_temp_dep(temperature_list,exp,[log_info_dict[temp]["avg_min_from_the_end"] for temp in temperature_list], sample_folder, conditional_folder)
+        ax, keep_time_info, conditional_folder_path, axes_info = plot_stable_temp_dep(temperature_list,exp,avg_time_list, sample_folder, conditional_folder)
         for tempera in log_info_dict:
             log_info_dict[tempera]["keep_time_min"] = keep_time_info[tempera]
         ax, handles, labels, ref_info = scat_ref_temp_dep(ax,ref_before,ref_recove,exp)
@@ -1020,8 +1027,8 @@ if __name__ == '__main__':
     #                  "40K-2":{"start_date":"", "start_time":"", "avg_min_from_the_end":60},
     #                  "60K-2":{"start_date":"", "start_time":"", "avg_min_from_the_end":60}
     #                 }
-    log_info_dict = {"10K":{"start_date":"2024-05-13", "start_time":"17:25", "avg_min_from_the_end":60},
-                     "20K":{"start_date":"2024-05-14", "start_time":"10:45", "avg_min_from_the_end":60},
+    log_info_dict = {"10K":{"start_date":"2024-05-13", "start_time":"17:25", "avg_min_from_the_end":60}, # if keyname 'avg_min_from_the_end' is not inside, the default is 60 minutes
+                     "20K":{"start_date":"2024-05-14", "start_time":"10:45", "avg_min_from_the_end":60}, # 'start_date' and 'start_time' are not neccessary if otherInfo have them.
                      "40K":{"start_date":"2024-05-14", "start_time":"16:15", "avg_min_from_the_end":60},
                      "60K":{"start_date":"2024-05-15", "start_time":"09:15", "avg_min_from_the_end":60},
                     #"re0K":{"start_date":"2024-05-15", "start_time":"15:43", "avg_min_from_the_end":60}
