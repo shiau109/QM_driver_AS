@@ -23,7 +23,7 @@ from exp.ramsey import statistic_T2_exp
 from exp.readout_fidelity import readout_fidelity
 
 # * Check here when you want an analysis please! 
-meas_raw_dir = "C:/Data/20240424_5q/10K~60K"
+meas_raw_dir = "/Users/ratiswu/Downloads"
 
 # def create_folder(idx:int,temperature:str,result:bool=False):
 #     # Parent Directory path 

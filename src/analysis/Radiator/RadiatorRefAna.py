@@ -5,12 +5,12 @@ from src.analysis.Radiator.RadiatorSetAna import main_analysis, get_references_f
 
 
 """ Manually fill in """
-target_q = 'q0'
-conditional_folder = "Radiator_WS"          # the previous folder from temperature folder     
-sample_folder = "Radiator_wisconsinQ1"     # the previous folder from conditional_folder
+target_q = 'q3'    
+sample_folder = "AS_radiator"     # the previous folder from conditional_folder
+conditions = "WS"          # the previous folder from temperature folder 
 
 # ? Save the references from a mK set
-ref_info = {"before":{"save_ref_to_json":False, "mK_folder_path":""},"recover":{"save_ref_to_json":False, "mK_folder_path":""}}
+ref_info = {"before":{"save_ref_to_json":True, "mK_folder_path":"/Users/ratiswu/Downloads/AS_radiator/WS/4K"},"recover":{"save_ref_to_json":False, "mK_folder_path":""}}
 
 # save reference
 for ref_type in ref_info:
@@ -18,4 +18,4 @@ for ref_type in ref_info:
         if ref_info[ref_type]["mK_folder_path"] != "":
             main_analysis(target_q, ref_info[ref_type]["mK_folder_path"])
             ref_dict = get_references_from_ResultJson(ref_info[ref_type]["mK_folder_path"])
-            save_ref(ref_dict,target_q,sample_name=sample_folder,conditional_name=conditional_folder,ref_type=ref_type)
+            save_ref(ref_dict,target_q,sample_name=sample_folder,conditional_name=conditions,ref_type=ref_type)

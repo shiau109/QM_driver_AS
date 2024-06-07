@@ -188,7 +188,7 @@ def create_img( data, dist_model, f01_Hz:float=0, fig=None, label="" ) -> tuple[
     p1in0, p1in1 = make_distribution( pos, sigma, get_proj_distance(centers,prepare_1_data), 1, ax_hist_1)
     if f01_Hz != 0:
         T_eff = 1000*constants.h*(f01_Hz)/constants.Boltzmann/np.log((1-2*p0in1)/p0in1+1)
-        fig.test(0.05,0.15,f"T_eff={T_eff:.3f} mK", fontsize=20)
+        fig.text(0.05,0.15,f"T_eff={T_eff:.3f} mK", fontsize=20)
 
 
     snr = dis/sigma

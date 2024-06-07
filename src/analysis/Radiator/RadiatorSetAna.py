@@ -354,11 +354,11 @@ def sort_set(name_list:list, by_which_num_idx:str):
 def sort_files(file_name_list:list):
     T1_file, T2_file, SS_file = [], [], []
     for file_name in file_name_list:
-        if file_name.split("_")[1].split("(")[0] == 'T1':
+        if file_name.split("]")[-1].split("_")[1] == 'T1':
             T1_file.append(file_name)
-        elif file_name.split("_")[1].split("(")[0] == 'T2':
+        elif file_name.split("]")[-1].split("_")[1] == 'T2':
             T2_file.append(file_name)
-        elif file_name.split("_")[1].split("(")[0] == 'SingleShot':
+        elif file_name.split("]")[-1].split("_")[1] == 'readout':
             SS_file.append(file_name)
     
     sort_set(T1_file,3)
@@ -524,13 +524,12 @@ def main_analysis(target_q:str, temperature_folder_path:str, mode:str='all' ):
         gamma2_MHz = []
         effT_mK = []
         therm_pop = []
-
         for file_name in files: # in a single set
             exp_type = file_name.split("]")[-1].split("_")[1] # T1/ T2/ readout
             file_path = os.path.join(folder_path,file_name)
+            exp_idx = file_name.split("]")[-1].split("_")[2].split("(")[-1].split(")")[0]
             match exp_type:
                 case "readout":
-                    exp_idx = file_name.split("]")[-1].split("_")[2].split("(")[-1].split(")")[0]
                     dataset = open_dataset(file_path).transpose("mixer","state","index")
                     for ro_name, data in dataset.data_vars.items():
                         new_data = moveaxis(data.values*1000,1,0)
@@ -583,7 +582,6 @@ def main_analysis(target_q:str, temperature_folder_path:str, mode:str='all' ):
         
         # calc T1
         T1s.append(T1_us)
-        
         gamma1s.append(gamma1_MHz)
         T1_us = array(T1_us)
         gamma1_MHz = array(gamma1_MHz)
@@ -591,8 +589,7 @@ def main_analysis(target_q:str, temperature_folder_path:str, mode:str='all' ):
         sd_T1_us = round(std(T1_us[T1_us != 0]),1)
         info_dict["T1"]["avg"], info_dict["T1"]["std"] = mean_T1_us, sd_T1_us
         info_dict["gamma1"]["avg"], info_dict["gamma1"]["std"] = round(mean(gamma1_MHz[gamma1_MHz != 0]),2), round(std(gamma1_MHz[gamma1_MHz != 0]),2)
-        histo_path = os.path.join(result_folder,f"T1-histo-S{set_idx}.png")
-        hist_plot("nobu",{"nobu":T1_us},f"S{set_idx}, T1={mean_T1_us}+/-{sd_T1_us} us",histo_path, False)
+        
         # calc T2
         T2s.append(T2_us)
         gamma2s.append(gamma2_MHz)
@@ -602,8 +599,7 @@ def main_analysis(target_q:str, temperature_folder_path:str, mode:str='all' ):
         sd_T2_us = round(std(T2_us[T2_us != 0]),1)
         info_dict["T2"]["avg"], info_dict["T2"]["std"] = mean_T2_us, sd_T2_us
         info_dict["gamma2"]["avg"], info_dict["gamma2"]["std"] = round(mean(gamma2_MHz[gamma2_MHz != 0]),2), round(std(gamma2_MHz[gamma2_MHz != 0]),2)
-        histo_path = os.path.join(result_folder,f"T2-histo-S{set_idx}.png")
-        hist_plot("nobu",{"nobu":T2_us[T2_us != 0]},f"S{set_idx}, T2={mean_T2_us}+/-{sd_T2_us} us",histo_path, False)
+
         # calc OnsShot
         effTs.append(effT_mK)
         thermalpops.append(therm_pop)
@@ -799,7 +795,7 @@ def scat_DR_avg_temp(need_log_info:dict,sample_folder_name:str="",conditional_fo
     x_axis = []
     for temperature in need_log_info:
         exp_keep_time_min:int = need_log_info[temperature]["keep_time_min"]
-        avg_min_from_the_end:int = need_log_info[temperature]["avg_min_from_the_end"]
+        avg_min_from_the_end:int = need_log_info[temperature]["avg_min_from_the_end"] if "avg_min_from_the_end" in  need_log_info[temperature] else 60
         try:
             other_info = {}
             with open(os.path.join(meas_raw_dir,sample_folder_name,conditional_folder_name,temperature,"otherInfo.json")) as JJ:
@@ -1009,16 +1005,16 @@ def TimeMonitor_tempCompa(temp_name_list:list, target_q, exp_catas, sample_folde
 if __name__ == '__main__':
     # // If you wanna plot DR temperature, "start_date" and "start_time" in log_info_dict and also log_folder ALL should be given !
     # *********** Manully settings ***********
-    analysis:bool = 0         # analysis or not. Once u had analyzed, u won't need it again
-    plot_time_trend:bool = 0          # If there is only one element in `log_info_dict`, polt the time monitoring, which is time as the x-axis.
-    always_plot_timeTrend:bool = 0    # if there are more than one element in `log_info_dict`, turn on this will plot time monitoring for all elements. 
-    plot_temp_dependence: bool = 0      # if there are more than one element in `log_info_dict`, plot the radiator-temp dependence, radiator_temp as x-asix. 
+    analysis:bool = 0       # analysis or not. Once u had analyzed, u won't need it again
+    plot_time_trend:bool = 1          # If there is only one element in `log_info_dict`, polt the time monitoring, which is time as the x-axis.
+    always_plot_timeTrend:bool = 0   # if there are more than one element in `log_info_dict`, turn on this will plot time monitoring for all elements. 
+    plot_temp_dependence: bool = 1      # if there are more than one element in `log_info_dict`, plot the radiator-temp dependence, radiator_temp as x-asix. 
     plot_tempComp_alongTime:bool = 0   # plot data of different radiator temp along time as x-axis.
     
-    target_q = 'q0'
+    target_q = 'q3'
     exp_catas = [1,3]       # {"1":"T1","2":"T2","3":"effT","4":"gamma1","5":"gamma2","6":"thermal_Pop","7":"gammaPhi"}
-    conditional_folder = "Radiator_WS"          # the previous folder from temperature folder     
-    sample_folder = "Radiator_wisconsinQ1"     # the previous folder from conditional_folder
+    conditional_folder = "WS"          # the previous folder from temperature folder     
+    sample_folder = "AS_radiator"     # the previous folder from conditional_folder
     
     # ?  log_info_dict at least should have the temperature with its 'avg_min_from_the_end'
     # // If there is only one temperature in `log_info_dict`, it will plot time trend. Or u can set 'always_plot_timeTrend = True` to enforce it plot no matter how many temperatures are there.
@@ -1027,16 +1023,16 @@ if __name__ == '__main__':
     #                  "40K-2":{"start_date":"", "start_time":"", "avg_min_from_the_end":60},
     #                  "60K-2":{"start_date":"", "start_time":"", "avg_min_from_the_end":60}
     #                 }
-    log_info_dict = {"10K":{"start_date":"2024-05-13", "start_time":"17:25", "avg_min_from_the_end":60}, # if keyname 'avg_min_from_the_end' is not inside, the default is 60 minutes
-                     "20K":{"start_date":"2024-05-14", "start_time":"10:45", "avg_min_from_the_end":60}, # 'start_date' and 'start_time' are not neccessary if otherInfo have them.
-                     "40K":{"start_date":"2024-05-14", "start_time":"16:15", "avg_min_from_the_end":60},
-                     "60K":{"start_date":"2024-05-15", "start_time":"09:15", "avg_min_from_the_end":60},
+    log_info_dict = {"10K":{}, # if keyname 'avg_min_from_the_end' is not inside, the default is 60 minutes
+                     "20K":{}, # 'start_date' and 'start_time' are not neccessary if otherInfo have them.
+                     "40K":{},
+                     "60K":{},
                     #"re0K":{"start_date":"2024-05-15", "start_time":"15:43", "avg_min_from_the_end":60}
                     }
     
     # ? For references.
-    ref_before = get_ref_from_json(target_q,sample_folder,conditional_folder)["ref_before"]
-    ref_recove = get_ref_from_json(target_q,sample_folder,conditional_folder)["ref_recove"]
+    ref_before = get_ref_from_json(target_q,sample_folder,conditional_folder)["ref_before"] if "ref_before" in get_ref_from_json(target_q,sample_folder,conditional_folder).keys() else {}
+    ref_recove = get_ref_from_json(target_q,sample_folder,conditional_folder)["ref_recove"] if "ref_recove" in get_ref_from_json(target_q,sample_folder,conditional_folder).keys() else {}
 
 
     # ? If this folder is "", it won't plot the MXC temperature. 

@@ -173,7 +173,7 @@ def gamma_compa_temp_dep(sample_folder_name:str, temp_folder_names:dict,slice_mi
                     except:
                         print(f"no ref called {mode} in reference.json !")
                 else:
-                    raise KeyError("Unsupported mode was given!")
+                    pass
     
     rec = []
     conditionla_folders = [get_conditional_folders(sample_folder_name)[-1]]
@@ -281,14 +281,13 @@ def gamma_compa_artist(sample_folder_name:str, temp_folder_names:dict, exp_catas
 
 
 if __name__ == '__main__':
-    target_q:str = 'q0'
-    sameple_folder:str = "Radiator_wisconsinQ1"
+    target_q:str = 'q3'
+    sameple_folder:str = "AS_radiator"
     compa_tempera:dict = {"10K":60,
                           "20K":60,
-                          "30K":60,
                           "40K":60,
                           "60K":60}
-    exps:list = ["4"]       # {"1":"T1","2":"T2","3":"effT","4":"gamma1","5":"gamma2","6":"thermalPop","7":"gammaPhi"}
+    exps:list = ["1"]       # {"1":"T1","2":"T2","3":"effT","4":"gamma1","5":"gamma2","6":"thermalPop","7":"gammaPhi"}
     
 
     # # plot time trend (time past as x-axis)
