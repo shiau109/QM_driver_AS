@@ -1,9 +1,9 @@
-from QM_driver_AS.ultitly.config_io import import_config
 import numpy as np
 
 import os
 config_path = os.path.dirname(os.path.abspath(__file__))+r'/config_link.toml'
-print( config_path )
+
+from QM_driver_AS.ultitly.config_io import import_config
 config_obj, spec = import_config( config_path )
 
 
@@ -87,7 +87,5 @@ for i in ro_infos:
 
     config_dict = config_obj.get_config() 
 
-import os
-config_path = os.path.dirname(os.path.abspath(__file__))+r'/config_link.toml'
 from QM_driver_AS.ultitly.config_io import output_config
 output_config( config_path, config_obj, spec )

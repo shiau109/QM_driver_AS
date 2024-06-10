@@ -2,7 +2,7 @@
 This file is used to configure the Octave ports (gain, switch_mode, down-conversion) and calibrate the up-conversion mixers.
 You need to run this file in order to update the Octaves with the new parameters.
 """
-from OnMachine.SetConfig.set_octave import ElementsSettings, octave_settings
+from QM_driver_AS.ultitly.set_octave import ElementsSettings, octave_settings
 
 # Configure the Octave parameters for each element
 rr0 = ElementsSettings("q0_ro", gain=0, rf_in_port=["octave1", 1], down_convert_LO_source="Internal")
@@ -31,14 +31,14 @@ elements_settings = [q4_xy]
 # Configure the Octave according to the elements settings and calibrate
 
 # Dynamic config
-from OnMachine.SetConfig.config_path import spec_loca, config_loca
-from config_component.configuration import import_config
-from config_component.channel_info import import_spec
+import os
+config_path = os.path.dirname(os.path.abspath(__file__))+r'/config_link.toml'
 
-spec = import_spec( spec_loca )
-config = import_config( config_loca ).get_config()
+from QM_driver_AS.ultitly.config_io import import_config
+config_obj, spec = import_config( config_path )
 qmm, octaves = spec.buildup_qmm()
 
+config = config_obj.get_config()
 # dyna_config.check_mixerCorrectionPair_for('q1')
 
 octave_settings(

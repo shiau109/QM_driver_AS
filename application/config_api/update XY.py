@@ -1,10 +1,10 @@
-from OnMachine.SetConfig.config_path import spec_loca, config_loca
-from config_component.configuration import import_config, configuration_read_dict
-from config_component.channel_info import import_spec
 
 
-spec = import_spec( spec_loca )
-config_obj = import_config( config_loca )
+import os
+config_path = os.path.dirname(os.path.abspath(__file__))+r'/config_link.toml'
+
+from QM_driver_AS.ultitly.config_io import import_config
+config_obj, spec = import_config( config_path )
 
 from config_component.update import update_controlFreq, update_controlWaveform
 
@@ -99,11 +99,5 @@ for i in xy_infos:
     spec.update_aXyInfo_for(target_q=q_name, amp=pi_amp, len=pi_len, half=i["90_corr"])
     update_controlWaveform(config_obj, spec.get_spec_forConfig("xy"), target_q=q_name )
 
-import json
-file_path = 'output.json'
-# Open the file in write mode and use json.dump() to export the dictionary to JSON
-with open(file_path, 'w') as json_file:
-    json.dump(config_obj.get_config(), json_file, indent=2)
-
-spec.export_spec(spec_loca)
-config_obj.export_config(config_loca)
+from QM_driver_AS.ultitly.config_io import output_config
+output_config( config_path, config_obj, spec )
