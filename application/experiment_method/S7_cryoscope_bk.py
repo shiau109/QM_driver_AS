@@ -21,9 +21,9 @@ ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
 q_name = "q4_xy"
 z_name = "q4_z"
 
-n_avg = 1000
-const_flux_len = 200 # unit ns <200
-const_flux_amp = 0.18
+n_avg = 2000
+const_flux_len = 240 # unit ns <200
+const_flux_amp =  0.18 #0.22, 0.18 ,0.145
 pad_zeros = (20,0)
 save_data = True
 save_dir = link_config["path"]["output_root"]
@@ -50,20 +50,30 @@ for ro_name, data in dataset.data_vars.items():
     rx90_data = data[0][0].values
     ry90_data = data[0][1].values
 
-    rx90_data = rx90_data-np.mean(rx90_data)
-    ry90_data = ry90_data-np.mean(rx90_data)
-
-    phase = np.unwrap(np.angle(rx90_data + 1j*ry90_data))
+    rx90_data = rx90_data-np.mean(rx90_data[pad_zeros[0]:])
+    ry90_data = ry90_data-np.mean(ry90_data[pad_zeros[0]:])
+    zdata = (rx90_data + 1j*ry90_data)
+    virtual_detune = 200.
+    mod_zdata = zdata*np.exp(1j*time*virtual_detune/1000*np.pi*2)
+    phase_origin = np.unwrap(np.angle( zdata ))
+    phase = np.unwrap(np.angle( mod_zdata ))
     phase = phase - phase[-1]
     # Filtering and derivative of the phase to get the averaged frequency
+    detuning_origin = signal.savgol_filter(phase_origin / 2 / np.pi, 13, 3, deriv=1, delta=0.001)
     detuning = signal.savgol_filter(phase / 2 / np.pi, 13, 3, deriv=1, delta=0.001)
     # Flux line step response in freq domain and voltage domain
     step_response_freq = detuning / np.average(detuning[-int(const_flux_len / 2) :])
 
-    ax[0].plot(time, data[0][0].values, label="x" )
-    ax[0].plot(time, data[0][1].values, label="y" )
-    ax[1].plot(time, phase)
-    ax[2].plot(time, detuning)
+    ax[0].plot(time, zdata.real, label="x" )
+    ax[0].plot(time, mod_zdata.real, label=f"x-{virtual_detune}" )
+    ax[0].plot(time, zdata.imag, label="y" )
+    ax[0].plot(time, mod_zdata.imag, label=f"y-{virtual_detune}" )
+
+    ax[1].plot(time, phase_origin, label="0" )
+    ax[1].plot(time, phase, label=f"{virtual_detune}")
+
+    ax[2].plot(time, detuning_origin, label="0")
+    ax[2].plot(time, detuning-virtual_detune, label=f"{virtual_detune}")
 
 if save_data: save_fig(save_dir, save_name, dataset)
 

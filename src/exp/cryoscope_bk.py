@@ -91,8 +91,9 @@ def baked_waveform(waveform, pulse_duration, z_element, config):
 
 
 
-def cryoscope_bk( ro_element, xy_element, z_element, const_flux_amp, const_flux_len, n_avg, config, qmm:QuantumMachinesManager, initializer=None, pad_zeros=(0,0)):
+def cryoscope_bk( ro_element, xy_element, z_element, const_flux_amp, const_flux_len, n_avg, config, qmm:QuantumMachinesManager, initializer=None, virtual_detune:float=0, pad_zeros=(0,0)):
 
+    virtual_detune = float(virtual_detune) # unit in MHz
     # Flag to set to True if state discrimination is calibrated (where the qubit state is inferred from the 'I' quadrature).
     # Otherwise, a preliminary sequence will be played to measure the averaged I and Q values when the qubit is in |g> and |e>.
     state_discrimination = False
@@ -110,7 +111,7 @@ def cryoscope_bk( ro_element, xy_element, z_element, const_flux_amp, const_flux_
         [0.0] * zeros_before_pulse + [1.0] * (const_flux_len + 1) + [0.0] * zeros_after_pulse
     )  # Perfect step response (square)
     xplot = np.arange(0, len(flux_waveform) + 1, 1)  # x-axis for plotting - Must be in ns.
-    qua_prog = qua_cryoscope_bk( ro_element, xy_element, flux_waveform, square_pulse_segments, const_flux_len, total_zeros, n_avg, initializer=initializer )
+    qua_prog = qua_cryoscope_bk( ro_element, xy_element, flux_waveform, square_pulse_segments, const_flux_len, total_zeros, n_avg, virtual_detune=virtual_detune, initializer=initializer )
 
 
     # Open the quantum machine
@@ -148,7 +149,7 @@ def cryoscope_bk( ro_element, xy_element, z_element, const_flux_amp, const_flux_
 
     return transposed_data
 
-def qua_cryoscope_bk(  ro_element, xy_element, flux_waveform, square_pulse_segments, const_flux_len, total_zeros, n_avg, ge_threshold=None, initializer=None ):
+def qua_cryoscope_bk(  ro_element, xy_element, flux_waveform, square_pulse_segments, const_flux_len, total_zeros, n_avg, ge_threshold=None, initializer=None, virtual_detune=0 ):
     """
     QUA FPGA
     """
@@ -163,6 +164,7 @@ def qua_cryoscope_bk(  ro_element, xy_element, flux_waveform, square_pulse_segme
         #     state_st = declare_stream()
 
         n_st = declare_stream()  # Stream for the averaging iteration 'n'
+        phi = declare(fixed)  # Phase to apply the virtual Z-rotation
 
         # Outer loop for averaging
         with for_(n, 0, n < n_avg, n + 1):
@@ -181,7 +183,7 @@ def qua_cryoscope_bk(  ro_element, xy_element, flux_waveform, square_pulse_segme
                         except:
                             print("Initializer didn't work!")
                             wait(100*u.us)
-
+                    phi = Cast.mul_fixed_by_int( virtual_detune/1e3, segment)
                     # Play first X/2
                     play("x90", xy_element)
                     # Play truncated flux pulse
@@ -196,6 +198,8 @@ def qua_cryoscope_bk(  ro_element, xy_element, flux_waveform, square_pulse_segme
                     # pulse arrives after the longest flux pulse
                     wait((len(flux_waveform) + 20) * u.ns, xy_element)
                     # Play second X/2 or Y/2
+                    
+                    frame_rotation_2pi(phi, xy_element)  # Virtual Z-rotation
                     with if_(flag):
                         play("x90", xy_element)
                     with else_():
