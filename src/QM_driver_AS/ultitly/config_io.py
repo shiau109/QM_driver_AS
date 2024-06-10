@@ -21,3 +21,8 @@ def output_config( link_path, config_obj, spec ):
     link_config = import_link(link_path)
     spec.export_spec(link_config["path"]["specification"])
     config_obj.export_config(link_config["path"]["dynamic_config"])
+    
+    import json
+    file_path = link_config["path"]["config"]
+    with open(file_path, 'w') as json_file:
+        json.dump(config_obj.get_config(), json_file, indent=2)
