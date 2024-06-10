@@ -3,10 +3,7 @@ import numpy as np
 
 
 from pathlib import Path
-# Get the current file path
-current_file = Path(__file__).resolve()
-# Get the parent directory
-link_path = current_file.parent/"config_link.toml"
+link_path = Path(__file__).resolve().parent/"config_link.toml"
 
 from QM_driver_AS.ultitly.config_io import import_config
 config_obj, spec = import_config( link_path )
@@ -23,26 +20,26 @@ tof = 280
 ro_infos = [
     {
         "name":"q0",
-        "IF": -159+1.1-3.91,
-        "amp": 0.048*2*0.75*1.25,
+        "IF": -139,
+        "amp": 0.1 ,
         "length":400,
         "phase": 293.1+0.5
     },{
         "name":"q1",
-        "IF": -62+1.36+2.8-1.17,
-        "amp": 0.2*0.1*5*0.3*1.75*1.75*0.5*1.75*0.5,#*0.3*0.5*4*0.75 *0.8,
+        "IF": -67,
+        "amp": 0.1 ,#*0.3*0.5*4*0.75 *0.8,
         "length":400,
         "phase": 294.7-0.8
     },{
         "name":"q2",
         "IF": -221+0.75+5-1.25-0.5,  #-213.1+0.28,
-        "amp": 0.5*0.3*0.8*0.3*1.75*1.75, # 0.2 *0.1,#*0.15*2*2*1.1 *0.8,
+        "amp": 0, # 0.2 *0.1,#*0.15*2*2*1.1 *0.8,
         "length":400,
         "phase": 107.3
     },{
         "name":"q3",
         "IF": -42+0.83+5-2-0.96,
-        "amp": 0.2*0.3*0.816*1.75*0.5*1.75,#*0.3*0.5 *0.8,
+        "amp": 0,#*0.3*0.5 *0.8,
         "length":400,
         "phase": 156.1
     }
