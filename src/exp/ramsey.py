@@ -172,7 +172,7 @@ def plot_ramsey_oscillation( x, y, ax=None ):
     """
     if ax == None:
         fig, ax = plt.subplots()
-    ax.plot(x, y, "-",label="positive")
+    ax.plot(x, y, "-",label="T2")
     ax.set_xlabel("Free Evolution Times [ns]")
     ax.legend()
     if ax == None:

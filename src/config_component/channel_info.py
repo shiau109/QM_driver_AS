@@ -353,6 +353,7 @@ class ChannelInfo:
                 "offset":0.0,
                 "OFFbias":0.0,
                 "idle":0.0,
+                "crosstalk":{},
                 "const_flux_len" : 600,
                 "const_flux_amp" : 0.1
             }
@@ -369,6 +370,8 @@ class ChannelInfo:
         if kwargs != {}:
             for info in kwargs:
                 if info.lower() in ["controller","con_channel","offset","offbias","idle"]:
+                    self._ZInfo[target_q][info] = kwargs[info]
+                elif info.lower() in ["crosstalk"]:
                     self._ZInfo[target_q][info] = kwargs[info]
                 elif info.lower() in ["settle"]:
                     self._ZInfo["settle_time"] = int(kwargs[info]*u.ns)

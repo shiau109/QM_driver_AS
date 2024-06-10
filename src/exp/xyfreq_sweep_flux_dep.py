@@ -318,3 +318,42 @@ def plot_ana_flux_dep_qubit( data, flux, dfs, freq_LO, freq_IF, abs_z, ax=None, 
     ax[1].legend()
 
 
+
+def plot_ana_flux_dep_qubit_1D( data, flux, dfs, freq_LO, freq_IF, abs_z, ax=None, iq_rotate=0 ):   # 20240530 test by Sean
+    """
+    data shape ( 2, N, M )
+    2 is I,Q
+    N is flux
+    M is freq
+    """
+    idata = data[0]
+    qdata = data[1]
+    zdata = (idata +1j*qdata)*np.exp(1j*(iq_rotate/180)*np.pi)  # data shape ( N, M )
+    s21 = zdata
+
+    # print(np.shape(data))
+    # print(np.shape(flux))
+    # print(np.shape(dfs))
+    # print(np.shape(zdata))
+
+    mid_flux_index = (len(flux))//2
+    mid_flux = abs_z + flux[mid_flux_index]
+    mid_zdata = zdata[mid_flux_index]    # data shape ( N )
+
+    abs_freq = freq_LO+freq_IF+dfs
+
+    if type(ax)==None:
+        fig, ax = plt.subplots()
+        ax.set_title('pcolormesh')
+        fig.show()
+
+    
+    ax[0].plot( abs_freq, np.real(mid_zdata), color='b', label=f"flux = {mid_flux:.3f}V" )
+    ax[1].plot( abs_freq, np.imag(mid_zdata), color='b', label=f"flux = {mid_flux:.3f}V" )
+
+    ax[1].set_xlabel('XY frequency [MHz]')
+    ax[0].set_ylabel('Amplitude [V]')
+    ax[1].set_ylabel('Amplitude [V]')
+
+    ax[0].legend()
+    ax[1].legend()

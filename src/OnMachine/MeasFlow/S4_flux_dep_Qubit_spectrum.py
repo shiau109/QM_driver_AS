@@ -23,21 +23,24 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(100000,mode='wait')
 
 
-ro_elements = ["q0_ro","q1_ro","q2_ro","q3_ro","q4_ro"]
-q_name = ['q4_xy'] 
-z_name = ['q3_z']
+ro_elements = ["q2_ro"]
+q_name = ['q2_xy']
+z_name = ['q2_z']
 
-saturation_len = 20  # In us (should be < FFT of df)
-saturation_ampRatio = 0.2 # pre-factor to the value defined in the config - restricted to [-2; 2)
-n_avg = 200
 
-flux_range = (-0.1,0.1)
-flux_resolution = 0.01
+saturation_len = 2  # In us (should be < FFT of df)
+saturation_ampRatio = 0.01 # pre-factor to the value defined in the config - restricted to [-2; 2)
+n_avg = 1000
 
-freq_range = (-300,+300)
-freq_resolution = 2
+flux_range = (-0.000,0.001)
+flux_resolution = 0.001
 
-sweep_type = "z_pulse"# "z_pulse", "const_z", "two_tone"
+freq_range = (-150,50)
+freq_resolution = 0.1
+
+# test
+
+sweep_type = "z_pulse"      # "z_pulse", "const_z", "two_tone"
 dataset = xyfreq_sweep_flux_dep( flux_range, flux_resolution, freq_range, freq_resolution, q_name, ro_elements, z_name, config, qmm, saturation_ampRatio=saturation_ampRatio, saturation_len=saturation_len, n_avg=n_avg, sweep_type=sweep_type, simulate=False)
 
 # Plot
@@ -49,13 +52,24 @@ for i, (ro_name, data) in enumerate(dataset.data_vars.items()):
     z_offset = dataset.attrs["z_offset"][0]
     print(ro_name, xy_LO, xy_IF_idle, z_offset, data.shape)
     fig, ax = plt.subplots(2)
-    plot_ana_flux_dep_qubit(data, flux, freqs, xy_LO, xy_IF_idle, z_offset, ax)
+
+    # plot_ana_flux_dep_qubit(data, flux, freqs, xy_LO, xy_IF_idle, z_offset, ax)
+    plot_ana_flux_dep_qubit_1D(data, flux, freqs, xy_LO, xy_IF_idle, z_offset, ax) 
+
+
     ax[0].set_title(ro_name)
     ax[1].set_title(ro_name)
 
-plt.show()
+# print( dataset.attrs)
 
 save_data = True
 if save_data:
-    from exp.save_data import save_nc  
-    save_nc(r"D:\Data\5Q4C_0411_3_DR4",f"Spectrum_{q_name[0]}_{z_name[0]}",dataset)
+    from exp.save_data import save_nc, save_fig
+    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240521_DR4_5Q4C_0430#7\00 raw data"
+    save_name = f"Spectrum_{q_name[0]}_{z_name[0]}_{sweep_type}"
+    save_nc(save_dir, save_name, dataset)
+    save_fig(save_dir, save_name)
+
+
+
+plt.show()

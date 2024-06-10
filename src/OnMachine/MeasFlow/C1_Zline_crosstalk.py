@@ -22,24 +22,27 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(100000,mode='wait')
 
 
-n_avg = 200
-expect_crosstalk = 0.1
-flux_modify_range = 0.005
-target = "q2"
-crosstalk = "q1"
+n_avg = 1000
+expect_crosstalk = 0.01
+flux_modify_range = 0.3
+target = "q4"
+crosstalk = "q3"
+mode="ramsey"   #"long"
 prob_q_name = f"{target}_xy"
 ro_element = f"{target}_ro"
 z_line = [f"{target}_z", f"{crosstalk}_z"]
 # flux_settle_time = 400 * u.us
 print(f"Z {target} offset {get_offset(z_line[0],config)} +/- {flux_modify_range*expect_crosstalk}")
 print(f"Z {crosstalk} offset {get_offset(z_line[1],config)} +/- {flux_modify_range}")
-
-# evo_time = 10
-# amp_ratio = 0.05
-# output_data, f_t, f_c = pi_z_pulse( flux_modify_range, prob_q_name, ro_element, z_line, config, qmm, expect_crosstalk=expect_crosstalk, amp_ratio=amp_ratio, n_avg=n_avg, initializer=init_macro, simulate=False, evo_time=evo_time)
-
-evo_time = 0.5
-output_data, f_t, f_c = ramsey_z_pulse( flux_modify_range, prob_q_name, ro_element, z_line, config, qmm, expect_crosstalk=expect_crosstalk, n_avg=n_avg, initializer=init_macro, simulate=False, evo_time=evo_time)
+if mode=="ramsey":
+    evo_time = 3
+    output_data, f_t, f_c = ramsey_z_pulse( flux_modify_range, prob_q_name, ro_element, z_line, config, qmm, expect_crosstalk=expect_crosstalk, n_avg=n_avg, initializer=init_macro, simulate=False, evo_time=evo_time)
+elif mode=="long":
+    evo_time = 10
+    amp_ratio = 0.05
+    output_data, f_t, f_c = pi_z_pulse( flux_modify_range, prob_q_name, ro_element, z_line, config, qmm, expect_crosstalk=expect_crosstalk, amp_ratio=amp_ratio, n_avg=n_avg, initializer=init_macro, simulate=False, evo_time=evo_time)
+else:
+    print("no such mode")
 
 
 for r in [ro_element]:
@@ -52,8 +55,6 @@ for r in [ro_element]:
     ax.set_ylabel(f"{z_line[0]} Delta Voltage (mV)", fontsize=15)
     ax.set_aspect(1/expect_crosstalk) 
     fig.suptitle(f"{r} RO freq", fontsize=15)
-
-plt.show()
 
 
 # amps = np.arange( 0.2, 1.5, 0.01)
@@ -88,7 +89,9 @@ output_data["paras"] = {
 
 save_data = True
 if save_data:
-    from exp.save_data import save_npz
-    import sys
-    save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
-    save_npz(r"D:\Data\DR2_5Q", "Q2Z1_crosstalk_ramsey", output_data)   
+    from exp.save_data import save_npz, save_fig
+    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240521_DR4_5Q4C_0430#7\03 zline_ramsey_1micro"
+    save_name = f"target_{target}_crosstalk_{crosstalk}_{mode}_zlinecrosstalk_{expect_crosstalk}"
+    save_npz(save_dir, save_name, output_data)
+    save_fig(save_dir, save_name)
+plt.show()

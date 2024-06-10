@@ -23,7 +23,7 @@ def ramsey_z_pulse( flux_modify_range, prob_q_name:str, ro_element:str, z_line:l
     """
     a_min = -flux_modify_range
     a_max = flux_modify_range
-    da = flux_modify_range/25
+    da = flux_modify_range/500
 
     flux_crosstalk = np.arange(a_min, a_max + da / 2, da)  # + da/2 to add a_max to amplitudes
     flux_target = np.arange(a_min, a_max - da / 2, da)*expect_crosstalk 

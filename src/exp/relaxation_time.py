@@ -10,7 +10,8 @@ from qualang_tools.plot.fitting import Fit
 # from common_fitting_func import gaussian
 from scipy.optimize import curve_fit
 import warnings
-from src.exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
+from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
+
 import xarray as xr
 warnings.filterwarnings("ignore")
 from qualang_tools.units import unit
@@ -109,13 +110,16 @@ def plot_T1( x, y ):
     # fig.show()
     # Plot
     for i, port in enumerate(["I", "Q"]):
-        ax[i].plot( x, y[i],"o", label="data",markersize=1)
-        ax[i].set_ylabel(f"{port} quadrature (mV)")
-        ax[i].set_xlabel("Wait time (us)")
-
         fit_T1_par, fit_func = fit_T1(x, y[i])
         ax[i].plot( x, fit_func(x), label="fit")
         print("T1",port,fit_T1_par)
+
+        ax[i].plot( x, y[i],"o", label=f"T1={fit_T1_par}",markersize=1)
+        ax[i].set_ylabel(f"{port} quadrature (mV)")
+        ax[i].set_xlabel("Wait time (us)")
+        ax[i].legend()
+
+        
 
 def plot_multiT1( data, rep, time ):
     """
