@@ -8,12 +8,12 @@ from qualang_tools.plot import interrupt_on_close
 from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 from qualang_tools.plot.fitting import Fit
 # from common_fitting_func import *
-from scipy.optimize import curve_fit
 import warnings
 warnings.filterwarnings("ignore")
 from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
 import xarray as xr
+import time
 
 def exp_ramsey(time_max,time_resolution,ro_element,xy_element,n_avg,config,qmm,virtual_detune=0,simulate:bool=False,initializer=None):
     """
@@ -109,26 +109,12 @@ def exp_ramsey(time_max,time_resolution,ro_element,xy_element,n_avg,config,qmm,v
         while results.is_processing():
             # Fetch results
             fetch_data = results.fetch_all()
-            # output_data = {}
-            # for r_idx, r_name in enumerate(ro_element):
-            #     ax[r_idx*2].cla()
-            #     ax[r_idx*2+1].cla()
-            #     output_data[r_name] = np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]])
-
-            #     # Plot I
-            #     ax[r_idx*2].set_ylabel("I quadrature [V]")
-            #     plot_ramsey_oscillation(evo_time, output_data[r_name][0], ax[r_idx*2])
-            #     # Plot Q
-            #     ax[r_idx*2+1].set_ylabel("Q quadrature [V]")
-            #     plot_ramsey_oscillation(evo_time, output_data[r_name][1], ax[r_idx*2+1])
-
-    
             # Progress bar
             iteration = fetch_data[-1]
             progress_counter(iteration, n_avg, start_time=results.start_time)
             # Plot
             plt.tight_layout()
-            plt.pause(1)
+            time.sleep(1)
 
         # Measurement finished 
         fetch_data = results.fetch_all()

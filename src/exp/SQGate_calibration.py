@@ -233,19 +233,9 @@ def amp_calibration( amp_modify_range, q_name:str, ro_element:list, config, qmm:
             while results.is_processing():
                 # Fetch results
                 fetch_data = results.fetch_all()
-                # output_data = {}
-                # for r_idx, r_name in enumerate(ro_element):
-                #     ax[r_idx*2].cla()
-                #     ax[r_idx*2+1].cla()
-                #     output_data[r_name] = np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]])
 
-                #     for op_idx, op in enumerate(["x90","x180"]):
-                #         ax[r_idx*2].plot(amps, output_data[r_name][0].transpose()[op_idx], label=op)
-                #         ax[r_idx*2+1].plot(amps, output_data[r_name][1].transpose()[op_idx], label=op)
-                
-
-                iteration = fetch_data[-1]
                 # Progress bar
+                iteration = fetch_data[-1]
                 progress_counter(iteration, n_avg, start_time=results.get_start_time())      
 
                 # plt.legend()
