@@ -1,14 +1,19 @@
 import numpy as np
 
-import os
-config_path = os.path.dirname(os.path.abspath(__file__))+r'/config_link.toml'
+
+
+from pathlib import Path
+# Get the current file path
+current_file = Path(__file__).resolve()
+# Get the parent directory
+link_path = current_file.parent/"config_link.toml"
 
 from QM_driver_AS.ultitly.config_io import import_config
-config_obj, spec = import_config( config_path )
+config_obj, spec = import_config( link_path )
 
 
 from config_component.update import update_ReadoutFreqs, update_Readout
-new_LO = 6.12
+new_LO = 6.1
 rin_offset = (+0.01502-0.00016+7.9e-5,+0.01300+1.5e-5) # I,Q
 # rin_offset = (+0,+0) # I,Q
 tof = 280
@@ -16,7 +21,7 @@ tof = 280
 # ,#
 # name, IF, amp, z, len, angle
 ro_infos = [
-{
+    {
         "name":"q0",
         "IF": -159+1.1-3.91,
         "amp": 0.048*2*0.75*1.25,
@@ -40,38 +45,6 @@ ro_infos = [
         "amp": 0.2*0.3*0.816*1.75*0.5*1.75,#*0.3*0.5 *0.8,
         "length":400,
         "phase": 156.1
-    },{
-        "name":"q4",
-        "IF":-128+0.68+5+1.6-2.4,
-        "amp": 0.2*0.3*1.4,#*0.3*0.5 *0.8,
-        "length":400,
-        "phase": 229.9+34+0.1
-    }
-    ,
-    {
-        "name":"q5",
-        "IF": -159+1.1,
-        "amp": 0.1,
-        "length":8000,
-        "phase": 75
-    },{
-        "name":"q6",
-        "IF": -214+1.153-0.08-0.8,  #-213.1+0.28,
-        "amp": 0.05, # 0.2 *0.1,#*0.15*2*2*1.1 *0.8,
-        "length":4000,
-        "phase": 0
-    },{
-        "name":"q7",
-        "IF": -42+0.83+5-2,  #-213.1+0.28,
-        "amp": 0.05, # 0.2 *0.1,#*0.15*2*2*1.1 *0.8,
-        "length":4000,
-        "phase": 0
-    },{
-        "name":"q8",
-        "IF": -128+0.68+5+1.6,  #-213.1+0.28,
-        "amp": 0.05, # 0.2 *0.1,#*0.15*2*2*1.1 *0.8,
-        "length":4000,
-        "phase": 0
     }
 ]
 # cavities = [['q0',+150-33, 0.3*0.1, 0, 2000,0],['q1',+150+0.8, 0.3*0.1*1.5*1.5*1.4, 0.038, 560,84.7],['q8',+150+3, 0.01, 0.1, 2000,0],['q5',+150-36, 0.3*0.05, -0.11, 2000,0]]
@@ -88,4 +61,4 @@ for i in ro_infos:
     config_dict = config_obj.get_config() 
 
 from QM_driver_AS.ultitly.config_io import output_config
-output_config( config_path, config_obj, spec )
+output_config( link_path, config_obj, spec )

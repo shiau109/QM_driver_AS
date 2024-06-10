@@ -1,9 +1,12 @@
 
-import os
-config_path = os.path.dirname(os.path.abspath(__file__))+r'/config_link.toml'
+from pathlib import Path
+# Get the current file path
+current_file = Path(__file__).resolve()
+# Get the parent directory
+link_path = current_file.parent/"config_link.toml"
 
 from QM_driver_AS.ultitly.config_io import import_config
-config_obj, spec = import_config( config_path )
+config_obj, spec = import_config( link_path )
 
 from config_component.update import update_z_offset, update_z_crosstalk
 
@@ -63,7 +66,7 @@ for i in z_infos:
     z_info = spec.update_ZInfo_for(target_q=i["name"],crosstalk=i["crosstalk"])
     update_z_crosstalk( config_obj, z_info, wiring[i["name"]])
     config_dict = config_obj.get_config() 
-    
+
 
 from QM_driver_AS.ultitly.config_io import output_config
 output_config( config_path, config_obj, spec )

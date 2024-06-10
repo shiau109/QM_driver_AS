@@ -1,6 +1,6 @@
 
-cluster_name = "Cluster_1"  # Write your cluster_name if version >= QOP220
-qop_ip = "192.168.50.91"  # Write the QM router IP address
+cluster_name = "OPX_3"  # Write your cluster_name if version >= QOP220
+qop_ip = "192.168.1.136"  # Write the QM router IP address
 qop_port = None 
 
 # Default
@@ -28,7 +28,7 @@ port_mapping = {
 ("con2", 10): ("octave2", "Q5"),
 }
 
-qubit_num = 9
+qubit_num = 4
 
 from config_component.channel_info import ChannelInfo
 spec = ChannelInfo(qubit_num)
@@ -36,8 +36,8 @@ spec = ChannelInfo(qubit_num)
 # Set QMM
 spec.update_HardwareInfo(qop_ip=qop_ip, qop_port=qop_port, cluster_name=cluster_name)
 # Set Octave
-spec.update_octave( "octave1", ip=qop_ip, port=11250, con="con1", port_map=port_mapping, clock="External_1000MHz")
-spec.update_octave( "octave2", ip=qop_ip, port=11249, con="con2", port_map=port_mapping, clock="External_1000MHz")
+spec.update_octave( "octave1", ip=qop_ip, port=11253, con="con1", port_map=port_mapping, clock="Internal")
+# spec.update_octave( "octave2", ip=qop_ip, port=11249, con="con2", port_map=port_mapping, clock="External_1000MHz")
 
 # Only for opx+
 opxp_hardware = {
@@ -71,18 +71,18 @@ config_obj = Configuration()
 # Create controller
 from config_component.controller import controller_read_dict
 config_obj._controllers["con1"] = controller_read_dict("con1", opxp_hardware)
-config_obj._controllers["con2"] = controller_read_dict("con2", opxp_hardware)
+# config_obj._controllers["con2"] = controller_read_dict("con2", opxp_hardware)
 # Create qubit
 from config_component.construct import create_qubit, create_roChannel, create_zChannel, create_xyChannel
 
-for x_wire in [("q0",("con2",7),("con2",8)), ("q1",("con1",7),("con1",8)), ("q2",("con2",1),("con2",2)), ("q3",("con2",3),("con2",4)), ("q4",("con2",7),("con2",8)), ("q5",("con1",3),("con1",4)), ("q6",("con1",7),("con1",8)), ("q7",("con2",1),("con2",2)), ("q8",("con2",3),("con2",4))]:
+for x_wire in [("q0",("con1",3),("con1",4)), ("q1",("con1",7),("con1",8))]:
     spec.update_WireInfo_for(x_wire[0],xy_I=x_wire[1],xy_Q=x_wire[2])
 
-for z_wire in [("q0",("con1",5)), ("q1",("con1",6)), ("q2",("con1",9)), ("q3",("con1",10)), ("q4",("con1",4))]:
+for z_wire in [("q0",("con1",5)), ("q1",("con1",6)), ("q2",("con1",9)), ("q3",("con1",10))]:
     spec.update_WireInfo_for(z_wire[0],z=z_wire[1])
 
-for z_wire in [("q5",("con2",6)), ("q6",("con2",9)), ("q7",("con2",10)), ("q8",("con2",5))]:
-    spec.update_WireInfo_for(z_wire[0],z=z_wire[1])
+# for z_wire in [("q5",("con2",6)), ("q6",("con2",9)), ("q7",("con2",10)), ("q8",("con2",5))]:
+#     spec.update_WireInfo_for(z_wire[0],z=z_wire[1])
 
 for q_idx in range(qubit_num):
     q_name = f"q{q_idx}"
@@ -91,7 +91,12 @@ for q_idx in range(qubit_num):
 #     create_roChannel( config, f"{q_name}_ro", spec.get_spec_forConfig('ro')[q_name],spec.get_spec_forConfig('wire')[q_name] )
 #     create_xyChannel( config, f"{q_name}_xy", spec.get_spec_forConfig('xy')[q_name],spec.get_spec_forConfig('wire')[q_name] )
 #     create_zChannel( config, f"{q_name}_z", spec.get_spec_forConfig('z')[q_name],spec.get_spec_forConfig('wire')[q_name] )
-import os
-config_path = os.path.dirname(os.path.abspath(__file__))+r'/config_link.toml'
+
+from pathlib import Path
+# Get the current file path
+current_file = Path(__file__).resolve()
+# Get the parent directory
+link_path = current_file.parent/"config_link.toml"
+
 from QM_driver_AS.ultitly.config_io import output_config
-output_config( config_path, config_obj, spec )
+output_config( link_path, config_obj, spec )

@@ -1,10 +1,13 @@
 
 
-import os
-config_path = os.path.dirname(os.path.abspath(__file__))+r'/config_link.toml'
+from pathlib import Path
+# Get the current file path
+current_file = Path(__file__).resolve()
+# Get the parent directory
+link_path = current_file.parent/"config_link.toml"
 
 from QM_driver_AS.ultitly.config_io import import_config
-config_obj, spec = import_config( config_path )
+config_obj, spec = import_config( link_path )
 
 from config_component.update import update_controlFreq, update_controlWaveform
 
