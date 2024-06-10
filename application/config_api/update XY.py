@@ -100,4 +100,4 @@ for i in xy_infos:
     update_controlWaveform(config_obj, spec.get_spec_forConfig("xy"), target_q=q_name )
 
 from QM_driver_AS.ultitly.config_io import output_config
-output_config( config_path, config_obj, spec )
+output_config( link_path, config_obj, spec )

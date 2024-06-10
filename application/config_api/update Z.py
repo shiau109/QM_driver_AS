@@ -66,4 +66,4 @@ for i in z_infos:
 
 
 from QM_driver_AS.ultitly.config_io import output_config
-output_config( config_path, config_obj, spec )
+output_config( link_path, config_obj, spec )
