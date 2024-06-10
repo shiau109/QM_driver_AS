@@ -18,12 +18,12 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(200000,mode='wait')
 
 
-ro_elements = ["q0_ro","q1_ro","q2_ro","q3_ro","q4_ro"]
-q_name = ['q3_xy','q4_xy']
-n_avg = 100
+ro_elements = ["q0_ro"]
+q_name = ["q0_xy"]
+n_avg = 10000
 repeat = 1
-max_time = 80 #us
-time_resolution = 0.4 #us
+max_time = 50 #us
+time_resolution = 0.1 #us
 from exp.relaxation_time import *
 
 if repeat == 1:
@@ -48,12 +48,15 @@ else:
         plot_multiT1( data, rep, time)
         print(acc_T1[ro_name].shape)
         T1_hist( acc_T1[ro_name] )
-plt.show()
 
 
 
 save_data = True
 if save_data:
-    from exp.save_data import save_nc
-    import sys
-    save_nc(r"D:\Data\03205Q4C_6", f"{q_name}_T1", dataset) 
+    from exp.save_data import save_nc, save_fig
+    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240521_DR4_5Q4C_0430#7\00 raw data"
+    save_name = f"{q_name[0]}_T1"
+    save_nc(save_dir, save_name, dataset)
+    save_fig(save_dir, save_name)
+
+plt.show()

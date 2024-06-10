@@ -11,8 +11,8 @@ init_macro = initializer(300000,mode='wait')
 
 
 # resonators = ["q0_ro","q1_ro","q2_ro"]
-resonators =  ["q0_ro","q1_ro","q2_ro","q3_ro","q4_ro"]
-q_name = ["q1_xy","q2_xy","q3_xy","q4_xy"]
+resonators =  ["q3_ro"]
+q_name = ["q3_xy"]
 shot_num = 20000
 
 import matplotlib.pyplot as plt
@@ -36,9 +36,16 @@ for ro_name, data in transposed_data.data_vars.items(): # elapsed_time = np.roun
     two_state_discriminator(data[0][0], data[1][0], data[0][1], data[1][1], True, True)
 
 
-plt.show()
-save_data = 1
+#   Data Saving   # 
+save_data = True
 if save_data:
-    from exp.save_data import save_nc
+    from exp.save_data import save_nc, save_fig
     import sys
-    save_nc(r"D:\Data\5Q4C_0411_3_DR4", "ro_fidelity", dataset)   
+    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240521_DR4_5Q4C_0430#7\00 raw data"
+    save_name = f"ro_fidelity_{q_name[0]}"
+    save_nc(save_dir, save_name, dataset)
+    save_fig(save_dir, save_name)
+
+plt.show()
+
+ 

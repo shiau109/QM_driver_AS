@@ -8,12 +8,14 @@ class Analog_output:
         """
         self._channel_index = channel_index
         self.offset = 0.0
+        self.crosstalk = {}
         self.filter = {} # TODO filter
 
     def to_dict( self ):
         return {
             self._channel_index:{
                 "offset":self.offset,
+                "crosstalk":self.crosstalk,
                 "filter":{} # TODO filter
             }
         }
