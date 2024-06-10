@@ -93,20 +93,5 @@ for q_idx in range(qubit_num):
 #     create_zChannel( config, f"{q_name}_z", spec.get_spec_forConfig('z')[q_name],spec.get_spec_forConfig('wire')[q_name] )
 import os
 config_path = os.path.dirname(os.path.abspath(__file__))+r'/config_link.toml'
-print( config_path )
-
-import tomlkit
-# Assuming 'config.toml' is your file
-with open(config_path, 'r') as file:
-    content = file.read()
-    link_config = tomlkit.parse(content)
-
-
-import json
-file_path = link_config["path"]["config"]
-# Open the file in write mode and use json.dump() to export the dictionary to JSON
-with open(file_path, 'w') as json_file:
-    json.dump(config_obj.get_config(), json_file, indent=2)
-
-spec.export_spec(link_config["path"]["specification"])
-config_obj.export_config(link_config["path"]["dynamic_config"])
+from QM_driver_AS.ultitly.config_io import output_config
+output_config( config_path, config_obj, spec )
