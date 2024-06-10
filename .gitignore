@@ -1,6 +1,2 @@
-config/
 testing/
 *.pyc
-
-output.json
-calibration_db.json
