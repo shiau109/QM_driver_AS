@@ -17,7 +17,7 @@ def save_nc( save_dir, file_name, output_data:xr.Dataset, time_label:str|None="p
 
 def save_fig( save_dir, file_name, time_label:str|None="prefix", time_format:str="%Y%m%d_%H%M" ):
     
-    save_path = f"{save_dir}/{_add_time_label(file_name, time_label, time_format)}.nc"
+    save_path = f"{save_dir}/{_add_time_label(file_name, time_label, time_format)}.png"
     figure = plt.gcf()
     figure.set_size_inches(16, 8)
     plt.tight_layout()
