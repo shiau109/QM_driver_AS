@@ -1,36 +1,53 @@
+# Import necessary file
+from pathlib import Path
+link_path = Path(__file__).resolve().parent.parent/"config_api"/"config_link.toml"
 
-import matplotlib.pyplot as plt
-import warnings
-warnings.filterwarnings("ignore")
+from QM_driver_AS.ultitly.config_io import import_config, import_link
+link_config = import_link(link_path)
+config_obj, spec = import_config( link_path )
 
-from exp.relaxation_time import exp_relaxation_time
-import numpy as np
-
-# Dynamic config
-from OnMachine.SetConfig.config_path import spec_loca, config_loca
-from config_component.configuration import import_config
-from config_component.channel_info import import_spec
-from ab.QM_config_dynamic import initializer
-
-spec = import_spec( spec_loca )
-config = import_config( config_loca ).get_config()
+config = config_obj.get_config()
 qmm, _ = spec.buildup_qmm()
+
+from ab.QM_config_dynamic import initializer
 init_macro = initializer(200000,mode='wait')
 
+from exp.save_data import save_nc, save_fig
+save_dir = link_config["path"]["output_root"]
 
-ro_elements = ["q0_ro"]
-q_name = ["q0_xy"]
-n_avg = 10000
+import matplotlib.pyplot as plt
+
+# Set parameters
+
+
+ro_elements = ["q4_ro"]
+q_name = ["q4_xy"]
+
+save_data = True
+save_name = f"{q_name[0]}_T1"
+
+n_avg = 1000
 repeat = 1
 max_time = 50 #us
 time_resolution = 0.1 #us
-from exp.relaxation_time import *
 
+# Start measurement
+from exp.relaxation_time import *
 if repeat == 1:
     dataset = exp_relaxation_time( max_time, time_resolution, q_name, ro_elements, config, qmm, n_avg=n_avg, initializer=init_macro)
 else:
     acc_T1, dataset = statistic_T1_exp( repeat, max_time, time_resolution, q_name, ro_elements, config, qmm, n_avg=n_avg, initializer=init_macro )
 
+
+
+
+
+
+
+if save_data: save_nc(save_dir, save_name, dataset)
+    
+
+import matplotlib.pyplot as plt
 # Plot
 time = dataset.coords["time"].values
 
@@ -49,14 +66,6 @@ else:
         print(acc_T1[ro_name].shape)
         T1_hist( acc_T1[ro_name] )
 
-
-
-save_data = True
-if save_data:
-    from exp.save_data import save_nc, save_fig
-    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240521_DR4_5Q4C_0430#7\00 raw data"
-    save_name = f"{q_name[0]}_T1"
-    save_nc(save_dir, save_name, dataset)
-    save_fig(save_dir, save_name)
+if save_data: save_fig(save_dir, save_name)
 
 plt.show()

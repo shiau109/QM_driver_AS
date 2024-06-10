@@ -1,25 +1,23 @@
+# Import necessary file
+from pathlib import Path
+link_path = Path(__file__).resolve().parent.parent/"config_api"/"config_link.toml"
 
-from qm.qua import *
-import matplotlib.pyplot as plt
-import warnings
-from exp.zline_crosstalk import *
-warnings.filterwarnings("ignore")
+from QM_driver_AS.ultitly.config_io import import_config, import_link
+link_config = import_link(link_path)
+config_obj, spec = import_config( link_path )
 
-from datetime import datetime
-import sys
-
-
-
-# Dynamic config
-from OnMachine.SetConfig.config_path import spec_loca, config_loca
-from config_component.configuration import import_config
-from config_component.channel_info import import_spec
-from ab.QM_config_dynamic import initializer
-
-spec = import_spec( spec_loca )
-config = import_config( config_loca ).get_config()
+config = config_obj.get_config()
 qmm, _ = spec.buildup_qmm()
-init_macro = initializer(100000,mode='wait')
+
+from ab.QM_config_dynamic import initializer
+init_macro = initializer(200000,mode='wait')
+
+from exp.save_data import save_nc, save_fig
+save_dir = link_config["path"]["output_root"]
+
+import matplotlib.pyplot as plt
+
+# Set parameters
 
 
 n_avg = 1000
@@ -34,6 +32,8 @@ z_line = [f"{target}_z", f"{crosstalk}_z"]
 # flux_settle_time = 400 * u.us
 print(f"Z {target} offset {get_offset(z_line[0],config)} +/- {flux_modify_range*expect_crosstalk}")
 print(f"Z {crosstalk} offset {get_offset(z_line[1],config)} +/- {flux_modify_range}")
+from exp.zline_crosstalk import *
+
 if mode=="ramsey":
     evo_time = 3
     output_data, f_t, f_c = ramsey_z_pulse( flux_modify_range, prob_q_name, ro_element, z_line, config, qmm, expect_crosstalk=expect_crosstalk, n_avg=n_avg, initializer=init_macro, simulate=False, evo_time=evo_time)

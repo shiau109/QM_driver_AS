@@ -1,28 +1,30 @@
 
-import warnings
-warnings.filterwarnings("ignore")
+# Import necessary file
+from pathlib import Path
+link_path = Path(__file__).resolve().parent.parent/"config_api"/"config_link.toml"
+
+from QM_driver_AS.ultitly.config_io import import_config, import_link
+link_config = import_link(link_path)
+config_obj, spec = import_config( link_path )
+
+config = config_obj.get_config()
+qmm, _ = spec.buildup_qmm()
+
+from ab.QM_config_dynamic import initializer
+init_macro = initializer(200000,mode='wait')
+
+from exp.save_data import save_nc, save_fig
+
 import matplotlib.pyplot as plt
 
-
-# 20231215 Test complete :Ratis
-# 20240202 Test complete :Jacky
-
-# Dynamic config
-from OnMachine.SetConfig.config_path import spec_loca, config_loca
-from config_component.configuration import import_config
-from config_component.channel_info import import_spec
-from ab.QM_config_dynamic import initializer
-
-spec = import_spec( spec_loca )
-config = import_config( config_loca ).get_config()
-qmm, _ = spec.buildup_qmm()
-init_macro = initializer(1000,mode='wait')
-
-# Measurement
+# Set parameters
 from exp.rofreq_sweep import *
+
+save_dir = link_config["path"]["output_root"]
+
 n_avg = 1000
-freq_range = (-170, -150)
-resolution = 0.1
+freq_range = (-300, +300)
+resolution = 1
 dataset = frequency_sweep(config,qmm,n_avg=n_avg,freq_range=freq_range, resolution=resolution,initializer=init_macro)  
 
 # Plot

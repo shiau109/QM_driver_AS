@@ -1,41 +1,43 @@
+# Import necessary file
+from pathlib import Path
+link_path = Path(__file__).resolve().parent.parent/"config_api"/"config_link.toml"
+
+from QM_driver_AS.ultitly.config_io import import_config, import_link
+link_config = import_link(link_path)
+config_obj, spec = import_config( link_path )
+
+config = config_obj.get_config()
+qmm, _ = spec.buildup_qmm()
+
+from ab.QM_config_dynamic import initializer
+init_macro = initializer(200000,mode='wait')
+
+from exp.save_data import save_nc, save_fig
+save_dir = link_config["path"]["output_root"]
 
 import matplotlib.pyplot as plt
-import warnings
-warnings.filterwarnings("ignore")
 
-from datetime import datetime
-import sys
+# Set parameters
 
-from exp.rabi import xyfreq_time_rabi, plot_ana_freq_time_rabi, xyfreq_power_rabi
-import numpy as np
+ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
+q_name = ['q4_xy']
+mode = "power" #"power", "time"
 
-# Dynamic config
-from OnMachine.SetConfig.config_path import spec_loca, config_loca
-from config_component.configuration import import_config
-from config_component.channel_info import import_spec
-from ab.QM_config_dynamic import initializer
+save_data = True
+save_name = f"{q_name[0]}_{mode}_Rabi"
 
-spec = import_spec( spec_loca )
-config = import_config( config_loca ).get_config()
-qmm, _ = spec.buildup_qmm()
-init_macro = initializer(100000,mode='wait')
-
-
-ro_elements = ["q7_ro"]
-q_name = ['q7_xy']
-n_avg = 1000
-
-freq_range = (-5,5)
-freq_resolution = 0.5
-time_range = (16,1600) # ns
+n_avg = 500
+freq_range = (-50,50)
+freq_resolution = 2
+time_range = (16,400) # ns
 time_resolution = 4
 
-amps_range = (0,2.5)
+amps_range = (0, 1.9) # max can't >=2
 amps_resolution = 0.01
 
 from exp.config_par import *
+from exp.rabi import xyfreq_time_rabi, plot_ana_freq_time_rabi, xyfreq_power_rabi
 
-mode = "power" #"power", "time"
 
 if mode == "power":
     dataset = xyfreq_power_rabi( freq_range, freq_resolution, amps_range, amps_resolution, q_name, ro_elements, config, qmm, initializer=init_macro, n_avg=n_avg, simulate=False)
@@ -43,6 +45,12 @@ if mode == "power":
 elif mode == "time":
     dataset = xyfreq_time_rabi( freq_range, freq_resolution, time_range, time_resolution, q_name, ro_elements, config, qmm, n_avg=n_avg, initializer=init_macro)
     y = dataset.coords["time"].values
+
+
+
+
+if save_data: save_nc(save_dir, save_name, dataset)
+
 
 freqs = dataset.coords["frequency"].values
 # Plot 
@@ -54,29 +62,6 @@ for ro_name, data in dataset.data_vars.items():
     ax[0].set_title(ro_name)
     ax[1].set_title(ro_name)
 
-
-
-# output_data = freq_power_rabi( dfs, amps, q_name, ro_elements, config.get_config(), qmm, initializer=init_macro, n_avg=n_avg, simulate=False)
-
-# for r in ro_elements:
-#     xy_LO = get_LO(q_name[0],config.get_config())
-#     xy_IF_idle = get_IF(q_name[0],config.get_config())
-#     fig, ax = plt.subplots(2)
-#     plot_ana_freq_time_rabi( output_data[r], dfs, amps, xy_LO, xy_IF_idle, ax )
-#     ax[0].set_title(r)
-#     ax[1].set_title(r)
-# plt.show()
-    
-
-#   Data Saving   # 
-
-save_data = True
-if save_data:
-    from exp.save_data import save_nc, save_fig
-    import sys
-    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240521_DR4_5Q4C_0430#7\00 raw data"
-    save_name = f"{q_name[0]}_{mode}_Rabi"
-    save_nc(save_dir, save_name, dataset)
-    save_fig(save_dir, save_name)
+if save_data: save_fig(save_dir, save_name)
 
 plt.show()

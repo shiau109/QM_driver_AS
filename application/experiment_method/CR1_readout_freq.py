@@ -1,54 +1,52 @@
 
-from qm.qua import *
-import matplotlib.pyplot as plt
-import warnings
-from exp.readout_optimization import *
-warnings.filterwarnings("ignore")
 
-from datetime import datetime
-import sys
+# Import necessary file
+from pathlib import Path
+link_path = Path(__file__).resolve().parent.parent/"config_api"/"config_link.toml"
 
+from QM_driver_AS.ultitly.config_io import import_config, import_link
+link_config = import_link(link_path)
+config_obj, spec = import_config( link_path )
 
-# Dynamic config
-from OnMachine.SetConfig.config_path import spec_loca, config_loca
-from config_component.configuration import import_config
-from config_component.channel_info import import_spec
-from ab.QM_config_dynamic import initializer
-
-spec = import_spec( spec_loca )
-config = import_config( config_loca ).get_config()
+config = config_obj.get_config()
 qmm, _ = spec.buildup_qmm()
-init_macro = initializer(100000,mode='wait')
 
-# ro_elements = ['q0_ro','q1_ro','q2_ro']
-ro_elements = ["q3_ro"]
-operate_qubit = ['q3_xy']
-n_avg = 100
+from ab.QM_config_dynamic import initializer
+init_macro = initializer(200000,mode='wait')
+
+from exp.save_data import save_nc, save_fig
+save_dir = link_config["path"]["output_root"]
+
+import matplotlib.pyplot as plt
+
+# Set parameters
+ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
+operate_qubit = ['q4_xy']
+
+save_data = True
+save_name = f"ro_amp_{operate_qubit[0]}"
+
+n_avg = 500
 
 freq_range = (-10, 10)
-freq_resolution = 0.01
-dataset = freq_dep_signal( freq_range, freq_resolution, operate_qubit, ro_elements, n_avg, config, qmm, initializer=init_macro, amp_mod=1.0)    # no progress (n/n_avg) showing
-transposed_data = dataset.transpose("mixer", "state", "frequency")
+freq_resolution = 0.1
 
+# Start measurement
+from exp.readout_optimization import *
+dataset = freq_dep_signal( freq_range, freq_resolution, operate_qubit, ro_elements, n_avg, config, qmm, initializer=init_macro, amp_mod=1.0)    # no progress (n/n_avg) showing
+
+# Data Saving 
+if save_data: save_nc(save_dir, save_name, dataset)
+
+# Plot
+transposed_data = dataset.transpose("mixer", "state", "frequency")
 dfs = transposed_data.coords["frequency"].values
 for ro_name, data in transposed_data.data_vars.items():  
     fig = plt.figure()
     ax = fig.subplots(3,1)
     plot_freq_signal( dfs, data, ro_name, ax )
     fig.suptitle(f"{ro_name} RO freq")
-
-
-
-#   Data Saving   # 
-
-save_data = True
-if save_data:
-    from exp.save_data import save_nc, save_fig
-    import sys
-    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240521_DR4_5Q4C_0430#7\00 raw data"
-    save_name = f"ro_freq_{operate_qubit[0]}"
-    save_nc(save_dir, save_name, dataset)
-    save_fig(save_dir, save_name)
+if save_data: save_fig(save_dir, save_name)
 
 plt.show()
 

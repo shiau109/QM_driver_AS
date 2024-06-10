@@ -1,42 +1,46 @@
 
+# Import necessary file
+from pathlib import Path
+link_path = Path(__file__).resolve().parent.parent/"config_api"/"config_link.toml"
 
-# Dynamic config
-from OnMachine.SetConfig.config_path import spec_loca, config_loca
-from config_component.configuration import import_config
-from config_component.channel_info import import_spec
+from QM_driver_AS.ultitly.config_io import import_config, import_link
+link_config = import_link(link_path)
+config_obj, spec = import_config( link_path )
+
+config = config_obj.get_config()
+qmm, _ = spec.buildup_qmm()
+
 from ab.QM_config_dynamic import initializer
 
-spec = import_spec( spec_loca )
-config = import_config( config_loca ).get_config()
-qmm, _ = spec.buildup_qmm()
-init_macro = initializer(300000,mode='wait')
+from exp.save_data import save_nc, save_fig
 
+import matplotlib.pyplot as plt
 
-from exp.Ramsey_freq_calibration import *
-n_avg = 100  # Number of averages
+# Set parameters
+init_macro = initializer(200000,mode='wait')
 
+ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
+q_name =  ["q4_xy"]
+save_data = True
+save_dir = link_config["path"]["output_root"]
+save_name = f"{q_name[0]}_XYfreqCali"
 
-ro_element = ["q3_ro"]
-q_name =  ["q3_xy"]
+n_avg = 200  # Number of averages
 virtual_detune = 5 # Unit in MHz
-output_data, evo_time = ramsey_freq_calibration( virtual_detune, q_name, ro_element, config, qmm, n_avg=n_avg, simulate=False, initializer=init_macro)
 
+# Start measurement
+from exp.ramsey_freq_calibration import *
+dataset = ramsey_freq_calibration( virtual_detune, q_name, ro_elements, config, qmm, n_avg=n_avg, simulate=False, initializer=init_macro)
+
+
+if save_data: save_nc( save_dir, save_name, dataset)
 
 # for ro_element, data in output_data.items():
 #     plot_ana_result(evo_time,data[0],virtual_detune)
-plot_ana_result(evo_time,output_data[ro_element[0]][0],virtual_detune)
-
-# #   Data Saving   # 
-
-save_data = True
-if save_data:
-    from exp.save_data import save_npz, save_nc, save_fig
-    import sys
-    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240521_DR4_5Q4C_0430#7\00 raw data"
-    save_name = f"{q_name[0]}_XYfreqCali"
-    # save_nc(save_dir, save_name, output_data)
-    # save_nc(save_dir, save_name+"_evo_line", evo_time)
-    save_fig(save_dir, save_name)
-
+plot_data = dataset["q4_ro"].values[0]
+evo_time = dataset.coords["time"].values
+plot_ana_result(evo_time,plot_data,virtual_detune)
+    
+if save_data: save_fig(save_dir, save_name)
 plt.show()
 
