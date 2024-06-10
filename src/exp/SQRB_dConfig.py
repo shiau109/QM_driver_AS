@@ -146,7 +146,7 @@ def play_sequence(sequence_list, depth, q_name):
                 play("y90", q_name)
                 play("-x90", q_name)
 
-def single_qubit_RB( max_circuit_depth, delta_clifford, q_name:str, ro_element:list, config, qmm:QuantumMachinesManager, sequence_repeat:int=1, n_avg=100, state_discrimination:list=None, initialization_macro=None, simulate:bool=True ):
+def single_qubit_RB( max_circuit_depth, delta_clifford, q_name:str, ro_element:list, config, qmm:QuantumMachinesManager, sequence_repeat:int=1, n_avg=100, state_discrimination:list=None, initialization_macro=None, simulate:bool=False ):
     
     
     is_discriminated = False
@@ -193,10 +193,12 @@ def single_qubit_RB( max_circuit_depth, delta_clifford, q_name:str, ro_element:l
                 with if_((depth == 1) | (depth == depth_target)):
                     with for_(n, 0, n < n_avg, n + 1):
                         # Initialize
+                        wait(100 * u.us)
                         if is_const_init:
                             wait(100 * u.us)
                         else:
-                            initialization_macro()
+                            pass
+                            # initialization_macro()
                         align()
 
                         # Operation
@@ -235,16 +237,16 @@ def single_qubit_RB( max_circuit_depth, delta_clifford, q_name:str, ro_element:l
                 ).average().save("state_avg")
             else:
                 # multiRO_pre_save(iqdata_stream, ro_element, (gate_step,2) )
-                iqdata_stream[0][0].buffer(n_avg).map(FUNCTIONS.average()).buffer(gate_step).buffer(
+                iqdata_stream[1][1].buffer(n_avg).map(FUNCTIONS.average()).buffer(gate_step).buffer(
                     num_of_sequences
                 ).save("I")
-                iqdata_stream[0][2].buffer(n_avg).map(FUNCTIONS.average()).buffer(gate_step).buffer(
+                iqdata_stream[3][1].buffer(n_avg).map(FUNCTIONS.average()).buffer(gate_step).buffer(
                     num_of_sequences
                 ).save("Q")
-                iqdata_stream[0][1].buffer(n_avg).map(FUNCTIONS.average()).buffer(gate_step).average().save(
+                iqdata_stream[1][1].buffer(n_avg).map(FUNCTIONS.average()).buffer(gate_step).average().save(
                     "I_avg"
                 )
-                iqdata_stream[0][3].buffer(n_avg).map(FUNCTIONS.average()).buffer(gate_step).average().save(
+                iqdata_stream[3][1].buffer(n_avg).map(FUNCTIONS.average()).buffer(gate_step).average().save(
                     "Q_avg"
                 )
 
@@ -346,9 +348,9 @@ def ana_SQRB( x, y ):
 
 def plot_SQRB_live( x, y, ax ):
     ax.plot(x, y, marker=".")
-    ax.xlabel("Number of Clifford gates")
-    ax.ylabel("Sequence Fidelity")
-    ax.title("Single qubit RB")
+    ax.set_xlabel("Number of Clifford gates")
+    ax.set_ylabel("Sequence Fidelity")
+    ax.set_title("Single qubit RB")
 
 def plot_SQRB_result( x, y, yerr, fig:Figure=None ):
 
@@ -363,33 +365,54 @@ def plot_SQRB_result( x, y, yerr, fig:Figure=None ):
 
 
 if __name__ == '__main__':
-    qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
     
     warnings.filterwarnings("ignore")
-    from QM_config_dynamic import QM_config, Circuit_info
-    dyna_config = QM_config()
-    dyna_config.import_config(path=r'.\TEST\BETAsite\QM\OPXPlus\3_5q Tune up\Standard Configuration\Config_1205_Calied')
-    the_specs = Circuit_info(q_num=5)
-    the_specs.import_spec(path=r'.\TEST\BETAsite\QM\OPXPlus\3_5q Tune up\Standard Configuration\Spec_1205_Calied')
-    
-    config = dyna_config.get_config()
-    pi_len = the_specs.get_spec_forConfig('xy')['q1']['pi_len']
+    # Dynamic config
+    from OnMachine.SetConfig.config_path import spec_loca, config_loca
+    from config_component.configuration import import_config
+    from config_component.channel_info import import_spec
+    from ab.QM_config_dynamic import initializer
+
+    spec = import_spec( spec_loca )
+    config = import_config( config_loca ).get_config()
+    qmm, _ = spec.buildup_qmm()
+    init_macro = initializer(100000,mode='wait')
+
+    # pi_len = the_specs.get_spec_forConfig('xy')['q1']['pi_len']
+    pi_len = 40
     ##############################
     # Program-specific variables #
     ##############################
     q_name = "q1_xy"
-    ro_element = ["rr1","rr2","rr3","rr4"]
-    threshold = the_specs.get_spec_forConfig('ro')[q_name]['ge_threshold']
+    ro_element = ["q0_ro","q1_ro","q2_ro"]
+    # threshold = the_specs.get_spec_forConfig('ro')[q_name]['ge_threshold']
 
 
-    num_of_sequences = 350  # Number of random sequences
+    num_of_sequences = 100  # Number of random sequences
     n_avg = 20  # Number of averaging loops for each random sequence
-    max_circuit_depth = 500  # Maximum circuit depth
-    delta_clifford = 10  #  Play each sequence with a depth step equals to 'delta_clifford - Must be > 1
+    max_circuit_depth = 200  # Maximum circuit depth
+    delta_clifford = 2  #  Play each sequence with a depth step equals to 'delta_clifford - Must be > 1
     assert (max_circuit_depth / delta_clifford).is_integer(), "max_circuit_depth / delta_clifford must be an integer."
     seed = 345324  # Pseudo-random number generator seed
     # Flag to enable state discrimination if the readout has been calibrated (rotated blobs and threshold)
-    state_discrimination = [1e-3]
-    x, value_avg, error_avg = single_qubit_RB( max_circuit_depth, delta_clifford, q_name, ro_element, config, qmm )
-    
+    # state_discrimination = [1e-3]
+    import xarray as xr
+    x, value_avg, error_avg = single_qubit_RB( max_circuit_depth, delta_clifford, q_name, ro_element, config, qmm)
+    print(x, value_avg)
+    output_data = {}
+    output_data[q_name] = (["gate_number"], np.array(value_avg)) 
+    output_data[f"{q_name}_err"] = (["gate_number"], np.array(error_avg))
+
+    dataset = xr.Dataset(
+        output_data,
+        coords={"gate_number": x, }
+    )    
+    save_data = True
+    if save_data:
+        from exp.save_data import save_nc
+        import sys
+        save_nc(r"D:\Data\5Qv4_0822_8_ITRIMixer", f"1QRB_{q_name}", dataset)    
+
     plot_SQRB_result( x, value_avg, error_avg )
+
+    plt.show()
