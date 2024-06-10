@@ -27,8 +27,8 @@ from qualang_tools.results import fetching_tool, progress_counter
 from qualang_tools.plot import interrupt_on_close
 from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 from qualang_tools.plot.fitting import Fit
+import xarray as xr
 import warnings
-
 warnings.filterwarnings("ignore")
 from qualang_tools.units import unit
 
@@ -144,71 +144,27 @@ def ramsey_freq_calibration( virtial_detune_freq, q_name:list, ro_element:list, 
         while results.is_processing():
             # Fetch results
             fetch_data = results.fetch_all()
-            # output_data = {}
-            # for r_idx, r_name in enumerate(ro_element):
-            #     ax[r_idx*2].cla()
-            #     ax[r_idx*2+1].cla()
-            #     output_data[r_name] = np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]])
 
-            #     # Plot I
-            #     ax[r_idx*2].set_ylabel("I quadrature [V]")
-            #     plot_dual_Ramsey_oscillation(evo_time, output_data[r_name][0], ax[r_idx*2])
-            #     # Plot Q
-            #     ax[r_idx*2+1].set_ylabel("Q quadrature [V]")
-            #     plot_dual_Ramsey_oscillation(evo_time, output_data[r_name][1], ax[r_idx*2+1])
-
-    
             # Progress bar
             iteration = fetch_data[-1]
             progress_counter(iteration, n_avg, start_time=results.start_time)
-            # Plot
-            # plt.tight_layout()
-            # plt.pause(1)
+
         # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
         qm.close()
-
+        # Creating an xarray dataset
         output_data = {}
         for r_idx, r_name in enumerate(ro_element):
-            output_data[r_name] = np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]])
+            output_data[r_name] = ( ["mixer","frequency","time"],
+                                    np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]]) )
+        dataset = xr.Dataset(
+            output_data,
+            coords={ "mixer":np.array(["I","Q"]), "frequency": np.array([virtial_detune_freq,-virtial_detune_freq]), "time":evo_time }
+        )
+        # dataset.attrs["ref_xy_IF"] = ref_xy_IF
+        # dataset.attrs["ref_xy_LO"] = ref_xy_LO
 
-        return output_data, evo_time
-        # try:
-        #     fit = Fit()
-        #     plt.figure()
-        #     plt.suptitle(f"ZZ-Ramsey measurement with detuning={detuning} Hz")
-        #     plt.subplot(221)
-        #     fit.ramsey(evo_time, I1, plot=True)
-        #     plt.xlabel("Idle times [ns]")
-        #     plt.ylabel("I quadrature [V]")
-        #     plt.title("Control-I")
-        #     plt.subplot(223)
-        #     fit.ramsey(evo_time, Q1, plot=True)
-        #     plt.xlabel("Idle times [ns]")
-        #     plt.ylabel("I quadrature [V]")
-        #     plt.title("Control-Q")
-        #     plt.subplot(222)
-        #     fitting_results = fit.ramsey(evo_time, I2, plot=True)
-        #     plt.xlabel("Idle times [ns]")
-        #     plt.ylabel("I quadrature [V]")
-        #     plt.subplot(224)
-        #     fit.ramsey(4 * idle_times, Q2, plot=True)
-        #     plt.xlabel("Idle times [ns]")
-        #     plt.ylabel("I quadrature [V]")
-        #     plt.tight_layout()
-        #     print("Detuned: %s" %(fitting_results['f'][0]*1e9*u.MHz - detuning))
-        # except (Exception,) as e:
-        #     print(e)
+        return dataset
         
-        # if save_data == True:
-        #     ###################
-        #     #  Figure Saving  #
-        #     ################### 
-        #     figure = plt.gcf() # get current figure
-        #     figure.set_size_inches(16, 8)
-        #     plt.tight_layout()
-        #     plt.pause(0.1)
-        #     plt.savefig(f"{save_path}.png", dpi = 500)
-        # plt.show()
 def plot_dual_Ramsey_oscillation( x, y, ax=None ):
     """
     y in shape (2,N)
