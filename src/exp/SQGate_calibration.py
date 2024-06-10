@@ -154,7 +154,7 @@ def amp_calibration( amp_modify_range, q_name:str, ro_element:list, config, qmm:
     '''
     a_min = 1-amp_modify_range
     a_max = 1+amp_modify_range
-    da = amp_modify_range/100
+    da = amp_modify_range/50
     n_pi = sequence_repeat *2
     n_90 = sequence_repeat *4
     amps = np.arange(a_min, a_max + da / 2, da)  # + da/2 to add a_max to amplitudes
@@ -274,7 +274,7 @@ def amp_calibration( amp_modify_range, q_name:str, ro_element:list, config, qmm:
         )
         transposed_data = dataset.transpose("mixer", "sequence", "amplitude_ratio")
 
-        return dataset
+        return transposed_data
     
 
 def StarkShift_program(q_name:str, ro_element:list, sequence_repeat:int=1, n_avg=100, initializer:tuple=None):
