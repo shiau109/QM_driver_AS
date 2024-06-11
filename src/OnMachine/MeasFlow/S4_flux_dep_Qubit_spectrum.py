@@ -23,17 +23,17 @@ qmm, _ = spec.buildup_qmm()
 init_macro = initializer(100000,mode='wait')
 
 
-ro_elements = ["q2_ro"]
-q_name = ['q2_xy']
-z_name = ['q2_z']
+ro_elements = ["q8_ro"]
+q_name = ['q8_xy']
+z_name = ['q8_z']
 
 
 saturation_len = 2  # In us (should be < FFT of df)
-saturation_ampRatio = 0.01 # pre-factor to the value defined in the config - restricted to [-2; 2)
-n_avg = 1000
+saturation_ampRatio = 2 # pre-factor to the value defined in the config - restricted to [-2; 2)
+n_avg = 100
 
-flux_range = (-0.000,0.001)
-flux_resolution = 0.001
+flux_range = (-0.2,0.2)
+flux_resolution = 0.01
 
 freq_range = (-150,50)
 freq_resolution = 0.1
@@ -53,8 +53,8 @@ for i, (ro_name, data) in enumerate(dataset.data_vars.items()):
     print(ro_name, xy_LO, xy_IF_idle, z_offset, data.shape)
     fig, ax = plt.subplots(2)
 
-    # plot_ana_flux_dep_qubit(data, flux, freqs, xy_LO, xy_IF_idle, z_offset, ax)
-    plot_ana_flux_dep_qubit_1D(data, flux, freqs, xy_LO, xy_IF_idle, z_offset, ax) 
+    plot_ana_flux_dep_qubit(data, flux, freqs, xy_LO, xy_IF_idle, z_offset, ax)
+    # plot_ana_flux_dep_qubit_1D(data, flux, freqs, xy_LO, xy_IF_idle, z_offset, ax) 
 
 
     ax[0].set_title(ro_name)

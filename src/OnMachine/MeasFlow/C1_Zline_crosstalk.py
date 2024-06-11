@@ -23,10 +23,10 @@ init_macro = initializer(100000,mode='wait')
 
 
 n_avg = 1000
-expect_crosstalk = 0.01
-flux_modify_range = 0.3
-target = "q2"
-crosstalk = "q3"
+expect_crosstalk = 0.02
+flux_modify_range = 0.05
+target = "q0"
+crosstalk = "q5"
 mode="ramsey"   #"long"
 prob_q_name = f"{target}_xy"
 ro_element = f"{target}_ro"
@@ -35,7 +35,7 @@ z_line = [f"{target}_z", f"{crosstalk}_z"]
 print(f"Z {target} offset {get_offset(z_line[0],config)} +/- {flux_modify_range*expect_crosstalk}")
 print(f"Z {crosstalk} offset {get_offset(z_line[1],config)} +/- {flux_modify_range}")
 if mode=="ramsey":
-    evo_time = 3
+    evo_time = 4
     output_data, f_t, f_c = ramsey_z_pulse( flux_modify_range, prob_q_name, ro_element, z_line, config, qmm, expect_crosstalk=expect_crosstalk, n_avg=n_avg, initializer=init_macro, simulate=False, evo_time=evo_time)
 elif mode=="long":
     evo_time = 10
@@ -90,7 +90,7 @@ output_data["paras"] = {
 save_data = True
 if save_data:
     from exp.save_data import save_npz, save_fig
-    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240521_DR4_5Q4C_0430#7\03 zline_ramsey_1micro"
+    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240521_DR4_5Q4C_0430#7\04 coupler zline_ramsey_2micro"
     save_name = f"target_{target}_crosstalk_{crosstalk}_{mode}_zlinecrosstalk_{expect_crosstalk}"
     save_npz(save_dir, save_name, output_data)
     save_fig(save_dir, save_name)
