@@ -16,7 +16,7 @@ import xarray as xr
 warnings.filterwarnings("ignore")
 from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
-
+import time
 def exp_z_pulse_relaxation_time(max_time, time_resolution, flux_range:tuple, flux_resolution:float, q_name:list, z_name:list, ro_element:list, config, qmm:QuantumMachinesManager, n_avg=100, initializer=None ):
     """
     parameters: \n
@@ -94,8 +94,15 @@ def exp_z_pulse_relaxation_time(max_time, time_resolution, flux_range:tuple, flu
 
     data_list = ro_ch_name + ["iteration"]   
 
-    results = fetching_tool(job, data_list=data_list, mode="wait_for_all")
-
+    results = fetching_tool(job, data_list=data_list, mode="live")
+    # Live plotting
+    while results.is_processing():
+        # Fetch results
+        fetch_data = results.fetch_all()
+        # Progress bar
+        iteration = fetch_data[-1]
+        progress_counter(iteration, n_avg, start_time=results.start_time)
+        time.sleep(1)
     # Measurement finished
     fetch_data = results.fetch_all()
     qm.close()

@@ -15,9 +15,10 @@ from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 import xarray as xr
 warnings.filterwarnings("ignore")
 from qualang_tools.units import unit
-import numpy as np
 u = unit(coerce_to_integer=True)
 
+import numpy as np
+import time
 def exp_relaxation_time(max_time, time_resolution, q_name:list, ro_element:list, config, qmm:QuantumMachinesManager, n_avg=100, initializer=None ):
     """
     parameters: \n
@@ -78,8 +79,15 @@ def exp_relaxation_time(max_time, time_resolution, q_name:list, ro_element:list,
 
     data_list = ro_ch_name + ["iteration"]   
 
-    results = fetching_tool(job, data_list=data_list, mode="wait_for_all")
-
+    results = fetching_tool(job, data_list=data_list, mode="live")
+    # Live plotting
+    while results.is_processing():
+        # Fetch results
+        fetch_data = results.fetch_all()
+        # Progress bar
+        iteration = fetch_data[-1]
+        progress_counter(iteration, n_avg, start_time=results.start_time)
+        time.sleep(1)
     # Measurement finished
     fetch_data = results.fetch_all()
     qm.close()
@@ -154,25 +162,25 @@ def statistic_T1_exp( repeat:int, max_time, time_resolution, q_name:list, ro_ele
     axis 0 (2) is I, Q
     axis 1 (M) is repeat 
     """
-    statistic_T1 = {}
+    # statistic_T1 = {}
     raw_data = {}
     repetition = np.arange(repeat)
     for r in ro_element:
-        statistic_T1[r] = []
+        # statistic_T1[r] = []
         raw_data[r] = []
     for i in range(repeat):
         print(f"{i}th T1")
         dataset = exp_relaxation_time(max_time, time_resolution, q_name, ro_element, config, qmm, n_avg, initializer)
         time = dataset.coords["time"].values
         for ro_name, data in dataset.data_vars.items():
-            T1_i = fit_T1( time, data[0])[0]
-            print(f"{ro_name} T1 = {T1_i}")
-            statistic_T1[ro_name].append( [T1_i])
+            # T1_i = fit_T1( time, data[0])[0]
+            # print(f"{ro_name} T1 = {T1_i}")
+            # statistic_T1[ro_name].append( [T1_i])
             raw_data[ro_name].append(data)
 
     output_data = {}
     for r in ro_element:
-        statistic_T1[r] = np.array(statistic_T1[r]).transpose()[0]
+        # statistic_T1[r] = np.array(statistic_T1[r]).transpose()[0]
         output_data[r] = (["repetition","mixer","time"], np.array(raw_data[r]))
 
     dataset = xr.Dataset(
@@ -180,7 +188,7 @@ def statistic_T1_exp( repeat:int, max_time, time_resolution, q_name:list, ro_ele
         coords={ "mixer":np.array(["I","Q"]), "time": time, "repetition": repetition }
     )    
     dataset = dataset.transpose("mixer","repetition","time")
-    return statistic_T1, dataset
+    return dataset
 
 def T1_hist( data, fig=None):
 
