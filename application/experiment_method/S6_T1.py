@@ -10,7 +10,6 @@ config = config_obj.get_config()
 qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
-init_macro = initializer(200000,mode='wait')
 
 from exp.save_data import save_nc, save_fig
 save_dir = link_config["path"]["output_root"]
@@ -18,25 +17,25 @@ save_dir = link_config["path"]["output_root"]
 import matplotlib.pyplot as plt
 
 # Set parameters
+init_macro = initializer(300000,mode='wait')
 
-
-ro_elements = ["q4_ro"]
+ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
 q_name = ["q4_xy"]
 
 save_data = True
 save_name = f"{q_name[0]}_T1"
 
-n_avg = 1000
-repeat = 1
-max_time = 50 #us
-time_resolution = 0.1 #us
+n_avg = 200
+repeat = 100
+max_time = 60 #us
+time_resolution = 0.6 #us
 
 # Start measurement
 from exp.relaxation_time import *
 if repeat == 1:
     dataset = exp_relaxation_time( max_time, time_resolution, q_name, ro_elements, config, qmm, n_avg=n_avg, initializer=init_macro)
 else:
-    acc_T1, dataset = statistic_T1_exp( repeat, max_time, time_resolution, q_name, ro_elements, config, qmm, n_avg=n_avg, initializer=init_macro )
+    dataset = statistic_T1_exp( repeat, max_time, time_resolution, q_name, ro_elements, config, qmm, n_avg=n_avg, initializer=init_macro )
 
 
 
@@ -63,8 +62,8 @@ else:
 
     for ro_name, data in dataset.data_vars.items():
         plot_multiT1( data, rep, time)
-        print(acc_T1[ro_name].shape)
-        T1_hist( acc_T1[ro_name] )
+        # print(acc_T1[ro_name].shape)
+        # T1_hist( acc_T1[ro_name] )
 
 if save_data: save_fig(save_dir, save_name)
 
