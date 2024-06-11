@@ -141,14 +141,31 @@ def T2_fitting(signal):
         qubit_T2 = 0
     return qubit_T2
 
-def multi_T2_exp(m, Qi, n_avg,idle_times,operation_flux_point,q_id,qmm):
-    T2_I, T2_Q = [], []
-    for i in range(m):
-        I, Q = exp_ramsey(Qi,n_avg,idle_times,operation_flux_point,q_id,qmm)
-        T2_I.append(T2_fitting(I))
-        T2_Q.append(T2_fitting(Q))
-        print(f'iteration: {i+1}')
-    return T2_I, T2_Q
+def multi_T2_exp( repeat, time_max,time_resolution,ro_element,xy_element,n_avg,config,qmm,virtual_detune=0,initializer=None ):
+
+    raw_data = {}
+    repetition = np.arange(repeat)
+    for r in ro_element:
+        raw_data[r] = []
+
+    for i in range(repeat):
+        print(f"{i}th T2")
+        dataset = exp_ramsey( time_max,time_resolution,ro_element,xy_element,n_avg,config,qmm,virtual_detune=virtual_detune,initializer=initializer )
+        time = dataset.coords["time"].values
+        for ro_name, data in dataset.data_vars.items():
+            raw_data[ro_name].append(data)
+
+    output_data = {}
+    for r in ro_element:
+        output_data[r] = (["repetition","mixer","time"], np.array(raw_data[r]))
+
+    dataset = xr.Dataset(
+        output_data,
+        coords={ "mixer":np.array(["I","Q"]), "time": time, "repetition": repetition }
+    )    
+    dataset = dataset.transpose("mixer","repetition","time")
+
+    return dataset
 
 def plot_ramsey_oscillation( x, y, ax=None ):
     """
@@ -163,31 +180,24 @@ def plot_ramsey_oscillation( x, y, ax=None ):
     ax.legend()
     if ax == None:
         return fig
-# def T2_hist(data, T2_max, signal_name):
-#     try:
-#         new_data = [x / 1000 for x in data]  
-#         bin_width = 0.5  
-#         start_value = -0.25  
-#         end_value = T2_max + 0.25  
-#         custom_bins = [start_value + i * bin_width for i in range(int((end_value - start_value) / bin_width) + 1)]
-#         hist_values, bin_edges = np.histogram(new_data, bins=custom_bins, density=True)
-#         bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
-#         params, covariance = curve_fit(gaussian, bin_centers, hist_values)
-#         mu, sigma = params
-#         plt.cla()
-#         plt.hist(new_data, bins=custom_bins, density=True, alpha=0.7, color='blue', label='Histogram') 
-#         xmin, xmax = plt.xlim()
-#         x = np.linspace(xmin, xmax, 100)
-#         p = gaussian(x, mu, sigma)
-#         plt.plot(x, p, 'k', linewidth=2, label=f'Fit result: $\mu$={mu:.2f}, $\sigma$={sigma:.2f}')
-#         plt.legend()
-#         plt.title('T2_'+signal_name+' Gaussian Distribution Fit')
-#         plt.show()
-#         print(f'Mean: {mu:.2f}')
-#         print(f'Standard Deviation: {sigma:.2f}')
-#     except Exception as e:
-#         print(f"An error occurred: {e}")
 
+def plot_multiT2( data, rep, time ):
+    """
+    data shape ( 2, N, M )
+    2 is I,Q
+    N is rep
+    M is time
+    """
+    idata = data[0]
+    qdata = data[1]
+    zdata = idata +1j*qdata
+
+    fig, ax = plt.subplots(2)
+    ax[0].set_title('I signal')
+    ax[0].pcolormesh( time, rep, idata, cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    ax[1].set_title('Q signal')
+    ax[1].pcolormesh( time, rep, qdata, cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    return fig
 
 if __name__ == '__main__':
     from configuration import *
