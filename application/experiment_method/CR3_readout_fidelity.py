@@ -22,7 +22,7 @@ ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
 q_elements = ['q4_xy']
 
 save_data = True
-save_name = f"ro_amp_{q_elements[0]}"
+save_name = f"ro_fidelity_{q_elements[0]}"
 
 shot_num = 10000
 
