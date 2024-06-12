@@ -14,6 +14,7 @@ from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
 
 import xarray as xr
+import time
 def xyfreq_sweep_flux_dep( flux_range:tuple, flux_resolution:float, freq_range:tuple, freq_resolution:float, q_name:list, ro_element:list, z_name:list, config, qmm:QuantumMachinesManager, n_avg:int=100, saturation_len=5, saturation_ampRatio=0.1, sweep_type:str="z_pulse", initializer=None, simulate:bool=False):
     """
     q_name is XY \n
@@ -91,24 +92,12 @@ def xyfreq_sweep_flux_dep( flux_range:tuple, flux_resolution:float, freq_range:t
         results = fetching_tool(job, data_list=data_list, mode="live")
         output_data = {}
         while results.is_processing():
+            # Fetch results
             fetch_data = results.fetch_all()
-            # for r_idx, r_name in enumerate(ro_element):
-            #     ax[0][r_idx].cla()
-            #     ax[1][r_idx].cla()
-            #     output_data[r_name] = np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]])
-
-            #     # Plot I
-            #     ax[0][r_idx].set_ylabel("I quadrature [V]")
-            #     plot_flux_dep_qubit(output_data[r_name], fluxes, freqs, [ax[0][r_idx],ax[1][r_idx]])
-                # # Plot Q
-                # ax[0][r_idx].set_ylabel("Q quadrature [V]")
-                # plot_flux_dep_qubit(output_data[r_name][1], offset_arr, d_freq_arr,ax[1][r_idx]) 
-
-            iteration = fetch_data[-1]
             # Progress bar
-            progress_counter(iteration, n_avg, start_time=results.get_start_time()) 
-
-            # plt.pause(1)
+            iteration = fetch_data[-1]
+            progress_counter(iteration, n_avg, start_time=results.start_time)
+            time.sleep(1)
 
         fetch_data = results.fetch_all()
         qm.close()
