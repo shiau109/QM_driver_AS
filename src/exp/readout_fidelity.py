@@ -23,7 +23,7 @@ from qm.qua import *
 from qm.simulate import SimulationConfig
 # from configuration import *
 import matplotlib.pyplot as plt
-from qualang_tools.results import fetching_tool
+from qualang_tools.results import fetching_tool, progress_counter
 from qualang_tools.analysis import two_state_discriminator
 # from exp.macros import qua_declaration, multiplexed_readout, reset_qubit
 from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save_singleShot
@@ -31,6 +31,7 @@ from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
 import xarray as xr
+import time
 def readout_fidelity( q_name:list, ro_element, shot_num, config, qmm:QuantumMachinesManager, initializer=None):
     """
     Single shot detect
@@ -67,8 +68,10 @@ def readout_fidelity( q_name:list, ro_element, shot_num, config, qmm:QuantumMach
                 align()
                 # Readout
                 multiRO_measurement(iqdata_stream, ro_element, weights="rotated_")  
+            save(n, n_st)
 
         with stream_processing():
+            n_st.save("iteration")
             # Save all streamed points for plotting the IQ blobs
             multiRO_pre_save_singleShot( iqdata_stream, ro_element, ( shot_num, 2 ) )
 
@@ -78,13 +81,24 @@ def readout_fidelity( q_name:list, ro_element, shot_num, config, qmm:QuantumMach
 
     qm = qmm.open_qm(config)
     job = qm.execute(iq_blobs)
-    data_list = []
-    for r in ro_element:
-        data_list.append(f"{r}_I")
-        data_list.append(f"{r}_Q")
 
-    
-    results = fetching_tool(job, data_list=data_list, mode="wait_for_all")
+    ro_ch_name = []
+    for r in ro_element:
+        ro_ch_name.append(f"{r}_I")
+        ro_ch_name.append(f"{r}_Q")
+    data_list = ro_ch_name + ["iteration"]   
+
+    results = fetching_tool(job, data_list=data_list, mode="live")
+    # Live plotting
+    while results.is_processing():
+        # Fetch results
+        fetch_data = results.fetch_all()
+        # Progress bar
+        iteration = fetch_data[-1]
+        progress_counter(iteration, shot_num, start_time=results.start_time)
+        # Plot
+        time.sleep(1)
+
     fetch_data = results.fetch_all()
     qm.close()
     # Creating an xarray dataset
@@ -98,42 +112,4 @@ def readout_fidelity( q_name:list, ro_element, shot_num, config, qmm:QuantumMach
     )
     return dataset
 
-if __name__ == '__main__':
-    import matplotlib.pyplot as plt
-    import time
-    from analysis.state_distribution import train_model, create_img
-
-    ###################
-    ###################
-
-
-    qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-    resonators = ["rr1"]
-    n_runs = 10000
-    reset = "cooldown"  # can be set to "cooldown" or "active"
-
-    start_time = time.time()
-    output_data = readout_fidelity( [0], resonators, n_runs, reset, config, qmm)  
-    end_time = time.time()
-    elapsed_time = np.round(end_time-start_time, 1)
-
-    for r in resonators:
-        
-        gmm_model = train_model(output_data[r]*1000)
-        fig = plt.figure(constrained_layout=True)
-        create_img(output_data[r]*1000, gmm_model)
-        # fig.show()
-        # plt.show()
-        two_state_discriminator(output_data[r][0][0], output_data[r][0][1], output_data[r][1][0], output_data[r][1][1], True, True)
-
-    plt.show()
-    #   Data Saving   # 
-    save_data = True
-    if save_data:
-        from exp.save_data import save_npz
-        import sys
-        save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
-        save_npz(save_dir, save_progam_name, output_data)
-
-    plt.show()
 
