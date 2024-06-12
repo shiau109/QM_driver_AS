@@ -12,6 +12,7 @@ from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 warnings.filterwarnings("ignore")
 import exp.config_par as gc
 import xarray as xr
+import time
 # 20240202 Test complete :Jacky
 
 def frequency_sweep( config:dict, qm_machine:QuantumMachinesManager, ro_element:list=["q0_ro"], freq_range:tuple=(-400,400), resolution:int=2, n_avg:int=100, initializer:tuple=None)->xr.Dataset:
@@ -82,9 +83,13 @@ def frequency_sweep( config:dict, qm_machine:QuantumMachinesManager, ro_element:
     results = fetching_tool(job, data_list=[f"{ro_element[0]}_I", f"{ro_element[0]}_Q", "iteration"], mode="live")
 
     while results.is_processing():
+        # Fetch results
         fetch_data = results.fetch_all()
-        progress_counter(fetch_data[-1], n_avg, start_time=results.get_start_time())
-
+        # Progress bar
+        iteration = fetch_data[-1]
+        progress_counter(iteration, n_avg, start_time=results.start_time)
+        time.sleep(1)
+        
 
     # Creating an xarray dataset
     fetch_data = results.fetch_all()
