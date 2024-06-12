@@ -1,20 +1,3 @@
-"""
-        READOUT OPTIMISATION: FREQUENCY
-This sequence involves measuring the state of the resonator in two scenarios: first, after thermalization
-(with the qubit in the |g> state) and then after applying a pi pulse to the qubit (transitioning the qubit to the
-|e> state). This is done while varying the readout frequency.
-The average I & Q quadratures for the qubit states |g> and |e>, along with their variances, are extracted to
-determine the Signal-to-Noise Ratio (SNR). The readout frequency that yields the highest SNR is selected as the
-optimal choice.
-
-Prerequisites:
-    - Having found the resonance frequency of the resonator coupled to the qubit under study (resonator_spectroscopy).
-    - Having calibrated qubit pi pulse (x180) by running qubit, spectroscopy, rabi_chevron, power_rabi and updated the config.
-    - Set the desired flux bias
-
-Next steps before going to the next node:
-    - Update the readout frequency (resonator_IF_q) in the configuration.
-"""
 
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.qua import *
@@ -31,6 +14,7 @@ warnings.filterwarnings("ignore")
 from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
 import xarray as xr
+import time
 
 def freq_dep_signal( freq_range, freq_resolution, q_name:list, ro_element:list, n_avg, config, qmm:QuantumMachinesManager, amp_mod=0.5, simulate=False, initializer:tuple=None )->xr.Dataset:
     """
@@ -94,7 +78,7 @@ def freq_dep_signal( freq_range, freq_resolution, q_name:list, ro_element:list, 
             save(n, n_st)
 
         with stream_processing():
-            n_st.save("n")
+            n_st.save("iteration")
             multiRO_pre_save( iqdata_stream, ro_element, (freq_len,2) )
 
 
@@ -104,14 +88,24 @@ def freq_dep_signal( freq_range, freq_resolution, q_name:list, ro_element:list, 
     job = qm.execute(ro_freq_opt)
     # Get results from QUA program
     
-    data_list = []
+    ro_ch_name = []
     for r in ro_element:
-        data_list.append(f"{r}_I")
-        data_list.append(f"{r}_Q")
+        ro_ch_name.append(f"{r}_I")
+        ro_ch_name.append(f"{r}_Q")
+    data_list = ro_ch_name + ["iteration"]   
 
-    results = fetching_tool(job, data_list=data_list, mode="wait_for_all")
-    
-    
+    results = fetching_tool(job, data_list=data_list, mode="live")
+    # Live plotting
+    while results.is_processing():
+        # Fetch results
+        fetch_data = results.fetch_all()
+        # Progress bar
+        iteration = fetch_data[-1]
+        progress_counter(iteration, n_avg, start_time=results.start_time)
+        # Plot
+        plt.tight_layout()
+        time.sleep(1)
+
     fetch_data = results.fetch_all()
     qm.close()
     # Creating an xarray dataset
@@ -175,7 +169,7 @@ def power_dep_signal( amp_range, amp_resolution, q_name:list, ro_element:list, n
             save(n, n_st)
 
         with stream_processing():
-            n_st.save("n")
+            n_st.save("iteration")
             multiRO_pre_save( iqdata_stream, ro_element, (amp_len,2))
 
 
@@ -185,13 +179,22 @@ def power_dep_signal( amp_range, amp_resolution, q_name:list, ro_element:list, n
     job = qm.execute(ro_freq_opt)
     # Get results from QUA program
     
-    data_list = []
+    ro_ch_name = []
     for r in ro_element:
-        data_list.append(f"{r}_I")
-        data_list.append(f"{r}_Q")
+        ro_ch_name.append(f"{r}_I")
+        ro_ch_name.append(f"{r}_Q")
+    data_list = ro_ch_name + ["iteration"]   
 
-    results = fetching_tool(job, data_list=data_list, mode="wait_for_all")
-    
+    results = fetching_tool(job, data_list=data_list, mode="live")
+    # Live plotting
+    while results.is_processing():
+        # Fetch results
+        fetch_data = results.fetch_all()
+        # Progress bar
+        iteration = fetch_data[-1]
+        progress_counter(iteration, n_avg, start_time=results.start_time)
+        time.sleep(1)
+
     fetch_data = results.fetch_all()
     qm.close()
     # Creating an xarray dataset
