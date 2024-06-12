@@ -10,11 +10,10 @@ import matplotlib.pyplot as plt
 warnings.filterwarnings("ignore")
 from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
-from datetime import datetime
-import sys
+
 import xarray as xr
 import exp.config_par as gc
-
+import time
 
 def frequency_sweep_power_dep( ro_element:list, config:dict, qm_machine:QuantumMachinesManager, n_avg:int=100, freq_range:tuple=(-5,5), freq_resolution:float=0.05, amp_max_ratio:float=1.5,amp_resolution:float=0.01, amp_scale:str='lin', initializer:tuple=None)->xr.Dataset:
     """
@@ -103,12 +102,13 @@ def frequency_sweep_power_dep( ro_element:list, config:dict, qm_machine:QuantumM
     results = fetching_tool(job, data_list=data_list, mode="live")
     output_data = {}
     while results.is_processing():
+        # Fetch results
         fetch_data = results.fetch_all()
-        for r_idx, r_name in enumerate(ro_element):
-            output_data[r_name] = np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]])
-        iteration = fetch_data[-1]
         # Progress bar
-        progress_counter(iteration, n_avg, start_time=results.get_start_time())        
+        iteration = fetch_data[-1]
+        progress_counter(iteration, n_avg, start_time=results.start_time)
+        time.sleep(1)
+       
     # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
     qm.close()
 
