@@ -41,7 +41,7 @@ from matplotlib.figure import Figure
 #######################
 u = unit(coerce_to_integer=True)
 
-
+import time
 
 
 ###################################
@@ -52,7 +52,7 @@ def power_law(power, a, b, p):
 
 # List of recovery gates from the lookup table
 inv_gates = [int(np.where(c1_table[i, :] == 0)[0][0]) for i in range(24)]
-def generate_sequence():
+def generate_sequence( max_circuit_depth, seed=None ):
     cayley = declare(int, value=c1_table.flatten().tolist())
     inv_list = declare(int, value=inv_gates)
     current_state = declare(int)
@@ -60,6 +60,7 @@ def generate_sequence():
     sequence = declare(int, size=max_circuit_depth + 1)
     inv_gate = declare(int, size=max_circuit_depth + 1)
     i = declare(int)
+    if seed is None: seed = 345324
     rand = Random(seed=seed)
 
     assign(current_state, 0)
@@ -72,7 +73,7 @@ def generate_sequence():
     return sequence, inv_gate
 
 
-def play_sequence(sequence_list, depth, q_name):
+def play_sequence(sequence_list, depth, q_name, pi_len=40):
     i = declare(int)
     with for_(i, 0, i <= depth, i + 1):
         with switch_(sequence_list[i], unsafe=True):
@@ -146,7 +147,7 @@ def play_sequence(sequence_list, depth, q_name):
                 play("y90", q_name)
                 play("-x90", q_name)
 
-def single_qubit_RB( max_circuit_depth, delta_clifford, q_name:str, ro_element:list, config, qmm:QuantumMachinesManager, sequence_repeat:int=1, n_avg=100, state_discrimination:list=None, initialization_macro=None, simulate:bool=False ):
+def single_qubit_RB( num_of_sequences, max_circuit_depth, delta_clifford, q_name:str, ro_element:list, config, qmm:QuantumMachinesManager, sequence_repeat:int=1, n_avg=100, state_discrimination:list=None, initialization_macro=None, simulate:bool=False, seed=None, gate_length=40 ):
     
     
     is_discriminated = False
@@ -180,7 +181,7 @@ def single_qubit_RB( max_circuit_depth, delta_clifford, q_name:str, ro_element:l
             state_st = declare_stream()
 
         with for_(m, 0, m < num_of_sequences, m + 1):  # QUA for_ loop over the random sequences
-            sequence_list, inv_gate_list = generate_sequence()  # Generate the random sequence of length max_circuit_depth
+            sequence_list, inv_gate_list = generate_sequence(max_circuit_depth, seed=seed)  # Generate the random sequence of length max_circuit_depth
 
             assign(depth_target, 0)  # Initialize the current depth to 0
 
@@ -205,7 +206,7 @@ def single_qubit_RB( max_circuit_depth, delta_clifford, q_name:str, ro_element:l
                         # The strict_timing ensures that the sequence will be played without gaps
                         with strict_timing_():
                             # Play the random sequence of desired depth
-                            play_sequence(sequence_list, depth, q_name)
+                            play_sequence(sequence_list, depth, q_name, gate_length)
                         # Align the two elements to measure after playing the circuit.
                         align()
 
@@ -269,27 +270,18 @@ def single_qubit_RB( max_circuit_depth, delta_clifford, q_name:str, ro_element:l
             results = fetching_tool(job, data_list=["state_avg", "iteration"], mode="live")
         else:
             results = fetching_tool(job, data_list=["I_avg", "Q_avg", "iteration"], mode="live")
-        # Live plotting
-        fig, ax = plt.subplots()
-        interrupt_on_close(fig, job)  # Interrupts the job when closing the figure
+
         # data analysis
         x = np.arange(0, max_circuit_depth + 0.1, delta_clifford)
         x[0] = 1  # to set the first value of 'x' to be depth = 1 as in the experiment
         while results.is_processing():
-            # data analysis
-            if is_discriminated:
-                state_avg, iteration = results.fetch_all()
-                value_avg = state_avg
-            else:
-                I, Q, iteration = results.fetch_all()
-                value_avg = I
-
+            # Fetch results
+            fetch_data = results.fetch_all()
             # Progress bar
-            progress_counter(iteration, num_of_sequences, start_time=results.get_start_time())
-            # Plot averaged values
-            plot_SQRB_live( x, value_avg, ax )
-            plt.cla()
-            plt.pause(0.1)
+            iteration = fetch_data[-1]
+            progress_counter(iteration, num_of_sequences, start_time=results.start_time)
+            # Plot
+            time.sleep(1)
 
 
         # At the end of the program, fetch the non-averaged results to get the error-bars
