@@ -10,18 +10,18 @@ config = config_obj.get_config()
 qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
-init_macro = initializer(200000,mode='wait')
 
 from exp.save_data import save_nc, save_fig
-save_dir = link_config["path"]["output_root"]
 
 import matplotlib.pyplot as plt
 
 # Set parameters
+init_macro = initializer(10000,mode='wait')
 ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
 z_elements = ['q4_z']
 
 save_data = True
+save_dir = link_config["path"]["output_root"]
 save_name = f"flux_resonator_{ro_elements[0]}_{z_elements[0]}"
 
 n_avg = 100
