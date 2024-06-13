@@ -23,7 +23,7 @@ z_name = "q4_z"
 
 n_avg = 2000
 const_flux_len = 240 # unit ns <200
-const_flux_amp =  0.18 #0.22, 0.18 ,0.145
+const_flux_amp =  0.22 #0.22, 0.18 ,0.145
 pad_zeros = (20,0)
 save_data = True
 save_dir = link_config["path"]["output_root"]
