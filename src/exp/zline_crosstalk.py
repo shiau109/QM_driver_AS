@@ -17,13 +17,13 @@ u = unit(coerce_to_integer=True)
 
 from exp.config_par import get_offset
 
-def ramsey_z_pulse( flux_modify_range, prob_q_name:str, ro_element:str, z_line:list, config, qmm:QuantumMachinesManager, evo_time=1, expect_crosstalk:float=1.0, n_avg:int=100, initializer:tuple=None, simulate=True):
+def ramsey_z_offset( flux_modify_range, prob_q_name:str, ro_element:str, z_line:list, config, qmm:QuantumMachinesManager, evo_time=1, expect_crosstalk:float=1.0, n_avg:int=100, initializer:tuple=None, simulate=True):
     """
     Mapping z offset crosstalk by qubit frequency 
     """
     a_min = -flux_modify_range
     a_max = flux_modify_range
-    da = flux_modify_range/500
+    da = flux_modify_range/25
 
     flux_crosstalk = np.arange(a_min, a_max + da / 2, da)  # + da/2 to add a_max to amplitudes
     flux_target = np.arange(a_min, a_max - da / 2, da)*expect_crosstalk 
@@ -67,6 +67,108 @@ def ramsey_z_pulse( flux_modify_range, prob_q_name:str, ro_element:str, z_line:l
                     wait(evo_cc) 
                     set_dc_offset( z_line[0], "single", get_offset(z_line[0],config) )
                     set_dc_offset( z_line[1], "single", get_offset(z_line[1],config) )
+                    align()
+                    wait(25) 
+                    play( "x90", prob_q_name )
+                    wait(10) 
+
+                    # Readout
+                    align()
+                    multiRO_measurement(iqdata_stream, ro_element, weights="rotated_")
+            save(n, n_st)
+        with stream_processing():
+            n_st.save("iteration")
+            multiRO_pre_save( iqdata_stream, ro_element, (flux_target_len,flux_crosstalk_len) )
+    
+    if simulate:
+        simulation_config = SimulationConfig(duration=10_000)  # In clock cycles = 4ns
+        job = qmm.simulate(config, zc, simulation_config)
+        job.get_simulated_samples().con1.plot()
+        plt.show()
+    else:
+        qm = qmm.open_qm(config)
+        job = qm.execute(zc)
+
+        ro_ch_name = []
+        ro_ch_name.append(f"{ro_element}_I")
+        ro_ch_name.append(f"{ro_element}_Q")
+        data_list = ro_ch_name + ["iteration"]   
+        results = fetching_tool(job, data_list=data_list, mode="live")
+
+        fig, ax = plt.subplots(2)
+        interrupt_on_close(fig, job)
+        # fig.colorbar( p_i, ax=ax[0] )
+        # fig.colorbar( p_q, ax=ax[1] )
+
+
+        output_data = {}
+        while results.is_processing():
+            fetch_data = results.fetch_all()
+            plt.cla()
+            ax[0].cla()
+            ax[1].cla()
+            output_data[ro_element] = np.array([fetch_data[0], fetch_data[1]])
+            plot_crosstalk_3Dscalar( flux_crosstalk, flux_target, output_data[ro_element][0], z_line, ax[0])
+            plot_crosstalk_3Dscalar( flux_crosstalk, flux_target, output_data[ro_element][1], z_line, ax[1])
+            iteration = fetch_data[-1]
+            # Progress bar
+            progress_counter(iteration, n_avg, start_time=results.get_start_time())      
+
+            plt.tight_layout()
+            plt.pause(1) 
+
+        qm.close()
+        return output_data, flux_target, flux_crosstalk
+
+def ramsey_z_pulse( flux_modify_range, prob_q_name:str, ro_element:str, z_line:list, config, qmm:QuantumMachinesManager, evo_time=1, expect_crosstalk:float=1.0, n_avg:int=100, initializer:tuple=None, simulate=True):
+    """
+    Mapping z offset crosstalk by qubit frequency 
+    """
+    a_min = -flux_modify_range
+    a_max = flux_modify_range
+    da = flux_modify_range/50
+
+    flux_crosstalk = np.arange(a_min, a_max + da / 2, da)  # + da/2 to add a_max to amplitudes
+    flux_target = np.arange(4*a_min, 4*a_max - da / 8, da/4)*expect_crosstalk 
+    evo_cc = (evo_time/4)*u.us
+    # flux_target = np.arange(a_min*expect_crosstalk , (a_max + da / 2)*expect_crosstalk , da*expect_crosstalk/2 )#flux_crosstalk*expect_crosstalk 
+    flux_target_len = len(flux_target) 
+    flux_crosstalk_len = len(flux_crosstalk) 
+
+    with program() as zc:
+        iqdata_stream = multiRO_declare( ro_element )
+        n = declare(int) 
+        n_st = declare_stream()
+        dc_1 = declare(fixed) 
+        dc_2 = declare(fixed) 
+
+        with for_(n, 0, n < n_avg, n + 1):
+            
+            with for_(*from_array(dc_1, flux_target)):
+                
+                with for_(*from_array(dc_2, flux_crosstalk)):
+
+                    
+                    # Init
+                    if initializer is None:
+                        wait(100*u.us)
+                        #wait(thermalization_time * u.ns)
+                    else:
+                        try:
+                            initializer[0](*initializer[1])
+                        except:
+                            print("Initializer didn't work!")
+                            wait(100*u.us)
+
+                    # Opration
+                    play( "x90", prob_q_name )
+                    align()
+                    wait(25)
+                    set_dc_offset( z_line[0], "single", get_offset(z_line[0],config))
+                    set_dc_offset( z_line[1], "single", get_offset(z_line[1],config))
+                    align()
+                    play("const"*amp(dc_1*10.), z_line[0], evo_cc)         #const 預設0.1
+                    play("const"*amp(dc_2*10.), z_line[1], evo_cc)
                     align()
                     wait(25) 
                     play( "x90", prob_q_name )

@@ -25,7 +25,6 @@ file_name = f"power_dep_resonator_{ro_elements[0]}"
 save_dir = link_config["path"]["output_root"]
 
 n_avg = 100  # The number of averages
-
 freq_range = (-15,15)
 freq_resolution = 0.1
 amp_max_ratio = 1.5
