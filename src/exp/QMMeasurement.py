@@ -49,7 +49,8 @@ class QMMeasurement( ABC ):
         return self._data_formation()
 
     def pulse_schedule_simulation( self, controllers:list, max_time:int ):
-
+        
+        self.shot_num = 1
         simulation_config = SimulationConfig(duration=max_time)  # In clock cycles = 4ns
         qua_program = self._get_qua_program()
         job = self.qmm.simulate(self.config, qua_program, simulation_config)
@@ -62,7 +63,7 @@ class QMMeasurement( ABC ):
         return f"Initializing {self.__class__.__name__}"
     
     def close(self):
-
+        
         self._qm.close()
         print("QM connection is closed.")
 
