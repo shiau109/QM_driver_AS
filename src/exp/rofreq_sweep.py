@@ -3,7 +3,6 @@ from qm.qua import *
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
-from qualang_tools.results import progress_counter, fetching_tool
 from qualang_tools.loops import from_array
 import warnings
 
@@ -102,31 +101,3 @@ class ROFreqSweep( QMMeasurement ):
             ref_ro_LO[ro_name] = gc.get_LO(self.ro_elements[0], self.config)
 
 
-
-def plot_CS(x:np.ndarray,idata:np.ndarray,qdata:np.ndarray,plot:bool=False,save:bool=False):
-    amp = np.absolute(idata +1j*qdata)
-    pha = np.unwrap(np.diff(np.arctan2(qdata,idata),append=np.mean(np.diff(np.arctan2(qdata,idata)))))
-    fig, ax = plt.subplots(2,1)
-    ax[0].plot(x,amp)
-    ax[0].set_title('Amplitude')
-    ax[0].set_xlabel("IF frequency (MHz)")
-    ax[1].plot(x,pha)
-    ax[1].set_title('Phase')
-    ax[1].set_xlabel("IF frequency (MHz)")
-    plt.tight_layout()
-    if save:
-        plt.savefig()
-    if plot:
-        plt.show()
-
-if __name__ == '__main__':
-    import matplotlib.pyplot as plt
-    # from configuration import *
-
-    search_range = np.arange(-400e6, 400e6, 0.5e6)
-    qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-
-    idata, qdata, repetition = search_resonators(search_range,config,"rr1",100,qmm)  
-    zdata = idata +1j*qdata
-    plt.plot(search_range, np.abs(zdata),label="Origin")
-    plt.show()
