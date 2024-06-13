@@ -13,9 +13,9 @@ warnings.filterwarnings("ignore")
 import exp.config_par as gc
 import xarray as xr
 import time
-# 20240202 Test complete :Jacky
+from exp.QMMeasurement import QMMeasurement
 
-def frequency_sweep( config:dict, qm_machine:QuantumMachinesManager, ro_element:list=["q0_ro"], freq_range:tuple=(-400,400), resolution:int=2, n_avg:int=100, initializer:tuple=None)->xr.Dataset:
+class ROFreqSweep( QMMeasurement ):
     """
     Parameters:
     Search cavities with the given IF range along the given ro_element's LO, (LO+freq_range[0],LO+freq_range[1]) .\n
@@ -29,81 +29,79 @@ def frequency_sweep( config:dict, qm_machine:QuantumMachinesManager, ro_element:
     Return: \n
 
     """
-    freq_r1_qua = freq_range[0] * u.MHz
-    freq_r2_qua = freq_range[1] * u.MHz
-    resolution_qua = resolution * u.MHz
+    def __init__( self, config, qmm: QuantumMachinesManager ):
+        super().__init__( config, qmm )
 
-    frequencies_qua = np.arange( freq_r1_qua, freq_r2_qua, resolution_qua )
-    frequencies_mhz = frequencies_qua/1e6 #  Unit in MHz
-    freq_len = frequencies_qua.shape[-1]
-
-    ref_xy_LO = {}
-    for xy in ro_element:
-        ref_xy_LO[xy] = gc.get_LO(ro_element[0],config)
-
-    # The QUA program #
-    with program() as resonator_spec:
-
-        f = declare(int)  # QUA variable for the readout frequency --> Hz int 32 up to 2^32
-        iqdata_stream = multiRO_declare( ro_element )
-        n = declare(int)
-        n_st = declare_stream()
-
-        with for_(n, 0, n < n_avg, n + 1):  # QUA for_ loop for averaging
-            with for_(*from_array(f, frequencies_qua)):  # QUA for_ loop for sweeping the frequency
-                # Initialization
-                # Wait for the resonator to deplete
-                if initializer is None:
-                    wait(10 * u.us, ro_element[0])
-                else:
-                    try:
-                        initializer[0](*initializer[1])
-                    except:
-                        print("initializer didn't work!")
-                        wait(1 * u.us, ro_element[0]) 
-                # Operation
-                update_frequency( ro_element[0], f)
-                # Readout
-                multiRO_measurement( iqdata_stream, ro_element,weights="rotated_") 
-            # Save the averaging iteration to get the progress bar
-            save(n, n_st)
-
-        with stream_processing():
-            # Cast the data into a 1D vector, average the 1D vectors together and store the results on the OPX processor
-            multiRO_pre_save( iqdata_stream, ro_element, (freq_len,))
-            n_st.save("iteration")
-    ###########
-    # execute #
-    ###########
-    # Open a quantum machine to execute the QUA program
-    qm = qm_machine.open_qm(config)
-    # Send the QUA program to the OPX, which compiles and executes it
-    job = qm.execute(resonator_spec)
-    # Get results from QUA program
-    results = fetching_tool(job, data_list=[f"{ro_element[0]}_I", f"{ro_element[0]}_Q", "iteration"], mode="live")
-
-    while results.is_processing():
-        # Fetch results
-        fetch_data = results.fetch_all()
-        # Progress bar
-        iteration = fetch_data[-1]
-        progress_counter(iteration, n_avg, start_time=results.start_time)
-        time.sleep(1)
+        self.ro_elements = ["q0_ro"]
+        self.initializer = None
         
+        self.freq_range = ( -100, 100 )
+        self.resolution = 1.
+        self.frequencies_qua = self._lin_freq_array( )
 
-    # Creating an xarray dataset
-    fetch_data = results.fetch_all()
-    # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
-    qm.close()
     
-    output_data = np.array([fetch_data[0],fetch_data[1]])
-    dataset = xr.Dataset(
-        {
-            ro_element[0]: (["mixer","frequency"], output_data),
-        },
-        coords={"frequency": frequencies_mhz, "mixer":np.array(["I","Q"]) }
-    )
-    return dataset
+
+    def _get_qua_program( self ):
+        
+        with program() as resonator_spec:
+
+            f = declare(int)  # QUA variable for the readout frequency --> Hz int 32 up to 2^32
+            iqdata_stream = multiRO_declare( self.ro_elements )
+            n = declare(int)
+            n_st = declare_stream()
+
+            with for_(n, 0, n < self.shot_num, n + 1):  # QUA for_ loop for averaging
+                with for_(*from_array(f, self.frequencies_qua)):  # QUA for_ loop for sweeping the frequency
+                    # Initialization
+                    # Wait for the resonator to deplete
+                    if self.initializer is None:
+                        wait(10 * u.us, self.ro_elements[0])
+                    else:
+                        try:
+                            self.initializer[0](*self.initializer[1])
+                        except:
+                            print("initializer didn't work!")
+                            wait(1 * u.us, self.ro_elements[0]) 
+                    # Operation
+                    update_frequency( self.ro_elements[0], f)
+                    # Readout
+                    multiRO_measurement( iqdata_stream, self.ro_elements, weights="rotated_") 
+                # Save the averaging iteration to get the progress bar
+                save(n, n_st)
+
+            with stream_processing():
+                # Cast the data into a 1D vector, average the 1D vectors together and store the results on the OPX processor
+                multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.frequencies_qua),))
+                n_st.save("iteration")
+
+        return resonator_spec
+
+    def _get_fetch_data_list( self ):
+        return [f"{self.ro_elements[0]}_I", f"{self.ro_elements[0]}_Q", "iteration"]
+
+    def _data_formation( self ):
+
+        frequencies_mhz = self.frequencies_qua/1e6 #  Unit in MHz
+        output_data = np.array([self.fetch_data[0],self.fetch_data[1]])
+        dataset = xr.Dataset(
+            {
+                self.ro_elements[0]: (["mixer","frequency"], output_data),
+            },
+            coords={"frequency": frequencies_mhz, "mixer":np.array(["I","Q"]) }
+        )
+        return dataset
+
+    def _lin_freq_array( self ):
+        return np.arange( self.freq_range[0]*u.MHz, self.freq_range[1]*u.MHz, self.resolution* u.MHz )
+    
+
+    def _get_ro_elements_info( self ):
+
+        ref_ro_LO = {}
+        for ro_name in self.ro_elements:
+            ref_ro_LO[ro_name] = gc.get_LO(self.ro_elements[0], self.config)
+
+
 
 def plot_CS(x:np.ndarray,idata:np.ndarray,qdata:np.ndarray,plot:bool=False,save:bool=False):
     amp = np.absolute(idata +1j*qdata)

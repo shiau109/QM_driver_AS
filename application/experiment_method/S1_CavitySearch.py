@@ -17,17 +17,18 @@ from exp.save_data import save_nc, save_fig
 import matplotlib.pyplot as plt
 
 # Set parameters
-from exp.rofreq_sweep import *
 
 save_dir = link_config["path"]["output_root"]
-init_macro = initializer(20000,mode='wait')
 
-n_avg = 1000
-freq_range = (-300, +300)
-resolution = 1
-dataset = frequency_sweep(config,qmm,n_avg=n_avg,freq_range=freq_range, resolution=resolution,initializer=init_macro)  
+from exp.rofreq_sweep import ROFreqSweep
+my_exp = ROFreqSweep(config, qmm)
+my_exp.freq_range = (-300, +300)
+my_exp.resolution = 1
+my_exp.initializer = initializer(20000,mode='wait')
+dataset = my_exp.run( 1000 )
 
 # Plot
+import numpy as np
 idata = dataset["q0_ro"].sel(mixer='I').values
 qdata = dataset["q0_ro"].sel(mixer='Q').values
 zdata = idata+1j*qdata
