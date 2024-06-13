@@ -10,25 +10,26 @@ config = config_obj.get_config()
 qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
-init_macro = initializer(200000,mode='wait')
 
 from exp.save_data import save_nc, save_fig
-save_dir = link_config["path"]["output_root"]
 
 import matplotlib.pyplot as plt
 
 # Set parameters
-n_avg = 100  # The number of averages
+init_macro = initializer(10000,mode='wait')
 ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
+
 
 save_data = True
 file_name = f"power_dep_resonator_{ro_elements[0]}"
 save_dir = link_config["path"]["output_root"]
 
+n_avg = 100  # The number of averages
+
 freq_range = (-15,15)
 freq_resolution = 0.1
 amp_max_ratio = 1.5
-amp_resolution = 0.01
+amp_resolution = 0.02
 amp_scale = "lin"   # "lin", "log"
 
 from exp.rofreq_sweep_power_dep import *

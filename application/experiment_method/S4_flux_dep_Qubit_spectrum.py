@@ -10,14 +10,14 @@ config = config_obj.get_config()
 qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
-init_macro = initializer(200000,mode='wait')
 
 from exp.save_data import save_nc, save_fig
-save_dir = link_config["path"]["output_root"]
 
 import matplotlib.pyplot as plt
 
 # Set parameters
+init_macro = initializer(10000,mode='wait')
+
 ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
 q_name = ['q4_xy']
 z_name = ['q4_z']
@@ -25,14 +25,14 @@ z_name = ['q4_z']
 sweep_type = "z_pulse"      # "z_pulse", "const_z", "two_tone"
 
 saturation_len = 20  # In us (should be < FFT of df)
-saturation_ampRatio = 0.5 # pre-factor to the value defined in the config - restricted to [-2; 2)
-n_avg = 500
+saturation_ampRatio = 0.1 # pre-factor to the value defined in the config - restricted to [-2; 2)
+n_avg = 1000
 
-flux_range = (-0.05,0.05)
-flux_resolution = 0.005
+flux_range = (-0.01,0.01)
+flux_resolution = 0.001
 
-freq_range = (-300,50)
-freq_resolution = 2
+freq_range = (-50,50)
+freq_resolution = 0.5
 
 save_data = True
 save_name = f"Spectrum_{q_name[0]}_{z_name[0]}_{sweep_type}"

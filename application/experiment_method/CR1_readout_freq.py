@@ -12,18 +12,18 @@ config = config_obj.get_config()
 qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
-init_macro = initializer(200000,mode='wait')
 
 from exp.save_data import save_nc, save_fig
-save_dir = link_config["path"]["output_root"]
 
 import matplotlib.pyplot as plt
 
 # Set parameters
+init_macro = initializer(200000,mode='wait')
 ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
 operate_qubit = ['q4_xy']
 
 save_data = True
+save_dir = link_config["path"]["output_root"]
 save_name = f"ro_amp_{operate_qubit[0]}"
 
 n_avg = 500
@@ -33,7 +33,7 @@ freq_resolution = 0.1
 
 # Start measurement
 from exp.readout_optimization import *
-dataset = freq_dep_signal( freq_range, freq_resolution, operate_qubit, ro_elements, n_avg, config, qmm, initializer=init_macro, amp_mod=1.0)    # no progress (n/n_avg) showing
+dataset = freq_dep_signal( freq_range, freq_resolution, operate_qubit, ro_elements, n_avg, config, qmm, initializer=init_macro, amp_mod=0.5)    # no progress (n/n_avg) showing
 
 # Data Saving 
 if save_data: save_nc(save_dir, save_name, dataset)

@@ -11,7 +11,6 @@ config = config_obj.get_config()
 qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
-init_macro = initializer(200000,mode='wait')
 
 from exp.save_data import save_nc, save_fig
 
@@ -21,6 +20,7 @@ import matplotlib.pyplot as plt
 from exp.rofreq_sweep import *
 
 save_dir = link_config["path"]["output_root"]
+init_macro = initializer(20000,mode='wait')
 
 n_avg = 1000
 freq_range = (-300, +300)

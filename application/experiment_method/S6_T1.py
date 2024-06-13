@@ -12,7 +12,6 @@ qmm, _ = spec.buildup_qmm()
 from ab.QM_config_dynamic import initializer
 
 from exp.save_data import save_nc, save_fig
-save_dir = link_config["path"]["output_root"]
 
 import matplotlib.pyplot as plt
 
@@ -23,6 +22,7 @@ ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
 q_name = ["q4_xy"]
 
 save_data = True
+save_dir = link_config["path"]["output_root"]
 save_name = f"{q_name[0]}_T1"
 
 n_avg = 200

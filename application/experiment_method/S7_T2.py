@@ -10,39 +10,44 @@ config = config_obj.get_config()
 qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
-init_macro = initializer(200000,mode='wait')
 
 from exp.save_data import save_nc, save_fig
 
 import matplotlib.pyplot as plt
 
 # Set parameters
-ro_elements = ["q6_ro"]
-q_name = ['q6_xy']
+init_macro = initializer(300000,mode='wait')
+ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
+q_name = ["q4_xy"]
 
-n_avg = 1000
+
+n_avg = 200
 virtual_detune = 1
 
+time_max = 10
+time_resolution = 0.1
 save_data = True
 save_dir = link_config["path"]["output_root"]
 save_name = f"{q_name[0]}_T2"
 
-from exp.ramsey import exp_ramsey,plot_ramsey_oscillation
-dataset = exp_ramsey( 20, 0.04, ro_elements, q_name, n_avg, config, qmm, virtual_detune=virtual_detune, initializer=init_macro)
+from exp.ramsey import exp_ramsey, multi_T2_exp
+# dataset = exp_ramsey( time_max, time_resolution, ro_elements, q_name, n_avg, config, qmm, virtual_detune=virtual_detune, initializer=init_macro)
 
+repeat = 10
+dataset = multi_T2_exp( repeat, time_max, time_resolution, ro_elements, q_name, n_avg, config, qmm, virtual_detune=virtual_detune, initializer=init_macro)
 
 if save_data: save_nc(save_dir, save_name, dataset)
 
 # Plot
+from exp.ramsey import plot_ramsey_oscillation, plot_multiT2
 time = dataset.coords["time"].values
 for ro_name, data in dataset.data_vars.items():
     fig, ax = plt.subplots(2)
-    print(data.shape)
-    # xy_LO = dataset.attrs["ref_xy_LO"][q_name[0]]/1e6
-    # xy_IF_idle = dataset.attrs["ref_xy_IF"][q_name[0]]/1e6
-    plot_ramsey_oscillation(time, data[0], ax[0])
-    plot_ramsey_oscillation(time, data[1], ax[1])
 
+    # plot_ramsey_oscillation(time, data[0], ax[0])
+    # plot_ramsey_oscillation(time, data[1], ax[1])
+    rep = dataset.coords["repetition"].values
+    plot_multiT2( data, rep, time )
 if save_data: save_fig(save_dir, save_name, dataset)
 
 plt.show()
