@@ -53,7 +53,7 @@ for ro_name, data in dataset.data_vars.items():
     pcm = ax.pcolormesh( time/1000, flux, data.values[0], cmap='RdBu')# , vmin=z_min, vmax=z_max)
     plt.colorbar(pcm, label='Value')
 
-if save_data: save_fig( save_dir, save_name, dataset) 
+if save_data: save_fig( save_dir, save_name ) 
 
 plt.show()
 
