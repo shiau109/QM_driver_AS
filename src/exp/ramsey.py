@@ -99,11 +99,6 @@ def exp_ramsey(time_max,time_resolution,ro_element,xy_element,n_avg,config,qmm,v
             ro_ch_name.append(f"{r_name}_Q")
         data_list = ro_ch_name + ["iteration"]   
         results = fetching_tool(job, data_list=data_list, mode="live")
-        # Live plotting
-
-        fig, ax = plt.subplots(2, len(ro_element))
-        interrupt_on_close(fig, job)  # Interrupts the job when closing the figure
-        fig.suptitle("Frequency calibration")
 
         # Live plotting
         while results.is_processing():
