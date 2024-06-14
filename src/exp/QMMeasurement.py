@@ -5,6 +5,9 @@ from qualang_tools.results import progress_counter, fetching_tool
 from abc import ABC, abstractmethod
 import matplotlib.pyplot as plt
 import time
+from datetime import datetime
+from xarray import Dataset
+
 class QMMeasurement( ABC ):
 
     def __init__( self, config:dict, qmm:QuantumMachinesManager):
@@ -21,17 +24,19 @@ class QMMeasurement( ABC ):
         pass
 
     @abstractmethod    
-    def _data_formation( self ):
+    def _data_formation( self )->Dataset:
         pass
 
     def run( self, shot_num:int ):
         self.shot_num = shot_num
         self._qm = self.qmm.open_qm( self.config )
         qua_program = self._get_qua_program()
+
+        measurement_start_time = datetime.now()
+
         job = self._qm.execute(qua_program)
 
         self._results = fetching_tool(job, data_list=self._get_fetch_data_list(), mode="live")
-        start_time= self._results.start_time
         while self._results.is_processing():
             # Fetch results
             fetch_data = self._results.fetch_all()
@@ -39,14 +44,15 @@ class QMMeasurement( ABC ):
             iteration = fetch_data[-1]
             progress_counter(iteration, shot_num, start_time=self._results.start_time)
             time.sleep(1)
+        
+        measurement_end_time = datetime.now()
+        self.fetch_data = self._results.fetch_all()
 
-        self.output_data = self._get_result()
+        self.output_data = self._data_formation()
+        self.output_data.attrs["start_time"] = str(measurement_start_time.strftime("%Y%m%d_%H%M%S"))
+        self.output_data.attrs["end_time"] = str(measurement_end_time.strftime("%Y%m%d_%H%M%S"))
         return self.output_data
     
-    def _get_result( self ):
-
-        self.fetch_data = self._results.fetch_all()
-        return self._data_formation()
 
     def pulse_schedule_simulation( self, controllers:list, max_time:int ):
         
