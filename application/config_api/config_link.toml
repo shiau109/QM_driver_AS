@@ -2,11 +2,11 @@
 
 
 [sample]
-  name = "ITRI_364_scalinQ"
+  name = "5Q4C0510_DR1_scalinQ"
 
 [path]
-    config = "D:\\QM_config\\test.json"
-    dynamic_config = "D:\\QM_config\\test_config.pkl"
-    specification = "D:\\QM_config\\test_spec.pkl"
-    output_root = "D:\\Data\\format_test"
+    config = "D:\\QM_config\\5Q4C0510_DR1_scalinQ.json"
+    dynamic_config = "D:\\QM_config\\5Q4C0510_DR1_scalinQ_config.pkl"
+    specification = "D:\\QM_config\\5Q4C0510_DR1_scalinQ_spec.pkl"
+    output_root = "D:\\Data\\5Q4C0510_DR1_scalinQ"
 

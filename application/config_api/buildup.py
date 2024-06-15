@@ -28,7 +28,7 @@ port_mapping = {
 ("con2", 10): ("octave2", "Q5"),
 }
 
-qubit_num = 4
+qubit_num = 9
 
 from config_component.channel_info import ChannelInfo
 spec = ChannelInfo(qubit_num)
@@ -75,10 +75,10 @@ config_obj._controllers["con1"] = controller_read_dict("con1", opxp_hardware)
 # Create qubit
 from config_component.construct import create_qubit, create_roChannel, create_zChannel, create_xyChannel
 
-for x_wire in [("q0",("con1",3),("con1",4)), ("q1",("con1",7),("con1",8))]:
+for x_wire in [("q3",("con1",3),("con1",4)), ("q4",("con1",7),("con1",8))]:
     spec.update_WireInfo_for(x_wire[0],xy_I=x_wire[1],xy_Q=x_wire[2])
 
-for z_wire in [("q0",("con1",5)), ("q1",("con1",6)), ("q2",("con1",9)), ("q3",("con1",10))]:
+for z_wire in [("q3",("con1",6)), ("q4",("con1",10)), ("q7",("con1",5)), ("q8",("con1",9))]:
     spec.update_WireInfo_for(z_wire[0],z=z_wire[1])
 
 # for z_wire in [("q5",("con2",6)), ("q6",("con2",9)), ("q7",("con2",10)), ("q8",("con2",5))]:

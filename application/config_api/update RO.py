@@ -10,7 +10,7 @@ config_obj, spec = import_config( link_path )
 
 
 from config_component.update import update_ReadoutFreqs, update_Readout
-new_LO = 6.1
+new_LO = 6.13
 rin_offset = (+0.01502-0.00016+7.9e-5,+0.01300+1.5e-5) # I,Q
 # rin_offset = (+0,+0) # I,Q
 tof = 280
@@ -19,28 +19,34 @@ tof = 280
 # name, IF, amp, z, len, angle
 ro_infos = [
     {
-        "name":"q0",
-        "IF": -139,
-        "amp": 0.1 ,
-        "length":400,
+        "name":"q2",
+        "IF": -268,
+        "amp": 0.1 *0.7,
+        "length":500,
         "phase": 293.1+0.5
     },{
-        "name":"q1",
-        "IF": -67,
-        "amp": 0.1 ,#*0.3*0.5*4*0.75 *0.8,
-        "length":400,
+        "name":"q0",
+        "IF": -205,
+        "amp": 0.1 *0.7,#*0.3*0.5*4*0.75 *0.8,
+        "length":500,
         "phase": 294.7-0.8
     },{
-        "name":"q2",
-        "IF": -221+0.75+5-1.25-0.5,  #-213.1+0.28,
-        "amp": 0, # 0.2 *0.1,#*0.15*2*2*1.1 *0.8,
-        "length":400,
-        "phase": 107.3
+        "name":"q4",
+        "IF": -169 -0.9,  #-213.1+0.28,
+        "amp": 0.1 *1.1 *1.2, # 0.2 *0.1,#*0.15*2*2*1.1 *0.8,/np.sqrt(2)
+        "length": 500,
+        "phase": 107.3 +95.7+318.1
+    },{
+        "name":"q1",
+        "IF": -96,
+        "amp": 0.1 *0.7,#*0.3*0.5 *0.8,
+        "length":500,
+        "phase": 156.1
     },{
         "name":"q3",
-        "IF": -42+0.83+5-2-0.96,
-        "amp": 0,#*0.3*0.5 *0.8,
-        "length":400,
+        "IF": -60,
+        "amp": 0.1 *0.7,#*0.3*0.5 *0.8,
+        "length":500,
         "phase": 156.1
     }
 ]
