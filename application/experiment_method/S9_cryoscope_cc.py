@@ -10,36 +10,29 @@ config = config_obj.get_config()
 qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
-init_macro = initializer(200000,mode='wait')
 
 from exp.save_data import save_nc, save_fig
 
 import matplotlib.pyplot as plt
 
 # Set parameters
-ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
-q_name = "q4_xy"
-z_name = "q4_z"
-
-n_avg = 2000
-const_flux_len = 240 # unit ns <200
-const_flux_amp =  0.22 #0.22, 0.18 ,0.145
-pad_zeros = (20,0)
-save_data = True
-save_dir = link_config["path"]["output_root"]
-save_name = f"{q_name}_cryoscope_bk"
 
 from exp.cryoscope import Cryoscope
-exp_cryoscope = Cryoscope(config, qmm)
-exp_cryoscope.ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
-exp_cryoscope.xy_elements = ["q4_xy"]
-exp_cryoscope.xy_elements = ["q4_z"]
-exp_cryoscope.time_range = ( 16, 800 )
-exp_cryoscope.resolution = 4
+my_exp = Cryoscope(config, qmm)
+my_exp.initializer = initializer(200000,mode='wait')
+my_exp.ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
+my_exp.xy_elements = ["q4_xy"]
+my_exp.z_elements = ["q4_z"]
+my_exp.time_range = ( 20, 800 )
+my_exp.resolution = 4
+my_exp.amp_modify = 0.44 #x0.5 is voltage     0.44 0.36 0.29
+ 
+dataset = my_exp.run(4000)
 
-dataset = exp_cryoscope.run(1000)
-exp_cryoscope.pulse_schedule_simulation(["con1"],20000)
-# "mixer", "r90", "time"
+save_data = True
+save_dir = link_config["path"]["output_root"]
+save_name = f"{my_exp.xy_elements[0]}_cryoscope_cc"
+
 
 if save_data: save_nc(save_dir, save_name, dataset)
 
@@ -57,8 +50,8 @@ for ro_name, data in dataset.data_vars.items():
     rx90_data = data[0][0].values
     ry90_data = data[0][1].values
 
-    rx90_data = rx90_data-np.mean(rx90_data[pad_zeros[0]:])
-    ry90_data = ry90_data-np.mean(ry90_data[pad_zeros[0]:])
+    rx90_data = rx90_data-np.mean(rx90_data[my_exp.pad_zeros[0]:])
+    ry90_data = ry90_data-np.mean(ry90_data[my_exp.pad_zeros[0]:])
     zdata = (rx90_data + 1j*ry90_data)
     virtual_detune = 200.
     mod_zdata = zdata*np.exp(1j*time*virtual_detune/1000*np.pi*2)
@@ -69,7 +62,6 @@ for ro_name, data in dataset.data_vars.items():
     detuning_origin = signal.savgol_filter(phase_origin / 2 / np.pi, 13, 3, deriv=1, delta=0.001)
     detuning = signal.savgol_filter(phase / 2 / np.pi, 13, 3, deriv=1, delta=0.001)
     # Flux line step response in freq domain and voltage domain
-    step_response_freq = detuning / np.average(detuning[-int(const_flux_len / 2) :])
 
     ax[0].plot(time, zdata.real, label="x" )
     ax[0].plot(time, mod_zdata.real, label=f"x-{virtual_detune}" )

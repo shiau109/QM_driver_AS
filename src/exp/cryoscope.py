@@ -1,45 +1,8 @@
-"""
-        CRYOSCOPE with 4ns granularity
-The goal of this protocol is to measure the step response of the flux line and design proper FIR and IIR filters
-(implemented on the OPX) to pre-distort the flux pulses and improve the two-qubit gates fidelity.
-Since the flux line ends on the qubit chip, it is not possible to measure the flux pulse after propagation through the
-fridge. The idea is to exploit the flux dependency of the qubit frequency, measured with a modified Ramsey sequence, to
-estimate the flux amplitude received by the qubit as a function of time.
-
-The sequence consists of a Ramsey sequence ("x90" - idle time - "x90" or "y90") with a fixed dephasing time.
-A flux pulse with varying duration is played during the idle time. The Sx and Sy components of the Bloch vector are
-measured by alternatively closing the Ramsey sequence with a "x90" or "y90" gate in order to extract the qubit dephasing
- as a function of the flux pulse duration.
-
-The results are then post-processed to retrieve the step function of the flux line which is fitted with an exponential
-function. The corresponding exponential parameters are then used to derive the FIR and IIR filter taps that will
-compensate for the distortions introduced by the flux line (wiring, bias-tee...).
-Such digital filters are then implemented on the OPX. Note that these filters will introduce a global delay on all the
-output channels that may rotate the IQ blobs so that you may need to recalibrate them for state discrimination or
-active reset protocols for instance. You can read more about these filters here:
-https://docs.quantum-machines.co/0.1/qm-qua-sdk/docs/Guides/output_filter/?h=filter#hardware-implementation
-
-The protocol is inspired from https://doi.org/10.1063/1.5133894, which contains more details about the sequence and
-the post-processing of the data.
-
-This version sweeps the flux pulse duration using real-time QUA, which means that the flux pulse can be arbitrarily long
-but the step must be larger than 1 clock cycle (4ns) and the minimum pulse duration must be 4 clock cycles (16ns).
-
-Prerequisites:
-    - Having found the resonance frequency of the resonator coupled to the qubit under study (resonator_spectroscopy).
-    - Having calibrated qubit gates (x90 and y90) by running qubit spectroscopy, rabi_chevron, power_rabi, Ramsey and updated the configuration.
-    - (optional) Having calibrated the readout to perform state discrimination (IQ_blobs).
-
-Next steps before going to the next node:
-    - Update the FIR and IIR filter taps in the configuration (config/controllers/con1/analog_outputs/"filter": {"feedforward": fir, "feedback": iir}).
-    - WARNING: the digital filters will add a global delay --> need to recalibrate IQ blobs (rotation_angle & ge_threshold).
-"""
 
 from qm.qua import *
 from qm import QuantumMachinesManager
 
-from qualang_tools.results import progress_counter, fetching_tool
-from qualang_tools.plot import interrupt_on_close
+
 from qualang_tools.loops import from_array
 
 from qualang_tools.units import unit
@@ -48,23 +11,44 @@ u = unit(coerce_to_integer=True)
 from exp.QMMeasurement import QMMeasurement
 from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 
-from scipy import signal, optimize
-import matplotlib.pyplot as plt
 import xarray as xr
 
 class Cryoscope( QMMeasurement ):
     """
-    Parameters:
-    Search cavities with the given IF range along the given ro_element's LO, (LO+freq_range[0],LO+freq_range[1]) .\n
+            CRYOSCOPE with 4ns granularity
+    The goal of this protocol is to measure the step response of the flux line and design proper FIR and IIR filters
+    (implemented on the OPX) to pre-distort the flux pulses and improve the two-qubit gates fidelity.
+    Since the flux line ends on the qubit chip, it is not possible to measure the flux pulse after propagation through the
+    fridge. The idea is to exploit the flux dependency of the qubit frequency, measured with a modified Ramsey sequence, to
+    estimate the flux amplitude received by the qubit as a function of time.
 
-    freq_range:\n
-    is a tuple ( upper, lower ), Unit in MHz.\n
-    resolution:\n
-    unit in MHz.\n
-    ro_element: ["q1_ro"], temporarily support only 1 element in the list.\n
-    initializer: from `initializer(paras,mode='depletion')`, and use paras return from `Circuit_info.give_depletion_time_for()`  
-    Return: \n
+    The sequence consists of a Ramsey sequence ("x90" - idle time - "x90" or "y90") with a fixed dephasing time.
+    A flux pulse with varying duration is played during the idle time. The Sx and Sy components of the Bloch vector are
+    measured by alternatively closing the Ramsey sequence with a "x90" or "y90" gate in order to extract the qubit dephasing
+    as a function of the flux pulse duration.
 
+    The results are then post-processed to retrieve the step function of the flux line which is fitted with an exponential
+    function. The corresponding exponential parameters are then used to derive the FIR and IIR filter taps that will
+    compensate for the distortions introduced by the flux line (wiring, bias-tee...).
+    Such digital filters are then implemented on the OPX. Note that these filters will introduce a global delay on all the
+    output channels that may rotate the IQ blobs so that you may need to recalibrate them for state discrimination or
+    active reset protocols for instance. You can read more about these filters here:
+    https://docs.quantum-machines.co/0.1/qm-qua-sdk/docs/Guides/output_filter/?h=filter#hardware-implementation
+
+    The protocol is inspired from https://doi.org/10.1063/1.5133894, which contains more details about the sequence and
+    the post-processing of the data.
+
+    This version sweeps the flux pulse duration using real-time QUA, which means that the flux pulse can be arbitrarily long
+    but the step must be larger than 1 clock cycle (4ns) and the minimum pulse duration must be 4 clock cycles (16ns).
+
+    Prerequisites:
+        - Having found the resonance frequency of the resonator coupled to the qubit under study (resonator_spectroscopy).
+        - Having calibrated qubit gates (x90 and y90) by running qubit spectroscopy, rabi_chevron, power_rabi, Ramsey and updated the configuration.
+        - (optional) Having calibrated the readout to perform state discrimination (IQ_blobs).
+
+    Next steps before going to the next node:
+        - Update the FIR and IIR filter taps in the configuration (config/controllers/con1/analog_outputs/"filter": {"feedforward": fir, "feedback": iir}).
+        - WARNING: the digital filters will add a global delay --> need to recalibrate IQ blobs (rotation_angle & ge_threshold).
     """
     def __init__( self, config, qmm: QuantumMachinesManager ):
         super().__init__( config, qmm )
@@ -74,17 +58,21 @@ class Cryoscope( QMMeasurement ):
         self.xy_elements = []
 
         self.initializer = None
-        
-        self.xy_z_timing_cc_qua = 20
+
+        self.xyz_timing_buffer = 80
+
+        self.pad_zeros = ( 20, 0 )
 
         self.time_range = ( 16, 600 )
         self.resolution = 4
         self.duration_cc_qua = self._lin_cc_array( )
-
+        self.amp_modify = 0.2
     
 
     def _get_qua_program( self ):
         
+        self.duration_cc_qua = self._lin_cc_array( )
+
         with program() as cryoscope:
             n = declare(int)  # QUA variable for the averaging loop
             t = declare(int)  # QUA variable for the flux pulse duration
@@ -119,12 +107,13 @@ class Cryoscope( QMMeasurement ):
                         # Play truncated flux pulse
                         align()
                         # Wait some time to ensure that the flux pulse will arrive after the x90 pulse
-                        wait( self.xy_z_timing_cc_qua )
+                        wait( self.xyz_timing_buffer )
 
-                        play("const", self.z_elements[0], duration=t)
+                        with if_(t > 3):
+                            play("const"*amp(self.amp_modify), self.z_elements[0], duration=t)
                         # Wait for the idle time set slightly above the maximum flux pulse duration to ensure that the 2nd x90
                         # pulse arrives after the longest flux pulse
-                        wait( max(self.duration_cc_qua) +self.xy_z_timing_cc_qua, self.xy_elements[0] )
+                        wait( max(self.duration_cc_qua) +self.xyz_timing_buffer, self.xy_elements[0] )
                         # Play second X/2 or Y/2
                         with if_(flag):
                             play("x90", self.xy_elements[0])
@@ -139,7 +128,7 @@ class Cryoscope( QMMeasurement ):
 
             with stream_processing():
                 # Cast the data into a 1D vector, average the 1D vectors together and store the results on the OPX processor
-                multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.duration_cc_qua),))
+                multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.duration_cc_qua), 2))
                 n_st.save("iteration")
 
         return cryoscope
@@ -175,8 +164,10 @@ class Cryoscope( QMMeasurement ):
         min_cc = self.time_range[0]//4
         if min_cc < 4: min_cc = 4
         max_cc = self.time_range[1]//4
-        
-        return np.arange( min_cc, max_cc, cc_resolution )
+
+        pad_zeros_cc = ( self.pad_zeros[0]//4, self.pad_zeros[1]//4 )
+
+        return np.arange( min_cc-pad_zeros_cc[0], max_cc+pad_zeros_cc[1], cc_resolution )
     
 
 
