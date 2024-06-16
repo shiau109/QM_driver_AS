@@ -254,7 +254,7 @@ class ChannelInfo:
             self._XyInfo["register"].append(f"q{idx}")
         # CW pulse info
             self._XyInfo[f'q{idx}']["const_len"] = 10 * u.us
-            self._XyInfo[f'q{idx}']["const_amp"] = 0.1
+            self._XyInfo[f'q{idx}']["const_amp"] = 0.5
         # Saturation pulse info
         self._XyInfo["saturation_len"] = 5 * u.us
         self._XyInfo["saturation_amp"] = 0.1
@@ -270,7 +270,7 @@ class ChannelInfo:
         delta or anh or d(anharmonicity, MHz)=-200,\n
         AC(AC_stark_detuning, MHz)=8,func='gauss' or 'drag',\n
         half_scale or half(half_pi_ampScale)=0.012.\n
-        const_amp default 0.1\n
+        const_amp default 0.5\n
         ### If update info is related to freq return the dict for updating the config.
         '''
         new_freq = {}
@@ -355,7 +355,7 @@ class ChannelInfo:
                 "idle":0.0,
                 "crosstalk":{},
                 "const_flux_len" : 600,
-                "const_flux_amp" : 0.1
+                "const_flux_amp" : 0.5
             }
 
         self._ZInfo["settle_time"] = 500 * u.ns
