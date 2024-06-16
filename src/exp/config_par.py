@@ -9,6 +9,13 @@ def get_offset( element, config ):
     offset = config["controllers"][con_name]["analog_outputs"][port_name]["offset"]
     return offset
 
+def get_const_wf( element, config ):
+    pulse_name = config["elements"][element]["operations"]["const"]
+    waveform_name = config["pulses"][pulse_name]["waveforms"]["single"]
+    const_amp = config["waveforms"][waveform_name]["sample"]
+
+    return const_amp
+
 def get_IF( element, config ):
     return config["elements"][element]["intermediate_frequency"]
 
