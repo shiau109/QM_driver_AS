@@ -1,15 +1,49 @@
 import os
 import xarray as xr
-from numpy import array, std, average, round, max, min, transpose, abs, sqrt, cos, sin, pi, linspace, arange,ndarray, log10
+from numpy import array, std, average, round, max, min, transpose, abs, sqrt, cos, sin, pi, linspace, arange,ndarray, log10, ndarray, asarray
 import matplotlib.pyplot as plt 
 from matplotlib.ticker import FuncFormatter
 from exp.relaxation_time import fit_T1
 
-dir_path = "/Users/ratiswu/Downloads/ZgateT1"
-fqs_meas = [5.34, 4.4]
-bias_meas = [0.165+0.0009, 0.165+0.0009-0.0435]
+dir_path = "/Users/ratiswu/Downloads/ZgateT1" # This folder contains all the ZgateT1 nc files
+background_dir_path = "/Users/ratiswu/Downloads/ZgateT1_BK" # This folder contains all the ZgateT1 BACKGROUND nc files
+z_period = 0.175 
+z_fq_map = {"sweet":{"fq_GHz":5.3,"Z_v":0.165+0.0009}, "4.4GHz":{"fq_GHz":4.4,"Z_v":0.165+0.0009-0.0435}}
+f_bare_MHz =  5.76045e3
+g_rq_MHz = 52.57
+detuning = f_bare_MHz-z_fq_map["sweet"]["fq_GHz"]*1e3
+kappa = ((38)**(-1))*((g_rq_MHz/detuning)**(-2))
 
+def set_fit_paras(): # **** manually set
+    d = 0.6
+    Ec = 0.3 #GHz
+    Ej_sum = 25
+    init = (Ec,Ej_sum,d)
+    up_b = (0.31,50,1)
+    lo_b = (0.29,10,0)
 
+    return init, lo_b, up_b
+
+def FqEqn(x,Ec,coefA,d):
+    """
+    a ~ period, b ~ offset, 
+    """
+    a = pi/z_period
+    b = z_fq_map["sweet"]["Z_v"]
+    return sqrt(8*coefA*Ec*sqrt(cos(a*(x-b))**2+d**2*sin(a*(x-b))**2))-Ec
+
+# ===================================================================================
+def find_nearest_idx(array, value):
+    array = asarray(array)
+    idx = (abs(array - value)).argmin()
+    return idx
+
+def build_result_pic_path(dir_path:str,folder_name:str="")->str:
+    parent = os.path.split(dir_path)[0]
+    new_path = os.path.join(parent,"ZgateT1_pic" if folder_name == "" else folder_name)
+    if not os.path.exists(new_path):
+        os.mkdir(new_path)
+    return new_path
 
 def zgate_T1_fitting(dataset:xr.Dataset):
     
@@ -30,58 +64,53 @@ def zgate_T1_fitting(dataset:xr.Dataset):
             
     return time/1000, flux, T1s, signals
 
-def set_fit_paras(): # **** manually set
-    d = 0.6
-    Ec = 0.3 #GHz
-    Ej_sum = 25
-    init = (Ec,Ej_sum,d)
-    up_b = (0.31,50,1)
-    lo_b = (0.29,10,0)
-
-    return init, lo_b, up_b
-
 def inver(lis:list):
     return 1/array(lis)
 
-def FqEqn(x,Ec,coefA,d):
-    """
-    a ~ period, b ~ offset, 
-    """
-    a = pi/0.175
-    b = 0.165+0.0009
-    return sqrt(8*coefA*Ec*sqrt(cos(a*(x-b))**2+d**2*sin(a*(x-b))**2))-Ec
+
+def plot_background(dir_path:str, sweet_bias:float):
+    pic_save_path = build_result_pic_path(dir_path, "Zgate_Background")
+    res = []
+    # Iterate directory
+    for path in os.listdir(dir_path):
+        # check if current path is a file
+        if os.path.isfile(os.path.join(dir_path, path)):
+            res.append(os.path.join(dir_path,path))
+
+    sets = []
+    for file in res:
+        sets.append(xr.open_dataset(file))
+
+    T1 = []
+    I_chennel = []
+    for dataset in sets:
+        
+        # for dataset in sub_set:
+        time, biass, T1s, Isignal = zgate_T1_fitting(dataset)
+        T1.append(T1s)
+        I_chennel.append(Isignal)
+        
+    avg_I_data = average(array(I_chennel),axis=0)
+    z = biass+sweet_bias
+
+    fig, ax = plt.subplots(figsize=(12.5,22))
+    ax:plt.Axes
+    im = ax.pcolormesh(z,time,transpose(avg_I_data),cmap='RdBu') 
+    ax.set_xlabel("bias (V)")
+    ax.set_ylabel("Free Evolution time(µs)") 
+    ax.set_title("No pi-pulse background, in 10 average")
+    ax.legend(loc='lower left')
+    fig.colorbar(im, ax)
+    # ax.set_xlim()
+    # ax.set_ylim()
+    plt.tight_layout()
+    pic_path = os.path.join(pic_save_path,"BG.png")
+    plt.savefig(pic_path)
 
 
 def plot_z_gateT1_poster(dir_path:str,sweet_bias:float,other_bias:list=None, other_bias_label:str=None, flux_cav_nc_path:str=None):
     
-    # res = []
-
-    # # Iterate directory
-    # x_path = "/Users/ratiswu/Downloads/ZgateT1_wopi_1"
-    # for path in os.listdir(x_path):
-    #     # check if current path is a file
-    #     if os.path.isfile(os.path.join(x_path, path)):
-    #         res.append(os.path.join(x_path,path))
-
-
-
-    # sets = []
-    # for file in res:
-    #     sets.append(xr.open_dataset(file))
-
-
-    # T1 = []
-    # I_chennel = []
-    # for dataset in sets:
-        
-    #     # for dataset in sub_set:
-    #     time, biass, T1s, Isignal = zgate_T1_fitting(dataset)
-    #     T1.append(T1s)
-    #     I_chennel.append(Isignal)
-        
-
-    # avg_I_data = average(array(I_chennel),axis=0)
-    # z = biass+sweet_bias
+    
     # ============================ keep below 
     # list to store files
     res = []
@@ -125,7 +154,7 @@ def plot_z_gateT1_poster(dir_path:str,sweet_bias:float,other_bias:list=None, oth
     plots_max_n = 5
     if flux_cav_nc_path is None:
         plots_max_n -= 1
-        if len(fqs_meas) == 1:
+        if other_bias is None:
             plots_max_n -= 1
             flx_cav_plot_idx= 3
             flx_qub_plt_idx = 4
@@ -133,7 +162,7 @@ def plot_z_gateT1_poster(dir_path:str,sweet_bias:float,other_bias:list=None, oth
             flx_cav_plot_idx= 4
             flx_qub_plt_idx = 3
     else:
-        if len(fqs_meas) == 1:
+        if other_bias is None:
             plots_max_n -= 1
             flx_cav_plot_idx= 3
             flx_qub_plt_idx = 4
@@ -142,7 +171,7 @@ def plot_z_gateT1_poster(dir_path:str,sweet_bias:float,other_bias:list=None, oth
             flx_qub_plt_idx = 4
     
     fig, ax = plt.subplots(plots_max_n,1,figsize=(12.5,22))
-
+    # # plot T1 and the 2D color map in flux
     im = ax[0].pcolormesh(z,time,transpose(avg_I_data),cmap='RdBu')
     ax[0].scatter(z,avg_T1,s=3,label='$T_{1}$',c='#0000FF')
    
@@ -150,12 +179,14 @@ def plot_z_gateT1_poster(dir_path:str,sweet_bias:float,other_bias:list=None, oth
         ax[0].vlines(other_bias,0,50,colors='black',linestyles="--",label=other_bias_label)
     ax[0].vlines([sweet_bias],0,50,colors='orange',linestyles="--",label='Fq=5.3GHz')
     # ax[0].set_xlim(0.035,0.08) 
+    # ax[0].set_ylim(0,50)
     ax[0].set_xlabel("bias (V)")
     ax[0].set_ylabel("Free Evolution time(µs)") 
-    ax[0].set_ylim(0,50)
     ax[0].set_title("$T_{1}$ vs Z-bias, in 10 average")
     ax[0].legend(loc='lower left')
-    # fig.colorbar(im, ax=ax[0])
+    fig.colorbar(im, ax=ax[0])
+
+    # # plot gamma_1 in flux
     rate = inver(avg_T1)
     ax[1].scatter(z,rate,s=3)
     if other_bias is not None:
@@ -164,9 +195,10 @@ def plot_z_gateT1_poster(dir_path:str,sweet_bias:float,other_bias:list=None, oth
 
     # ax[1].set_xlabel("bias (V)")
     ax[1].set_ylabel("$\Gamma_{1}$ (MHz)") 
-    ax[1].set_ylim(1/50,1/8)
+    # ax[1].set_ylim(1/50,1/8)
     ax[1].set_title("$\Gamma_{1}$ vs Z-bias, in 10 average")
 
+    # # plot T1 std percentage in flux
     ax[2].plot(z,std_T1_percent)
     # ax[2].set_xlabel("bias (V)")
     ax[2].set_ylabel("STD Percentage (%)")
@@ -174,10 +206,10 @@ def plot_z_gateT1_poster(dir_path:str,sweet_bias:float,other_bias:list=None, oth
     if other_bias is not None:
         ax[2].vlines(other_bias,0,100,colors='black',linestyles="--")
     ax[2].vlines([sweet_bias],0,100,colors='orange',linestyles="--")
-    ax[2].set_ylim(0,100)
+    # ax[2].set_ylim(0,100)
 
 
-
+    # # plot flux-cavity if it's given
     if flux_cav_nc_path is not None:
         dataset = xr.open_dataset(flux_cav_nc_path)
         for ro, data in dataset.data_vars.items():
@@ -187,55 +219,52 @@ def plot_z_gateT1_poster(dir_path:str,sweet_bias:float,other_bias:list=None, oth
             flux = dataset.coords["flux"].values
             ax[flx_cav_plot_idx].pcolormesh(flux,freq,abs(amp),cmap='RdBu')
             ax[flx_cav_plot_idx].set_xlim(min(z),max(z))
-            ax[flx_cav_plot_idx].set_ylim(5.7525,5.765)                          # ***
+            # ax[flx_cav_plot_idx].set_ylim(5.7525,5.765)                          # ***
             ax[flx_cav_plot_idx].set_ylabel("Frequency (GHz)")
             ax[flx_cav_plot_idx].set_title("Flux dependent Cavity")
             if other_bias is not None:
                 ax[flx_cav_plot_idx].vlines(other_bias,min(freq),max(freq),colors='black',linestyles="--")
             ax[flx_cav_plot_idx].vlines([sweet_bias],min(freq),max(freq),colors='orange',linestyles="--")
 
-
-    if len(fqs_meas) >= 2 and len(bias_meas) >= 2:
+    # # plot flux-fq fitting results
+    if other_bias is not None and other_bias_label is not None:
         from scipy.optimize import curve_fit 
         init, lo_b, up_b = set_fit_paras()
-        p, e = curve_fit(FqEqn,bias_meas,fqs_meas,p0=init,bounds=(lo_b,up_b))
-
+        p, e = curve_fit(FqEqn,[z_fq_map[pos]["Z_v"] for pos in z_fq_map],[z_fq_map[pos]["fq_GHz"] for pos in z_fq_map],p0=init,bounds=(lo_b,up_b))
         fq = FqEqn(z,*p)
-        print("fq sweetspot: ",FqEqn(array([sweet_bias]),*p))
+        pos_a = [z_fq_map["sweet"]["Z_v"],z_fq_map["sweet"]["fq_GHz"]]
+        
         ax[flx_qub_plt_idx].plot(z,fq)
         ax[flx_qub_plt_idx].set_title(f"Ec={round(p[0],3)} GHz, Ej={round(p[1],1)} GHz, d={round(p[2],2)}")
-        ax[flx_qub_plt_idx].vlines([bias_meas[1]],min(fq),fqs_meas[1],colors='black',linestyles="--")
-        ax[flx_qub_plt_idx].vlines([bias_meas[0]],min(fq),fqs_meas[0],colors='orange',linestyles="--")
+        ax[flx_qub_plt_idx].vlines([pos_a[0]],min(fq),pos_a[1],colors='black',linestyles="--")
+        ax[flx_qub_plt_idx].vlines([z_fq_map[other_bias_label]["Z_v"]],min(fq),z_fq_map[other_bias_label]["fq_GHz"],colors='orange',linestyles="--")
         ax[flx_qub_plt_idx].set_xlabel("bias (V)")
         ax[flx_qub_plt_idx].set_ylabel("$f_{q}$ (GHz)")
         ax[flx_qub_plt_idx].set_title("Flux dependent Transition Frequency")
 
 
-    peak_fq_z = array([0.151588, 0.142654, 0.136175, 0.131079, 0.126723, 0.122809, 
-                 0.119167, 0.1157939,0.112661, 0.109920])
-    
-    peak_fq = FqEqn(peak_fq_z,*p)
-    
-    from numpy import diff, mean
-    dif = diff(peak_fq)*1000
-    print("peak fq @ ",peak_fq)
-    print("that differences: ",dif)
-    print(f"avg diff = {round(mean(dif),3)} +/- {round(std(dif),3)} MHz")
-
+    # # background peak flux
+    # peak_fq_z = array([0.151588, 0.142654, 0.136175, 0.131079, 0.126723, 0.122809, 
+    #              0.119167, 0.1157939,0.112661, 0.109920])
+    # peak_fq = FqEqn(peak_fq_z,*p)
+    # from numpy import diff, mean
+    # dif = diff(peak_fq)*1000
+    # print("peak fq @ ",peak_fq)
+    # print("that differences: ",dif)
+    # print(f"avg diff = {round(mean(dif),3)} +/- {round(std(dif),3)} MHz")
+    folder_path = build_result_pic_path(dir_path)
+    pic_path = os.path.join(folder_path,"ZgateT1_poster.png")
     plt.tight_layout()
-    # plt.savefig("/Users/ratiswu/Downloads/ZgateT1_welldone.png")
-    plt.show()
-    # plt.close()
+    plt.savefig(pic_path)
+    # plt.show()
+    plt.close()
     if other_bias is not None:
         return fq, p, z, rate, std_T1_percent
     else:
         return [], [], z, rate, std_T1_percent
     
 
-
-from numpy import ndarray
-
-def plot_purcell_compa(fq:ndarray,p:list,z:ndarray,sweet_bias:float, rate:ndarray, std_T1_percent:ndarray):
+def plot_purcell_compa(fq:ndarray,p:list,z:ndarray,sweet_bias:float, rate:ndarray, std_T1_percent:ndarray, kappa:float):
     min_fq = min(fq)
     max_fq = max(fq)
     a = FqEqn(array([0.035]),*p)
@@ -274,40 +303,38 @@ def plot_purcell_compa(fq:ndarray,p:list,z:ndarray,sweet_bias:float, rate:ndarra
 
 
     fq_max = max(x_value)*1e3
-    fb = 5.76045e3
-    g = 52.57
-    delta_min = fb-fq_max
-    kappa = ((38)**(-1))*((g/delta_min)**(-2))
-    a = g/(sqrt(fb*fq_max))
+    delta_min = f_bare_MHz-fq_max
+    
+    a = g_rq_MHz/(sqrt(f_bare_MHz*fq_max))
     def gamma_purcell(fq:ndarray,fb:float,a:float,kappa:float):
         return array(kappa*((a**2)*fq*fb)/((fb**2)-2*fq*fb+(fq**2)))
 
-    print(gamma_purcell(fq_max,fb,a,kappa)**(-1))
+    print(gamma_purcell(fq_max,f_bare_MHz,a,kappa)**(-1))
     print(max(x_value))
 
     # fq = x_value
     gamma = rate
     # sd = std_T1_percent
-    gamma_p = gamma_purcell(x_value*1e3,fb,a,kappa)
+    gamma_p = gamma_purcell(x_value*1e3,f_bare_MHz,a,kappa)
 
     fig ,ax = plt.subplots(2,1,)
     ax[0].scatter(x_value,gamma,s=3,c='red',label="$\Gamma_{1}$")
     ax[0].plot(x_value,gamma_p,label="$\Gamma_{purcell}$")
     ax[0].set_ylabel("$\Gamma_{1}$ (MHz)") 
-    # ax[0].set_yscale("log")
-    # ax[0].set_ylim(1e-2,2e-1)
     ax[0].set_ylim(0.002,0.2)
     ax[0].set_title("$\Gamma_{1}$ vs Transition frequency, in 10 average")
     ax[0].set_xlabel("Transition Frequency (GHz)")
-    ax[0].set_xlim(4,5.3)
+    # ax[0].set_xlim(4,5.3)
+    # ax[0].set_ylim(1e-2,2e-1)
+    # ax[0].set_yscale("log")
     # ax[0].vlines([4.4],-0.05,max(gamma),colors='black',linestyles="--")
     # ax[0].vlines([5.3],0,max(gamma),colors='green',linestyles="--")
     ax[0].legend(loc='upper left')
 
     ax[1].scatter(x_value,(gamma-gamma_p)/gamma,s=3,label="$\Gamma_{other}$",c='green')
     ax[1].scatter(x_value,gamma_p/gamma,s=3,label="$\Gamma_{purcell}$")
-    ax[1].set_ylim(0,1)
-    ax[1].set_xlim(4,5.3)
+    # ax[1].set_ylim(0,1)
+    # ax[1].set_xlim(4,5.3)
     # ax[1].set_yscale("log")
     ax[1].legend()
     ax[1].set_xlabel("Transition Frequency (GHz)")
@@ -331,34 +358,33 @@ def plot_purcell_compa(fq:ndarray,p:list,z:ndarray,sweet_bias:float, rate:ndarra
     # plt.close()
 
 
-# from numpy import ndarray, asarray
 
-# def find_nearest_idx(array, value):
-#     array = asarray(array)
-#     idx = (abs(array - value)).argmin()
-#     return idx
+# # This needs modifying
 
-# def give_Z_plotT1(z:list,flux_ary:ndarray,time:ndarray,Isignals:ndarray):
-#     """
-#     z is a list contains what bias T1 you want to see,\n
-#     Isignals.shape = (flux, evoTime)
-#     """
-#     fig, ax = plt.subplots(len(z),1)
-#     for idx in range(len(z)):
-#         z_idx = find_nearest_idx(flux_ary, z[idx])
-#         target_data = Isignals[z_idx]
-#         T1, func = fit_T1(time,target_data)
-#         ax[idx].scatter(time,target_data)
-#         ax[idx].plot( time, func(time), label=f"{z[idx]}: T1={round(T1,1)}µs")
-#         ax[idx].legend(loc='upper right')
-#     plt.xlabel("Evolution time (µs)")
-#     plt.ylabel("I chennel (mV)")
-#     plt.show()
+def give_Z_plotT1(z:list,flux_ary:ndarray,time:ndarray,Isignals:ndarray):
+    """
+    z is a list contains what bias T1 you want to see,\n
+    --------
+    Isignals.shape = (flux, evoTime) -> avg_I_data in `plot_z_gateT1_poster`
+    time -> time in `plot_z_gateT1_poster`
+    flux_ary -> output in plot_z_gateT1_poster
+    """
+    fig, ax = plt.subplots(len(z),1)
+    for idx in range(len(z)):
+        z_idx = find_nearest_idx(flux_ary, z[idx])
+        target_data = Isignals[z_idx]
+        T1, func = fit_T1(time,target_data)
+        ax[idx].scatter(time,target_data)
+        ax[idx].plot( time, func(time), label=f"{z[idx]}: T1={round(T1,1)}µs")
+        ax[idx].legend(loc='upper right')
+    plt.xlabel("Evolution time (µs)")
+    plt.ylabel("I chennel (mV)")
+    plt.show()
 
 
 # # give_Z_plotT1([0.08,0.04533338,-0.02],z,time,avg_I_data)
 
 
 if __name__ == "__main__":
-    fq, p, z, rate, std_T1_percent = plot_z_gateT1_poster(dir_path,bias_meas[0],[bias_meas[1]],"fq=4.4GHz")
-    plot_purcell_compa(fq, p, z, bias_meas[0], rate, std_T1_percent)
+    fq, p, z, rate, std_T1_percent = plot_z_gateT1_poster(dir_path,z_fq_map["sweet"]["Z_v"],[z_fq_map["4.4GHz"]["Z_v"]],"4.4GHz")
+    plot_purcell_compa(fq, p, z, z_fq_map["sweet"]["Z_v"], rate, std_T1_percent, kappa)
