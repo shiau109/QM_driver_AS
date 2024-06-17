@@ -20,15 +20,15 @@ z_infos = [
         "crosstalk":{}
     },{
         "name":"q4",
-        "offset": -0.069,
+        "offset": -0.0495,
         "crosstalk":{}
     },{
         "name":"q7",
-        "offset": -0.04,
+        "offset": -0.0,
         "crosstalk":{}
     },{
         "name":"q8",
-        "offset": -0.04,
+        "offset": -0.05,
         "crosstalk":{}
     }
 ]

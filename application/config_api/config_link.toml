@@ -2,11 +2,11 @@
 
 
 [sample]
-  name = "5Q4C0510_DR1_scalinQ"
+  name = "5Q4C0510_DR1_AS16"
 
 [path]
-    config = "D:\\QM_config\\5Q4C0510_DR1_scalinQ.json"
-    dynamic_config = "D:\\QM_config\\5Q4C0510_DR1_scalinQ_config.pkl"
-    specification = "D:\\QM_config\\5Q4C0510_DR1_scalinQ_spec.pkl"
-    output_root = "D:\\Data\\5Q4C0510_DR1_scalinQ"
+    config = "D:\\QM_config\\5Q4C0510_DR1_AS16.json"
+    dynamic_config = "D:\\QM_config\\5Q4C0510_DR1_AS16_config.pkl"
+    specification = "D:\\QM_config\\5Q4C0510_DR1_AS16_spec.pkl"
+    output_root = "D:\\Data\\5Q4C0510_DR1_AS16"
 
