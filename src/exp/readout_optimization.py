@@ -16,111 +16,7 @@ u = unit(coerce_to_integer=True)
 import xarray as xr
 import time
 
-def freq_dep_signal( freq_range, freq_resolution, q_name:list, ro_element:list, n_avg, config, qmm:QuantumMachinesManager, amp_mod=0.5, simulate=False, initializer:tuple=None )->xr.Dataset:
-    """
-    Parameters:\n
-    freq_range: readout frequency, unit in MHz.\n
-    freq_resolution: unit in MHz.\n
-    amp_mod: The modification ratio of RO pulse amplitude default is 0.5 
 
-    Return:
-    ["mixer", "frequency", "state"]
-    """
-    freq_r1_qua = freq_range[0] * u.MHz
-    freq_r2_qua = freq_range[1] * u.MHz
-
-    freq_resolution_qua = freq_resolution * u.MHz
-
-    freqs_qua = np.arange( freq_r1_qua, freq_r2_qua, freq_resolution_qua )
-    freqs_mhz = freqs_qua/1e6 #  Unit in MHz
-
-    center_IF = {}
-    for r in ro_element:
-        center_IF[r] = config["elements"][r]["intermediate_frequency"]
-    freq_len = freqs_qua.shape[-1]
-    ###################
-    # The QUA program #
-    ###################
-    with program() as ro_freq_opt:
-        iqdata_stream = multiRO_declare(ro_element)
-        n = declare(int)
-        n_st = declare_stream()
-        df = declare(int)  # QUA variable for the readout frequency
-        p_idx = declare(int)
-        with for_(n, 0, n < n_avg, n + 1):
-            with for_(*from_array(df, freqs_qua)):
-                # Update the frequency of the two resonator elements
-                with for_each_( p_idx, [0, 1]):  
-                    # Init
-                    if initializer is None:
-                        wait(100*u.us)
-                        #wait(thermalization_time * u.ns)
-                    else:
-                        try:
-                            initializer[0](*initializer[1])
-                        except:
-                            print("Initializer didn't work!")
-                            wait(100*u.us)
-                        
-                    # Operation
-                    with switch_(p_idx, unsafe=True):
-                        with case_(0):
-                            pass
-                        with case_(1):
-                            for q in q_name:
-                                play("x180", q)
-                    align()
-                    # Measurement
-                    for r in ro_element:
-                        update_frequency(r, df +center_IF[r])
-                    multiRO_measurement(iqdata_stream, ro_element, weights="rotated_",amp_modify=amp_mod)
-            # Save the averaging iteration to get the progress bar
-            save(n, n_st)
-
-        with stream_processing():
-            n_st.save("iteration")
-            multiRO_pre_save( iqdata_stream, ro_element, (freq_len,2) )
-
-
-    # Open the quantum machine
-    qm = qmm.open_qm(config)
-    # Send the QUA program to the OPX, which compiles and executes it
-    job = qm.execute(ro_freq_opt)
-    # Get results from QUA program
-    
-    ro_ch_name = []
-    for r in ro_element:
-        ro_ch_name.append(f"{r}_I")
-        ro_ch_name.append(f"{r}_Q")
-    data_list = ro_ch_name + ["iteration"]   
-
-    results = fetching_tool(job, data_list=data_list, mode="live")
-    # Live plotting
-    while results.is_processing():
-        # Fetch results
-        fetch_data = results.fetch_all()
-        # Progress bar
-        iteration = fetch_data[-1]
-        progress_counter(iteration, n_avg, start_time=results.start_time)
-        # Plot
-        plt.tight_layout()
-        time.sleep(1)
-
-    fetch_data = results.fetch_all()
-    qm.close()
-    # Creating an xarray dataset
-    output_data = {}
-    for r_idx, r_name in enumerate(ro_element):
-        output_data[r_name] = ( ["mixer","frequency","state"],
-                                np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]]) )
-    dataset = xr.Dataset(
-        output_data,
-        coords={ "mixer":np.array(["I","Q"]), "frequency": freqs_mhz, "state":[0,1] }
-    )
-    # dataset.attrs["ref_xy_IF"] = ref_xy_IF
-    # dataset.attrs["ref_xy_LO"] = ref_xy_LO
-
-    return dataset
 
 def power_dep_signal( amp_range, amp_resolution, q_name:list, ro_element:list, n_avg, config, qmm:QuantumMachinesManager, initializer=None, simulate=False )->xr.Dataset:
     """
@@ -302,6 +198,139 @@ def get_signal_amp( data ):
 from exp.QMMeasurement import QMMeasurement
 import exp.config_par as gc
 
+class ROFreq( QMMeasurement ):
+    """
+    Parameters:\n
+
+    Output:\n
+    Dataset:\n
+    coords: "mixer","frequency","prepare_state"
+
+    """
+    def __init__( self, config, qmm: QuantumMachinesManager ):
+        super().__init__( config, qmm )
+
+        self.ro_elements = ["q4_ro"]
+        # self.z_elements = ["q0_z"]
+        self.xy_elements = ["q4_xy"]
+
+        self.initializer = None
+
+        self.freq_range = ( -1, 1 )
+        self.freq_resolution = 0.5
+
+        self.amp_mod = 1
+
+        self.preprocess = "ave"
+
+    def _get_qua_program( self ):
+        
+        self.qua_freqs = self._lin_freq_array()
+
+        self._attribute_config()
+        
+
+        with program() as multi_res_spec_vs_amp:
+        
+            iqdata_stream = multiRO_declare(self.ro_elements)
+            n = declare(int)
+            n_st = declare_stream()
+            df = declare(int)  # QUA variable for the readout frequency
+            p_idx = declare(bool,)
+            with for_(n, 0, n < self.shot_num, n + 1):
+                with for_(*from_array(df, self.qua_freqs)):
+                    # Update the frequency of the two resonator elements
+                    with for_each_( p_idx, [False, True]):  
+                        # Init
+                        if self.initializer is None:
+                            wait(100*u.us)
+                            #wait(thermalization_time * u.ns)
+                        else:
+                            try:
+                                self.initializer[0](*self.initializer[1])
+                            except:
+                                print("Initializer didn't work!")
+                                wait(100*u.us)
+                        align()
+                        # Operation
+                        with if_(p_idx):
+                            for q in self.xy_elements:
+                                play("x180", q)
+                        align()
+                        # Measurement
+                        for i, r in enumerate(self.ro_elements):
+                            update_frequency(r, df +self.ref_ro_IF[i])
+                        multiRO_measurement(iqdata_stream, self.ro_elements, weights="rotated_",amp_modify=self.amp_mod)
+                # Save the averaging iteration to get the progress bar
+                save(n, n_st)
+
+            with stream_processing():
+                n_st.save("iteration")
+                multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.qua_freqs),2))
+
+
+
+        return multi_res_spec_vs_amp
+    
+    def _get_fetch_data_list( self ):
+        ro_ch_name = []
+        for r_name in self.ro_elements:
+            ro_ch_name.append(f"{r_name}_I")
+            ro_ch_name.append(f"{r_name}_Q")
+
+        data_list = ro_ch_name + ["iteration"]   
+        return data_list
+    
+    def _data_formation( self ):
+
+        output_data = {}
+
+        for r_idx, r_name in enumerate(self.ro_elements):
+            output_data[r_name] = ( ["mixer","frequency","prepare_state"],
+                                np.array([ self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]]) )
+
+        freqs_mhz = self.qua_freqs/1e6
+
+        dataset = xr.Dataset(
+            output_data,
+            coords={ "mixer":np.array(["I","Q"]), "frequency": freqs_mhz, "prepare_state": np.array([0,1]) }
+        )
+
+        dataset = dataset.transpose("mixer", "prepare_state", "frequency")
+
+        self._attribute_config()
+        dataset.attrs["ro_LO"] = self.ref_ro_LO
+        dataset.attrs["ro_IF"] = self.ref_ro_IF
+        dataset.attrs["xy_LO"] = self.ref_xy_LO
+        dataset.attrs["xy_IF"] = self.ref_xy_IF
+        dataset.attrs["xy_elements"] = self.xy_elements
+
+
+        return dataset
+
+    def _attribute_config( self ):
+        self.ref_ro_IF = []
+        self.ref_ro_LO = []
+        for r in self.ro_elements:
+            self.ref_ro_IF.append(gc.get_IF(r, self.config))
+            self.ref_ro_LO.append(gc.get_LO(r, self.config))
+
+        self.ref_xy_IF = []
+        self.ref_xy_LO = []
+        for xy in self.xy_elements:
+            self.ref_xy_IF.append(gc.get_IF(xy, self.config))
+            self.ref_xy_LO.append(gc.get_LO(xy, self.config))
+
+
+    def _lin_freq_array( self ):
+
+        freq_r1_qua = self.freq_range[0] * u.MHz
+        freq_r2_qua = self.freq_range[1] * u.MHz
+        freq_resolution_qua = self.freq_resolution * u.MHz
+        freqs_qua = np.arange(freq_r1_qua,freq_r2_qua,freq_resolution_qua )
+        
+        return freqs_qua
+
 
 
 
@@ -375,8 +404,8 @@ class ROFreqAmpMapping( QMMeasurement ):
                             for i, r in enumerate(self.ro_elements):
                                 update_frequency(r, df +self.ref_ro_IF[i])
                             multiRO_measurement(iqdata_stream, self.ro_elements, weights="rotated_",amp_modify=r_amp)
-            # Save the averaging iteration to get the progress bar
-            save(n, n_st)
+                # Save the averaging iteration to get the progress bar
+                save(n, n_st)
 
             with stream_processing():
                 n_st.save("iteration")
