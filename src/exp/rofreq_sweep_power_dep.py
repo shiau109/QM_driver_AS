@@ -40,7 +40,7 @@ class ROFreqSweepPowerDep( QMMeasurement ):
         self.amp_resolution = 0.05
 
         self.freq_range = ( -10, 10 )
-        self.freq_resolution = 4
+        self.freq_resolution = 1
 
         
 
@@ -49,11 +49,11 @@ class ROFreqSweepPowerDep( QMMeasurement ):
         self.amp_ratio = self._get_amp_ratio_array()
         self.freqs_qua = self._lin_freq_array()
         
-        self.ref_ro_IF = {}
-        self.ref_ro_LO = {}
+        self.ro_IF = []
+        self.ro_LO = []
         for r in self.ro_elements:
-            self.ref_ro_IF[r] = gc.get_IF(r,self.config)
-            self.ref_ro_LO[r] = gc.get_LO(r,self.config)
+            self.ro_IF.append( gc.get_IF(r,self.config) )
+            self.ro_LO.append( gc.get_LO(r,self.config) )
 
         with program() as multi_res_spec_vs_amp:
         
@@ -79,8 +79,8 @@ class ROFreqSweepPowerDep( QMMeasurement ):
                                 wait(1*u.us, self.ro_elements)
 
                         # Operation    
-                        for r in self.ro_elements:
-                            update_frequency( r, self.ref_ro_IF[r]+df)
+                        for i, r in enumerate(self.ro_elements):
+                            update_frequency( r, self.ro_IF[i]+df)
                         
                         # Readout
                         multiRO_measurement( iqdata_stream, self.ro_elements, amp_modify=a, weights='rotated_' )
@@ -109,13 +109,10 @@ class ROFreqSweepPowerDep( QMMeasurement ):
     def _data_formation( self ):
 
         output_data = {}
-        ro_LO = []
-        ro_IF = []
+
         for r_idx, r_name in enumerate(self.ro_elements):
             output_data[r_name] = ( ["mixer","amp_ratio","frequency"],
                                 np.array([ self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]]) )
-            ro_LO.append(self.ref_ro_LO[r_name])
-            ro_IF.append(self.ref_ro_IF[r_name])
 
         freqs_mhz = self.freqs_qua/1e6
 
@@ -129,8 +126,8 @@ class ROFreqSweepPowerDep( QMMeasurement ):
             coords={ "mixer":np.array(["I","Q"]), "frequency": freqs_mhz, "amp_ratio": output_amp_ratio }
         )
 
-        dataset.attrs["ro_LO"] = ro_LO
-        dataset.attrs["ro_IF"] = ro_IF
+        dataset.attrs["ro_LO"] = self.ro_LO
+        dataset.attrs["ro_IF"] = self.ro_IF
 
         return dataset
 
@@ -182,6 +179,3 @@ def plot_power_dep_resonator( freqs, amp_ratio, data, ax=None, yscale="lin" ):
         pcm = ax.pcolormesh(freqs, amp_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
     plt.colorbar(pcm, label='Value')
 
-
-if __name__ == '__main__':
-    pass
