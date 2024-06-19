@@ -266,8 +266,11 @@ class ROFreq( QMMeasurement ):
 
             with stream_processing():
                 n_st.save("iteration")
-                multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.qua_freqs),2))
-
+                match self.preprocess:
+                    case "shot":
+                        multiRO_pre_save( iqdata_stream, self.ro_elements, (self.shot_num, len(self.qua_freqs),2), stream_preprocess="shot")
+                    case _:
+                        multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.qua_freqs),2))
 
 
         return multi_res_spec_vs_amp
@@ -283,20 +286,27 @@ class ROFreq( QMMeasurement ):
     
     def _data_formation( self ):
 
-        output_data = {}
-
-        for r_idx, r_name in enumerate(self.ro_elements):
-            output_data[r_name] = ( ["mixer","frequency","prepare_state"],
-                                np.array([ self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]]) )
-
         freqs_mhz = self.qua_freqs/1e6
 
-        dataset = xr.Dataset(
-            output_data,
-            coords={ "mixer":np.array(["I","Q"]), "frequency": freqs_mhz, "prepare_state": np.array([0,1]) }
-        )
+        coords = { 
+            "mixer":np.array(["I","Q"]), 
+            "frequency": freqs_mhz, 
+            "prepare_state": np.array([0,1]),
+            }
+        match self.preprocess:
+            case "shot":
+                dims_order = ["mixer","shot","frequency","prepare_state"]
+                coords["shot"] = np.arange(self.shot_num)
+            case _:
+                dims_order = ["mixer","frequency","prepare_state"]
 
-        dataset = dataset.transpose("mixer", "prepare_state", "frequency")
+        output_data = {}
+        for r_idx, r_name in enumerate(self.ro_elements):
+            data_array = np.array([ self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]])
+            output_data[r_name] = ( dims_order, np.squeeze(data_array))
+
+        print(data_array.shape)
+        dataset = xr.Dataset(output_data, coords=coords)
 
         self._attribute_config()
         dataset.attrs["ro_LO"] = self.ref_ro_LO
@@ -349,7 +359,7 @@ class ROFreqAmpMapping( QMMeasurement ):
         self.ro_elements = ["q4_ro"]
         # self.z_elements = ["q0_z"]
         self.xy_elements = ["q4_xy"]
-
+        self.preprocess = "ave"
         self.initializer = None
         
         self.amp_mod_range = (0.5, 1.5)
@@ -409,11 +419,12 @@ class ROFreqAmpMapping( QMMeasurement ):
 
             with stream_processing():
                 n_st.save("iteration")
-                # Cast the data into a 2D matrix, average the 2D matrices together and store the results on the OPX processor
                 # NOTE that the buffering goes from the most inner loop (left) to the most outer one (right)
-                multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.qua_freqs), len(self.qua_amp_ratio_array),2))
-
-
+                match self.preprocess:
+                    case "shot":
+                        multiRO_pre_save( iqdata_stream, self.ro_elements, (self.shot_num, len(self.qua_freqs), len(self.qua_amp_ratio_array),2), stream_preprocess="shot")
+                    case _:
+                        multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.qua_freqs), len(self.qua_amp_ratio_array),2))
 
         return multi_res_spec_vs_amp
     

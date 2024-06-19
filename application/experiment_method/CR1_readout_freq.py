@@ -17,31 +17,39 @@ from exp.save_data import save_nc, save_fig
 
 import matplotlib.pyplot as plt
 
-# Set parameters
-init_macro = initializer(200000,mode='wait')
-ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
-operate_qubit = ['q4_xy']
-
+from exp.readout_optimization import ROFreq
+my_exp = ROFreq(config, qmm)
+my_exp.initializer = initializer(300000,mode='wait')
+my_exp.ro_elements = ["q3_ro", "q4_ro"]
+my_exp.xy_elements = ['q4_xy']
+my_exp.freq_range = (-5, 5)
+my_exp.freq_resolution = 0.1
+my_exp.preprocess = "shot"
 save_data = True
 save_dir = link_config["path"]["output_root"]
-save_name = f"ro_amp_{operate_qubit[0]}"
-
-n_avg = 500
-
-freq_range = (-10, 10)
-freq_resolution = 0.1
+save_name = f"ro_amp_{my_exp.xy_elements[0]}"
 
 # Start measurement
-from exp.readout_optimization import *
-dataset = freq_dep_signal( freq_range, freq_resolution, operate_qubit, ro_elements, n_avg, config, qmm, initializer=init_macro, amp_mod=0.5)    # no progress (n/n_avg) showing
+dataset = my_exp.run(1000)
 
 # Data Saving 
 if save_data: save_nc(save_dir, save_name, dataset)
 
 # Plot
-transposed_data = dataset.transpose("mixer", "state", "frequency")
-dfs = transposed_data.coords["frequency"].values
-for ro_name, data in transposed_data.data_vars.items():  
+from exp.readout_optimization import *
+if my_exp.preprocess == "shot":
+    dataset = dataset.transpose("mixer","shot","prepare_state","frequency")
+
+else:
+    dataset = dataset.transpose("mixer","prepare_state","frequency")
+
+dfs = dataset.coords["frequency"].values
+for ro_name, data in dataset.data_vars.items():
+
+    data = data.values
+    if my_exp.preprocess == "shot":
+        data = np.average(data, axis=1)
+    print(data.shape)
     fig = plt.figure()
     ax = fig.subplots(3,1)
     plot_freq_signal( dfs, data, ro_name, ax )
