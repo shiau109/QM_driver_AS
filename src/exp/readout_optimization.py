@@ -438,20 +438,26 @@ class ROFreqAmpMapping( QMMeasurement ):
         return data_list
     
     def _data_formation( self ):
-
-        output_data = {}
-
-        for r_idx, r_name in enumerate(self.ro_elements):
-            output_data[r_name] = ( ["mixer","frequency","amp_ratio","prepare_state"],
-                                np.array([ self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]]) )
-
         freqs_mhz = self.qua_freqs/1e6
         amp_ratio = self.qua_amp_ratio_array
+        coords = { 
+            "mixer":np.array(["I","Q"]), 
+            "frequency": freqs_mhz, 
+            "prepare_state": np.array([0,1]),
+            }
+        match self.preprocess:
+            case "shot":
+                dims_order = ["mixer","shot","frequency","prepare_state"]
+                coords["shot"] = np.arange(self.shot_num)
+            case _:
+                dims_order = ["mixer","frequency","prepare_state"]
 
-        dataset = xr.Dataset(
-            output_data,
-            coords={ "mixer":np.array(["I","Q"]), "frequency": freqs_mhz, "amp_ratio": amp_ratio, "prepare_state": np.array([0,1]) }
-        )
+        output_data = {}
+        for r_idx, r_name in enumerate(self.ro_elements):
+            output_data[r_name] = ( dims_order,
+                                np.array([ self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]]) )
+
+        dataset = xr.Dataset( output_data, coords=coords )
 
         dataset = dataset.transpose("mixer", "prepare_state", "frequency", "amp_ratio")
 
