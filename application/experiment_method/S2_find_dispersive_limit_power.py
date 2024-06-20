@@ -22,11 +22,11 @@ my_exp.initializer = initializer(10000,mode='wait')
 my_exp.ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
 my_exp.freq_range = (-15,15)
 my_exp.freq_resolution = 0.1
-my_exp.amp_ratio = (0.1,1.9) # tha value range >0, <2
+my_exp.amp_mod_range = (0.1,1.9) # tha value range >0, <2
 my_exp.amp_scale = "lin"
 dataset = my_exp.run( 100 )
 
-save_data = True
+save_data = False
 file_name = f"power_dep_resonator_{my_exp.ro_elements[0]}_{len(my_exp.ro_elements)}"
 save_dir = link_config["path"]["output_root"]
 
