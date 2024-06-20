@@ -443,23 +443,24 @@ class ROFreqAmpMapping( QMMeasurement ):
         coords = { 
             "mixer":np.array(["I","Q"]), 
             "frequency": freqs_mhz, 
-            "prepare_state": np.array([0,1]),
+            "amp_ratio":amp_ratio,
+            "prepare_state": np.array([0,1])
             }
         match self.preprocess:
             case "shot":
-                dims_order = ["mixer","shot","frequency","prepare_state"]
+                dims_order = ["mixer","shot","frequency","amp_ratio","prepare_state"]
                 coords["shot"] = np.arange(self.shot_num)
             case _:
-                dims_order = ["mixer","frequency","prepare_state"]
+                dims_order = ["mixer","frequency","amp_ratio","prepare_state"]
 
         output_data = {}
         for r_idx, r_name in enumerate(self.ro_elements):
-            output_data[r_name] = ( dims_order,
-                                np.array([ self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]]) )
+            data_array = np.array([ self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]])
+            output_data[r_name] = ( dims_order, np.squeeze(data_array))
 
         dataset = xr.Dataset( output_data, coords=coords )
 
-        dataset = dataset.transpose("mixer", "prepare_state", "frequency", "amp_ratio")
+        # dataset = dataset.transpose("mixer", "prepare_state", "frequency", "amp_ratio")
 
         self._attribute_config()
         dataset.attrs["ro_LO"] = self.ref_ro_LO
