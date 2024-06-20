@@ -15,6 +15,6 @@ This project is use to run common experiment for Transmon on Quantum Machine and
     Repository -> Show in Explorer
 3. Check QUA version 
     qm-octave==1.2.0
-    qm-qua==1.1.3          
+    qm-qua==1.1.3
     qualang-tools==0.15.2
 
