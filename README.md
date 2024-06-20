@@ -1,7 +1,7 @@
-## About this Project:
+## About this Project
 This project is use to run common experiment for Transmon on Quantum Machine and record data.
 
-## How to use:
+## How to use
 1. Install this package.
 2. Set config file in /application/config_api
 
