@@ -24,7 +24,6 @@ from exp.rofreq_sweep import ROFreqSweep
 my_exp = ROFreqSweep(config, qmm)
 my_exp.freq_range = (-100, 100)
 my_exp.resolution = 0.1
-my_exp.frequencies_qua = my_exp._lin_freq_array()
 my_exp.initializer = initializer(2000,mode='wait')
 dataset = my_exp.run( 1000 )
 # Plot

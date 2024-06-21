@@ -36,12 +36,13 @@ class ROFreqSweep( QMMeasurement ):
         
         self.freq_range = ( -100, 100 )
         self.resolution = 1.
-        self.frequencies_qua = self._lin_freq_array( )
 
     
 
     def _get_qua_program( self ):
         
+        self.frequencies_qua = self._lin_freq_array( )
+
         with program() as resonator_spec:
 
             f = declare(int)  # QUA variable for the readout frequency --> Hz int 32 up to 2^32
