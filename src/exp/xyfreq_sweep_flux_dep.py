@@ -15,19 +15,26 @@ u = unit(coerce_to_integer=True)
 
 import xarray as xr
 import time
-def xyfreq_sweep_flux_dep( flux_range:tuple, flux_resolution:float, freq_range:tuple, freq_resolution:float, q_name:list, ro_element:list, z_name:list, config, qmm:QuantumMachinesManager, n_avg:int=100, saturation_len=5, saturation_ampRatio=0.1, sweep_type:str="z_pulse", initializer=None, simulate:bool=False):
-    """
-    q_name is XY \n
-    z_name is Z \n
+from exp.QMMeasurement import QMMeasurement
 
-    flux_range: \n
+class XYFreqFlux( QMMeasurement ):
+    """
+
+    Parameters:
+    ro_elements is RO \n
+    xy_elements is XY \n
+    Z_elements is Z \n
+
+    z_amp_ratio_range: \n
         is a tuple ( upper bound, lower bound), unit in voltage, ref to idle offset \n
-    flux_resolution: \n
+    z_amp_ratio_resolution: \n
         unit in voltage.\n
     freq_range: \n
         is a tuple ( upper bound, lower bound), unit in MHz, ref to idle IF \n
+    freq_resolution: \n
+        is a float, unit in MHz, ref to idle IF \n
     sweep_type: \n
-        enumerate z_pulse, const_z, two_tone
+        enumerate z_pulse, overlap
 
     return: \n
     dataset \n
@@ -35,224 +42,210 @@ def xyfreq_sweep_flux_dep( flux_range:tuple, flux_resolution:float, freq_range:t
     attrs: ref_xy_IF, ref_xy_LO, z_offset\n
     """
 
-    fluxes = np.arange(flux_range[0], flux_range[1], flux_resolution)
+    def __init__( self, config, qmm: QuantumMachinesManager ):
+        super().__init__( config, qmm )
 
-    freq_r1_qua = freq_range[0] * u.MHz
-    freq_r2_qua = freq_range[1] * u.MHz
-    freq_resolution_qua = freq_resolution * u.MHz
-    freqs = np.arange(freq_r1_qua, freq_r2_qua, freq_resolution_qua)
+        self.ro_elements = ["q4_ro"]
+        self.z_elements = ["q0_z"]
+        self.xy_elements = ["q4_xy"]
+        
+        self.preprocess = "ave"
+        self.initializer = None
+        
+        self.sweep_type = "z_pulse"
+        self.xy_driving_time = 10
+        self.xy_amp_mod = 0.1
+        self.z_amp_ratio_range = (0.5, 1.5)
+        self.z_amp_ratio_resolution = 0.1
 
-    freqs_mhz = freqs/1e6 # Unit in MHz
+        self.freq_range = ( -1, 1 )
+        self.freq_resolution = 0.5
 
-    saturation_time_qua = saturation_len/4 *u.us
+        
 
-    ref_ro_IF = {}
-    for r in ro_element:
-        ref_ro_IF[r] = gc.get_IF(r, config)
-    ref_xy_IF = {}
-    ref_xy_LO = {}
-    for xy in q_name:
-        ref_xy_IF[xy] = gc.get_IF(xy, config)
-        ref_xy_LO[xy] = gc.get_LO(xy,config)
+    def _get_qua_program( self ):
+        
+        self.qua_z_amp_ratio_array = self._lin_z_amp_array()
+        # print(self.qua_cc_pi_timing)
+        self.qua_freqs = self._lin_freq_array()
 
-    ref_z_offset = {}
-    for z in z_name:
-        ref_z_offset[z] = gc.get_offset(z, config)
+        self.qua_xy_driving_time = self.xy_driving_time/4 *u.us
+        self._attribute_config()
 
-    match sweep_type:
-        case "z_pulse":
-            qua_prog = qua_constant_drive_z_pulse( ro_element, n_avg, fluxes, freqs, saturation_ampRatio, saturation_time_qua, ref_z_offset, ref_xy_IF, initializer)
-        case "const_z":
-            qua_prog = qua_constant_drive_const_z( ro_element, n_avg, fluxes, freqs, saturation_ampRatio, saturation_time_qua, ref_z_offset, ref_xy_IF, initializer)
-        case "two_tone":
-            qua_prog = qua_constant_drive_twotone( ro_element, n_avg, fluxes, freqs, saturation_ampRatio, saturation_time_qua, ref_z_offset, ref_xy_IF, initializer)
-        case _:
-            qua_prog = qua_constant_drive_z_pulse( ro_element, n_avg, fluxes, freqs, saturation_ampRatio, saturation_time_qua, ref_z_offset, ref_xy_IF, initializer)
+        with program() as qua_prog:
 
-    if simulate:
-        simulation_config = SimulationConfig(duration=10_000)  # In clock cycles = 4ns
-        job = qmm.simulate(config, qua_prog, simulation_config)
-        job.get_simulated_samples().con1.plot()
-        plt.show()
-    else:
-        qm = qmm.open_qm(config)
-        job = qm.execute(qua_prog)
+            iqdata_stream = multiRO_declare( self.ro_elements )
+            n = declare(int)  
+            n_st = declare_stream()
+            df = declare(int)  
+            r_z_amp = declare(fixed)  
 
-        # fig, ax = plt.subplots(2, len(ro_element))
-        # if len(ro_element) == 1:
-        #     ax = [[ax[0]],[ax[1]]]
-        # interrupt_on_close(fig, job)
+            with for_(n, 0, n < self.shot_num, n + 1):
 
+                with for_(*from_array(r_z_amp, self.qua_z_amp_ratio_array )):
+
+                    with for_(*from_array(df, self.qua_freqs)):
+
+                        # Initialization
+                        if self.initializer is None:
+                            wait(1*u.us, self.ro_elements)
+                        else:
+                            try:
+                                self.initializer[0](*self.initializer[1])
+                            except:
+                                print("initializer didn't work!")
+                                wait(1*u.us, self.ro_elements)
+
+                        # operation
+                        match self.sweep_type:
+                            case "z_pulse":
+                                self._qua_constant_drive_z_pulse(r_z_amp, df)
+                            case "overlap":
+                                self._qua_constant_drive_overlap(r_z_amp, df)
+                            case _:
+                                self._qua_constant_drive_z_pulse(r_z_amp, df)
+
+                        # measurement
+                        multiRO_measurement( iqdata_stream, self.ro_elements, weights='rotated_'  )
+
+                    # assign(index, index + 1)
+                save(n, n_st)
+            with stream_processing():
+                n_st.save("n")
+                multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.qua_z_amp_ratio_array), len(self.qua_freqs)))
+
+        return qua_prog
+        
+
+        
+    
+    def _get_fetch_data_list( self ):
         ro_ch_name = []
-        for r_name in ro_element:
+        for r_name in self.ro_elements:
             ro_ch_name.append(f"{r_name}_I")
             ro_ch_name.append(f"{r_name}_Q")
 
-        data_list = ro_ch_name + ["n"]   
-        results = fetching_tool(job, data_list=data_list, mode="live")
+        data_list = ro_ch_name + ["iteration"]   
+        return data_list
+    
+    def _data_formation( self ):
+        freqs_mhz = self.qua_freqs/1e6
+        amp_ratio = self.qua_z_amp_ratio_array
+        coords = { 
+            "mixer":np.array(["I","Q"]), 
+            "frequency": freqs_mhz, 
+            "amp_ratio":amp_ratio,
+            "prepare_state": np.array([0,1])
+            }
+        match self.preprocess:
+            case "shot":
+                dims_order = ["mixer","shot","frequency","amp_ratio","prepare_state"]
+                coords["shot"] = np.arange(self.shot_num)
+            case _:
+                dims_order = ["mixer","frequency","amp_ratio","prepare_state"]
+
         output_data = {}
-        while results.is_processing():
-            # Fetch results
-            fetch_data = results.fetch_all()
-            # Progress bar
-            iteration = fetch_data[-1]
-            progress_counter(iteration, n_avg, start_time=results.start_time)
-            time.sleep(1)
+        for r_idx, r_name in enumerate(self.ro_elements):
+            data_array = np.array([ self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]])
+            output_data[r_name] = ( dims_order, np.squeeze(data_array))
 
-        fetch_data = results.fetch_all()
-        qm.close()
-        # Creating an xarray dataset
-        output_data = {}
-        for r_idx, r_name in enumerate(ro_element):
-            output_data[r_name] = ( ["mixer","flux","frequency"],
-                                    np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]]) )
-        dataset = xr.Dataset(
-            output_data,
-            coords={ "mixer":np.array(["I","Q"]), "frequency": freqs_mhz, "flux": fluxes }
-        )
+        dataset = xr.Dataset( output_data, coords=coords )
 
-        dataset.attrs["ro_IF"] = list(ref_ro_IF.values())
-        dataset.attrs["xy_IF"] = list(ref_xy_IF.values())
-        dataset.attrs["xy_LO"] =  list(ref_xy_LO.values())
-        dataset.attrs["z_offset"] = list(ref_z_offset.values())
+        # dataset = dataset.transpose("mixer", "prepare_state", "frequency", "amp_ratio")
 
+        self._attribute_config()
+        dataset.attrs["ro_LO"] = self.ref_ro_LO
+        dataset.attrs["ro_IF"] = self.ref_ro_IF
+        dataset.attrs["xy_LO"] = self.ref_xy_LO
+        dataset.attrs["xy_IF"] = self.ref_xy_IF
+        dataset.attrs["z_offset"] = self.z_offset
+
+        dataset.attrs["z_amp_const"] = self.z_amp
         return dataset
 
+    def _attribute_config( self ):
+        self.ref_ro_IF = []
+        self.ref_ro_LO = []
+        for r in self.ro_elements:
+            self.ref_ro_IF.append(gc.get_IF(r, self.config))
+            self.ref_ro_LO.append(gc.get_LO(r, self.config))
 
-def qua_constant_drive_z_pulse( ro_element, n_avg, fluxes, freqs, saturation_ampRatio, saturation_len, ref_z_offset:dict, ref_xy_IF:dict, initializer=None):
-    with program() as qua_prog:
-        iqdata_stream = multiRO_declare( ro_element )
-        n = declare(int)  
-        n_st = declare_stream()
-        df = declare(int)  
-        dc = declare(fixed)  
+        self.ref_xy_IF = []
+        self.ref_xy_LO = []
+        for xy in self.xy_elements:
+            self.ref_xy_IF.append(gc.get_IF(xy, self.config))
+            self.ref_xy_LO.append(gc.get_LO(xy, self.config))
 
-        with for_(n, 0, n < n_avg, n + 1):
+        self.z_offset = []
+        self.z_amp = []
+        for z in self.z_elements:
+            self.z_offset.append( gc.get_offset(z, self.config ))
+            self.z_amp.append(gc.get_const_wf(z, self.config ))
 
-            with for_(*from_array(dc, fluxes)):
+    def _lin_freq_array( self ):
 
-                with for_(*from_array(df, freqs)):
+        freq_r1_qua = self.freq_range[0] * u.MHz
+        freq_r2_qua = self.freq_range[1] * u.MHz
+        freq_resolution_qua = self.freq_resolution * u.MHz
+        freqs_qua = np.arange(freq_r1_qua,freq_r2_qua,freq_resolution_qua )
+        
+        return freqs_qua
 
-                    # Initialization
-                    if initializer is None:
-                        wait(1*u.us, ro_element)
-                    else:
-                        try:
-                            initializer[0](*initializer[1])
-                        except:
-                            print("initializer didn't work!")
-                            wait(1*u.us, ro_element)
+    def _lin_z_amp_array( self ):
+        amp_ratio = np.arange( self.z_amp_ratio_range[0],self.z_amp_ratio_range[1], self.z_amp_ratio_resolution)
+        return amp_ratio
+    
 
-                    # operation
-                    for z_name, ref_z in ref_z_offset.items():
-                        set_dc_offset( z_name, "single", ref_z +dc)
-                        # assign(index, 0)
-                    wait(25)
-                    for xy_name, ref_IF in ref_xy_IF.items():
-                        update_frequency( xy_name, ref_IF +df )
-                        play("const"*amp(saturation_ampRatio), xy_name, duration=saturation_len)
-                    align()
-                    for z_name, ref_z in ref_z_offset.items():
-                        set_dc_offset( z_name, "single", ref_z)
-                    wait(250)
-                    align()
-                    # measurement
-                    multiRO_measurement( iqdata_stream, ro_element, weights='rotated_'  )
+    def _qua_constant_drive_z_pulse( self, r_z_amp, df ):
+        
+        # operation
+        for i, z in enumerate(self.z_elements):
+            play( "const"*amp( r_z_amp ), z, duration=self.qua_xy_driving_time)
+        for i, xy in enumerate(self.xy_elements):
+            update_frequency( xy, self.ref_xy_IF[i] +df )
+            play("const"*amp( self.xy_amp_mod ), xy, duration=self.qua_xy_driving_time)
+        align()
 
-                # assign(index, index + 1)
-            save(n, n_st)
-        with stream_processing():
-            n_st.save("n")
-            multiRO_pre_save( iqdata_stream, ro_element, (len(fluxes), len(freqs)))
+    def _qua_constant_drive_overlap( self, r_z_amp, df ):
+       
+        # operation
+        for i, z in enumerate(self.z_elements):
+            play( "const"*amp( r_z_amp ), z, duration=self.qua_xy_driving_time)
+        # wait(250)
+        for i, xy in enumerate(self.xy_elements):
+            update_frequency( xy, self.ref_xy_IF[i] +df )
+            play("const"*amp( self.xy_amp_mod ), xy, duration=self.qua_xy_driving_time)
 
-    return qua_prog
+        for i, ro in enumerate(self.ro_elements):
+            wait( int(self.qua_xy_driving_time-gc.get_ro_length(ro,self.config)//4), ro )
 
-def qua_constant_drive_twotone( ro_element, n_avg, fluxes, freqs, saturation_ampRatio, saturation_len, ref_z_offset:dict, ref_xy_IF:dict, initializer=None ):
-    with program() as qua_prog:
-        iqdata_stream = multiRO_declare( ro_element )
-        n = declare(int)  
-        n_st = declare_stream()
-        df = declare(int)  
-        dc = declare(fixed)  
-        # dynamic_ro_IF = declare(int, value=res_IF_list) 
-        # index = declare(int, value=0) 
+    def _qua_constant_drive_z_pulse_offset( self, r_z_amp, df ):
+        
+        # operation
+        for i, z in enumerate(self.z_elements):
+            play( "const"*amp( r_z_amp ), z, duration=self.qua_xy_driving_time)
+        for i, xy in enumerate(self.xy_elements):
+            update_frequency( xy, self.ref_xy_IF[i] +df )
+            play("const"*amp( self.xy_amp_mod ), xy, duration=self.qua_xy_driving_time)
+        align()
 
-        with for_(n, 0, n < n_avg, n + 1):
+    def _qua_constant_drive_overlap_offset( self, r_z_amp, df ):
+        # operation
+        for i, z in enumerate(self.z_elements):
+            set_dc_offset( z, "single", self.z_offset +r_z_amp)
+            # assign(index, 0)
+        # wait(25)
+        for i, xy in enumerate(self.xy_elements):
+            update_frequency( xy, self.ref_xy_IF +df )
+            play("const"*amp( self.xy_amp_mod ), xy, duration=self.qua_xy_driving_time)
+        align()
+        for i, z in enumerate(self.z_elements):
+            set_dc_offset( z, "single", self.z_offset)
+        # wait(25)
+        align()
 
-            with for_(*from_array(dc, fluxes)):
 
-                with for_(*from_array(df, freqs)):
 
-                    # Initialization
-                    if initializer is None:
-                        wait(1*u.us, ro_element)
-                    else:
-                        try:
-                            initializer[0](*initializer[1])
-                        except:
-                            print("initializer didn't work!")
-                            wait(1*u.us, ro_element)
-            
-                    # operation
-                    for z_name, ref_z in ref_z_offset.items():
-                        set_dc_offset( z_name, "single", ref_z +dc)
-                    wait(250)
-                    for xy_name, ref_IF in ref_xy_IF.items():
-                        update_frequency( xy_name, ref_IF +df )
-                        play("const"*amp(saturation_ampRatio), xy_name, duration=saturation_len)
-                    # measurement
-                    multiRO_measurement( iqdata_stream, ro_element, weights='rotated_'  )              
-                    align()
-                    
-
-                # assign(index, index + 1)
-            save(n, n_st)
-        with stream_processing():
-            n_st.save("n")
-            multiRO_pre_save( iqdata_stream, ro_element, (len(fluxes), len(freqs)))
-    return qua_prog
-
-def qua_constant_drive_const_z( ro_element, n_avg, fluxes, freqs, saturation_ampRatio, saturation_len, ref_z_offset:dict, ref_xy_IF:dict, initializer=None ):
-    with program() as qua_prog:
-        iqdata_stream = multiRO_declare( ro_element )
-        n = declare(int)  
-        n_st = declare_stream()
-        df = declare(int)  
-        dc = declare(fixed)  
-
-        with for_(n, 0, n < n_avg, n + 1):
-
-            with for_(*from_array(dc, fluxes)):
-
-                for z_name, ref_z in ref_z_offset.items():
-                    set_dc_offset( z_name, "single", ref_z +dc)
-
-                with for_(*from_array(df, freqs)):
-                    # Initialization
-                    if initializer is None:
-                        wait(1*u.us, ro_element)
-                    else:
-                        try:
-                            initializer[0](*initializer[1])
-                        except:
-                            print("initializer didn't work!")
-                            wait(1*u.us, ro_element)
-
-                    # operation
-                    for xy_name, ref_IF in ref_xy_IF.items():
-                        update_frequency( xy_name, ref_IF +df )
-                        play("saturation"*amp(saturation_ampRatio), xy_name, duration=saturation_len)
-                    
-                    align()
-                    # measurement
-                    multiRO_measurement( iqdata_stream, ro_element, weights='rotated_'  )
-
-                # assign(index, index + 1)
-            save(n, n_st)
-        with stream_processing():
-            n_st.save("n")
-            multiRO_pre_save( iqdata_stream, ro_element, (len(fluxes), len(freqs)))
-    return qua_prog
 
 
 def plot_flux_dep_qubit( data, flux, dfs, ax=None ):

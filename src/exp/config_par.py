@@ -21,3 +21,8 @@ def get_IF( element, config ):
 
 def get_LO( element, config ):
     return config["elements"][element]["mixInputs"]["lo_frequency"]
+
+def get_ro_length( element, config ):
+
+    pulse_name = config["elements"][element]["operations"]["readout"]
+    return pulse_name["length"]
