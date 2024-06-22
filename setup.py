@@ -20,7 +20,13 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Operating System :: OS Independent",
     ],
-    # install_requires=["bson >= 0.5.10"],
+    install_requires=[
+        "numpy>=1.26.0",
+        "scipy>=1.13.0,",
+        "matplotlib>=3.9",
+        "xarray>=2024.6.0",
+        "tomlkit>=0.12.5",
+    ],
     # extras_require={
     #     "dev": ["pytest>=7.0", "twine>=4.0.2"],
     # },
