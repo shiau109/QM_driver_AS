@@ -57,23 +57,8 @@ class DetunedRabiFluxPulse( QMMeasurement ):
         self.qua_freqs = self._lin_freq_array()
         self.qua_cc_duration = self.duration//4
 
-        self.ref_ro_IF = []
-        self.ref_ro_LO = []
-        for r in self.ro_elements:
-            self.ref_ro_IF.append(gc.get_IF(r, self.config))
-            self.ref_ro_LO.append(gc.get_LO(r, self.config))
-
-        self.ref_xy_IF = []
-        self.ref_xy_LO = []
-        for xy in self.xy_elements:
-            self.ref_xy_IF.append(gc.get_IF(xy, self.config))
-            self.ref_xy_LO.append(gc.get_LO(xy, self.config))
-
-        self.z_offset = []
-        self.z_amp = []
-        for z in self.z_elements:
-            self.z_offset.append( gc.get_offset(z, self.config ))
-            self.z_amp.append(gc.get_const_wf(z, self.config ))
+        self._attribute_config()
+        
 
         with program() as multi_res_spec_vs_amp:
         
@@ -149,6 +134,7 @@ class DetunedRabiFluxPulse( QMMeasurement ):
             coords={ "mixer":np.array(["I","Q"]), "frequency": freqs_mhz, "pi_timing": pi_timing }
         )
 
+        self._attribute_config()
         dataset.attrs["ro_LO"] = self.ref_ro_LO
         dataset.attrs["ro_IF"] = self.ref_ro_IF
         dataset.attrs["xy_LO"] = self.ref_xy_LO
@@ -158,6 +144,25 @@ class DetunedRabiFluxPulse( QMMeasurement ):
         dataset.attrs["z_amp"] = self.z_amp
 
         return dataset
+
+    def _attribute_config( self ):
+        self.ref_ro_IF = []
+        self.ref_ro_LO = []
+        for r in self.ro_elements:
+            self.ref_ro_IF.append(gc.get_IF(r, self.config))
+            self.ref_ro_LO.append(gc.get_LO(r, self.config))
+
+        self.ref_xy_IF = []
+        self.ref_xy_LO = []
+        for xy in self.xy_elements:
+            self.ref_xy_IF.append(gc.get_IF(xy, self.config))
+            self.ref_xy_LO.append(gc.get_LO(xy, self.config))
+
+        self.z_offset = []
+        self.z_amp = []
+        for z in self.z_elements:
+            self.z_offset.append( gc.get_offset(z, self.config ))
+            self.z_amp.append(gc.get_const_wf(z, self.config ))
 
     def _lin_freq_array( self ):
 
