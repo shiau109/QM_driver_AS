@@ -25,24 +25,28 @@ z_name = ['q4_z']
 sweep_type = "z_pulse"      # "z_pulse", "const_z", "two_tone"
 
 saturation_len = 20  # In us (should be < FFT of df)
-saturation_ampRatio = 0.1 # pre-factor to the value defined in the config - restricted to [-2; 2)
+saturation_ampRatio = 0.05 # pre-factor to the value defined in the config - restricted to [-2; 2)
 n_avg = 1000
 
 flux_range = (-0.01,0.01)
 flux_resolution = 0.001
 
-freq_range = (-50,50)
-freq_resolution = 0.5
+freq_range = (-5,5)
+freq_resolution = 0.1
+
+
+# Start meausrement
+from exp.xyfreq_sweep_flux_dep import XYFreqFlux
+my_exp = XYFreqFlux(config, qmm)
+my_exp.ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
+my_exp.xy_elements = ['q4_xy']
+my_exp.z_elements = ['q4_z']
+
+dataset = my_exp.run( 1000 )
 
 save_data = True
 save_name = f"Spectrum_{q_name[0]}_{z_name[0]}_{sweep_type}"
 save_dir = link_config["path"]["output_root"]
-# Start meausrement
-from exp.xyfreq_sweep_flux_dep import *
-dataset = xyfreq_sweep_flux_dep( flux_range, flux_resolution, freq_range, freq_resolution, q_name, ro_elements, z_name, config, qmm, saturation_ampRatio=saturation_ampRatio, saturation_len=saturation_len, n_avg=n_avg, sweep_type=sweep_type, simulate=False)
-
-
-
 if save_data: save_nc( save_dir, save_name, dataset)
 
 # Plot
