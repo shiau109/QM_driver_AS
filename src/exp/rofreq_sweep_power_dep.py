@@ -126,8 +126,8 @@ class ROFreqSweepPowerDep( QMMeasurement ):
             coords={ "mixer":np.array(["I","Q"]), "frequency": freqs_mhz, "amp_ratio": output_amp_ratio }
         )
 
-        dataset.attrs["ro_LO"] = self.ro_LO
-        dataset.attrs["ro_IF"] = self.ro_IF
+        #dataset.attrs["ro_LO"] = self.ro_LO
+        #dataset.attrs["ro_IF"] = self.ro_IF
 
         return dataset
 
