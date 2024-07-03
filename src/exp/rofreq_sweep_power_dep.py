@@ -48,12 +48,8 @@ class ROFreqSweepPowerDep( QMMeasurement ):
         
         self.amp_ratio = self._get_amp_ratio_array()
         self.freqs_qua = self._lin_freq_array()
+        self._attribute_config()
         
-        self.ro_IF = []
-        self.ro_LO = []
-        for r in self.ro_elements:
-            self.ro_IF.append( gc.get_IF(r,self.config) )
-            self.ro_LO.append( gc.get_LO(r,self.config) )
 
         with program() as multi_res_spec_vs_amp:
         
@@ -80,7 +76,7 @@ class ROFreqSweepPowerDep( QMMeasurement ):
 
                         # Operation    
                         for i, r in enumerate(self.ro_elements):
-                            update_frequency( r, self.ro_IF[i]+df)
+                            update_frequency( r, self.ref_ro_IF[i]+df)
                         
                         # Readout
                         multiRO_measurement( iqdata_stream, self.ro_elements, amp_modify=a, weights='rotated_' )
@@ -126,8 +122,8 @@ class ROFreqSweepPowerDep( QMMeasurement ):
             coords={ "mixer":np.array(["I","Q"]), "frequency": freqs_mhz, "amp_ratio": output_amp_ratio }
         )
 
-        #dataset.attrs["ro_LO"] = self.ro_LO
-        #dataset.attrs["ro_IF"] = self.ro_IF
+        dataset.attrs["ro_LO"] = self.ref_ro_LO
+        dataset.attrs["ro_IF"] = self.ref_ro_IF
 
         return dataset
 
@@ -155,6 +151,12 @@ class ROFreqSweepPowerDep( QMMeasurement ):
             case "log": return  self._log_amp_ratio_array()
             case _: return self._lin_amp_ratio_array()    
 
+    def _attribute_config( self ):
+        self.ref_ro_IF = []
+        self.ref_ro_LO = []
+        for r in self.ro_elements:
+            self.ref_ro_IF.append(gc.get_IF(r, self.config))
+            self.ref_ro_LO.append(gc.get_LO(r, self.config))
     
 
 def plot_power_dep_resonator( freqs, amp_ratio, data, ax=None, yscale="lin" ):
