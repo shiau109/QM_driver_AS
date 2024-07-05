@@ -20,7 +20,7 @@ import exp.config_par as gc
 import xarray as xr
 from exp.QMMeasurement import QMMeasurement
 
-class XYFreqFlux( QMMeasurement ):
+class RamseyFreqCalibration( QMMeasurement ):
     """
     Use positive and nagative detuning refence to freq in config to get measured ramsey oscillation frequency.
     evo_time unit is tick (4ns)
@@ -45,26 +45,27 @@ class XYFreqFlux( QMMeasurement ):
         # self.sweep_type = "z_pulse"
 
 
-        self.virtial_detune_freq = 5
+        self.virtial_detune_freq = 10
 
-        self.point_per_period = 20
-        self.max_period = 6
+        self.point_per_period = 1
+        self.max_period = 1
         
 
     def _get_qua_program( self ):
         
 
         self.qua_cc_evo = self._lin_time_array()
+        print(self.qua_cc_evo)
         self._attribute_config()
 
         with program() as ramsey:
-            iqdata_stream = multiRO_declare( ro_element )
+            iqdata_stream = multiRO_declare( self.ro_elements )
             n = declare(int)
             n_st = declare_stream()
             t = declare(int)  # QUA variable for the idle time
             phi = declare(fixed)  # Phase to apply the virtual Z-rotation
             phi_idx = declare(bool,)
-            with for_(n, 0, n < n_avg, n + 1):
+            with for_(n, 0, n < self.shot_num, n + 1):
                 with for_each_( phi_idx, [True, False]):
                     with for_(*from_array(t, self.qua_cc_evo)):
 
@@ -87,20 +88,20 @@ class XYFreqFlux( QMMeasurement ):
                         False_value = Cast.mul_fixed_by_int(-self.virtial_detune_freq * 1e-3, 4 * t)
                         assign(phi, Util.cond(phi_idx, True_value, False_value))
 
-                        for q in q_name:
+                        for q in self.xy_elements:
                             play("x90", q)  # 1st x90 gate
 
-                        for q in q_name:
+                        for q in self.xy_elements:
                             wait(t, q)
 
-                        for q in q_name:
+                        for q in self.xy_elements:
                             frame_rotation_2pi(phi, q)  # Virtual Z-rotation
                             play("x90", q)  # 2st x90 gate
 
                         # Align after playing the qubit pulses.
                         align()
                         # Readout
-                        multiRO_measurement(iqdata_stream, ro_element, weights="rotated_")         
+                        multiRO_measurement(iqdata_stream, self.ro_elements, weights="rotated_")         
                     
 
                 # Save the averaging iteration to get the progress bar
@@ -108,7 +109,7 @@ class XYFreqFlux( QMMeasurement ):
 
             with stream_processing():
                 n_st.save("iteration")
-                multiRO_pre_save(iqdata_stream, ro_element, (2,len(self.qua_cc_evo)) )
+                multiRO_pre_save(iqdata_stream, self.ro_elements, (2,len(self.qua_cc_evo)) )
         
         return ramsey
         
