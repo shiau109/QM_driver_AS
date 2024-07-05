@@ -14,139 +14,181 @@ import xarray as xr
 import warnings
 warnings.filterwarnings("ignore")
 from qualang_tools.units import unit
-
-
-#######################
-# AUXILIARY FUNCTIONS #
-#######################
 u = unit(coerce_to_integer=True)
 
-###################
-# The QUA program #
-###################
+import exp.config_par as gc
+import xarray as xr
+from exp.QMMeasurement import QMMeasurement
 
-def ramsey_freq_calibration( virtial_detune_freq, q_name:list, ro_element:list, config, qmm:QuantumMachinesManager, n_avg:int=100, simulate = False, initializer:tuple=None ):
+class XYFreqFlux( QMMeasurement ):
     """
     Use positive and nagative detuning refence to freq in config to get measured ramsey oscillation frequency.
     evo_time unit is tick (4ns)
     virtial_detune_freq unit in MHz can't larger than 2
+
+    return: \n
+    dataset \n
+    coors: ["mixer","frequency","time"]\n
+    attrs: ref_xy_IF, ref_xy_LO, z_offset\n
     """
-    point_per_period = 20
-    Ramsey_period = (1e3/virtial_detune_freq)* u.ns
-    tick_resolution = (Ramsey_period//(4*point_per_period))
-    evo_time_tick_max = tick_resolution *point_per_period*6
-    print(f"time resolution {tick_resolution*4} ,max time {evo_time_tick_max*4}")
-    evo_time_tick = np.arange( 4, evo_time_tick_max, tick_resolution)
-    evo_time = evo_time_tick*4
-    time_len = len(evo_time)
-    with program() as ramsey:
-        iqdata_stream = multiRO_declare( ro_element )
-        n = declare(int)
-        n_st = declare_stream()
-        t = declare(int)  # QUA variable for the idle time
-        phi = declare(fixed)  # Phase to apply the virtual Z-rotation
-        phi_idx = declare(bool,)
-        with for_(n, 0, n < n_avg, n + 1):
-            with for_each_( phi_idx, [True, False]):
-                with for_(*from_array(t, evo_time_tick)):
 
-                    # Rotate the frame of the second x90 gate to implement a virtual Z-rotation
-                    # 4*tau because tau was in clock cycles and 1e-9 because tau is ns
-                    
-                    # Init
-                    if initializer is None:
-                        wait(100*u.us)
-                        #wait(thermalization_time * u.ns)
-                    else:
-                        try:
-                            initializer[0](*initializer[1])
-                        except:
-                            print("Initializer didn't work!")
+    def __init__( self, config, qmm: QuantumMachinesManager ):
+        super().__init__( config, qmm )
+
+        self.ro_elements = ["q0_ro"]
+        self.z_elements = ["q0_z"]
+        self.xy_elements = ["q0_xy"]
+        
+        self.preprocess = "ave"
+        self.initializer = None
+        
+        # self.sweep_type = "z_pulse"
+
+
+        self.virtial_detune_freq = 5
+
+        self.point_per_period = 20
+        self.max_period = 6
+        
+
+    def _get_qua_program( self ):
+        
+
+        self.qua_cc_evo = self._lin_time_array()
+        self._attribute_config()
+
+        with program() as ramsey:
+            iqdata_stream = multiRO_declare( ro_element )
+            n = declare(int)
+            n_st = declare_stream()
+            t = declare(int)  # QUA variable for the idle time
+            phi = declare(fixed)  # Phase to apply the virtual Z-rotation
+            phi_idx = declare(bool,)
+            with for_(n, 0, n < n_avg, n + 1):
+                with for_each_( phi_idx, [True, False]):
+                    with for_(*from_array(t, self.qua_cc_evo)):
+
+                        # Rotate the frame of the second x90 gate to implement a virtual Z-rotation
+                        # 4*tau because tau was in clock cycles and 1e-9 because tau is ns
+                        
+                        # Init
+                        if self.initializer is None:
                             wait(100*u.us)
+                            #wait(thermalization_time * u.ns)
+                        else:
+                            try:
+                                self.initializer[0](*self.initializer[1])
+                            except:
+                                print("Initializer didn't work!")
+                                wait(100*u.us)
 
-                    # Operation
-                    True_value = Cast.mul_fixed_by_int(virtial_detune_freq * 1e-3, 4 * t)
-                    False_value = Cast.mul_fixed_by_int(-virtial_detune_freq * 1e-3, 4 * t)
-                    assign(phi, Util.cond(phi_idx, True_value, False_value))
+                        # Operation
+                        True_value = Cast.mul_fixed_by_int(self.virtial_detune_freq * 1e-3, 4 * t)
+                        False_value = Cast.mul_fixed_by_int(-self.virtial_detune_freq * 1e-3, 4 * t)
+                        assign(phi, Util.cond(phi_idx, True_value, False_value))
 
-                    for q in q_name:
-                        play("x90", q)  # 1st x90 gate
+                        for q in q_name:
+                            play("x90", q)  # 1st x90 gate
 
-                    for q in q_name:
-                        wait(t, q)
+                        for q in q_name:
+                            wait(t, q)
 
-                    for q in q_name:
-                        frame_rotation_2pi(phi, q)  # Virtual Z-rotation
-                        play("x90", q)  # 2st x90 gate
+                        for q in q_name:
+                            frame_rotation_2pi(phi, q)  # Virtual Z-rotation
+                            play("x90", q)  # 2st x90 gate
 
-                    # Align after playing the qubit pulses.
-                    align()
-                    # Readout
-                    multiRO_measurement(iqdata_stream, ro_element, weights="rotated_")         
-                
+                        # Align after playing the qubit pulses.
+                        align()
+                        # Readout
+                        multiRO_measurement(iqdata_stream, ro_element, weights="rotated_")         
+                    
 
-            # Save the averaging iteration to get the progress bar
-            save(n, n_st)
+                # Save the averaging iteration to get the progress bar
+                save(n, n_st)
 
-        with stream_processing():
-            n_st.save("iteration")
-            multiRO_pre_save(iqdata_stream, ro_element, (2,time_len) )
-
-    ###########################
-    # Run or Simulate Program #
-    ###########################
-
-
-    if simulate:
-        # Simulates the QUA program for the specified duration
-        simulation_config = SimulationConfig(duration=20_000)  # In clock cycles = 4ns
-        job = qmm.simulate(config, ramsey, simulation_config)
-        job.get_simulated_samples().con1.plot()
-        job.get_simulated_samples().con2.plot()
-        plt.show()
-
-    else:
-        # Open the quantum machine
-        qm = qmm.open_qm(config)
-        # Send the QUA program to the OPX, which compiles and executes it
-        job = qm.execute(ramsey)
-        # Get results from QUA program
+            with stream_processing():
+                n_st.save("iteration")
+                multiRO_pre_save(iqdata_stream, ro_element, (2,len(self.qua_cc_evo)) )
+        
+        return ramsey
+        
+    
+    def _get_fetch_data_list( self ):
         ro_ch_name = []
-        for r_name in ro_element:
+        for r_name in self.ro_elements:
             ro_ch_name.append(f"{r_name}_I")
             ro_ch_name.append(f"{r_name}_Q")
+
         data_list = ro_ch_name + ["iteration"]   
-        results = fetching_tool(job, data_list=data_list, mode="live")
-        # Live plotting
+        return data_list
+    
+    def _data_formation( self ):
+        time_ns = self.qua_cc_evo*4
 
-        fig, ax = plt.subplots(2, len(ro_element))
-        interrupt_on_close(fig, job)  # Interrupts the job when closing the figure
-        fig.suptitle("Frequency calibration")
+        coords = { 
+            "mixer":np.array(["I","Q"]), 
+            "frequency": np.array([self.virtial_detune_freq,-self.virtial_detune_freq]), 
+            "time": time_ns
+            }
+        match self.preprocess:
+            case "shot":
+                dims_order = ["mixer","frequency","time"]
+                coords["shot"] = np.arange(self.shot_num)
+            case _:
+                dims_order = ["mixer","frequency","time"]
 
-        # Live plotting
-        while results.is_processing():
-            # Fetch results
-            fetch_data = results.fetch_all()
-
-            # Progress bar
-            iteration = fetch_data[-1]
-            progress_counter(iteration, n_avg, start_time=results.start_time)
-
-        # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
-        qm.close()
-        # Creating an xarray dataset
         output_data = {}
-        for r_idx, r_name in enumerate(ro_element):
-            output_data[r_name] = ( ["mixer","frequency","time"],
-                                    np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]]) )
-        dataset = xr.Dataset(
-            output_data,
-            coords={ "mixer":np.array(["I","Q"]), "frequency": np.array([virtial_detune_freq,-virtial_detune_freq]), "time":evo_time }
-        )
-        # dataset.attrs["ref_xy_IF"] = ref_xy_IF
-        # dataset.attrs["ref_xy_LO"] = ref_xy_LO
+        for r_idx, r_name in enumerate(self.ro_elements):
+            data_array = np.array([ self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]])
+            output_data[r_name] = ( dims_order, np.squeeze(data_array))
+
+        dataset = xr.Dataset( output_data, coords=coords )
+
+        # dataset = dataset.transpose("mixer", "prepare_state", "frequency", "amp_ratio")
+
+        self._attribute_config()
+        dataset.attrs["ro_LO"] = self.ref_ro_LO
+        dataset.attrs["ro_IF"] = self.ref_ro_IF
+        dataset.attrs["xy_LO"] = self.ref_xy_LO
+        dataset.attrs["xy_IF"] = self.ref_xy_IF
+        dataset.attrs["z_offset"] = self.z_offset
 
         return dataset
+
+    def _attribute_config( self ):
+        self.ref_ro_IF = []
+        self.ref_ro_LO = []
+        for r in self.ro_elements:
+            self.ref_ro_IF.append(gc.get_IF(r, self.config))
+            self.ref_ro_LO.append(gc.get_LO(r, self.config))
+
+        self.ref_xy_IF = []
+        self.ref_xy_LO = []
+        for xy in self.xy_elements:
+            self.ref_xy_IF.append(gc.get_IF(xy, self.config))
+            self.ref_xy_LO.append(gc.get_LO(xy, self.config))
+
+        self.z_offset = []
+        for z in self.z_elements:
+            self.z_offset.append( gc.get_offset(z, self.config ))
+
+    def _lin_time_array( self ):
+
+        ramsey_period = abs(1e3/ self.virtial_detune_freq )* u.ns
+        qua_cc_resolution = (ramsey_period//(4*self.point_per_period))
+        if qua_cc_resolution < 1:
+            print("Warning qua_cc_resolution <1 force to 1, virtial_detune_freq is to large or point_per_period is too large.")
+            qua_cc_resolution = 1
+
+        qua_cc_max_evo = qua_cc_resolution *self.point_per_period* self.max_period
+        # print(f"time resolution {qua_cc_resolution*4} ,max time {evo_time_tick_max*4}")
+        qua_cc_evo = np.arange( 4, qua_cc_max_evo, qua_cc_resolution)
+        # evo_time = evo_time_tick*4
+        
+        return qua_cc_evo
+
+
+
         
 def plot_dual_Ramsey_oscillation( x, y, ax=None ):
     """
