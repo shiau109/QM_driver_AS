@@ -27,7 +27,8 @@ class QMMeasurement( ABC ):
     def _data_formation( self )->Dataset:
         pass
 
-    def run( self, shot_num:int ):
+    def run( self, shot_num:int, save_path:str=None ):
+
         self.shot_num = shot_num
         self._qm = self.qmm.open_qm( self.config )
         qua_program = self._get_qua_program()
@@ -51,6 +52,10 @@ class QMMeasurement( ABC ):
         self.output_data = self._data_formation()
         self.output_data.attrs["start_time"] = str(measurement_start_time.strftime("%Y%m%d_%H%M%S"))
         self.output_data.attrs["end_time"] = str(measurement_end_time.strftime("%Y%m%d_%H%M%S"))
+
+        if save_path is not None:
+            self.output_data.to_netcdf(save_path)
+            
         return self.output_data
     
 
