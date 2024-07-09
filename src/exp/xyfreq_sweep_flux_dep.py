@@ -111,7 +111,7 @@ class XYFreqFlux( QMMeasurement ):
                     # assign(index, index + 1)
                 save(n, n_st)
             with stream_processing():
-                n_st.save("n")
+                n_st.save("iteration")
                 multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.qua_z_amp_ratio_array), len(self.qua_freqs)))
 
         return qua_prog
@@ -125,7 +125,7 @@ class XYFreqFlux( QMMeasurement ):
             ro_ch_name.append(f"{r_name}_I")
             ro_ch_name.append(f"{r_name}_Q")
 
-        data_list = ro_ch_name + ["n"]   
+        data_list = ro_ch_name + ["iteration"]   
         return data_list
     
     def _data_formation( self ):
@@ -139,7 +139,7 @@ class XYFreqFlux( QMMeasurement ):
             }
         match self.preprocess:
             case "shot":
-                dims_order = ["mixer","shot","frequency","amp_ratio","prepare_state"]
+                dims_order = ["mixer","shot","amp_ratio","frequency"]
                 coords["shot"] = np.arange(self.shot_num)
             case _:
                 dims_order = ["mixer","amp_ratio","frequency"]
