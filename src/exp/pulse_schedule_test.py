@@ -12,11 +12,9 @@ qmm, _ = spec.buildup_qmm()
 from ab.QM_config_dynamic import initializer
 
 from exp.cryoscope import Cryoscope
-from exp.rofreq_sweep_power_dep import ROFreqSweepPowerDep
+from exp.rabi_copy1 import RabiTime
 
-my_exp = ROFreqSweepPowerDep(config, qmm)
+my_exp = RabiTime(config, qmm)
 my_exp.initializer = initializer(2000,mode='wait')
-my_exp.pulse_schedule_simulation()
-#
 
 my_exp.pulse_schedule_simulation(["con1"],20000)
