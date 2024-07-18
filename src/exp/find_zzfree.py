@@ -11,7 +11,7 @@ import xarray as xr
 import numpy as np
 from exp.QMMeasurement import QMMeasurement
 
-class find_ZZfree( QMMeasurement ):
+class ZZCouplerFreqRamsey( QMMeasurement ):
 
     """
     Parameters:
@@ -36,8 +36,8 @@ class find_ZZfree( QMMeasurement ):
         super().__init__( config, qmm )
 
         self.ro_elements = ["q0_ro"]
-        self.target_xy = ["q0_xy"]
-        self.crosstalk_xy = ["q1_xy"]
+        self.zz_detector_xy = ["q0_xy"]
+        self.zz_source_xy = ["q1_xy"]
         self.coupler_z = ["q2_z"]
         self.initializer = None
         
@@ -82,16 +82,16 @@ class find_ZZfree( QMMeasurement ):
                                 assign(phi, Util.cond(phi_idx, True_value, False_value))
 
                                 with if_(X_idx):
-                                    play("x180", self.crosstalk_xy[0])   # conditional x180 gate
+                                    play("x180", self.zz_source_xy[0])   # conditional x180 gate
                                     align()
 
-                                play("x90", self.target_xy[0])  # 1st x90 gate
+                                play("x90", self.zz_detector_xy[0])  # 1st x90 gate
                                 align()
                                 play("const"*amp(dc*2.), self.coupler_z[0], t)    # const 預設0.1
-                                wait(t, self.target_xy[0])
+                                wait(t, self.zz_detector_xy[0])
                                 align()
-                                frame_rotation_2pi(phi, self.target_xy[0])  # Virtual Z-rotation
-                                play("x90", self.target_xy[0])  # 2st x90 gate
+                                frame_rotation_2pi(phi, self.zz_detector_xy[0])  # Virtual Z-rotation
+                                play("x90", self.zz_detector_xy[0])  # 2st x90 gate
                                 align()
                                 # Readout
                                 multiRO_measurement( iqdata_stream, self.ro_elements[0], weights="rotated_") 
@@ -137,7 +137,7 @@ class find_ZZfree( QMMeasurement ):
         evo_time_tick = np.arange( 4, evo_time_tick_max, tick_resolution)
         return evo_time_tick
     
-class pure_ZZfree( QMMeasurement ):
+class ZZCouplerFreqEcho( QMMeasurement ):
 
     """
     Parameters:
@@ -151,7 +151,7 @@ class pure_ZZfree( QMMeasurement ):
 
     ro_elements: ["q0_ro"], temporarily support only 1 element in the list.\n
     who do ramsey.\n
-    crosstalk_xy: ["q1_xy"], temporarily support only 1 element in the list.\n
+    zz_source_xy: ["q1_xy"], temporarily support only 1 element in the list.\n
     who is applied X or I to measure ZZ (not Z line) crosstalk is.\n
     coupler_z: ["q2_z"], temporarily support only 1 element in the list.\n
     the coupler between target_element and crosstalk_element, whose frequency is tuned to find ZZ free point. \n
@@ -162,8 +162,8 @@ class pure_ZZfree( QMMeasurement ):
         super().__init__( config, qmm )
 
         self.ro_elements = ["q1_ro"]
-        self.target_xy = ["q1_xy"]
-        self.crosstalk_xy = ["q2_xy"]
+        self.zz_detector_xy = ["q1_xy"]
+        self.zz_source_xy = ["q2_xy"]
         self.coupler_z = ["q6_z"]
         self.predict_detune = 0.1
         self.initializer = None
@@ -196,21 +196,21 @@ class pure_ZZfree( QMMeasurement ):
                                 print("initializer didn't work!")
                                 wait(1 * u.us, self.ro_elements[0]) 
 
-                        play("x90", self.target_xy[0])  # 1st x90 gate
+                        play("x90", self.zz_detector_xy[0])  # 1st x90 gate
                         wait(5)
                         align()
                         play("const"*amp(dc*2.), self.coupler_z[0], t)    # const 預設0.5
                         align()
-                        play("x180", self.target_xy[0])     #flip
-                        play("x180", self.crosstalk_xy[0])      #make ZZ crosstalk
+                        play("x180", self.zz_detector_xy[0])     #flip
+                        play("x180", self.zz_source_xy[0])      #make ZZ crosstalk
                         wait(5)
                         align()
 
                         play("const"*amp(dc*2.), self.coupler_z[0], t)    # const 預設0.5
                         align()
                         # wait(5)
-                        # frame_rotation_2pi(0.5, self.target_xy[0])  # Virtual Z-rotation
-                        play("-x90", self.target_xy[0])  # 2nd x90 gate
+                        # frame_rotation_2pi(0.5, self.zz_detector_xy[0])  # Virtual Z-rotation
+                        play("-x90", self.zz_detector_xy[0])  # 2nd x90 gate
                         align()
                         
                         # Readout
@@ -264,10 +264,10 @@ class pure_ZZfree( QMMeasurement ):
 
         self.ref_xy_IF = []
         self.ref_xy_LO = []
-        for xy in self.target_xy:
+        for xy in self.zz_detector_xy:
             self.ref_xy_IF.append(gc.get_IF(xy, self.config))
             self.ref_xy_LO.append(gc.get_LO(xy, self.config))
-        for xy in self.crosstalk_xy:
+        for xy in self.zz_source_xy:
             self.ref_xy_IF.append(gc.get_IF(xy, self.config))
             self.ref_xy_LO.append(gc.get_LO(xy, self.config))
 
