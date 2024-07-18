@@ -45,16 +45,16 @@ class z_pulse_relaxation_time( QMMeasurement ):
         attrs: z_offset\n
         time unit in ns \n
         """
-        fluxes = np.arange(self.flux_range[0], self.flux_range[1], self.flux_resolution)
-        fluxes_len = fluxes.shape[-1]
+        self.fluxes = np.arange(self.flux_range[0], self.flux_range[1], self.flux_resolution)
+        fluxes_len = self.fluxes.shape[-1]
 
         cc_max_qua = (self.max_time/4) * u.us
         cc_resolution_qua = (self.time_resolution/4) * u.us
         cc_delay_qua = np.arange( 4, cc_max_qua, cc_resolution_qua)
-        evo_time = cc_delay_qua*4
+        self.evo_time = cc_delay_qua*4
         evo_time_len = cc_delay_qua.shape[-1]
         
-        ref_z_offset = {}
+        self.ref_z_offset = {}
         # QUA program
         with program() as t1:
 
@@ -64,7 +64,7 @@ class z_pulse_relaxation_time( QMMeasurement ):
             n = declare(int)
             n_st = declare_stream()
             with for_(n, 0, n < self.n_avg, n + 1):
-                with for_(*from_array(dc, fluxes)):
+                with for_(*from_array(dc, self.fluxes)):
                     with for_(*from_array(t, cc_delay_qua)):
                         # initializaion
                         if self.initializer is None:
@@ -79,11 +79,11 @@ class z_pulse_relaxation_time( QMMeasurement ):
                         for q in self.q_name:
                             play("x180", q)
                         wait(25)    
-                        for z_name, ref_z in ref_z_offset.items():
+                        for z_name, ref_z in self.ref_z_offset.items():
                             set_dc_offset( z_name, "single", ref_z +dc)
                             # assign(index, 0)
                         wait(t)
-                        for z_name, ref_z in ref_z_offset.items():
+                        for z_name, ref_z in self.ref_z_offset.items():
                             set_dc_offset( z_name, "single", ref_z)
                         wait(25)                         
                         # align()
