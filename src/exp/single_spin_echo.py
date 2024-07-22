@@ -22,62 +22,61 @@ from exp.QMMeasurement import QMMeasurement
 class single_spin_echo( QMMeasurement ):
     def __init__( self, config, qmm: QuantumMachinesManager):
         super().__init__( config, qmm )
-        self.time_range = [4,400] 
+        self.time_range = (32,400)
 
         """evo time is the duration between x90 and x180, unit in nano seconds
           I want the program to try spin echo for different time durations"""
         
-        self.time_resolution = 10
-        self.q_name = None
-        self.ro_element = None
+        self.time_resolution = 80
+        self.xy_elements = ["q0_xy"]
+        self.ro_elements = ["q0_ro"]
         self.n_avg = 100
         self.initializer = None
-        self.simulate = False
 
     def _get_qua_program( self ):
-        time_r1_qua = (self.time_range[0]/4) *u.ns
-        time_r2_qua = (self.time_range[1]/4) *u.ns
+        half_time_r1_qua = (self.time_range[0]/4 /2) *u.ns
+        half_time_r2_qua = (self.time_range[1]/4 /2) *u.ns
 
         if self.time_resolution < 4:
             print( "Warning!! time resolution < 4 ns.")
         time_resolution_qua = (self.time_resolution/4) *u.ns
-        self.qua_driving_time = np.arange(time_r1_qua, time_r2_qua, time_resolution_qua)
-        
+        self.qua_half_evo_time = np.arange(half_time_r1_qua, half_time_r2_qua, time_resolution_qua)
+        print(self.qua_half_evo_time)
         # QUA program
         with program() as spin_echo:
 
-            iqdata_stream = multiRO_declare( self.ro_element )
+            iqdata_stream = multiRO_declare( self.ro_elements )
             half_evo_time = declare(int)  # x180 -> x90 has same time duration as x90 -> x180
             n = declare(int)
             n_st = declare_stream()
             with for_(n, 0, n < self.n_avg, n + 1):
-                with for_(*from_array(half_evo_time, self.qua_driving_time)):
+                with for_(*from_array(half_evo_time, self.qua_half_evo_time)):
                     # initializaion
                     if self.initializer is None:
-                        wait(1*u.us,self.ro_element)
+                        wait(1*u.us,self.ro_elements)
                     else:
                         try:
                             self.initializer[0](*self.initializer[1])
                         except:
-                            wait(1*u.us,self.ro_element)
+                            wait(1*u.us,self.ro_elements)
 
                     # Operation: x90 -> x180 -> x-90, should theoretically project to |0>    
-                    for q in self.q_name:
+                    for q in self.xy_elements:
                         play("x90", q)
                         wait(half_evo_time)
                         play("x180", q)  
                         wait(half_evo_time)  
-                        play("x-90",q)
-
+                        play("-x90",q)
+                    align()
                     # Readout
-                    multiRO_measurement( iqdata_stream,  resonators=self.ro_element, weights="rotated_")
+                    multiRO_measurement( iqdata_stream,  resonators=self.ro_elements, weights="rotated_")
                 
                 # Save the averaging iteration to get the progress bar
                 save(n, n_st)
 
             with stream_processing():
                 n_st.save("iteration")
-                multiRO_pre_save(iqdata_stream, self.ro_element, (self.qua_driving_time.shape[-1], ))
+                multiRO_pre_save(iqdata_stream, self.ro_elements, (self.qua_half_evo_time.shape[-1], ))
 
         return spin_echo
 
@@ -92,13 +91,13 @@ class single_spin_echo( QMMeasurement ):
     
     def _data_formation( self ):
         output_data = {}
-        qua_driving_time = self.qua_driving_time*4 #4 for scaling back to normal dimension
-        for r_idx, r_name in enumerate(self.ro_element):
+        qua_half_evo_time = self.qua_half_evo_time*4 *2#4 for scaling back to normal dimension
+        for r_idx, r_name in enumerate(self.ro_elements):
             output_data[r_name] = ( ["mixer","half_evolution_time"],
                                 np.array([self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]]) )
         dataset = xr.Dataset(
             output_data,
-            coords={ "mixer":np.array(["I","Q"]), "half_evolution_time": qua_driving_time }
+            coords={ "mixer":np.array(["I","Q"]), "half_evolution_time": qua_half_evo_time }
         )
     
         # cannot think of attributes for this experiment so far
