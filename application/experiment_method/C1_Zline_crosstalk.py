@@ -20,29 +20,30 @@ import matplotlib.pyplot as plt
 # Set parameters
 
 
-n_avg = 1000
-expect_crosstalk = 0.001
-flux_modify_range = 0.2
-target = "q0"
-crosstalk = "q1"
-mode="ramsey_z_pulse"   #"long"
+n_avg = 50
+expect_crosstalk = 0.01
+flux_modify_range = 0.4
+evo_time = 50 
+target = "q4"
+crosstalk = "q3"
+mode="long_z_pulse"   #"long"
 prob_q_name = f"{target}_xy"
 ro_element = f"{target}_ro"
 z_line = [f"{target}_z", f"{crosstalk}_z"]
 # flux_settle_time = 400 * u.us
-print(f"Z {target} offset {get_offset(z_line[0],config)} +/- {flux_modify_range*expect_crosstalk}")
-print(f"Z {crosstalk} offset {get_offset(z_line[1],config)} +/- {flux_modify_range}")
+# print(f"Z {target} offset {get_offset(z_line[0],config)} +/- {flux_modify_range*expect_crosstalk}")
+# print(f"Z {crosstalk} offset {get_offset(z_line[1],config)} +/- {flux_modify_range}")
 
 from exp.zline_crosstalk import *
 if mode=="ramsey_z_offset":
-    evo_time = 3
     output_data, f_t, f_c = ramsey_z_offset( flux_modify_range, prob_q_name, ro_element, z_line, config, qmm, expect_crosstalk=expect_crosstalk, n_avg=n_avg, initializer=init_macro, simulate=False, evo_time=evo_time)
 elif mode=="ramsey_z_pulse":
-    evo_time = 5
     output_data, f_t, f_c = ramsey_z_pulse( flux_modify_range, prob_q_name, ro_element, z_line, config, qmm, expect_crosstalk=expect_crosstalk, n_avg=n_avg, initializer=init_macro, simulate=False, evo_time=evo_time)
-elif mode=="long":
-    evo_time = 10
-    amp_ratio = 0.05
+elif mode=="long_z_offset":
+    amp_ratio = 40/(evo_time*1e3)
+    output_data, f_t, f_c = pi_z_offset( flux_modify_range, prob_q_name, ro_element, z_line, config, qmm, expect_crosstalk=expect_crosstalk, amp_ratio=amp_ratio, n_avg=n_avg, initializer=init_macro, simulate=False, evo_time=evo_time)
+elif mode=="long_z_pulse":
+    amp_ratio = 40/(evo_time*1e3)
     output_data, f_t, f_c = pi_z_pulse( flux_modify_range, prob_q_name, ro_element, z_line, config, qmm, expect_crosstalk=expect_crosstalk, amp_ratio=amp_ratio, n_avg=n_avg, initializer=init_macro, simulate=False, evo_time=evo_time)
 else:
     print("no such mode")
@@ -93,8 +94,8 @@ output_data["paras"] = {
 save_data = True
 if save_data:
     from exp.save_data import save_npz, save_fig
-    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240521_DR4_5Q4C_0430#7\04 coupler zline_ramsey"
-    save_name = f"target_{target}_crosstalk_{crosstalk}_{mode}_zlinecrosstalk_{expect_crosstalk}"
+    save_dir = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240719_DR3_5Q4C_0430#7\flux_crosstalk"
+    save_name = f"target_{target}_crosstalk_{crosstalk}_{mode}_zlinecrosstalk_{expect_crosstalk}_{evo_time}mius"
     save_npz(save_dir, save_name, output_data)
     save_fig(save_dir, save_name)
 plt.show()
