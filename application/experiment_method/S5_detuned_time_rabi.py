@@ -29,8 +29,6 @@ my_exp.initializer = initializer(200000,mode='wait')
 
 my_exp.ro_elements = ["q0_ro", "q1_ro"]
 my_exp.xy_elements = ['q1_xy']
-my_exp.amp_range = (0, 1.5) 
-my_exp.amp_resolution = 0.02
 
 my_exp.freq_range = (-20,20)
 my_exp.freq_resolution = 2
