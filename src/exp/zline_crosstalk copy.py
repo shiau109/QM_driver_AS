@@ -126,7 +126,7 @@ class FluxCrosstalk( QMMeasurement ):
 
                 with stream_processing():
                     # Cast the data into a 1D vector, average the 1D vectors together and store the results on the OPX processor
-                    multiRO_pre_save( iqdata_stream, self.ro_elements[0], (len(self.flux_qua), len(self.evo_time_tick_qua)))
+                    multiRO_pre_save( iqdata_stream, self.ro_elements[0], (len(self.crosstalk_z_qua), len(self.detector_z_qua)))
                     n_st.save("iteration")
 
             return Ramsey_z_pulse
@@ -292,20 +292,23 @@ class FluxCrosstalk( QMMeasurement ):
         output_data = {}
 
         for r_idx, r_name in enumerate(self.ro_elements):
-            output_data[r_name] = ( ["mixer","flux","time"],
+            output_data[r_name] = ( ["mixer","crosstalk_z","detector_z"],
                                 np.array([self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]]) )
         dataset = xr.Dataset(
             output_data,
-            coords={"mixer":np.array(["I","Q"]), "flux": self.flux_qua, "time": 4*self.evo_time_tick_qua}
+            coords={"mixer":np.array(["I","Q"]), "crosstalk_z": self.crosstalk_z_qua, "detector_z": self.detector_z_qua}
         )
 
         self._attribute_config()
+        dataset.attrs["z_time"] = self.z_time
+        dataset.attrs["measure_method"] = self.measure_method
+        dataset.attrs["z_method"] = self.z_method
+
         dataset.attrs["ro_LO"] = self.ref_ro_LO
         dataset.attrs["ro_IF"] = self.ref_ro_IF
         dataset.attrs["xy_LO"] = self.ref_xy_LO
         dataset.attrs["xy_IF"] = self.ref_xy_IF
         dataset.attrs["z_offset"] = self.z_offset
-
         dataset.attrs["z_amp_const"] = self.z_amp
         return dataset
     
@@ -318,16 +321,19 @@ class FluxCrosstalk( QMMeasurement ):
 
         self.ref_xy_IF = []
         self.ref_xy_LO = []
-        for xy in self.zz_detector_xy:
+        for xy in self.crosstalk_qubit:
             self.ref_xy_IF.append(gc.get_IF(xy, self.config))
             self.ref_xy_LO.append(gc.get_LO(xy, self.config))
-        for xy in self.zz_source_xy:
+        for xy in self.detector_qubit:
             self.ref_xy_IF.append(gc.get_IF(xy, self.config))
             self.ref_xy_LO.append(gc.get_LO(xy, self.config))
 
         self.z_offset = []
         self.z_amp = []
-        for z in self.coupler_z:
+        for z in self.crosstalk_qubit:
+            self.z_offset.append( gc.get_offset(z, self.config ))
+            self.z_amp.append(gc.get_const_wf(z, self.config ))
+        for z in self.detector_qubit:
             self.z_offset.append( gc.get_offset(z, self.config ))
             self.z_amp.append(gc.get_const_wf(z, self.config ))
  
