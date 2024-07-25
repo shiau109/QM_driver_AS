@@ -29,14 +29,14 @@ my_exp.crosstalk_qubit = "q4"
 my_exp.ro_elements = [f"{my_exp.detector_qubit}_ro"]
 
 my_exp.expect_crosstalk = 0.04
-my_exp.z_modify_range = 0.3
-my_exp.z_resolution = 0.003
-my_exp.z_time = 200
+my_exp.z_modify_range = 0.4
+my_exp.z_resolution = 0.008
+my_exp.z_time = 5
 
-my_exp.measure_method = "long_drive"   #long_drive, ramsey
+my_exp.measure_method = "ramsey"   #long_drive, ramsey
 my_exp.z_method = "pulse"     #offset, pulse
 
-my_exp.initializer = initializer(200000,mode='wait')
+my_exp.initializer = initializer(1000000,mode='wait')
 dataset = my_exp.run( 50 )
 print(dataset)
 

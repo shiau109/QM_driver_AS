@@ -97,7 +97,6 @@ class FluxCrosstalk( QMMeasurement ):
                     with for_(*from_array(z_crosstalk, self.crosstalk_z_qua)):
                         with for_( *from_array(z_detector, self.detector_z_qua) ):
                         
-
                             # Initialization
                             # Wait for the resonator to deplete
                             if self.initializer is None:
