@@ -1,15 +1,8 @@
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.qua import *
-from qm import SimulationConfig
-import matplotlib.pyplot as plt
 from qualang_tools.loops import from_array
 from qualang_tools.results import fetching_tool
-from qualang_tools.plot import interrupt_on_close
-from qualang_tools.results import progress_counter
-from qualang_tools.plot.fitting import Fit
-# from common_fitting_func import gaussian
 import exp.config_par as gc
-from scipy.optimize import curve_fit
 import warnings
 from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 import xarray as xr
@@ -19,7 +12,7 @@ u = unit(coerce_to_integer=True)
 import time
 from exp.QMMeasurement import QMMeasurement
 
-class single_spin_echo( QMMeasurement ):
+class SpinEcho( QMMeasurement ):
     def __init__( self, config, qmm: QuantumMachinesManager):
         super().__init__( config, qmm )
         self.time_range = (32,400)
@@ -30,7 +23,7 @@ class single_spin_echo( QMMeasurement ):
         self.time_resolution = 80
         self.xy_elements = ["q0_xy"]
         self.ro_elements = ["q0_ro"]
-        self.n_avg = 100
+        self.shot_num = 100
         self.initializer = None
 
     def _get_qua_program( self ):
@@ -49,7 +42,7 @@ class single_spin_echo( QMMeasurement ):
             half_evo_time = declare(int)  # x180 -> x90 has same time duration as x90 -> x180
             n = declare(int)
             n_st = declare_stream()
-            with for_(n, 0, n < self.n_avg, n + 1):
+            with for_(n, 0, n < self.shot_num, n + 1):
                 with for_(*from_array(half_evo_time, self.qua_half_evo_time)):
                     # initializaion
                     if self.initializer is None:
@@ -91,13 +84,14 @@ class single_spin_echo( QMMeasurement ):
     
     def _data_formation( self ):
         output_data = {}
-        qua_half_evo_time = self.qua_half_evo_time*4 *2#4 for scaling back to normal dimension
+        evo_time = self.qua_half_evo_time*4 *2#4 for scaling back to normal dimension
         for r_idx, r_name in enumerate(self.ro_elements):
-            output_data[r_name] = ( ["mixer","half_evolution_time"],
+            output_data[r_name] = ( ["mixer","time"],
                                 np.array([self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]]) )
+
         dataset = xr.Dataset(
             output_data,
-            coords={ "mixer":np.array(["I","Q"]), "half_evolution_time": qua_half_evo_time }
+            coords={ "mixer":np.array(["I","Q"]), "time": evo_time }
         )
     
         # cannot think of attributes for this experiment so far
