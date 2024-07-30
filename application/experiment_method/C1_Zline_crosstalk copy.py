@@ -18,26 +18,28 @@ import matplotlib.pyplot as plt
 
 from visualization.zline_crosstalk_plot import plot_crosstalk_3Dscalar
 
+
+
 import xarray as xr
 
 # Set parameters
 from exp.zline_crosstalk_copy import FluxCrosstalk
 my_exp = FluxCrosstalk(config, qmm)
-my_exp.detector_qubit = "q3"
-my_exp.detector_is_coupler = "False"
-my_exp.crosstalk_qubit = "q4"
+my_exp.detector_qubit = "q8"
+my_exp.detector_is_coupler = "True"
+my_exp.crosstalk_qubit = "q3"
 my_exp.ro_elements = [f"{my_exp.detector_qubit}_ro"]
 
-my_exp.expect_crosstalk = 0.04
+my_exp.expect_crosstalk = 0.25
 my_exp.z_modify_range = 0.4
 my_exp.z_resolution = 0.008
-my_exp.z_time = 5
+my_exp.z_time = 20
 
-my_exp.measure_method = "ramsey"   #long_drive, ramsey
+my_exp.measure_method = "long_drive"   #long_drive, ramsey
 my_exp.z_method = "pulse"     #offset, pulse
 
 my_exp.initializer = initializer(200000,mode='wait')
-dataset = my_exp.run( 50 )
+dataset = my_exp.run( 500 )
 print(dataset)
 
 save_data = True
@@ -46,6 +48,10 @@ if save_data: save_nc( save_dir, file_name, dataset)
 
 # Plot
 # dataset = xr.open_dataset(r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240719_DR3_5Q4C_0430#7\check\20240724_2212_detector_q3_crosstalk_q4_ramsey_pulse_expectcrosstalk_0.04_5mius.nc")
-plot_crosstalk_3Dscalar(dataset)
-if save_data: save_fig( save_dir, file_name)
-plt.show()
+figures = plot_crosstalk_3Dscalar(dataset)
+# 保存每个图像并显示
+for fig, ax, q in figures:
+    if save_data:
+        plt.figure(fig.number)  # 设置当前图形对象
+        save_fig( save_dir, f"{q}_{file_name}")
+    # plt.show()  # 显示图像
