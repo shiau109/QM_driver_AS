@@ -100,13 +100,13 @@ class z_pulse_relaxation_time( QMMeasurement ):
         return t1
 
     def _get_fetch_data_list( self ):
-            ro_ch_name = []
-            for r_name in self.ro_elements:
-                ro_ch_name.append(f"{r_name}_I")
-                ro_ch_name.append(f"{r_name}_Q")
+        ro_ch_name = []
+        for r_name in self.ro_elements:
+            ro_ch_name.append(f"{r_name}_I")
+            ro_ch_name.append(f"{r_name}_Q")
 
-            data_list = ro_ch_name + ["iteration"]   
-            return data_list
+        data_list = ro_ch_name + ["iteration"]   
+        return data_list
     
     def _data_formation( self ):
         output_data = {}
