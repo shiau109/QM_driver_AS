@@ -96,8 +96,12 @@ def multiRO_pre_save( iqdata_stream, resonators:list, buffer_shape:tuple, suffix
     match stream_preprocess:
         case "ave":
             for idx_res, res in enumerate(resonators):
-                I_st[idx_res].buffer(*buffer_shape).average().save(f"{res}_I{suffix}")
-                Q_st[idx_res].buffer(*buffer_shape).average().save(f"{res}_Q{suffix}") 
+                if(buffer_shape == None):
+                    I_st[idx_res].average().save(f"{res}_I{suffix}")
+                    Q_st[idx_res].average().save(f"{res}_Q{suffix}")
+                else:
+                    I_st[idx_res].buffer(*buffer_shape).average().save(f"{res}_I{suffix}")
+                    Q_st[idx_res].buffer(*buffer_shape).average().save(f"{res}_Q{suffix}") 
         case "shot":
             for idx_res, res in enumerate(resonators):
                 I_st[idx_res].buffer(*buffer_shape).save_all(f"{res}_I{suffix}")    
