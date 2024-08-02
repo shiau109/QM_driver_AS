@@ -14,28 +14,24 @@ from ab.QM_config_dynamic import initializer
 from exp.save_data import save_nc, save_fig
 
 import matplotlib.pyplot as plt
-
-# Set parameters
-init_macro = initializer(300000,mode='wait')
-ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
-q_name = ["q4_xy"]
+from exp.ramsey_class import exp_ramsey
 
 
-n_avg = 200
-virtual_detune = 1
+#Set parameters
+my_exp = exp_ramsey(config, qmm)
+from ab.QM_config_dynamic import initializer
+my_exp.initializer = initializer(300000,mode='wait')
+my_exp.ro_element = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
+my_exp.n_avg = 200
+my_exp.virtual_detune = 1
+my_exp.max_time = 10
+my_exp.time_resolution = 0.1
+dataset = my_exp.run(400)
 
-time_max = 10
-time_resolution = 0.1
+from exp.save_data import save_nc, save_fig
 save_data = True
 save_dir = link_config["path"]["output_root"]
-save_name = f"{q_name[0]}_T2"
-
-from exp.ramsey import exp_ramsey, multi_T2_exp
-# dataset = exp_ramsey( time_max, time_resolution, ro_elements, q_name, n_avg, config, qmm, virtual_detune=virtual_detune, initializer=init_macro)
-
-repeat = 10
-dataset = multi_T2_exp( repeat, time_max, time_resolution, ro_elements, q_name, n_avg, config, qmm, virtual_detune=virtual_detune, initializer=init_macro)
-
+save_name = f"{my_exp.xy_elements[0]}_T2"
 if save_data: save_nc(save_dir, save_name, dataset)
 
 # Plot
@@ -59,4 +55,4 @@ re_exp.exp_name = ["T2"]
 my_exp.shot_num = 400
 dataset = re_exp.run(50)
 save_name = f"{my_exp.xy_elements[0]}_EchoT2_stat"
-if save_data: save_nc(save_dir, save_name, dataset["spin_echo"])
+if save_data: save_nc(save_dir, save_name, dataset["Ramsey"])
