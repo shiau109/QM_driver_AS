@@ -23,7 +23,7 @@ from visualization.zline_crosstalk_plot import plot_crosstalk_3Dscalar
 import xarray as xr
 
 # Set parameters
-from exp.zline_crosstalk_copy import FluxCrosstalk
+from exp.zline_crosstalk import FluxCrosstalk
 my_exp = FluxCrosstalk(config, qmm)
 my_exp.detector_qubit = "q8"
 my_exp.detector_is_coupler = "True"
