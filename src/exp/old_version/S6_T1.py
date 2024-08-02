@@ -15,27 +15,37 @@ from exp.save_data import save_nc, save_fig
 
 import matplotlib.pyplot as plt
 
-from exp.relaxation_time_class import exp_relaxation_time
+# Set parameters
+init_macro = initializer(300000,mode='wait')
 
+ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
+q_name = ["q4_xy"]
 
-#Set parameters
-my_exp = exp_relaxation_time(config, qmm)
-my_exp.initializer = initializer(300000,mode='wait')
-my_exp.ro_element = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
-my_exp.n_avg = 200
-my_exp.max_time = 10
-my_exp.time_resolution = 0.6
-dataset = my_exp.run(400)
-
-
-#saving the data
 save_data = True
 save_dir = link_config["path"]["output_root"]
-save_name = "q4_xy_T1" #change the file name here
+save_name = f"{q_name[0]}_T1"
+
+n_avg = 200
+repeat = 100
+max_time = 60 #us
+time_resolution = 0.6 #us
+
+# Start measurement
+from exp.relaxation_time import *
+if repeat == 1:
+    dataset = exp_relaxation_time( max_time, time_resolution, q_name, ro_elements, config, qmm, n_avg=n_avg, initializer=init_macro)
+else:
+    dataset = statistic_T1_exp( repeat, max_time, time_resolution, q_name, ro_elements, config, qmm, n_avg=n_avg, initializer=init_macro )
+
+
+
+
+
+
+
 if save_data: save_nc(save_dir, save_name, dataset)
     
 
-'''
 import matplotlib.pyplot as plt
 # Plot
 time = dataset.coords["time"].values
@@ -58,13 +68,3 @@ else:
 if save_data: save_fig(save_dir, save_name)
 
 plt.show()
-'''
-
-from exp.repetition_measurement import RepetitionMeasurement
-re_exp = RepetitionMeasurement()
-re_exp.exp_list = [my_exp]
-re_exp.exp_name = ["T1_relaxation"]
-my_exp.shot_num = 400
-dataset = re_exp.run(50)
-save_name = "_T1_stat"
-if save_data: save_nc(save_dir, save_name, dataset["T1"])
