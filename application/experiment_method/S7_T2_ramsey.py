@@ -35,15 +35,16 @@ save_name = f"{my_exp.xy_elements[0]}_T2"
 if save_data: save_nc(save_dir, save_name, dataset)
 
 # Plot
-from exp.ramsey import plot_ramsey_oscillation, plot_multiT2
-time = dataset.coords["time"].values
-for ro_name, data in dataset.data_vars.items():
-    fig, ax = plt.subplots(2)
+time = (dataset.coords["time"].values)/1000
+from qcat.visualization.qubit_relaxation import plot_qubit_relaxation
+from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting
 
-    # plot_ramsey_oscillation(time, data[0], ax[0])
-    # plot_ramsey_oscillation(time, data[1], ax[1])
-    rep = dataset.coords["repetition"].values
-    plot_multiT2( data, rep, time )
+for ro_name, data in dataset.data_vars.items():
+    print(ro_name)
+    fit_result = qubit_relaxation_fitting(time, data.values[0])
+    print(fit_result.params)
+    fig, ax = plt.subplots()
+    plot_qubit_relaxation(time, data[0], ax, fit_result)
 if save_data: save_fig(save_dir, save_name, dataset)
 
 plt.show()
@@ -56,3 +57,27 @@ my_exp.shot_num = 400
 dataset = re_exp.run(50)
 save_name = f"{my_exp.xy_elements[0]}_EchoT2_stat"
 if save_data: save_nc(save_dir, save_name, dataset["Ramsey"])
+
+#To plot the result of multiple measurements (2D graph and histogram), use the following block of code
+#================================================================================================#
+import qcat.visualization.qubit_relaxation as qv
+print(dir(qv))
+
+from qcat.visualization.qubit_relaxation import plot_time_dep_qubit_T2_relaxation_2Dmap, plot_qubit_T2_relaxation_hist
+from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting
+
+
+rep = dataset.coords["repetition"].values
+dataset.data_vars.items()
+single_name = "q0_ro"
+for ro_name, data in [(single_name, dataset["q0_ro"])]:
+    acc_T1 = []
+    for i in range(rep.shape[-1]):
+        fit_result = qubit_relaxation_fitting(time, data.values[0][i])
+        acc_T1.append(fit_result.params["T1"].value)
+    fig, ax = plt.subplots()
+    plot_time_dep_qubit_T2_relaxation_2Dmap( rep, time, data.values[0], ax, fit_result=acc_T1)
+    print(acc_T1)
+    fig1, ax1 = plt.subplots()
+
+    plot_qubit_T2_relaxation_hist( np.array(acc_T1), ax1 )
