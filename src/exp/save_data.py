@@ -1,5 +1,5 @@
 from datetime import datetime
-import sys
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import xarray as xr
@@ -34,3 +34,17 @@ def _add_time_label( file_name, time_label:str|None="prefix", time_format:str="%
         case _:
             new_file_name = f"{file_name}"  
     return new_file_name
+
+def create_folder(save_dir, folder_name):
+    # Combine fixed part with user input
+    folder_name = f"Experiment_{folder_name}"
+    full_path = os.path.join(save_dir, folder_name)
+
+    if os.path.exists(full_path):
+        print(f"Warning: The directory '{full_path}' already exists.")
+        return 0
+    else:
+        # Create the directory
+        os.makedirs(full_path, exist_ok=True)
+        print(f"Directory '{full_path}' created successfully.")
+        return full_path

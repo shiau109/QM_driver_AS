@@ -39,8 +39,8 @@ freq_resolution = 0.1
 from exp.xyfreq_sweep_flux_dep import XYFreqFlux
 my_exp = XYFreqFlux(config, qmm)
 my_exp.ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
-my_exp.xy_elements = ['q2_xy']
-my_exp.z_elements = ['q2_z']
+my_exp.xy_elements = ['q4_xy']
+my_exp.z_elements = ['q4_z']
 my_exp.initializer=initializer(10000,mode='wait')
 my_exp.xy_driving_time = 20
 my_exp.z_amp_ratio_range = (-0.2,0.2)
