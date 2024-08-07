@@ -11,7 +11,7 @@ qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
 
-from exp.save_data import save_nc, save_fig
+from exp.save_data import save_nc, save_fig, create_folder
 
 import matplotlib.pyplot as plt
 import xarray as xr
@@ -35,6 +35,7 @@ seed = 345324  # Pseudo-random number generator seed
 save_data = True
 save_dir = link_config["path"]["output_root"]
 save_name = f"{q_name[0]}_sqrb"
+folder_label = "SQRB_1" #your data and plots with be saved under a new folder with this name
 
 from exp.randomized_banchmarking_sq import single_qubit_RB
 x, value_avg, error_avg = single_qubit_RB( num_of_sequences, max_circuit_depth, delta_clifford, q_name, ro_elements, config, qmm, seed=seed, gate_length=gate_length)
@@ -49,7 +50,9 @@ dataset = xr.Dataset(
 )    
 
 
-if save_data: save_nc(save_dir, save_name, dataset)
+if save_data: 
+    folder_save_dir = create_folder(save_dir, folder_label)
+    save_nc(folder_save_dir, save_name, dataset)
 
 # Plot
 from exp.randomized_banchmarking_sq import plot_SQRB_result
@@ -57,6 +60,6 @@ fig, ax = plt.subplots(2)
 
 rep = dataset.coords["repetition"].values
 plot_SQRB_result( x, value_avg, error_avg )
-if save_data: save_fig(save_dir, save_name, dataset)
+if save_data: save_fig(folder_save_dir, save_name, dataset)
 
 plt.show()

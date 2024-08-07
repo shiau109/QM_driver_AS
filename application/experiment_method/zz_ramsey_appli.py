@@ -12,7 +12,7 @@ qmm, _ = spec.buildup_qmm()
 from ab.QM_config_dynamic import initializer
 init_macro = initializer(200000,mode='wait')
 
-from exp.save_data import save_nc, save_fig
+from exp.save_data import save_nc, save_fig, create_folder
 
 import matplotlib.pyplot as plt
 
@@ -28,8 +28,10 @@ X = False # w/ or w/o conditional x gate
 save_data = True
 save_dir = link_config["path"]["output_root"]
 save_name = f"{q_name[0]}_zz ramsey"
+folder_label = "zz_ramsey_appli_1" #your data and plots with be saved under a new folder with this name
 
 from exp.zz_ramsey import exp_zz_ramsey
 dataset = exp_zz_ramsey(20,0.04,ro_elements,q_name,con_xy_element,n_avg,config,qmm,virtual_detune=virtual_detune,X=X,initializer=init_macro)
-
-if save_data: save_nc(save_dir, save_name, dataset)
+if save_data: 
+    folder_save_dir = create_folder(save_dir, folder_label)
+    save_nc(folder_save_dir, save_name, dataset)

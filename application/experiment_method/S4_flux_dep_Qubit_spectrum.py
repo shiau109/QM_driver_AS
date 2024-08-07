@@ -11,7 +11,7 @@ qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
 
-from exp.save_data import save_nc, save_fig
+from exp.save_data import save_nc, save_fig, create_folder
 
 import matplotlib.pyplot as plt
 
@@ -39,8 +39,8 @@ freq_resolution = 0.1
 from exp.xyfreq_sweep_flux_dep import XYFreqFlux
 my_exp = XYFreqFlux(config, qmm)
 my_exp.ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
-my_exp.xy_elements = ['q2_xy']
-my_exp.z_elements = ['q2_z']
+my_exp.xy_elements = ['q4_xy']
+my_exp.z_elements = ['q4_z']
 my_exp.initializer=initializer(10000,mode='wait')
 my_exp.xy_driving_time = 20
 my_exp.z_amp_ratio_range = (-0.2,0.2)
@@ -51,8 +51,11 @@ dataset = my_exp.run( 1000 )
 
 save_data = False
 save_name = f"Spectrum_{q_name[0]}_{z_name[0]}_{sweep_type}"
+folder_label = "Flux_dep_Qubit_1" #your data and plots with be saved under a new folder with this name
 save_dir = link_config["path"]["output_root"]
-if save_data: save_nc( save_dir, save_name, dataset)
+if save_data: 
+    folder_save_dir = create_folder(save_dir, folder_label)
+    save_nc( folder_save_dir, save_name, dataset)
 
 # Plot
 from exp.xyfreq_sweep_flux_dep import plot_ana_flux_dep_qubit
@@ -71,7 +74,9 @@ for i, (ro_name, data) in enumerate(dataset.data_vars.items()):
 
     ax[0].set_title(ro_name)
     ax[1].set_title(ro_name)
+    save_name = f"flux_dep_Qubit_{ro_name}"
+    if save_data: save_fig(folder_save_dir, save_name)
 
-if save_data: save_fig(save_dir, save_name)
+
 
 plt.show()

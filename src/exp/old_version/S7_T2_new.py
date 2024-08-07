@@ -11,11 +11,12 @@ qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
 
-from exp.save_data import save_nc, save_fig, create_folder
-import numpy as np
+from exp.save_data import save_nc, save_fig
+
 import matplotlib.pyplot as plt
 from exp.ramsey_class import exp_ramsey
-
+import numpy as np
+import xarray as xr
 
 #Set parameters
 my_exp = exp_ramsey(config, qmm)
@@ -28,18 +29,19 @@ my_exp.max_time = 10
 my_exp.time_resolution = 0.1
 dataset = my_exp.run(400)
 
-from exp.save_data import save_nc, save_fig
 save_data = True
 save_dir = link_config["path"]["output_root"]
-folder_label = "T2_ramsey_1" #your data and plots with be saved under a new folder with this name
 save_name = f"{my_exp.xy_elements[0]}_T2"
-if save_data: 
-    folder_save_dir = create_folder(save_dir, folder_label)
-    save_nc( folder_save_dir, save_name, dataset)
+if save_data: save_nc(save_dir, save_name, dataset)
 
-# Plot
+# Plotting
+#To plot a single decay: use this code:
+#================================================================================================#
+print(dataset)
+
 time = (dataset.coords["time"].values)/1000
-from qcat.visualization.qubit_relaxation import plot_qubit_relaxation
+
+from qcat.visualization.qubit_relaxation import plot_qubit_relaxation, plot_time_dep_qubit_T2_relaxation_2Dmap, plot_qubit_T2_relaxation_hist
 from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting
 
 for ro_name, data in dataset.data_vars.items():
@@ -48,9 +50,7 @@ for ro_name, data in dataset.data_vars.items():
     print(fit_result.params)
     fig, ax = plt.subplots()
     plot_qubit_relaxation(time, data[0], ax, fit_result)
-if save_data: save_fig(folder_save_dir, save_name, dataset)
-
-plt.show()
+#================================================================================================#
 
 from exp.repetition_measurement import RepetitionMeasurement
 re_exp = RepetitionMeasurement()
@@ -58,12 +58,15 @@ re_exp.exp_list = [my_exp]
 re_exp.exp_name = ["T2"]
 my_exp.shot_num = 400
 dataset = re_exp.run(50)
-save_name = f"{my_exp.xy_elements[0]}_ramseyT2_stat"
-if save_data: save_nc( folder_save_dir, save_name, dataset["Ramsey"])
+save_name = f"{my_exp.xy_elements[0]}_EchoT2_stat"
+if save_data: save_nc(save_dir, save_name, dataset["Ramsey"])
 
 #To plot the result of multiple measurements (2D graph and histogram), use the following block of code
 #================================================================================================#
+
+time = (dataset.coords["time"].values)/1000
 import qcat.visualization.qubit_relaxation as qv
+
 print(dir(qv))
 
 from qcat.visualization.qubit_relaxation import plot_time_dep_qubit_T2_relaxation_2Dmap, plot_qubit_T2_relaxation_hist
@@ -74,17 +77,14 @@ rep = dataset.coords["repetition"].values
 dataset.data_vars.items()
 single_name = "q0_ro"
 for ro_name, data in [(single_name, dataset["q0_ro"])]:
-    acc_T2 = []
+    acc_T1 = []
     for i in range(rep.shape[-1]):
         fit_result = qubit_relaxation_fitting(time, data.values[0][i])
-        acc_T2.append(fit_result.params["T2"].value)
+        acc_T1.append(fit_result.params["T2"].value)
     fig, ax = plt.subplots()
-    plot_time_dep_qubit_T2_relaxation_2Dmap( rep, time, data.values[0], ax, fit_result=acc_T2)
-    print(acc_T2)
-    save_name = f"T2_2Dmap_{ro_name}"
-    if save_data: save_fig( folder_save_dir, save_name)
+    plot_time_dep_qubit_T2_relaxation_2Dmap( rep, time, data.values[0], ax, fit_result=acc_T1)
+    print(acc_T1)
     fig1, ax1 = plt.subplots()
 
-    plot_qubit_T2_relaxation_hist( np.array(acc_T2), ax1 )
-    save_name = f"T2_hist_{ro_name}"
-    if save_data: save_fig( folder_save_dir, save_name)
+    plot_qubit_T2_relaxation_hist( np.array(acc_T1), ax1 )
+#================================================================================================#

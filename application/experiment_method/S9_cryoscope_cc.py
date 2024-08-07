@@ -11,7 +11,7 @@ qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
 
-from exp.save_data import save_nc, save_fig
+from exp.save_data import save_nc, save_fig, create_folder
 
 import matplotlib.pyplot as plt
 
@@ -32,9 +32,11 @@ dataset = my_exp.run(4000)
 save_data = True
 save_dir = link_config["path"]["output_root"]
 save_name = f"{my_exp.xy_elements[0]}_cryoscope_cc"
+folder_label = "cryoscope_cc_1" #your data and plots with be saved under a new folder with this name
 
-
-if save_data: save_nc(save_dir, save_name, dataset)
+if save_data: 
+    folder_save_dir = create_folder(save_dir, folder_label)
+    save_nc(folder_save_dir, save_name, dataset)
 
 # Plot
 
@@ -74,6 +76,7 @@ for ro_name, data in dataset.data_vars.items():
     ax[2].plot(time, detuning_origin, label="0")
     ax[2].plot(time, detuning-virtual_detune, label=f"{virtual_detune}")
 
-if save_data: save_fig(save_dir, save_name, dataset)
+    save_name = f"cryoscope_cc_{ro_name}"
+    if save_data: save_fig(folder_save_dir, save_name, dataset)
 
 plt.show()

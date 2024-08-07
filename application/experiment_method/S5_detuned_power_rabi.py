@@ -11,7 +11,7 @@ qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
 
-from exp.save_data import save_nc, save_fig
+from exp.save_data import save_nc, save_fig, create_folder
 
 import matplotlib.pyplot as plt
 
@@ -39,9 +39,12 @@ dataset = my_exp.run(200)
 
 save_data = True
 save_dir = link_config["path"]["output_root"]
+folder_label = "detuned_power_rabi_1" #your data and plots with be saved under a new folder with this name
 save_name = f"{my_exp.xy_elements[0]}_{my_exp.process}_Rabi"
 
-if save_data: save_nc(save_dir, save_name, dataset)
+if save_data: 
+    folder_save_dir = create_folder(save_dir, folder_label)
+    save_nc(folder_save_dir, save_name, dataset)
 
 y = dataset.coords["amplitude"].values
 freqs = dataset.coords["frequency"].values
@@ -54,7 +57,7 @@ for ro_name, data in dataset.data_vars.items():
     plot_ana_freq_time_rabi( data, freqs, y, xy_LO, xy_IF_idle, ax )
     ax[0].set_title(ro_name)
     ax[1].set_title(ro_name)
-
-if save_data: save_fig(save_dir, save_name)
+    save_name = f"detuned_power_rabi_{ro_name}"
+    if save_data: save_fig(folder_save_dir, save_name)
 
 plt.show()
