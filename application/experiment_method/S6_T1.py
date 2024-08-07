@@ -11,7 +11,7 @@ qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
 
-from exp.save_data import save_nc, save_fig
+from exp.save_data import save_nc, save_fig, create_folder
 
 import matplotlib.pyplot as plt
 
@@ -46,6 +46,8 @@ for ro_name, data in dataset.data_vars.items():
     print(fit_result.params)
     fig, ax = plt.subplots()
     plot_qubit_relaxation(time, data[0], ax, fit_result)
+    save_name = f"T1_stat_{ro_name}"
+    if save_data: save_fig(save_dir, save_name)
 plt.show()
 
 from exp.repetition_measurement import RepetitionMeasurement
@@ -55,7 +57,10 @@ re_exp.exp_name = ["T1_relaxation"]
 my_exp.shot_num = 400
 dataset = re_exp.run(50)
 save_name = "_T1_stat"
-if save_data: save_nc(save_dir, save_name, dataset["T1"])
+folder_label = "T1_stat_1" #your data and plots with be saved under a new folder with this name
+if save_data: 
+    folder_save_dir = create_folder(save_dir, folder_label)
+    save_nc( folder_save_dir, save_name, dataset["T1"])
 
 #To plot the result of multiple measurements (2D graph and histogram), use the following block of code
 #================================================================================================#
@@ -79,6 +84,11 @@ for ro_name, data in [(single_name, dataset["q0_ro"])]:
     fig, ax = plt.subplots()
     plot_time_dep_qubit_T1_relaxation_2Dmap( rep, time, data.values[0], ax, fit_result=acc_T1)
     print(acc_T1)
+    save_name = f"T1_2Dmap_{ro_name}"
+    if save_data: save_fig( folder_save_dir, save_name)
     fig1, ax1 = plt.subplots()
-
+    
     plot_qubit_T1_relaxation_hist( np.array(acc_T1), ax1 )
+    save_name = f"T1_hist_{ro_name}"
+    if save_data: save_fig( folder_save_dir, save_name)
+plt.show()

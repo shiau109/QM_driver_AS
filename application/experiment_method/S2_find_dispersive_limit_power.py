@@ -27,7 +27,7 @@ my_exp.amp_scale = "lin"
 dataset = my_exp.run( 100 )
 
 save_data = True
-folder_label = "Dipersive_Limit_2" #your data and plots with be saved under a new folder with this name
+folder_label = "Dispersive_Limit_2" #your data and plots with be saved under a new folder with this name
 file_name = f"power_dep_resonator_{my_exp.ro_elements[0]}_{len(my_exp.ro_elements)}"
 save_dir = link_config["path"]["output_root"]
 
