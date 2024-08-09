@@ -13,6 +13,8 @@ import xarray as xr
 import exp.config_par as gc
 from exp.QMMeasurement import QMMeasurement
 
+import numpy as np
+
 class ROFreqSweepPowerDep( QMMeasurement ):
     """
     Parameters:\n

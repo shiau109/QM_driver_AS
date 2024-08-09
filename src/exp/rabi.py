@@ -21,6 +21,8 @@ import xarray as xr
 
 from exp.QMMeasurement import QMMeasurement
 
+import numpy as np
+
 class RabiTime( QMMeasurement ):
     def __init__( self, config, qmm: QuantumMachinesManager):
         super().__init__( config, qmm )

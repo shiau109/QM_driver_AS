@@ -16,6 +16,7 @@ from exp.save_data import save_nc, save_fig
 import matplotlib.pyplot as plt
 from exp.ramsey_class import exp_ramsey
 
+import numpy as np
 
 #Set parameters
 my_exp = exp_ramsey(config, qmm)

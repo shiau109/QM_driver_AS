@@ -17,6 +17,8 @@ import xarray as xr
 import time
 from exp.QMMeasurement import QMMeasurement
 
+import numpy as np
+
 class XYFreqFlux( QMMeasurement ):
     """
 

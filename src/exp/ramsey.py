@@ -15,6 +15,8 @@ u = unit(coerce_to_integer=True)
 import xarray as xr
 import time
 
+import numpy as np
+
 def exp_ramsey(time_max,time_resolution,ro_element,xy_element,n_avg,config,qmm,virtual_detune=0,simulate:bool=False,initializer=None):
     """
 

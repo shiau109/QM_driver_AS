@@ -2,11 +2,11 @@
 
 
 [sample]
-  name = "5Q4C0510_DR1_AS16"
+  name = "aaaaa"
 
 [path]
-    config = "D:\\QM_config\\5Q4C0510_DR1_AS16.json"
-    dynamic_config = "D:\\QM_config\\5Q4C0510_DR1_AS16_config.pkl"
-    specification = "D:\\QM_config\\5Q4C0510_DR1_AS16_spec.pkl"
-    output_root = "D:\\Data\\5Q4C0510_DR1_AS16"
+    config = "C:\\PersonalWorks\\Quela\\QM\\QMtest\\QMtest.json"
+    dynamic_config = "C:\\PersonalWorks\\Quela\\QM\\QMtest\\QMtest_config.pkl"
+    specification = "C:\\PersonalWorks\\Quela\\QM\\QMtest\\QMtest_spec.pkl"
+    output_root = "C:\\PersonalWorks\\Quela\\QM\\QMtest"
 

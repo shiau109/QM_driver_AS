@@ -16,6 +16,8 @@ import xarray as xr
 import time
 from exp.QMMeasurement import QMMeasurement
 
+import numpy as np
+
 class exp_ramsey( QMMeasurement ):
     def __init__( self, config, qmm: QuantumMachinesManager):
         super().__init__( config, qmm )
