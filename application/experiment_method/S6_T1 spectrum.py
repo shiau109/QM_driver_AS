@@ -12,7 +12,7 @@ qmm, _ = spec.buildup_qmm()
 from ab.QM_config_dynamic import initializer
 
 from exp.save_data import save_nc, save_fig, create_folder
-
+from exp.plotting import plot_and_save_T1_spectrum
 
 import matplotlib.pyplot as plt
 
@@ -45,20 +45,5 @@ if save_data:
 time = dataset.coords["time"].values
 flux = dataset.coords["z_voltage"].values
 
-for ro_name, data in dataset.data_vars.items():
-    fig_0, ax_0 = plt.subplots()
-    ax_0.plot(time, data.values[0][0])
-    print( data.values[0].shape )
-    fig, ax = plt.subplots()
-    ax.set_title('pcolormesh')
-    ax.set_xlabel("T1 (us)")
-    ax.set_ylabel("Flux")
-    pcm = ax.pcolormesh( time/1000, flux, data.values[0], cmap='RdBu')# , vmin=z_min, vmax=z_max)
-    plt.colorbar(pcm, label='Value')
-    save_name = f"T1_spectrum_{ro_name}"
-    if save_data: save_fig( folder_save_dir, save_name ) 
-
-plt.show()
-
-
+plot_and_save_T1_spectrum(dataset, time, flux, folder_save_dir, save_data)
 

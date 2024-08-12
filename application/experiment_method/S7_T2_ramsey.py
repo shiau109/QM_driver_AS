@@ -29,6 +29,7 @@ my_exp.time_resolution = 0.1
 dataset = my_exp.run(400)
 
 from exp.save_data import save_nc, save_fig
+from exp.plotting import plot_and_save_t2_ramsey_singleRun, plot_and_save_t2_ramsey_repeateRun
 save_data = True
 save_dir = link_config["path"]["output_root"]
 folder_label = "T2_ramsey_1" #your data and plots with be saved under a new folder with this name
@@ -39,18 +40,8 @@ if save_data:
 
 # Plot
 time = (dataset.coords["time"].values)/1000
-from qcat.visualization.qubit_relaxation import plot_qubit_relaxation
-from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting
+plot_and_save_t2_ramsey_singleRun(dataset, time, folder_save_dir, save_data)
 
-for ro_name, data in dataset.data_vars.items():
-    print(ro_name)
-    fit_result = qubit_relaxation_fitting(time, data.values[0])
-    print(fit_result.params)
-    fig, ax = plt.subplots()
-    plot_qubit_relaxation(time, data[0], ax, fit_result)
-if save_data: save_fig(folder_save_dir, save_name, dataset)
-
-plt.show()
 
 from exp.repetition_measurement import RepetitionMeasurement
 re_exp = RepetitionMeasurement()
@@ -65,26 +56,6 @@ if save_data: save_nc( folder_save_dir, save_name, dataset["Ramsey"])
 #================================================================================================#
 import qcat.visualization.qubit_relaxation as qv
 print(dir(qv))
-
-from qcat.visualization.qubit_relaxation import plot_time_dep_qubit_T2_relaxation_2Dmap, plot_qubit_T2_relaxation_hist
-from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting
-
-
-rep = dataset.coords["repetition"].values
 dataset.data_vars.items()
 single_name = "q0_ro"
-for ro_name, data in [(single_name, dataset["q0_ro"])]:
-    acc_T2 = []
-    for i in range(rep.shape[-1]):
-        fit_result = qubit_relaxation_fitting(time, data.values[0][i])
-        acc_T2.append(fit_result.params["T2"].value)
-    fig, ax = plt.subplots()
-    plot_time_dep_qubit_T2_relaxation_2Dmap( rep, time, data.values[0], ax, fit_result=acc_T2)
-    print(acc_T2)
-    save_name = f"T2_2Dmap_{ro_name}"
-    if save_data: save_fig( folder_save_dir, save_name)
-    fig1, ax1 = plt.subplots()
-
-    plot_qubit_T2_relaxation_hist( np.array(acc_T2), ax1 )
-    save_name = f"T2_hist_{ro_name}"
-    if save_data: save_fig( folder_save_dir, save_name)
+plot_and_save_t2_ramsey_repeateRun(dataset, time, single_name, folder_save_dir, save_data)

@@ -14,7 +14,7 @@ from ab.QM_config_dynamic import initializer
 from exp.save_data import save_nc, save_fig, create_folder
 
 import matplotlib.pyplot as plt
-
+from exp.plotting import plot_and_save_flux_dep_Qubit
 # Set parameters
 init_macro = initializer(10000,mode='wait')
 
@@ -58,25 +58,4 @@ if save_data:
     save_nc( folder_save_dir, save_name, dataset)
 
 # Plot
-from exp.xyfreq_sweep_flux_dep import plot_ana_flux_dep_qubit
-freqs = dataset.coords["frequency"].values
-flux = dataset.coords["amp_ratio"].values
-for i, (ro_name, data) in enumerate(dataset.data_vars.items()):
-    xy_LO = dataset.attrs["xy_LO"][0]/1e6
-    xy_IF_idle = dataset.attrs["xy_IF"][0]/1e6
-    z_offset = dataset.attrs["z_offset"][0]
-    print(ro_name, xy_LO, xy_IF_idle, z_offset, data.shape)
-    fig, ax = plt.subplots(2)
-
-    plot_ana_flux_dep_qubit(data, flux, freqs, xy_LO, xy_IF_idle, z_offset, ax)
-    # plot_ana_flux_dep_qubit_1D(data, flux, freqs, xy_LO, xy_IF_idle, z_offset, ax) 
-
-
-    ax[0].set_title(ro_name)
-    ax[1].set_title(ro_name)
-    save_name = f"flux_dep_Qubit_{ro_name}"
-    if save_data: save_fig(folder_save_dir, save_name)
-
-
-
-plt.show()
+plot_and_save_flux_dep_Qubit(dataset, folder_save_dir, save_data)

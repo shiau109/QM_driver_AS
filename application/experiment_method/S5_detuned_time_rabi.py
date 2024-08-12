@@ -16,13 +16,9 @@ from exp.save_data import save_nc, save_fig, create_folder
 import matplotlib.pyplot as plt
 
 # Set parameters
-
-
-
-
-
 from exp.config_par import *
 from exp.rabi import RabiTime
+from exp.plotting import plot_and_save_rabi
 
 my_exp = RabiTime(config, qmm)
 my_exp.initializer = initializer(200000,mode='wait')
@@ -51,16 +47,6 @@ if save_data:
 
 y = dataset.coords["time"].values
 freqs = dataset.coords["frequency"].values
-# Plot 
-from exp.old_version.rabi import plot_ana_freq_time_rabi 
-for ro_name, data in dataset.data_vars.items():
-    xy_LO = dataset.attrs["ref_xy_LO"][0]/1e6
-    xy_IF_idle = dataset.attrs["ref_xy_IF"][0]/1e6
-    fig, ax = plt.subplots(2)
-    plot_ana_freq_time_rabi( data, freqs, y, xy_LO, xy_IF_idle, ax )
-    ax[0].set_title(ro_name)
-    ax[1].set_title(ro_name)
-    save_name = f"detuned_time_rabi_{ro_name}"
-    if save_data: save_fig( folder_save_dir, save_name)
 
-plt.show()
+# Plot 
+plot_and_save_rabi(dataset, freqs, y, folder_save_dir, "time", save_data)

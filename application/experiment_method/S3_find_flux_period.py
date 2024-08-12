@@ -10,10 +10,9 @@ config = config_obj.get_config()
 qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
-
 from exp.save_data import save_nc, save_fig, create_folder
-
 import matplotlib.pyplot as plt
+from exp.plotting import plot_and_save_flux_period
 
 # Set parameters
 init_macro = initializer(10000,mode='wait')
@@ -41,13 +40,4 @@ if save_data:
     
 
 # Plot
-dfs = dataset.coords["frequency"].values
-amps = dataset.coords["flux"].values   
-for ro_name, data in dataset.data_vars.items():
-    fig, ax = plt.subplots()
-    plot_flux_dep_resonator( data.values, dfs, amps, ax)
-    ax.set_title(ro_name)
-    save_name = f"flux_resonator_{ro_name}"
-    if save_data: save_fig( folder_save_dir, save_name)
-
-plt.show()
+plot_and_save_flux_period(dataset, folder_save_dir, save_data)

@@ -12,8 +12,7 @@ qmm, _ = spec.buildup_qmm()
 from ab.QM_config_dynamic import initializer
 
 from exp.save_data import save_nc, save_fig, create_folder
-
-import matplotlib.pyplot as plt
+from exp.plotting import plot_and_save_piscope
 
 # Set parameters
 
@@ -35,32 +34,11 @@ dataset = my_exp.run(200)
 save_data = True
 save_dir = link_config["path"]["output_root"]
 save_name = f"{my_exp.xy_elements[0]}_piscope_cc"
-folder_label = "piscope_1" #your data and plots with be saved under a new folder with this name
+folder_label = "piscope_1" #your data and plots will be saved under a new folder with this name
 
 if save_data: 
     folder_save_dir = create_folder(save_dir, folder_label)
     save_nc(folder_save_dir, save_name, dataset)
 
 # Plot
-
-
-import numpy as np
-from scipy import signal, optimize
-
-time = dataset.coords["pi_timing"].values
-freq = dataset.coords["frequency"].values
-
-for ro_name, data in dataset.data_vars.items():
-    fig_0, ax_0 = plt.subplots()
-    fig, ax = plt.subplots()
-    ax.set_title('pcolormesh')
-    ax.set_xlabel("T1 (us)")
-    ax.set_ylabel("Flux")
-    pcm = ax.pcolormesh( freq, time, data.values[0], cmap='RdBu')# , vmin=z_min, vmax=z_max)
-    plt.colorbar(pcm, label='Value')
-
-    save_name = f"piscope_{ro_name}"
-    if save_data: 
-        save_fig(folder_save_dir, save_name, dataset)
-
-plt.show()
+plot_and_save_piscope(dataset, folder_save_dir, save_data)

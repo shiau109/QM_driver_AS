@@ -24,6 +24,7 @@ dataset = my_exp.run(400)
 
 
 from exp.save_data import save_nc, save_fig, create_folder    
+from exp.plotting import plot_and_save_t2_spinEcho
 save_data = True
 save_dir = link_config["path"]["output_root"]
 save_name = f"{my_exp.xy_elements[0]}_EchoT2"
@@ -35,18 +36,7 @@ if save_data:
 # Plot
 import matplotlib.pyplot as plt
 
-from exp.ramsey import plot_ramsey_oscillation
-time = dataset.coords["time"].values
-for ro_name, data in dataset.data_vars.items():
-    fig, ax = plt.subplots(2)
-    # print(data.shape)
-    plot_ramsey_oscillation(time, data[0], ax[0])
-    plot_ramsey_oscillation(time, data[1], ax[1])
-    # rep = dataset.coords["repetition"].values
-    # plot_multiT2( data, rep, time )
-    save_name = f"T2_spin_echo_{ro_name}"
-    if save_data: save_fig(folder_save_dir, save_name, dataset)
-plt.show()
+plot_and_save_t2_spinEcho(dataset, folder_save_dir, save_data = True )
 
 from exp.repetition_measurement import RepetitionMeasurement
 re_exp = RepetitionMeasurement()

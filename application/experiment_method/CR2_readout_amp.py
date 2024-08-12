@@ -13,7 +13,7 @@ qmm, _ = spec.buildup_qmm()
 from ab.QM_config_dynamic import initializer
 init_macro = initializer(200000,mode='wait')
 
-from exp.save_data import save_nc, save_fig
+from exp.save_data import save_nc, save_fig, create_folder
 save_dir = link_config["path"]["output_root"]
 
 import matplotlib.pyplot as plt
@@ -24,6 +24,7 @@ operate_qubit = ['q4_xy']
 
 save_data = True
 save_name = f"ro_amp_{operate_qubit[0]}"
+folder_label = "ro_amp_1"
 
 n_avg = 400
 amp_range = (0.1, 1.8)
@@ -35,18 +36,10 @@ from exp.readout_optimization import *
 dataset = power_dep_signal( amp_range, amp_resolution, operate_qubit, ro_elements, n_avg, config, qmm, initializer=init_macro)
 
 # Data Saving 
-if save_data: save_nc(save_dir, save_name, dataset)
+if save_data: 
+    folder_save_dir = create_folder(save_dir, folder_label)
+    save_nc(save_dir, save_name, dataset)
     
-
-transposed_data = dataset.transpose("mixer", "state", "amplitude_ratio")
-amps = transposed_data.coords["amplitude_ratio"].values
-for ro_name, data in transposed_data.data_vars.items():  
-    fig = plt.figure()
-    ax = fig.subplots(1,2,sharex=True)
-    plot_amp_signal( amps, data, ro_name, ax[0] )
-    plot_amp_signal_phase( amps, data, ro_name, ax[1] )
-    fig.suptitle(f"{ro_name} RO amplitude")
-
-if save_data: save_fig(save_dir, save_name)
-plt.show()
+from exp.plotting import plot_and_save_readout_amp
+plot_and_save_readout_amp(dataset, folder_save_dir, save_data)
 
