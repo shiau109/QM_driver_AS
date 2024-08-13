@@ -1,6 +1,7 @@
 from exp.save_data import save_nc, save_fig, create_folder
 import matplotlib.pyplot as plt
-from exp.rofreq_sweep_power_dep import plot_power_dep_resonator, plot_flux_dep_resonator
+from exp.rofreq_sweep_power_dep import plot_power_dep_resonator
+from exp.rofreq_sweep_flux_dep import plot_flux_dep_resonator
 import numpy as np
 
 #S2

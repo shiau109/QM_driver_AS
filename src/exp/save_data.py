@@ -44,8 +44,8 @@ def create_folder(save_dir, folder_name):
         print(f"Warning: The directory '{full_path}' already exists, creating separate folder")
         count = 0
         while os.path.exists(full_path):
-            folder_name = f"Experiment_{folder_name}_{count}"
-            full_path = os.path.join(save_dir, folder_name)
+            new_folder_name = f"{folder_name}_{count}"
+            full_path = os.path.join(save_dir, new_folder_name)
             count+=1
         os.makedirs(full_path, exist_ok=True)
         return full_path
