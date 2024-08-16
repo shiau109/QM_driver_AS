@@ -119,7 +119,7 @@ def analysis_crosstalk_value_fft(dataset ):
 
     return crosstalk, f_axes, magnitude_spectrum
 
-def analysis_crosstalk_value_fitting(dataset ):
+def analysis_crosstalk_value_fft(dataset ):
     """
     z1 is shape (N,),  crosstalk voltage (other)\n
     z2 is shape (M,), compensation voltage (self)\n
