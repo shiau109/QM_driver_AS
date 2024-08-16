@@ -4,7 +4,7 @@ import warnings
 warnings.filterwarnings("ignore")
 import xarray as xr
 import numpy as np
-from analysis.zline_crosstalk_analysis import analysis_crosstalk_value
+from analysis.zline_crosstalk_analysis import analysis_crosstalk_value_fft, analysis_crosstalk_value_fitting
 from qualang_tools.plot.fitting import Fit
 
 
@@ -19,9 +19,12 @@ def plot_crosstalk_2points(data):
     """
     q = list(data.data_vars.keys())
     crosstalk_z = data.coords["crosstalk_z"].values
+    detector_z = data.coords["detector_z"].values
     crosstalk_qubit = data.attrs["crosstalk_qubit"]
     detector_qubit = data.attrs["detector_qubit"]
+
     fig, ax = plt.subplots(2, 1)
+
     ax[0].plot(crosstalk_z, data[q][0, :, 0], color="red", linewidth=5)
     fit = Fit()
     ana_dict = fit.reflection_resonator_spectroscopy(crosstalk_z, data[q][0, :, 0], plot=False)
@@ -29,6 +32,7 @@ def plot_crosstalk_2points(data):
     ax[0].set_titile(f"{detector_qubit}_ro")
     ax[0].set_xlabel(f"{crosstalk_qubit}_z Delta Voltage (mV)", fontsize=15)
     ax[0].set_ylabel(f"I", fontsize=15)
+
     ax[1].plot(crosstalk_z, data[q][0, :, 1], color="red", linewidth=5)
     fit = Fit()
     ana_dict = fit.reflection_resonator_spectroscopy(crosstalk_z, data[q][0, :, 1], plot=False)
@@ -37,8 +41,9 @@ def plot_crosstalk_2points(data):
     ax[1].set_xlabel(f"{crosstalk_qubit}_z Delta Voltage (mV)", fontsize=15)
     ax[1].set_ylabel(f"I", fontsize=15)
 
-    return freq_minus, freq_plus
-
+    crosstalk=(freq_plus - freq_minus)/(detector_z[1] - detector_z[0])
+    
+    return crosstalk
 
 
 def plot_crosstalk_3Dscalar(data):
@@ -119,10 +124,12 @@ def plot_analysis( data ):
     fig, ax = plt.subplots(ncols=2)
     fig.set_size_inches(10, 5)
 
-    crosstalk, freq_axes, mag = analysis_crosstalk_value( data )
+    # crosstalk, freq_axes, mag = analysis_crosstalk_value_fft( data )
+    crosstalk, intercept = analysis_crosstalk_value_fitting( data )
+
     _plot_rawdata( data, crosstalk, ax[0] )
 
-    _plot_2Dfft( freq_axes[0], freq_axes[1], mag.transpose(), ax[1] )
+    # _plot_2Dfft( freq_axes[0], freq_axes[1], mag.transpose(), ax[1] )
 
 def _plot_rawdata( dataset, slope, ax=None ):
     """
