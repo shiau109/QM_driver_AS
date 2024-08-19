@@ -27,9 +27,11 @@ class QMMeasurement( ABC ):
     def _data_formation( self )->Dataset:
         pass
 
-    def run( self, shot_num:int, save_path:str=None ):
+    def run( self, shot_num:int=None, save_path:str=None ):
 
-        self.shot_num = shot_num
+        if shot_num is not None:
+            print(f"New setting {shot_num} shots")
+            self.shot_num = shot_num
         self._qm = self.qmm.open_qm( self.config )
         qua_program = self._get_qua_program()
 
@@ -43,7 +45,7 @@ class QMMeasurement( ABC ):
             fetch_data = self._results.fetch_all()
             # Progress bar
             iteration = fetch_data[-1]
-            progress_counter(iteration, shot_num, start_time=self._results.start_time)
+            progress_counter(iteration, self.shot_num, start_time=self._results.start_time)
             time.sleep(1)
         
         measurement_end_time = datetime.now()
