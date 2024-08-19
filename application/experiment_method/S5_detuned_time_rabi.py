@@ -27,7 +27,7 @@ from exp.rabi import RabiTime
 my_exp = RabiTime(config, qmm)
 my_exp.initializer = initializer(200000,mode='wait')
 
-my_exp.ro_elements = ["q0_ro", "q1_ro"]
+my_exp.ro_elements = [ "q1_ro"]
 my_exp.xy_elements = ['q1_xy']
 
 my_exp.freq_range = (-20,20)

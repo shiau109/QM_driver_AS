@@ -15,22 +15,14 @@ from config_component.update import update_z_offset, update_z_crosstalk
 
 z_infos = [
     {
-        "name":"q3",
-        "offset": 0.,
+        "name":"q0",
+        "offset": 0.0,
         "crosstalk":{}
     },{
-        "name":"q4",
-        "offset": -0.0495,
+        "name":"q1",
+        "offset": 0.0,
         "crosstalk":{}
-    },{
-        "name":"q7",
-        "offset": -0.0,
-        "crosstalk":{}
-    },{
-        "name":"q8",
-        "offset": -0.05,
-        "crosstalk":{}
-    }
+    },
 ]
 for i in z_infos:
     wiring = spec.get_spec_forConfig('wire')

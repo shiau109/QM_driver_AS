@@ -5,7 +5,7 @@ You need to run this file in order to update the Octaves with the new parameters
 from QM_driver_AS.ultitly.set_octave import ElementsSettings, octave_settings
 
 # Configure the Octave parameters for each element
-rr0 = ElementsSettings("q0_ro", gain=8, rf_in_port=["octave1", 1], down_convert_LO_source="Internal")
+rr0 = ElementsSettings("q0_ro", gain=20, rf_in_port=["octave1", 1], down_convert_LO_source="Internal")
 
 
 q0_xy = ElementsSettings("q0_xy", gain=18)
@@ -22,7 +22,7 @@ q4_xy = ElementsSettings("q4_xy", gain=20)
 
 # Add the "octave" elements
 # elements_settings = [rr0]
-elements_settings = [rr0]
+elements_settings = [rr0,q0_xy,q1_xy]
 
 
 ###################

@@ -17,8 +17,8 @@ import matplotlib.pyplot as plt
 
 # Set parameters
 init_macro = initializer(10000,mode='wait')
-ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
-z_elements = ['q4_z']
+ro_elements = ["q0_ro", "q1_ro"]
+z_elements = ['q3_z']
 
 save_data = True
 save_dir = link_config["path"]["output_root"]

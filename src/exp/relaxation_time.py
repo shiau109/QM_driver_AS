@@ -41,7 +41,6 @@ class exp_relaxation_time( QMMeasurement):
         self.ro_element = None
         self.n_avg = 100
         self.initializer = None
-    
     def _get_qua_program( self ):
         cc_max_qua = (self.max_time/4) * u.us
         cc_resolution_qua = (self.time_resolution/4) * u.us
@@ -55,7 +54,7 @@ class exp_relaxation_time( QMMeasurement):
             t = declare(int)  
             n = declare(int)
             n_st = declare_stream()
-            with for_(n, 0, n < self.n_avg, n + 1):
+            with for_(n, 0, n < self.shot_num, n + 1):
                 with for_(*from_array(t, cc_delay_qua)):
                     # initializaion
                     if self.initializer is None:
@@ -85,7 +84,7 @@ class exp_relaxation_time( QMMeasurement):
 
     def _get_fetch_data_list( self ):
         ro_ch_name = []
-        for r_name in self.ro_elements:
+        for r_name in self.ro_element:
             ro_ch_name.append(f"{r_name}_I")
             ro_ch_name.append(f"{r_name}_Q")
 

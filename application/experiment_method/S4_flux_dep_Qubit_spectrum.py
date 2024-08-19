@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 # Set parameters
 init_macro = initializer(10000,mode='wait')
 
-ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
+ro_elements = ["q0_ro"]
 q_name = ['q0_xy']
 z_name = ['q0_z']
 
@@ -28,26 +28,26 @@ saturation_len = 20  # In us (should be < FFT of df)
 saturation_ampRatio = 0.05 # pre-factor to the value defined in the config - restricted to [-2; 2)
 n_avg = 1000
 
-flux_range = (0.0,0.15)
-flux_resolution = 0.01
+flux_range = (0.0,0.1)
+flux_resolution = 0.05
 
-freq_range = (-5,5)
-freq_resolution = 0.1
+freq_range = (-200,200)
+freq_resolution = 1
 
 
 # Start meausrement
 from exp.xyfreq_sweep_flux_dep import XYFreqFlux
 my_exp = XYFreqFlux(config, qmm)
-my_exp.ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
-my_exp.xy_elements = ['q2_xy']
-my_exp.z_elements = ['q2_z']
+my_exp.ro_elements = ro_elements
+my_exp.xy_elements = q_name
+my_exp.z_elements = z_name
 my_exp.initializer=initializer(10000,mode='wait')
 my_exp.xy_driving_time = 20
-my_exp.z_amp_ratio_range = (-0.2,0.2)
-my_exp.z_amp_ratio_resolution = 0.01
-my_exp.freq_range = (-50,50)
-my_exp.freq_resolution = 1.0
-dataset = my_exp.run( 1000 )
+my_exp.z_amp_ratio_range = flux_range
+my_exp.z_amp_ratio_resolution = flux_resolution
+my_exp.freq_range = freq_range
+my_exp.freq_resolution = freq_resolution
+dataset = my_exp.run( n_avg )
 
 save_data = False
 save_name = f"Spectrum_{q_name[0]}_{z_name[0]}_{sweep_type}"
@@ -55,7 +55,7 @@ save_dir = link_config["path"]["output_root"]
 if save_data: save_nc( save_dir, save_name, dataset)
 
 # Plot
-from exp.xyfreq_sweep_flux_dep import plot_ana_flux_dep_qubit
+from exp.xyfreq_sweep_flux_dep import plot_ana_flux_dep_qubit, plot_ana_flux_dep_qubit_1D
 freqs = dataset.coords["frequency"].values
 flux = dataset.coords["amp_ratio"].values
 for i, (ro_name, data) in enumerate(dataset.data_vars.items()):
@@ -65,8 +65,8 @@ for i, (ro_name, data) in enumerate(dataset.data_vars.items()):
     print(ro_name, xy_LO, xy_IF_idle, z_offset, data.shape)
     fig, ax = plt.subplots(2)
 
-    plot_ana_flux_dep_qubit(data, flux, freqs, xy_LO, xy_IF_idle, z_offset, ax)
-    # plot_ana_flux_dep_qubit_1D(data, flux, freqs, xy_LO, xy_IF_idle, z_offset, ax) 
+    # plot_ana_flux_dep_qubit(data, flux, freqs, xy_LO, xy_IF_idle, z_offset, ax)
+    plot_ana_flux_dep_qubit_1D(data, flux, freqs, xy_LO, xy_IF_idle, z_offset, ax) 
 
 
     ax[0].set_title(ro_name)
