@@ -14,11 +14,11 @@ from ab.QM_config_dynamic import initializer
 from exp.save_data import save_nc, save_fig
 
 import matplotlib.pyplot as plt
-from exp.ramsey_class import exp_ramsey
+from exp.ramsey import Ramsey
 
 
 #Set parameters
-my_exp = exp_ramsey(config, qmm)
+my_exp = Ramsey(config, qmm)
 from ab.QM_config_dynamic import initializer
 my_exp.initializer = initializer(300000,mode='wait')
 my_exp.ro_element = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
