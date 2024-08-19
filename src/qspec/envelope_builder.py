@@ -4,7 +4,7 @@ class EnvelopeBuilder:
     def __init__(self,xyInfo:dict):
         self.QsXyInfo = xyInfo
     
-    def build_XYwaveform(self,axis:str,**kwargs)->dict:
+    def build_XYwaveform(self,target_q:str,axis:str,**kwargs)->dict:
         ''' Create the pulse waveform for XY control for target qubit\n
             func: "drag" or "gauss"\n
             axis: "x" or "y" or "x/2" or "y/2" or "-x/2" or "-y/2"\n
@@ -16,16 +16,16 @@ class EnvelopeBuilder:
         from exp.customized_waveform_tools import multi_sine_pulse_waveforms
 
         # search the waveform function
-        func = 'drag' if self.QsXyInfo["waveform_func"] == 0 else self.QsXyInfo["waveform_func"]
+        func = 'drag' if self.QsXyInfo[target_q]["waveform_func"] == 0 else self.QsXyInfo[target_q]["waveform_func"]
         if func.lower() in ['drag','dragg','gdrag']:
             def wf_func(amp, width, sigma, *args):
                 return drag_gaussian_pulse_waveforms(amp, width, sigma, args[0], args[1], args[2])
         elif func.lower() in ['gauss','g','gaussian']:
             def wf_func(amp, width, sigma, *args):
                 return drag_gaussian_pulse_waveforms(amp, width, sigma, 0, args[1], args[2])
-        elif func.lower() in ['sin','sine',]:
+        elif func.lower() in ['sin','sine']:
             def wf_func(amp, width, *args):
-                return multi_sine_pulse_waveforms(amp, width, 0, args[1], args[2])
+                return multi_sine_pulse_waveforms(amp, width, args[1], args[2])
         else:
             raise ValueError("Only surpport Gaussian or DRAG-gaussian waveform!")
         
@@ -36,8 +36,8 @@ class EnvelopeBuilder:
         if angle in ["2"]:
             correspond_name = str(int(180/int(angle)))
             # check the /2 modified scale in the spec
-            if correspond_name in list(self.QsXyInfo["pi_ampScale"].keys()):
-                scale_90 = self.QsXyInfo["pi_ampScale"][correspond_name]
+            if correspond_name in list(self.QsXyInfo[target_q]["pi_ampScale"].keys()):
+                scale_90 = self.QsXyInfo[target_q]["pi_ampScale"][correspond_name]
             else:
                 scale_90 = 1
             scale = rota_direction*0.5*scale_90
@@ -60,13 +60,13 @@ class EnvelopeBuilder:
 
         if 'x' in axis[:2].lower():
             wf, der_wf = array(
-                wf_func(self.QsXyInfo["pi_amp"]*scale, self.QsXyInfo["pi_len"], self.QsXyInfo["pi_len"]/S_factor, self.QsXyInfo["drag_coef"], self.QsXyInfo["anharmonicity"], self.QsXyInfo["AC_stark_detuning"])
+                wf_func(self.QsXyInfo[target_q]["pi_amp"]*scale, self.QsXyInfo[target_q]["pi_len"], self.QsXyInfo[target_q]["pi_len"]/S_factor, self.QsXyInfo[target_q]["drag_coef"], self.QsXyInfo[target_q]["anharmonicity"], self.QsXyInfo[target_q]["AC_stark_detuning"])
             )
             I_wf = wf
             Q_wf = der_wf
         elif 'y' in axis[:2].lower():
             wf, der_wf = array(
-                wf_func(self.QsXyInfo["pi_amp"]*scale, self.QsXyInfo["pi_len"], self.QsXyInfo["pi_len"]/S_factor, self.QsXyInfo["drag_coef"], self.QsXyInfo["anharmonicity"], self.QsXyInfo["AC_stark_detuning"])
+                wf_func(self.QsXyInfo[target_q]["pi_amp"]*scale, self.QsXyInfo[target_q]["pi_len"], self.QsXyInfo[target_q]["pi_len"]/S_factor, self.QsXyInfo[target_q]["drag_coef"], self.QsXyInfo[target_q]["anharmonicity"], self.QsXyInfo[target_q]["AC_stark_detuning"])
             )
             I_wf = (-1)*der_wf
             Q_wf = wf 

@@ -35,7 +35,6 @@ def multi_sine_pulse_waveforms(
     sin_wave = (
         0.5
         * amplitude
-        * (2 * np.pi / end_point * 1e9)
         * np.sin(t * 2 * np.pi / end_point)
     )  # The derivative of cosine function
     z = sin_wave + 1j * 0

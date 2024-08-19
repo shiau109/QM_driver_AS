@@ -135,7 +135,7 @@ def create_xyChannel(config:Configuration, name, xyInfo:dict, wireInfo:dict):
     config._mixers[mixer_name] = mixer
 
     # create corresponding waveform name in pulses dict, create waveform list in waveforms dict
-    from config_component.envelope_builder import EnvelopeBuilder
+    from qspec.envelope_builder import EnvelopeBuilder
     wave_maker = EnvelopeBuilder(xyInfo)
     waveform = Waveform(waveform_name)
     waveform.type = "constant"

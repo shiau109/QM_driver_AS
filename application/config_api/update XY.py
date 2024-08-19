@@ -6,7 +6,7 @@ link_path = Path(__file__).resolve().parent/"config_link.toml"
 from QM_driver_AS.ultitly.config_io import import_config
 config_obj, spec = import_config( link_path )
 
-from config_component.update import update_controlFreq, update_controlWaveform
+from qspec.update import update_controlFreq, update_controlWaveform
 
 import numpy as np
 
@@ -44,6 +44,8 @@ for i in xy_infos:
     pi_len = i["pi_len"]
     if "wf" in i.keys():
         qubit_wf = i["wf"]
+    else:
+        qubit_wf = 0
 
     update_controlFreq(config_obj, spec.update_aXyInfo_for(target_q=q_name,IF=ref_IF,LO=qubit_LO))
     if np.abs(ref_IF) > 350:
