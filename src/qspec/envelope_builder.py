@@ -12,7 +12,9 @@ class EnvelopeBuilder:
             "given_wf_array"(** not done!) a dict contains key "I" and "Q" for the given array waveform (arbitrary),\n
             ex. given_wf_array = {"I":array([0.1,0.1,0.1]),"Q":array([0.1,0.8,0.1])}
         '''
-        from qualang_tools.config.waveform_tools import drag_gaussian_pulse_waveforms
+        from qualang_tools.config.waveform_tools import drag_gaussian_pulse_waveforms, drag_cosine_pulse_waveforms
+        from exp.customized_waveform_tools import multi_sine_pulse_waveforms
+
         # search the waveform function
         func = 'drag' if self.QsXyInfo["waveform_func"] == 0 else self.QsXyInfo["waveform_func"]
         if func.lower() in ['drag','dragg','gdrag']:
@@ -21,6 +23,9 @@ class EnvelopeBuilder:
         elif func.lower() in ['gauss','g','gaussian']:
             def wf_func(amp, width, sigma, *args):
                 return drag_gaussian_pulse_waveforms(amp, width, sigma, 0, args[1], args[2])
+        elif func.lower() in ['sin','sine',]:
+            def wf_func(amp, width, *args):
+                return multi_sine_pulse_waveforms(amp, width, 0, args[1], args[2])
         else:
             raise ValueError("Only surpport Gaussian or DRAG-gaussian waveform!")
         

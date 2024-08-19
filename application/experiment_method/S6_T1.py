@@ -21,8 +21,8 @@ from exp.relaxation_time import exp_relaxation_time
 #Set parameters
 my_exp = exp_relaxation_time(config, qmm)
 my_exp.initializer = initializer(200000,mode='wait')
-my_exp.ro_element = ["q1_ro"]
-my_exp.q_name = ["q1_xy"]
+my_exp.ro_element = ["q0_ro"]
+my_exp.q_name = ["q0_xy"]
 my_exp.max_time = 60
 my_exp.time_resolution = 0.6
 dataset = my_exp.run(400)

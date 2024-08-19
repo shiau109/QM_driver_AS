@@ -8,7 +8,7 @@ config_obj, spec = import_config( link_path )
 
 config = config_obj.get_config()
 qmm, _ = spec.buildup_qmm()
-
+# print(config["waveforms"]["q0_xy_xcos180_wf_I"])
 from ab.QM_config_dynamic import initializer
 
 from exp.cryoscope import Cryoscope
