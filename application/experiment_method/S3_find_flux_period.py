@@ -16,28 +16,29 @@ from exp.plotting import plot_and_save_flux_period
 
 # Set parameters
 init_macro = initializer(10000,mode='wait')
-ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
-z_elements = ['q4_z']
+#ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
+ro_elements = ["q1_ro","q3_ro"]
+z_elements = ['q3_z']
 
 save_data = True
-folder_label = "Find_Flux_Period_1" #your data and plots with be saved under a new folder with this name
+folder_label = "Find_Flux_Period__0815_q1" #your data and plots with be saved under a new folder with this name
 save_dir = link_config["path"]["output_root"]
 save_name = f"flux_resonator_{ro_elements[0]}_{z_elements[0]}"
 
 n_avg = 100
-freq_range = (-10,10)
-freq_resolution = 0.2
+freq_range = (-5,5)
+freq_resolution = 0.05 #0.1
 flux_range = (-0.3,0.3)
-flux_resolution = 0.01
+flux_resolution = 0.01 #0.01
 
 from exp.rofreq_sweep_flux_dep import *
 dataset = freq_sweep_flux_dep(ro_elements, z_elements, config, qmm, freq_range=freq_range, freq_resolution=freq_resolution, flux_settle_time=1, flux_range=flux_range, flux_resolution=flux_resolution, n_avg=n_avg, initializer=init_macro)
 # dataset = freq_sweep_flux_dep_stable(ro_elements, z_elements, config, qmm, freq_range=freq_range, freq_resolution=freq_resolution, flux_settle_time=1, flux_range=flux_range, flux_resolution=flux_resolution, n_avg=n_avg, initializer=init_macro)
 
 if save_data: 
-    folder_save_dir = create_folder(save_dir, folder_label)
-    save_nc( folder_save_dir, save_name, dataset)
+    save_dir = create_folder(save_dir, folder_label)
+    save_nc( save_dir, save_name, dataset)
     
 
 # Plot
-plot_and_save_flux_period(dataset, folder_save_dir, save_data)
+plot_and_save_flux_period(dataset, save_dir, save_data)

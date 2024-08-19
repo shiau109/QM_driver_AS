@@ -37,8 +37,8 @@ save_name = f"{my_exp.xy_elements[0]}_piscope_cc"
 folder_label = "piscope_1" #your data and plots will be saved under a new folder with this name
 
 if save_data: 
-    folder_save_dir = create_folder(save_dir, folder_label)
-    save_nc(folder_save_dir, save_name, dataset)
+    save_dir = create_folder(save_dir, folder_label)
+    save_nc(save_dir, save_name, dataset)
 
 # Plot
-plot_and_save_piscope(dataset, folder_save_dir, save_data)
+plot_and_save_piscope(dataset, save_dir, save_data)

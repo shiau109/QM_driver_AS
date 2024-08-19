@@ -34,7 +34,7 @@ from exp.cryoscope_bk import cryoscope_bk
 dataset = cryoscope_bk( ro_elements, q_name, z_name, const_flux_amp, const_flux_len, n_avg, config, qmm, initializer=init_macro, pad_zeros=pad_zeros)
 
 # "mixer", "r90", "time"
-
+folder_save_dir = 0
 if save_data: 
     folder_save_dir = create_folder(save_dir, folder_label)
     save_nc(folder_save_dir, save_name, dataset)

@@ -21,18 +21,16 @@ from exp.rabi import RabiTime
 from exp.plotting import plot_and_save_rabi
 
 my_exp = RabiTime(config, qmm)
-my_exp.initializer = initializer(200000,mode='wait')
+my_exp.initializer = initializer(20000,mode='wait')
 
-my_exp.ro_elements = ["q0_ro", "q1_ro"]
+my_exp.ro_elements = ["q1_ro", "q3_ro"]
 my_exp.xy_elements = ['q1_xy']
 my_exp.amp_range = (0, 1.5) 
 my_exp.amp_resolution = 0.02
 
 my_exp.freq_range = (-20,20)
-my_exp.freq_resolution = 2
+my_exp.freq_resolution = 1
 
-my_exp.time_range = (16,200) # ns
-my_exp.time_resolution = 8
 
 my_exp.process = "power"
 
@@ -40,14 +38,14 @@ dataset = my_exp.run(200)
 
 save_data = True
 save_dir = link_config["path"]["output_root"]
-folder_label = "detuned_power_rabi_1" #your data and plots with be saved under a new folder with this name
+folder_label = "detuned_power_rabi_0815" #your data and plots with be saved under a new folder with this name
 save_name = f"{my_exp.xy_elements[0]}_{my_exp.process}_Rabi"
 
 if save_data: 
-    folder_save_dir = create_folder(save_dir, folder_label)
-    save_nc(folder_save_dir, save_name, dataset)
+    save_dir = create_folder(save_dir, folder_label)
+    save_nc(save_dir, save_name, dataset)
 
 y = dataset.coords["amplitude"].values
 freqs = dataset.coords["frequency"].values
 # Plot 
-plot_and_save_rabi(dataset, freqs, y, folder_save_dir, "power", save_data)
+plot_and_save_rabi(dataset, freqs, y, save_dir, "power", save_data)

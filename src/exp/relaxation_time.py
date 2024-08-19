@@ -36,10 +36,8 @@ class exp_relaxation_time( QMMeasurement):
         """
         self.max_time = 5
         self.time_resolution = 10
-        self.q_name = None
-        self.z_name = None
-        self.ro_element = None
-        self.n_avg = 100
+        self.xy_elements = None
+        self.ro_elements = None
         self.initializer = None
     
     def _get_qua_program( self ):
@@ -51,35 +49,35 @@ class exp_relaxation_time( QMMeasurement):
         # QUA program
         with program() as t1:
 
-            iqdata_stream = multiRO_declare( self.ro_element )
+            iqdata_stream = multiRO_declare( self.ro_elements )
             t = declare(int)  
             n = declare(int)
             n_st = declare_stream()
-            with for_(n, 0, n < self.n_avg, n + 1):
+            with for_(n, 0, n < self.shot_num, n + 1):
                 with for_(*from_array(t, cc_delay_qua)):
                     # initializaion
                     if self.initializer is None:
-                        wait(1*u.us, self.ro_element)
+                        wait(1*u.us, self.ro_elements)
                     else:
                         try:
                             self.initializer[0](*self.initializer[1])
                         except:
-                            wait(1*u.us, self.ro_element)
+                            wait(1*u.us, self.ro_elements)
 
                     # Operation   
-                    for q in self.q_name:
+                    for q in self.xy_elements:
                         play("x180", q)
                         wait(t, q)
                     align()
                     # Readout
-                    multiRO_measurement( iqdata_stream,  resonators= self.ro_element, weights="rotated_")
+                    multiRO_measurement( iqdata_stream,  resonators= self.ro_elements, weights="rotated_")
                     
                 # Save the averaging iteration to get the progress bar
                 save(n, n_st)
 
             with stream_processing():
                 n_st.save("iteration")
-                multiRO_pre_save(iqdata_stream, self.ro_element, (evo_time_len,) )
+                multiRO_pre_save(iqdata_stream, self.ro_elements, (evo_time_len,) )
 
         return t1
 
@@ -94,7 +92,7 @@ class exp_relaxation_time( QMMeasurement):
     
     def _data_formation( self ):
         output_data = {}
-        for r_idx, r_name in enumerate(self.ro_element):
+        for r_idx, r_name in enumerate(self.ro_elements):
             output_data[r_name] = ( ["mixer","time"],
                                 np.array([self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]]) )
         dataset = xr.Dataset(

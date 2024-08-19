@@ -11,7 +11,7 @@ qmm, _ = spec.buildup_qmm()
 
 
 from exp.single_spin_echo import SpinEcho
-
+from exp.plotting import plot_and_save_t2_repeateRun
 # Set parameters
 my_exp = SpinEcho( config, qmm )
 from ab.QM_config_dynamic import initializer
@@ -29,9 +29,11 @@ save_data = True
 save_dir = link_config["path"]["output_root"]
 save_name = f"{my_exp.xy_elements[0]}_EchoT2"
 folder_label = "T2_spin_echo_1" #your data and plots with be saved under a new folder with this name
+
+folder_save_dir = 0
 if save_data: 
-    folder_save_dir = create_folder(save_dir, folder_label)
-    save_nc(folder_save_dir, save_name, dataset)
+    save_dir = create_folder(save_dir, folder_label)
+    save_nc(save_dir, save_name, dataset)
 
 # Plot
 import matplotlib.pyplot as plt
@@ -46,5 +48,8 @@ my_exp.shot_num = 400
 dataset = re_exp.run(50)
 save_name = f"{my_exp.xy_elements[0]}_EchoT2_stat"
 if save_data: 
-    save_nc( folder_save_dir, save_name, dataset["spin_echo"])
+    save_nc( save_dir, save_name, dataset["spin_echo"])
 
+time = (dataset.coords["time"].values)
+single_name = "q1_ro"
+plot_and_save_t2_repeateRun(dataset, time, single_name, save_dir, save_data)

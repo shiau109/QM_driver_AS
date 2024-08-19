@@ -15,7 +15,7 @@ u = unit(coerce_to_integer=True)
 import xarray as xr
 import time
 
-def exp_ramsey(time_max,time_resolution,ro_element,xy_element,n_avg,config,qmm,virtual_detune=0,simulate:bool=False,initializer=None):
+def exp_ramsey(time_max,time_resolution,ro_element,xy_elements,n_avg,config,qmm,virtual_detune=0,simulate:bool=False,initializer=None):
     """
 
     virtual_detune unit in MHz.\n
@@ -55,7 +55,7 @@ def exp_ramsey(time_max,time_resolution,ro_element,xy_element,n_avg,config,qmm,v
                     # True_value =  v_detune_qua*4*cc
                     # False_value = v_detune_qua*4*cc
 
-                    for xy in xy_element:
+                    for xy in xy_elements:
                         play("x90", xy)  # 1st x90 gate
                         wait(cc, xy)
                         frame_rotation_2pi(phi, xy)  # Virtual Z-rotation
@@ -136,7 +136,7 @@ def T2_fitting(signal):
         qubit_T2 = 0
     return qubit_T2
 
-def multi_T2_exp( repeat, time_max,time_resolution,ro_element,xy_element,n_avg,config,qmm,virtual_detune=0,initializer=None ):
+def multi_T2_exp( repeat, time_max,time_resolution,ro_element,xy_elements,n_avg,config,qmm,virtual_detune=0,initializer=None ):
 
     raw_data = {}
     repetition = np.arange(repeat)
@@ -145,7 +145,7 @@ def multi_T2_exp( repeat, time_max,time_resolution,ro_element,xy_element,n_avg,c
 
     for i in range(repeat):
         print(f"{i}th T2")
-        dataset = exp_ramsey( time_max,time_resolution,ro_element,xy_element,n_avg,config,qmm,virtual_detune=virtual_detune,initializer=initializer )
+        dataset = exp_ramsey( time_max,time_resolution,ro_element,xy_elements,n_avg,config,qmm,virtual_detune=virtual_detune,initializer=initializer )
         time = dataset.coords["time"].values
         for ro_name, data in dataset.data_vars.items():
             raw_data[ro_name].append(data)

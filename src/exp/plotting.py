@@ -21,7 +21,7 @@ def plot_and_save_dispersive_limit(dataset, folder_save_dir, my_exp, save_data =
     plt.show()
 
 #S3
-def plot_and_save_flux_period(dataset, folder_save_dir, save_data = True):
+def plot_and_save_flux_period(dataset, folder_save_dir = 0, save_data = True):
     dfs = dataset.coords["frequency"].values
     amps = dataset.coords["flux"].values   
     for ro_name, data in dataset.data_vars.items():
@@ -34,7 +34,7 @@ def plot_and_save_flux_period(dataset, folder_save_dir, save_data = True):
     plt.show()
 
 #S4
-def plot_and_save_flux_dep_Qubit(dataset, folder_save_dir, save_data = True):
+def plot_and_save_flux_dep_Qubit(dataset, folder_save_dir = 0, save_data = True):
     from exp.xyfreq_sweep_flux_dep import plot_ana_flux_dep_qubit
     freqs = dataset.coords["frequency"].values
     flux = dataset.coords["amp_ratio"].values
@@ -59,7 +59,7 @@ def plot_and_save_flux_dep_Qubit(dataset, folder_save_dir, save_data = True):
     plt.show()
 
 #S5
-def plot_and_save_rabi(dataset, freqs, y, folder_save_dir, name, save_data = True ):
+def plot_and_save_rabi(dataset, freqs, y, name, folder_save_dir = 0, save_data = True ):
     from exp.old_version.rabi import plot_ana_freq_time_rabi 
     for ro_name, data in dataset.data_vars.items():
         xy_LO = dataset.attrs["ref_xy_LO"][0]/1e6
@@ -74,7 +74,7 @@ def plot_and_save_rabi(dataset, freqs, y, folder_save_dir, name, save_data = Tru
     plt.show()
 
 #S6
-def plot_and_save_T1_spectrum(dataset, time, flux, folder_save_dir, save_data = True ):
+def plot_and_save_T1_spectrum(dataset, time, flux, folder_save_dir = 0, save_data = True ):
     for ro_name, data in dataset.data_vars.items():
         fig_0, ax_0 = plt.subplots()
         ax_0.plot(time, data.values[0][0])
@@ -90,7 +90,7 @@ def plot_and_save_T1_spectrum(dataset, time, flux, folder_save_dir, save_data = 
 
     plt.show()
 
-def plot_and_save_t1_singleRun(dataset, time, folder_save_dir, save_data = True ):
+def plot_and_save_t1_singleRun(dataset, time, folder_save_dir = 0, save_data = True ):
     from qcat.visualization.qubit_relaxation import plot_qubit_relaxation
     from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting
     for ro_name, data in dataset.data_vars.items():
@@ -104,7 +104,7 @@ def plot_and_save_t1_singleRun(dataset, time, folder_save_dir, save_data = True 
             save_fig(folder_save_dir, save_name)
     plt.show()
 
-def plot_and_save_t1_repeateRun(dataset, time, single_name, folder_save_dir, save_data = True ):
+def plot_and_save_t1_repeateRun(dataset, time, single_name, folder_save_dir = 0, save_data = True ):
     from qcat.visualization.qubit_relaxation import plot_time_dep_qubit_T1_relaxation_2Dmap, plot_qubit_T1_relaxation_hist
     from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting
     import numpy as np
@@ -128,7 +128,7 @@ def plot_and_save_t1_repeateRun(dataset, time, single_name, folder_save_dir, sav
 
 #S7
 #spin echo
-def plot_and_save_t2_spinEcho(dataset, folder_save_dir, save_data = True ):
+def plot_and_save_t2_spinEcho(dataset, folder_save_dir = 0, save_data = True ):
     from exp.ramsey import plot_ramsey_oscillation
     time = dataset.coords["time"].values
     for ro_name, data in dataset.data_vars.items():
@@ -143,7 +143,7 @@ def plot_and_save_t2_spinEcho(dataset, folder_save_dir, save_data = True ):
     plt.show()
 
 #ramsey
-def plot_and_save_t2_ramsey_singleRun(dataset, time, folder_save_dir, save_data = True ):
+def plot_and_save_t2_ramsey_singleRun(dataset, time, folder_save_dir = 0, save_data = True ):
     from qcat.visualization.qubit_relaxation import plot_qubit_relaxation
     from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting
 
@@ -158,7 +158,7 @@ def plot_and_save_t2_ramsey_singleRun(dataset, time, folder_save_dir, save_data 
 
     plt.show()
 
-def plot_and_save_t2_ramsey_repeateRun(dataset, time, single_name, folder_save_dir, save_data = True ):
+def plot_and_save_t2_ramsey_repeateRun(dataset, time, single_name, folder_save_dir = 0, save_data = True ):
     from qcat.visualization.qubit_relaxation import plot_time_dep_qubit_T2_relaxation_2Dmap, plot_qubit_T2_relaxation_hist
     from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting
 
@@ -182,7 +182,7 @@ def plot_and_save_t2_ramsey_repeateRun(dataset, time, single_name, folder_save_d
 
 #S9
 #bk
-def plot_and_save_cryoscope_bk(dataset, folder_save_dir, pad_zeros, const_flux_len, save_data = True ):
+def plot_and_save_cryoscope_bk(dataset, pad_zeros, const_flux_len, folder_save_dir = 0, save_data = True ):
     import numpy as np
     from scipy import signal, optimize
     time = dataset.coords["time"].values
@@ -224,7 +224,7 @@ def plot_and_save_cryoscope_bk(dataset, folder_save_dir, pad_zeros, const_flux_l
     plt.show()
 
 #cc
-def plot_and_save_cryoscope_cc(dataset, folder_save_dir, my_exp, save_data = True ):
+def plot_and_save_cryoscope_cc(dataset, my_exp, folder_save_dir = 0, save_data = True ):
     import numpy as np
     from scipy import signal
 
@@ -266,7 +266,7 @@ def plot_and_save_cryoscope_cc(dataset, folder_save_dir, my_exp, save_data = Tru
     plt.show()
 
 #piscope
-def plot_and_save_piscope(dataset, folder_save_dir, save_data = True ):
+def plot_and_save_piscope(dataset, folder_save_dir = 0, save_data = True ):
     time = dataset.coords["pi_timing"].values
     freq = dataset.coords["frequency"].values
 
@@ -286,7 +286,7 @@ def plot_and_save_piscope(dataset, folder_save_dir, save_data = True ):
     plt.show()
 
 #C3
-def plot_and_save_xy_amp(dataset, folder_save_dir, save_data = True ):
+def plot_and_save_xy_amp(dataset, folder_save_dir = 0, save_data = True ):
     amps = dataset.coords["amplitude_ratio"].values
     for ro_name, data in dataset.data_vars.items():
         print(f"ploting {ro_name} with shape {data.shape}")
@@ -303,7 +303,7 @@ def plot_and_save_xy_amp(dataset, folder_save_dir, save_data = True ):
     plt.show()
 
 #Cr1
-def plot_and_save_readout_freq(dataset, my_exp, folder_save_dir, save_data = True ):
+def plot_and_save_readout_freq(dataset, my_exp, folder_save_dir = 0, save_data = True ):
     from exp.readout_optimization import plot_freq_signal
     dfs = dataset.coords["frequency"].values
     for ro_name, data in dataset.data_vars.items():
@@ -322,7 +322,7 @@ def plot_and_save_readout_freq(dataset, my_exp, folder_save_dir, save_data = Tru
     plt.show()
 
 #CR2
-def plot_and_save_readout_amp(dataset, folder_save_dir, save_data = True ):
+def plot_and_save_readout_amp(dataset, folder_save_dir = 0, save_data = True ):
     from exp.readout_optimization import plot_amp_signal, plot_amp_signal_phase
     transposed_data = dataset.transpose("mixer", "state", "amplitude_ratio")
     amps = transposed_data.coords["amplitude_ratio"].values
@@ -337,7 +337,7 @@ def plot_and_save_readout_amp(dataset, folder_save_dir, save_data = True ):
     plt.show()
 
 #CR3
-def plot_and_save_readout_fidelity(dataset, folder_save_dir, save_data = True ):
+def plot_and_save_readout_fidelity(dataset, folder_save_dir = 0, save_data = True ):
     from analysis.state_distribution import train_model, create_img
     from qualang_tools.analysis import two_state_discriminator
     transposed_data = dataset.transpose("mixer", "state", "index")
@@ -353,7 +353,7 @@ def plot_and_save_readout_fidelity(dataset, folder_save_dir, save_data = True ):
 
     plt.show()
 
-def plot_and_save_readout_mapping(dataset, folder_save_dir, save_data = True ):
+def plot_and_save_readout_mapping(dataset, folder_save_dir = 0, save_data = True ):
     freq = dataset.coords["frequency"].values
     amp = dataset.coords["amp_ratio"].values
 
@@ -373,7 +373,7 @@ def plot_and_save_readout_mapping(dataset, folder_save_dir, save_data = True ):
     plt.show()
 
 #cz chavron
-def plot_and_save_cz_chavron(dataset, save_dir, save_data = True ):
+def plot_and_save_cz_chavron(dataset, save_dir = 0, save_data = True ):
     time = dataset.coords["time"].values
     amps = dataset.coords["amplitude"].values
 

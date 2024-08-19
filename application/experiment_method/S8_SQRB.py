@@ -49,7 +49,7 @@ dataset = xr.Dataset(
     coords={"gate_number": x, }
 )    
 
-
+folder_save_dir = 0
 if save_data: 
     folder_save_dir = create_folder(save_dir, folder_label)
     save_nc(folder_save_dir, save_name, dataset)

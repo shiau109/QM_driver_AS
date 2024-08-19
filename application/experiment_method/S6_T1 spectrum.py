@@ -36,14 +36,15 @@ flux_resolution = 0.0015
 from exp.z_pulse_relaxation_time import z_pulse_relaxation_time
 dataset = z_pulse_relaxation_time( max_time, time_resolution, flux_range, flux_resolution, q_name, z_name, ro_elements, config, qmm, n_avg=n_avg, initializer=init_macro)
 
+folder_save_dir = 0
 if save_data: 
-    folder_save_dir = create_folder(save_dir, folder_label)
-    save_nc( folder_save_dir, save_name, dataset) 
+    save_dir = create_folder(save_dir, folder_label)
+    save_nc( save_dir, save_name, dataset) 
 
 
 # Plot
 time = dataset.coords["time"].values
 flux = dataset.coords["z_voltage"].values
 
-plot_and_save_T1_spectrum(dataset, time, flux, folder_save_dir, save_data)
+plot_and_save_T1_spectrum(dataset, time, flux, save_dir, save_data)
 

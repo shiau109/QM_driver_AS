@@ -284,7 +284,7 @@ def plot_ana_flux_dep_qubit( data, flux, dfs, freq_LO, freq_IF, abs_z, ax=None, 
         fig, ax = plt.subplots()
         ax.set_title('pcolormesh')
         fig.show()
-    pcm = ax[0].pcolormesh( abs_freq, abs_z+flux, np.real(zdata), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    pcm = ax[0].pcolormesh( abs_freq, abs_z+flux, np.abs(zdata), cmap='RdBu')# , vmin=z_min, vmax=z_max)
     ax[0].axvline(x=freq_LO+freq_IF, color='b', linestyle='--', label='ref IF')
     ax[0].axvline(x=freq_LO, color='r', linestyle='--', label='LO')
     ax[0].axhline(y=abs_z, color='black', linestyle='--', label='idle z')

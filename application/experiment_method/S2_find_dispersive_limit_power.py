@@ -19,25 +19,26 @@ from exp.plotting import plot_and_save_dispersive_limit
 from exp.rofreq_sweep_power_dep import ROFreqSweepPowerDep
 my_exp = ROFreqSweepPowerDep(config, qmm)
 my_exp.initializer = initializer(10000,mode='wait')
-my_exp.ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
-my_exp.freq_range = (-15,15)
-my_exp.freq_resolution = 0.1
+#my_exp.ro_elements = ["q0_ro", "q1_ro","q2_ro", "q3_ro", "q4_ro", "q5_ro"]
+my_exp.ro_elements = ["q1_ro","q3_ro"]
+my_exp.freq_range = (-3,3)
+my_exp.freq_resolution = 0.01
 my_exp.amp_mod_range = (0.1,1.9) # tha value range >0, <2
 my_exp.amp_scale = "lin"
 dataset = my_exp.run( 100 )
-
-save_data = True
-folder_label = "Dispersive_Limit_2" #your data and plots will be saved under a new folder with this name
+folder_save_dir = 0
+save_data = False
+folder_label = "Dispersive_Limit_0815_gain0_amp0.2" #your data and plots will be saved under a new folder with this name
 file_name = f"power_dep_resonator_{my_exp.ro_elements[0]}_{len(my_exp.ro_elements)}"
 save_dir = link_config["path"]["output_root"]
 
 if save_data: 
-    folder_save_dir = create_folder(save_dir, folder_label)
-    save_nc( folder_save_dir, file_name, dataset)
+    save_dir = create_folder(save_dir, folder_label)
+    save_nc( save_dir, file_name, dataset)
 
 
 # Plot
-plot_and_save_dispersive_limit(dataset, folder_save_dir, my_exp, save_data)
+plot_and_save_dispersive_limit(dataset, save_dir, my_exp, save_data)
 
 # for ro_name, data in dataset.data_vars.items():
 #     fig, ax = plt.subplots()
@@ -48,4 +49,3 @@ plot_and_save_dispersive_limit(dataset, folder_save_dir, my_exp, save_data)
 #     if save_data: save_fig( folder_save_dir, file_name)
     
 # plt.show()
-

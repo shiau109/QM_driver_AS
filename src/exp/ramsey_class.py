@@ -26,9 +26,9 @@ class exp_ramsey( QMMeasurement ):
         """
         self.max_time = 5
         self.time_resolution = 10
-        self.xy_elements = ["q0_xy"]
+        self.xy_elements = None
         self.virtual_detune = 0
-        self.ro_element = None
+        self.ro_elements = None
         self.n_avg = 100
         self.initializer = None
         self.simulate = False
@@ -44,7 +44,7 @@ class exp_ramsey( QMMeasurement ):
         self.evo_time = cc_qua*4
         time_len = len(cc_qua)
         with program() as ramsey:
-            iqdata_stream = multiRO_declare( self.ro_element )
+            iqdata_stream = multiRO_declare( self.ro_elements )
             n = declare(int)
             n_st = declare_stream()
             cc = declare(int)  # QUA variable for the idle time, unit in clock cycle
@@ -67,7 +67,7 @@ class exp_ramsey( QMMeasurement ):
                         # True_value =  v_detune_qua*4*cc
                         # False_value = v_detune_qua*4*cc
 
-                        for xy in self.xy_element:
+                        for xy in self.xy_elements:
                             play("x90", xy)  # 1st x90 gate
                             wait(cc, xy)
                             frame_rotation_2pi(phi, xy)  # Virtual Z-rotation
@@ -76,7 +76,7 @@ class exp_ramsey( QMMeasurement ):
                         # Align after playing the qubit pulses.
                         align()
                         # Readout
-                        multiRO_measurement(iqdata_stream, self.ro_element, weights="rotated_")         
+                        multiRO_measurement(iqdata_stream, self.ro_elements, weights="rotated_")         
                     
 
                 # Save the averaging iteration to get the progress bar
@@ -84,7 +84,7 @@ class exp_ramsey( QMMeasurement ):
 
             with stream_processing():
                 n_st.save("iteration")
-                multiRO_pre_save(iqdata_stream, self.ro_element, (time_len,) )
+                multiRO_pre_save(iqdata_stream, self.ro_elements, (time_len,) )
         return ramsey
     
     def _get_fetch_data_list( self ):
@@ -99,7 +99,7 @@ class exp_ramsey( QMMeasurement ):
     def _data_formation( self ):
         output_data = {}
 
-        for r_idx, r_name in enumerate(self.ro_element):
+        for r_idx, r_name in enumerate(self.ro_elements):
             output_data[r_name] = ( ["mixer","time"],
                                 np.array([self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]]) )
         dataset = xr.Dataset(
