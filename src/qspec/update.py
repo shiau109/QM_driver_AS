@@ -1,6 +1,6 @@
 
 from config_component.configuration import Configuration
-from config_component.channel_info import Waveform
+from qspec.channel_info import Waveform
 import numpy as np
 # ===================== Update about XY =====================================
 ### directly update the frequency info into config ### 

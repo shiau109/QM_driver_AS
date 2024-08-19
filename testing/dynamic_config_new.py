@@ -17,7 +17,7 @@ with open(json_file_path, 'r') as json_file:
 new_config = configuration_read_dict(data_dict)
 # myConfig.controllers["con1"] = Controller("con1")
 """
-from config_component.channel_info import ChannelInfo
+from qspec.channel_info import ChannelInfo
 specs = ChannelInfo(1)
 
 

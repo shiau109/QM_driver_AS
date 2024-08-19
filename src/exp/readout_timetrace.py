@@ -17,7 +17,7 @@ from qualang_tools.results import progress_counter, fetching_tool
 # Dynamic config
 from OnMachine.SetConfig.config_path import spec_loca, config_loca
 from config_component.configuration import import_config
-from config_component.channel_info import import_spec
+from qspec.channel_info import import_spec
 from ab.QM_config_dynamic import initializer
 
 import xarray as xr
@@ -254,7 +254,7 @@ if __name__ == '__main__':
     # Dynamic config
     from OnMachine.SetConfig.config_path import spec_loca, config_loca
     from config_component.configuration import import_config
-    from config_component.channel_info import import_spec
+    from qspec.channel_info import import_spec
     from ab.QM_config_dynamic import initializer
 
     spec = import_spec( spec_loca )

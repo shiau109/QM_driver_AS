@@ -1,12 +1,12 @@
 from OnMachine.MeasFlow.ConfigBuildUp_new import spec_loca, config_loca
 from config_component.configuration import import_config, configuration_read_dict
-from config_component.channel_info import import_spec
+from qspec.channel_info import import_spec
 
 
 spec = import_spec( spec_loca )
 config_obj = import_config( config_loca )
 
-from config_component.update import update_ReadoutFreqs, update_Readout, update_z_offset
+from qspec.update import update_ReadoutFreqs, update_Readout, update_z_offset
 new_LO = 5.9
 # init_value of readout amp is 0.2
 # 0.065
