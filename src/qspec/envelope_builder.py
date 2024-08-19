@@ -23,9 +23,9 @@ class EnvelopeBuilder:
         elif func.lower() in ['gauss','g','gaussian']:
             def wf_func(amp, width, sigma, *args):
                 return drag_gaussian_pulse_waveforms(amp, width, sigma, 0, args[1], args[2])
-        elif func.lower() in ['sin','sine']:
-            def wf_func(amp, width, *args):
-                return multi_sine_pulse_waveforms(amp, width, args[1], args[2])
+        # elif func.lower() in ['sin','sine']:
+        #     def wf_func(amp, width, *args):
+        #         return multi_sine_pulse_waveforms(amp, width, args[1], args[2])
         else:
             raise ValueError("Only surpport Gaussian or DRAG-gaussian waveform!")
         
