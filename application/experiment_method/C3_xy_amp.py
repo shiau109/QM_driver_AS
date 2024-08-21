@@ -11,8 +11,7 @@ qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
 
-from exp.save_data import save_nc, save_fig
-
+from exp.save_data import save_nc, save_fig, create_folder
 import matplotlib.pyplot as plt
 
 # Set parameters
@@ -25,7 +24,7 @@ q_name =  "q4_xy"
 save_data = True
 save_dir = link_config["path"]["output_root"]
 save_name = f"{q_name}_XYampCali"
-
+folder_label = "xy_amp_1"
 n_avg = 500
 
 sequence_repeat = 1
@@ -37,20 +36,10 @@ dataset = amp_calibration( amp_modify_range, q_name, ro_elements, config, qmm, n
 
 
 #   Data Saving   # 
-if save_data: save_nc(save_dir, save_name, dataset)
+if save_data: 
+    folder_save_dir = create_folder(save_dir, folder_label)
+    save_nc( folder_save_dir, save_name, dataset)
 
 # Plot
-amps = dataset.coords["amplitude_ratio"].values
-for ro_name, data in dataset.data_vars.items():
-    print(f"ploting {ro_name} with shape {data.shape}")
-    fig, ax = plt.subplots()
-    # x90data = dataset.sel(sequence='x90').data_vars["zdata"].values
-    # x90data = dataset.sel(sequence='x90').data_vars["zdata"].values
-
-    ax.plot(amps,data[0][0], label="x90")
-    ax.plot(amps,data[0][1], label="x180")
-    fig.legend()
-
-if save_data: save_fig(save_dir, save_name)
-
-plt.show()
+from exp.plotting import plot_and_save_xy_amp
+plot_and_save_xy_amp(dataset, folder_save_dir, save_data)

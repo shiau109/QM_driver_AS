@@ -17,7 +17,7 @@ qmm, _ = spec.buildup_qmm()
 from ab.QM_config_dynamic import initializer
 
 init_macro = initializer(200000,mode='wait')
-
+link_config = import_link(link_path)
 
 
 ro_elements = ['q0_ro','q1_ro','q2_ro','q3_ro','q4_ro']
@@ -41,6 +41,13 @@ cc = time/4
 from exp.iSWAP_J import exp_coarse_iSWAP, plot_ana_iSWAP_chavron
 dataset = exp_coarse_iSWAP( coupler_z, coupler_amp, amps, cc, excited_q, ro_elements, z_name, config, qmm, n_avg=n_avg, simulate=False, initializer=init_macro )
 
+save_data = True
+save_dir = link_config["path"]["output_root"]
+save_name = f"iSWAP"
+folder_label = "find_iSWAP_1"
+if save_data: 
+    save_dir = create_folder(save_dir, folder_label)
+    save_nc(save_dir, save_name, dataset)
 
 time = dataset.coords["time"].values*4
 amps = dataset.coords["amplitude"].values
@@ -50,13 +57,10 @@ for ro_name, data in dataset.data_vars.items():
     plot_ana_iSWAP_chavron( data.values, amps, time, ax )
     ax[0].set_title(ro_name)
     ax[1].set_title(ro_name)
+
 plt.show()
 
 
 
-save_data = True
-if save_data:
-    from exp.save_data import save_nc
-    import sys
-    save_nc(r"D:\Data\5Q4C_0411_3_DR4", f"iSWAP_{excited_q}_{z_name[0]}_{coupler_z}_{coupler_amp}", dataset)    
+   
 

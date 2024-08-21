@@ -11,7 +11,7 @@ qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
 
-from exp.save_data import save_nc, save_fig
+from exp.save_data import save_nc, save_fig, create_folder
 save_dir = link_config["path"]["output_root"]
 
 import matplotlib.pyplot as plt
@@ -43,8 +43,11 @@ dataset = my_exp.run( 500 )
 print(dataset)
 
 save_data = True
+folder_label = "Zline_crosstalk_1" #your data and plots with be saved under a new folder with this name
 file_name = f"detector_{my_exp.detector_qubit}_crosstalk_{my_exp.crosstalk_qubit}_{my_exp.measure_method}_{my_exp.z_method}_expectcrosstalk_{my_exp.expect_crosstalk}_{my_exp.z_time}mius"
-if save_data: save_nc( save_dir, file_name, dataset)
+if save_data: 
+    folder_save_dir = create_folder(save_dir, folder_label)
+    save_nc( folder_save_dir, file_name, dataset)
 
 # Plot
 # dataset = xr.open_dataset(r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240719_DR3_5Q4C_0430#7\check\20240724_2212_detector_q3_crosstalk_q4_ramsey_pulse_expectcrosstalk_0.04_5mius.nc")
@@ -53,5 +56,5 @@ figures = plot_crosstalk_3Dscalar(dataset)
 for fig, ax, q in figures:
     if save_data:
         plt.figure(fig.number)  # 设置当前图形对象
-        save_fig( save_dir, f"{q}_{file_name}")
+        save_fig( folder_save_dir, f"{q}_{file_name}")
     # plt.show()  # 显示图像

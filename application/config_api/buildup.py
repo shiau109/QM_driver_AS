@@ -71,7 +71,7 @@ config_obj = Configuration()
 # Create controller
 from config_component.controller import controller_read_dict
 config_obj._controllers["con1"] = controller_read_dict("con1", opxp_hardware)
-# config_obj._controllers["con2"] = controller_read_dict("con2", opxp_hardware)
+config_obj._controllers["con2"] = controller_read_dict("con2", opxp_hardware)
 # Create qubit
 from qspec.construct import create_qubit, create_roChannel, create_zChannel, create_xyChannel
 
