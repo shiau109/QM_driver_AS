@@ -16,5 +16,5 @@ from exp.exp_temp import ExpTemp
 
 my_exp = ExpTemp(config, qmm)
 my_exp.initializer = initializer(2000,mode='wait')
-
+my_exp.sweep_type = "overlap"
 my_exp.pulse_schedule_simulation(["con1"],20000)

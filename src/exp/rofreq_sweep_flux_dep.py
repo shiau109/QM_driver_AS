@@ -264,6 +264,7 @@ def plot_flux_dep_resonator( data, freqs, fluxes, ax=None ):
         fig, ax = plt.subplots()
         ax.set_title('pcolormesh')
         fig.show()
-    ax.pcolormesh(fluxes, freqs, np.abs(zdata), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    pcm = ax.pcolormesh(fluxes, freqs, np.abs(zdata), cmap='RdBu')# , vmin=z_min, vmax=z_max)
     ax.set_xlabel("flux")
     ax.set_ylabel("additional IF freq (MHz)")
+    plt.colorbar(pcm, label='Value')

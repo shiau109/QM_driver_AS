@@ -106,4 +106,91 @@ class Ramsey( QMMeasurement ):
             output_data,
             coords={ "mixer":np.array(["I","Q"]), "time": self.evo_time }
         )
+
         return dataset
+       
+def T2_fitting(signal):
+    try:
+        fit = Fit()
+        decay_fit = fit.ramsey(4 * idle_times, signal, plot=False)
+        qubit_T2 = np.round(np.abs(decay_fit["T2"][0]) / 4) * 4
+    except Exception as e:     
+        print(f"An error occurred: {e}")  
+        qubit_T2 = 0
+    return qubit_T2
+
+def multi_T2_exp( repeat, time_max,time_resolution,ro_element,xy_elements,n_avg,config,qmm,virtual_detune=0,initializer=None ):
+
+    raw_data = {}
+    repetition = np.arange(repeat)
+    for r in ro_element:
+        raw_data[r] = []
+
+    for i in range(repeat):
+        print(f"{i}th T2")
+        dataset = exp_ramsey( time_max,time_resolution,ro_element,xy_elements,n_avg,config,qmm,virtual_detune=virtual_detune,initializer=initializer )
+        time = dataset.coords["time"].values
+        for ro_name, data in dataset.data_vars.items():
+            raw_data[ro_name].append(data)
+
+    output_data = {}
+    for r in ro_element:
+        output_data[r] = (["repetition","mixer","time"], np.array(raw_data[r]))
+
+    dataset = xr.Dataset(
+        output_data,
+        coords={ "mixer":np.array(["I","Q"]), "time": time, "repetition": repetition }
+    )    
+    dataset = dataset.transpose("mixer","repetition","time")
+
+    return dataset
+
+def plot_ramsey_oscillation( x, y, ax=None ):
+    """
+    y in shape (2,N)
+    2 is postive and negative
+    N is evo_time_point
+    """
+    if ax == None:
+        fig, ax = plt.subplots()
+    ax.plot(x, y, "-",label="T2")
+    ax.set_xlabel("Free Evolution Times [ns]")
+    ax.legend()
+    if ax == None:
+        return fig
+
+def plot_multiT2( data, rep, time ):
+    """
+    data shape ( 2, N, M )
+    2 is I,Q
+    N is rep
+    M is time
+    """
+    idata = data[0]
+    qdata = data[1]
+    zdata = idata +1j*qdata
+
+    fig, ax = plt.subplots(2)
+    ax[0].set_title('I signal')
+    ax[0].pcolormesh( time, rep, idata, cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    ax[1].set_title('Q signal')
+    ax[1].pcolormesh( time, rep, qdata, cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    return fig
+
+if __name__ == '__main__':
+    from configuration import *
+
+    n_avg = 750
+    idle_times = np.arange(4, 200, 1)  
+    detuning = 1e6  
+    operation_flux_point = [0, -3.000e-01, -0.2525, -0.3433, -3.400e-01] 
+    q_id = [0,1,2,3]
+    Qi = 3
+
+    qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
+    I,Q = T2_exp(Qi,n_avg,idle_times,operation_flux_point,q_id,qmm)
+    T2_plot(I, Q, Qi, True)
+    # m = 3
+    # T2_I, T2_Q = multi_T2_exp(m, Qi, n_avg,idle_times,operation_flux_point,q_id,qmm)
+    # T2_hist(T2_I,15,'I')
+    # T2_hist(T2_Q,15,'Q')
