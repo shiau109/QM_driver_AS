@@ -4,6 +4,9 @@ link_path = Path(__file__).resolve().parent.parent/"config_api"/"config_link.tom
 
 from QM_driver_AS.ultitly.config_io import import_config, import_link
 link_config = import_link(link_path)
+
+from QM_driver_AS.ultitly.config_io import import_config, import_link
+link_config = import_link(link_path)
 config_obj, spec = import_config( link_path )
 
 config = config_obj.get_config()
@@ -12,7 +15,7 @@ qmm, _ = spec.buildup_qmm()
 from ab.QM_config_dynamic import initializer
 init_macro = initializer(200000,mode='wait')
 
-from exp.save_data import save_nc, save_fig
+from exp.save_data import save_nc, save_fig, create_folder
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -32,19 +35,14 @@ amps_resolution = 0.003
 save_data = True
 save_dir = link_config["path"]["output_root"]
 save_name = f"q{flux_Qi}_czchavron"
-
+folder_label = "cz_chavron_1"
 from exp.cz_chavron import CZ
 dataset = CZ(time_max,time_resolution,amps_max,amps_resolution,ro_element,flux_Qi,excited_Qi,qmm,config,n_avg=n_avg,initializer=init_macro)
 
-if save_data: save_nc(save_dir, save_name, dataset) 
+if save_data: 
+    save_dir = create_folder(save_dir, folder_label)
+    save_nc(save_dir, save_name, dataset) 
 
 # Plot
-time = dataset.coords["time"].values
-amps = dataset.coords["amplitude"].values
-
-from exp.cz_chavron import plot_cz_chavron
-for ro_name, data in dataset.data_vars.items():
-    fig, ax = plt.subplots()
-    plot_cz_chavron(time,amps,data.values[0],ax)
-
-plt.show()
+from exp.plotting import plot_and_save_cz_chavron
+plot_and_save_cz_chavron(dataset, save_dir, save_data )

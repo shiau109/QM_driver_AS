@@ -13,7 +13,7 @@ qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
 
-from exp.save_data import save_nc, save_fig
+from exp.save_data import save_nc, save_fig, create_folder
 
 import matplotlib.pyplot as plt
 
@@ -28,12 +28,14 @@ my_exp.preprocess = "shot"
 save_data = True
 save_dir = link_config["path"]["output_root"]
 save_name = f"ro_amp_{my_exp.xy_elements[0]}"
-
+folder_label = "readout_freq_1"
 # Start measurement
 dataset = my_exp.run(1000)
 
 # Data Saving 
-if save_data: save_nc(save_dir, save_name, dataset)
+if save_data: 
+    folder_save_dir = create_folder(save_dir, folder_label)
+    save_nc( folder_save_dir, save_name, dataset)
 
 # Plot
 from exp.readout_optimization import *
@@ -42,19 +44,5 @@ if my_exp.preprocess == "shot":
 
 else:
     dataset = dataset.transpose("mixer","prepare_state","frequency")
-
-dfs = dataset.coords["frequency"].values
-for ro_name, data in dataset.data_vars.items():
-
-    data = data.values
-    if my_exp.preprocess == "shot":
-        data = np.average(data, axis=1)
-    print(data.shape)
-    fig = plt.figure()
-    ax = fig.subplots(3,1)
-    plot_freq_signal( dfs, data, ro_name, ax )
-    fig.suptitle(f"{ro_name} RO freq")
-if save_data: save_fig(save_dir, save_name)
-
-plt.show()
-
+from exp.plotting import plot_and_save_readout_freq
+plot_and_save_readout_freq(dataset, my_exp, folder_save_dir, save_data)

@@ -12,9 +12,9 @@ qmm, _ = spec.buildup_qmm()
 from ab.QM_config_dynamic import initializer
 
 from exp.cryoscope import Cryoscope
-from exp.rabi_copy1 import RabiTime
+from exp.exp_temp import ExpTemp
 
-my_exp = RabiTime(config, qmm)
+my_exp = ExpTemp(config, qmm)
 my_exp.initializer = initializer(2000,mode='wait')
-
+my_exp.sweep_type = "overlap"
 my_exp.pulse_schedule_simulation(["con1"],20000)

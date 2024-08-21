@@ -11,7 +11,7 @@ qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
 
-from exp.save_data import save_nc, save_fig
+from exp.save_data import save_nc, save_fig, create_folder
 
 import matplotlib.pyplot as plt
 
@@ -34,28 +34,16 @@ dataset = my_exp.run( 1000 )
 save_data = True
 save_dir = link_config["path"]["output_root"]
 save_name = f"ro_map_{my_exp.xy_elements[0]}"
+folder_label = "ro_mapping_1"
 
-if save_data: save_nc(save_dir, save_name, dataset)
+if save_data: 
+    folder_save_dir = create_folder(save_dir, folder_label)
+    save_nc(save_dir, save_name, dataset)
 
 
 # Plot
-freq = dataset.coords["frequency"].values
-amp = dataset.coords["amp_ratio"].values
-import numpy as np
-for ro_name, data in dataset.data_vars.items():
-    fig, ax = plt.subplots()
-    iqdata = data.values[0] +1j*data.values[1]
-    dist = np.abs(iqdata[1]-iqdata[0])
-    norm_dist = dist/amp
-    ax.set_title('pcolormesh')
-    # ax.set_xlabel("T1 (us)")
-    # ax.set_ylabel("Flux")
-    pcm = ax.pcolormesh( freq, amp, dist.transpose(), cmap='RdBu')# , vmin=z_min, vmax=z_max)
-    plt.colorbar(pcm, label='Value')
-
-if save_data: save_fig( save_dir, save_name ) 
-
-plt.show()
+from exp.plotting import plot_and_save_readout_mapping
+plot_and_save_readout_mapping(dataset, folder_save_dir, save_data)
 
 
 

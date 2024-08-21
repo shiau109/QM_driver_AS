@@ -12,7 +12,7 @@ qmm, _ = spec.buildup_qmm()
 from ab.QM_config_dynamic import initializer
 init_macro = initializer(400000,mode='wait')
 
-from exp.save_data import save_nc, save_fig
+from exp.save_data import save_nc, save_fig, create_folder
 save_dir = link_config["path"]["output_root"]
 
 import matplotlib.pyplot as plt
@@ -23,7 +23,7 @@ q_elements = ['q4_xy']
 
 save_data = True
 save_name = f"ro_fidelity_{q_elements[0]}"
-
+folder_label = "ro_fidelity_1"
 shot_num = 10000
 
 
@@ -33,23 +33,13 @@ import numpy as np
 dataset = readout_fidelity( q_elements, ro_elements, shot_num, config, qmm, init_macro)  
 
 
-if save_data: save_nc(save_dir, save_name, dataset)
+if save_data: 
+    folder_save_dir = create_folder(save_dir, folder_label)
+    save_nc(folder_save_dir, save_name, dataset)
+
+from exp.plotting import plot_and_save_readout_fidelity
+plot_and_save_readout_fidelity(dataset, folder_save_dir, save_data)
 
 
-from analysis.state_distribution import train_model, create_img
-from qualang_tools.analysis import two_state_discriminator
-transposed_data = dataset.transpose("mixer", "state", "index")
-
-for ro_name, data in transposed_data.data_vars.items(): # elapsed_time = np.round(end_time-start_time, 1)
-    new_data = np.moveaxis(data.values*1000,1,0)
-    gmm_model = train_model(new_data)
-    fig = plt.figure(constrained_layout=True)
-    create_img(new_data, gmm_model)
-    two_state_discriminator(data[0][0], data[1][0], data[0][1], data[1][1], True, True)
-
-
-if save_data: save_fig(save_dir, save_name)
-
-plt.show()
 
  
