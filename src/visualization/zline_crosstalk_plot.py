@@ -137,8 +137,8 @@ def _plot_rawdata( dataset, slope, ax=None ):
     y is compensation voltage (self)
     """
     q = list(dataset.data_vars.keys())[0]
-    x = dataset.attrs["crosstalk_qubit"]
-    y = dataset.attrs["detector_qubit"]
+    x = dataset.coords["crosstalk_z"]
+    y = dataset.coords["detector_z"]
     z = dataset[q][0, :, :].T
     ax.pcolormesh(x, y, z, cmap='RdBu')
 
@@ -195,10 +195,10 @@ def _plot_2Dfft( x, y, z, ax=None  ):
 
 
 
-# # Load the NetCDF file
-# file_path = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240719_DR3_5Q4C_0430#7\flux_crosstalk\good\20240725_0205_detector_q3_crosstalk_q4_long_drive_pulse_expectcrosstalk_0.04_0.04mius.nc"
+# Load the NetCDF file
+file_path = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240814_DR3_5Q4C_0430#7\good_20us\20240822_0128_detector_q4_crosstalk_q8_long_drive_pulse_expectcrosstalk_0.05_20mius.nc"
 
-# dataset = xr.open_dataset(file_path)
+dataset = xr.open_dataset(file_path)
 
 # # Access data
 # raw_data = dataset[list(dataset.data_vars)[0]].values  # Extract the q3_ro data
@@ -222,46 +222,56 @@ def _plot_2Dfft( x, y, z, ax=None  ):
 # # Print the shapes to verify
 # print(data.shape, d_z_target_amp.shape, d_z_crosstalk_amp.shape)
 
-# plot_analysis(d_z_crosstalk_amp, d_z_target_amp, data)
+plot_analysis(dataset)
 
-# plt.show()
+plt.show()
+
+
+
+
+
 
 
 
 # import xarray as xr
 
 # # 假設 ds1 和 ds2 是你已經讀取的 xarray Dataset
-# ds1 = xr.open_dataset(r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240719_DR3_5Q4C_0430#7\raw_data\20240729_1221_detector_q8_crosstalk_q3_long_drive_pulse_expectcrosstalk_0.1_20mius.nc")  # 如果你從文件讀取資料集
-# ds2 = xr.open_dataset(r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240719_DR3_5Q4C_0430#7\raw_data\20240729_1240_detector_q8_crosstalk_q3_long_drive_pulse_expectcrosstalk_0.1_20mius.nc")  # 如果你從文件讀取資料集
+# ds1 = xr.open_dataset(r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240814_DR3_5Q4C_0430#7\raw_data\20240822_0128_detector_q4_crosstalk_q8_long_drive_pulse_expectcrosstalk_0.05_20mius.nc")  # 如果你從文件讀取資料集
+# ds2 = xr.open_dataset(r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240814_DR3_5Q4C_0430#7\raw_data\20240822_0138_detector_q4_crosstalk_q8_long_drive_pulse_expectcrosstalk_0.05_20mius.nc")  # 如果你從文件讀取資料集
 
 # # 複製 ds1 創建 ds3
 # ds3 = ds1.copy()
 
 # # 取出 q8_ro 變數
-# q8_ro_ds1 = ds1['q8_ro']
-# q8_ro_ds2 = ds2['q8_ro']
+# q8_ro_ds1 = ds1['q4_ro']
+# q8_ro_ds2 = ds2['q4_ro']
 
 # # 在 mixer 維度上分別選取 'I' 和 'Q'，並進行相減操作
 # q8_ro_diff_I = q8_ro_ds1.sel(mixer='I') - q8_ro_ds2.sel(mixer='I')
 # q8_ro_diff_Q = q8_ro_ds1.sel(mixer='Q') - q8_ro_ds2.sel(mixer='Q')
 
 # # 覆蓋 ds3 中的 'I' 和 'Q' 數據
-# ds3['q8_ro'].loc[{'mixer': 'I'}] = q8_ro_diff_I
-# ds3['q8_ro'].loc[{'mixer': 'Q'}] = q8_ro_diff_Q
+# ds3['q4_ro'].loc[{'mixer': 'I'}] = q8_ro_diff_I
+# ds3['q4_ro'].loc[{'mixer': 'Q'}] = q8_ro_diff_Q
 
 # print(ds3)
-# plot_crosstalk_3Dscalar(ds3)
+# plot_analysis(ds3)
 # plt.show()
 
 
 
 
-import xarray as xr
-data = xr.open_dataset(r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240719_DR3_5Q4C_0430#7\raw_data\20240730_1334_detector_q8_crosstalk_q3_long_drive_pulse_expectcrosstalk_1_20mius.nc")
-# 调用函数生成图像
-figures = plot_crosstalk_3Dscalar(data)
 
-# 保存每个图像
-for fig, ax, q in figures:
-    plt.figure(fig.number)  # 设置当前图形对象
-    plt.show()  # 显示图像
+
+
+
+
+# import xarray as xr
+# data = xr.open_dataset(r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240719_DR3_5Q4C_0430#7\raw_data\20240730_1334_detector_q8_crosstalk_q3_long_drive_pulse_expectcrosstalk_1_20mius.nc")
+# # 调用函数生成图像
+# figures = plot_crosstalk_3Dscalar(data)
+
+# # 保存每个图像
+# for fig, ax, q in figures:
+#     plt.figure(fig.number)  # 设置当前图形对象
+#     plt.show()  # 显示图像
