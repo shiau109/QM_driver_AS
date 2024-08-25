@@ -25,14 +25,14 @@ import xarray as xr
 # Set parameters
 from exp.zline_crosstalk import FluxCrosstalk
 my_exp = FluxCrosstalk(config, qmm)
-my_exp.detector_qubit = "q8"
-my_exp.detector_is_coupler = "True"
-my_exp.crosstalk_qubit = "q3"
-my_exp.ro_elements = [f"{my_exp.detector_qubit}_ro"]
+my_exp.detector_qubit = "q4"
+my_exp.detector_is_coupler = False
+my_exp.crosstalk_qubit = "q1"
+my_exp.ro_elements = ["q8_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
 
-my_exp.expect_crosstalk = 0.25
-my_exp.z_modify_range = 0.4
-my_exp.z_resolution = 0.008
+my_exp.expect_crosstalk = 0.05
+my_exp.z_modify_range = 0.1
+my_exp.z_resolution = 0.002
 my_exp.z_time = 20
 
 my_exp.measure_method = "long_drive"   #long_drive, ramsey
@@ -41,6 +41,7 @@ my_exp.z_method = "pulse"     #offset, pulse
 my_exp.initializer = initializer(200000,mode='wait')
 dataset = my_exp.run( 500 )
 print(dataset)
+
 
 save_data = True
 file_name = f"detector_{my_exp.detector_qubit}_crosstalk_{my_exp.crosstalk_qubit}_{my_exp.measure_method}_{my_exp.z_method}_expectcrosstalk_{my_exp.expect_crosstalk}_{my_exp.z_time}mius"
@@ -51,7 +52,12 @@ if save_data: save_nc( save_dir, file_name, dataset)
 figures = plot_crosstalk_3Dscalar(dataset)
 # 保存每个图像并显示
 for fig, ax, q in figures:
+    plt.figure(fig.number)  # 设置当前图形对象
     if save_data:
-        plt.figure(fig.number)  # 设置当前图形对象
         save_fig( save_dir, f"{q}_{file_name}")
-    # plt.show()  # 显示图像
+for fig, ax, q in figures:
+    plt.figure(fig.number)  # 设置当前图形对象
+    plt.show()  # 显示图像
+
+    
+

@@ -87,7 +87,7 @@ class FluxCrosstalk( QMMeasurement ):
         if(self.detector_is_coupler == False):
             if ((self.measure_method == "ramsey") & (self.z_method == "pulse")):
                 with program() as Ramsey_z_pulse:
-                    iqdata_stream = multiRO_declare( self.ro_elements[0] )
+                    iqdata_stream = multiRO_declare( self.ro_elements )
                     n = declare(int)
                     n_st = declare_stream()
 
@@ -102,13 +102,13 @@ class FluxCrosstalk( QMMeasurement ):
                                 # Initialization
                                 # Wait for the resonator to deplete
                                 if self.initializer is None:
-                                    wait(10 * u.us, self.ro_elements[0])
+                                    wait(10 * u.us, self.ro_elements)
                                 else:
                                     try:
                                         self.initializer[0](*self.initializer[1])
                                     except:
                                         print("initializer didn't work!")
-                                        wait(1 * u.us, self.ro_elements[0]) 
+                                        wait(1 * u.us, self.ro_elements) 
 
                                 # Opration
                                 play( "x90", f"{self.detector_qubit}_xy" )
@@ -123,20 +123,21 @@ class FluxCrosstalk( QMMeasurement ):
                                 wait(5)  
                                 
                                 # Readout
-                                multiRO_measurement( iqdata_stream, self.ro_elements[0], weights="rotated_") 
+                                multiRO_measurement( iqdata_stream, self.ro_elements, weights="rotated_") 
                         # Save the averaging iteration to get the progress bar
                         save(n, n_st)
 
                     with stream_processing():
                         # Cast the data into a 1D vector, average the 1D vectors together and store the results on the OPX processor
-                        multiRO_pre_save( iqdata_stream, self.ro_elements[0], (len(self.crosstalk_z_qua), len(self.detector_z_qua)))
+                        multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.crosstalk_z_qua), len(self.detector_z_qua)))
                         n_st.save("iteration")
 
                 return Ramsey_z_pulse
             
             elif((self.measure_method == "long_drive") & (self.z_method == "pulse")):
+                print("有打這個")
                 with program() as LongDrive_z_pulse:
-                    iqdata_stream = multiRO_declare( self.ro_elements[0] )
+                    iqdata_stream = multiRO_declare( self.ro_elements )
                     n = declare(int)
                     n_st = declare_stream()
 
@@ -151,36 +152,37 @@ class FluxCrosstalk( QMMeasurement ):
                                 # Initialization
                                 # Wait for the resonator to deplete
                                 if self.initializer is None:
-                                    wait(10 * u.us, self.ro_elements[0])
+                                    wait(10 * u.us, self.ro_elements)
                                 else:
                                     try:
                                         self.initializer[0](*self.initializer[1])
                                     except:
                                         print("initializer didn't work!")
-                                        wait(1 * u.us, self.ro_elements[0]) 
+                                        wait(1 * u.us, self.ro_elements) 
 
                                 # Opration
                                 play( "x180"*amp(self.pi_amp_ration), f"{self.detector_qubit}_xy", duration=self.z_time_cc )
+                                # play("const"*amp( 0.00005 ), f"{self.detector_qubit}_xy", duration=self.z_time_cc)
                                 wait(17-5)    #不加這個wait的話x180會比z慢17cc，到底為啥???
                                 play("const"*amp(z_crosstalk*2.), f"{self.crosstalk_qubit}_z", self.z_time_cc+10)         #const 預設0.5
                                 play("const"*amp(z_detector*2.), f"{self.detector_qubit}_z", self.z_time_cc+10)
                                 wait(self.z_time_cc+15)
 
                                 # Readout
-                                multiRO_measurement( iqdata_stream, self.ro_elements[0], weights="rotated_") 
+                                multiRO_measurement( iqdata_stream, self.ro_elements, weights="rotated_") 
                         # Save the averaging iteration to get the progress bar
                         save(n, n_st)
 
                     with stream_processing():
                         # Cast the data into a 1D vector, average the 1D vectors together and store the results on the OPX processor
-                        multiRO_pre_save( iqdata_stream, self.ro_elements[0], (len(self.crosstalk_z_qua), len(self.detector_z_qua)))
+                        multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.crosstalk_z_qua), len(self.detector_z_qua)))
                         n_st.save("iteration")
 
                 return LongDrive_z_pulse
             
             elif((self.measure_method == "ramsey") & (self.z_method == "offset")):
                 with program() as Ramsey_z_offset:
-                    iqdata_stream = multiRO_declare( self.ro_elements[0] )
+                    iqdata_stream = multiRO_declare( self.ro_elements )
                     n = declare(int)
                     n_st = declare_stream()
 
@@ -195,13 +197,13 @@ class FluxCrosstalk( QMMeasurement ):
                                 # Initialization
                                 # Wait for the resonator to deplete
                                 if self.initializer is None:
-                                    wait(10 * u.us, self.ro_elements[0])
+                                    wait(10 * u.us, self.ro_elements)
                                 else:
                                     try:
                                         self.initializer[0](*self.initializer[1])
                                     except:
                                         print("initializer didn't work!")
-                                        wait(1 * u.us, self.ro_elements[0]) 
+                                        wait(1 * u.us, self.ro_elements) 
 
                                 # Opration
                                 play( "x90", f"{self.detector_qubit}_xy" )
@@ -221,20 +223,20 @@ class FluxCrosstalk( QMMeasurement ):
                                 wait(5) 
                                 
                                 # Readout
-                                multiRO_measurement( iqdata_stream, self.ro_elements[0], weights="rotated_") 
+                                multiRO_measurement( iqdata_stream, self.ro_elements, weights="rotated_") 
                         # Save the averaging iteration to get the progress bar
                         save(n, n_st)
 
                     with stream_processing():
                         # Cast the data into a 1D vector, average the 1D vectors together and store the results on the OPX processor
-                        multiRO_pre_save( iqdata_stream, self.ro_elements[0], (len(self.crosstalk_z_qua), len(self.detector_z_qua)))
+                        multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.crosstalk_z_qua), len(self.detector_z_qua)))
                         n_st.save("iteration")
 
                 return Ramsey_z_offset
 
             elif((self.measure_method == "long_drive") & (self.z_method == "offset")):
                 with program() as LongDrive_z_offset:
-                    iqdata_stream = multiRO_declare( self.ro_elements[0] )
+                    iqdata_stream = multiRO_declare( self.ro_elements )
                     n = declare(int)
                     n_st = declare_stream()
 
@@ -251,13 +253,13 @@ class FluxCrosstalk( QMMeasurement ):
                                 # set_dc_offset( f"{self.crosstalk_qubit}_z", "single", get_offset(f"{self.crosstalk_qubit}_z",self.config)+z_crosstalk )
                                 # set_dc_offset( f"{self.detector_qubit}_z", "single", get_offset(f"{self.detector_qubit}_z",self.config)+z_detector )
                                 if self.initializer is None:
-                                    wait(10 * u.us, self.ro_elements[0])
+                                    wait(10 * u.us, self.ro_elements)
                                 else:
                                     try:
                                         self.initializer[0](*self.initializer[1])
                                     except:
                                         print("initializer didn't work!")
-                                        wait(1 * u.us, self.ro_elements[0]) 
+                                        wait(1 * u.us, self.ro_elements) 
 
                                 # Opration
                                 play( "x180"*amp(self.pi_amp_ration), f"{self.detector_qubit}_xy", duration=self.z_time_cc )
@@ -269,13 +271,13 @@ class FluxCrosstalk( QMMeasurement ):
                                 set_dc_offset( f"{self.detector_qubit}_z", "single", get_offset(f"{self.detector_qubit}_z",self.config) )
                                 
                                 # Readout
-                                multiRO_measurement( iqdata_stream, self.ro_elements[0], weights="rotated_") 
+                                multiRO_measurement( iqdata_stream, self.ro_elements, weights="rotated_") 
                         # Save the averaging iteration to get the progress bar
                         save(n, n_st)
 
                     with stream_processing():
                         # Cast the data into a 1D vector, average the 1D vectors together and store the results on the OPX processor
-                        multiRO_pre_save( iqdata_stream, self.ro_elements[0], (len(self.crosstalk_z_qua), len(self.detector_z_qua)))
+                        multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.crosstalk_z_qua), len(self.detector_z_qua)))
                         n_st.save("iteration")
 
                 return LongDrive_z_offset
@@ -284,7 +286,7 @@ class FluxCrosstalk( QMMeasurement ):
                 print("unknown measure_method or z_method")
         else:
             with program() as Is_coupler:
-                    iqdata_stream = multiRO_declare( self.ro_elements[0] )
+                    iqdata_stream = multiRO_declare( self.ro_elements )
                     n = declare(int)
                     n_st = declare_stream()
 
@@ -299,13 +301,13 @@ class FluxCrosstalk( QMMeasurement ):
                                 # Initialization
                                 # Wait for the resonator to deplete
                                 if self.initializer is None:
-                                    wait(10 * u.us, self.ro_elements[0])
+                                    wait(10 * u.us, self.ro_elements)
                                 else:
                                     try:
                                         self.initializer[0](*self.initializer[1])
                                     except:
                                         print("initializer didn't work!")
-                                        wait(1 * u.us, self.ro_elements[0]) 
+                                        wait(1 * u.us, self.ro_elements) 
 
                                 # Opration
                                 # play( "x180", f"{self.detector_qubit}_xy", duration=self.z_time_cc )
@@ -314,21 +316,21 @@ class FluxCrosstalk( QMMeasurement ):
                                 play("const"*amp(z_crosstalk*2.), f"{self.crosstalk_qubit}_z", self.z_time_cc+10)         #const 預設0.5
                                 play("const"*amp(z_detector*2.), f"{self.detector_qubit}_z", self.z_time_cc+10)
                                 wait(5)
-                                play("const"*amp( 0.05 ), f"{self.detector_qubit}_xy", duration=self.z_time_cc)
+                                play("const"*amp( 0.2 ), f"{self.detector_qubit}_xy", duration=self.z_time_cc)
                                 for i, ro in enumerate(self.ro_elements):
-                                    # wait(4000, self.ro_elements[0])
+                                    # wait(4000, self.ro_elements)
                                     wait( int(self.z_time_qua-gc.get_ro_length(ro,self.config)//4), ro )
 
                                 # wait(self.z_time_cc+15)
 
                                 # Readout
-                                multiRO_measurement( iqdata_stream, self.ro_elements[0], weights="rotated_") 
+                                multiRO_measurement( iqdata_stream, self.ro_elements, weights="rotated_") 
                         # Save the averaging iteration to get the progress bar
                         save(n, n_st)
 
                     with stream_processing():
                         # Cast the data into a 1D vector, average the 1D vectors together and store the results on the OPX processor
-                        multiRO_pre_save( iqdata_stream, self.ro_elements[0], (len(self.crosstalk_z_qua), len(self.detector_z_qua)))
+                        multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.crosstalk_z_qua), len(self.detector_z_qua)))
                         n_st.save("iteration")
 
             return Is_coupler
@@ -474,7 +476,7 @@ class FluxCrosstalk_2points( QMMeasurement ):
         if(self.detector_is_coupler == False):
             if ((self.measure_method == "ramsey") & (self.z_method == "pulse")):
                 with program() as Ramsey_z_pulse:
-                    iqdata_stream = multiRO_declare( self.ro_elements[0] )
+                    iqdata_stream = multiRO_declare( self.ro_elements )
                     n = declare(int)
                     n_st = declare_stream()
 
@@ -489,13 +491,13 @@ class FluxCrosstalk_2points( QMMeasurement ):
                                 # Initialization
                                 # Wait for the resonator to deplete
                                 if self.initializer is None:
-                                    wait(10 * u.us, self.ro_elements[0])
+                                    wait(10 * u.us, self.ro_elements)
                                 else:
                                     try:
                                         self.initializer[0](*self.initializer[1])
                                     except:
                                         print("initializer didn't work!")
-                                        wait(1 * u.us, self.ro_elements[0]) 
+                                        wait(1 * u.us, self.ro_elements) 
 
                                 # Opration
                                 play( "x90", f"{self.detector_qubit}_xy" )
@@ -510,20 +512,20 @@ class FluxCrosstalk_2points( QMMeasurement ):
                                 wait(5)  
                                 
                                 # Readout
-                                multiRO_measurement( iqdata_stream, self.ro_elements[0], weights="rotated_") 
+                                multiRO_measurement( iqdata_stream, self.ro_elements, weights="rotated_") 
                         # Save the averaging iteration to get the progress bar
                         save(n, n_st)
 
                     with stream_processing():
                         # Cast the data into a 1D vector, average the 1D vectors together and store the results on the OPX processor
-                        multiRO_pre_save( iqdata_stream, self.ro_elements[0], (len(self.crosstalk_z_qua), len(self.detector_z_qua)))
+                        multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.crosstalk_z_qua), len(self.detector_z_qua)))
                         n_st.save("iteration")
 
                 return Ramsey_z_pulse
             
             elif((self.measure_method == "long_drive") & (self.z_method == "pulse")):
                 with program() as LongDrive_z_pulse:
-                    iqdata_stream = multiRO_declare( self.ro_elements[0] )
+                    iqdata_stream = multiRO_declare( self.ro_elements )
                     n = declare(int)
                     n_st = declare_stream()
 
@@ -538,13 +540,13 @@ class FluxCrosstalk_2points( QMMeasurement ):
                                 # Initialization
                                 # Wait for the resonator to deplete
                                 if self.initializer is None:
-                                    wait(10 * u.us, self.ro_elements[0])
+                                    wait(10 * u.us, self.ro_elements)
                                 else:
                                     try:
                                         self.initializer[0](*self.initializer[1])
                                     except:
                                         print("initializer didn't work!")
-                                        wait(1 * u.us, self.ro_elements[0]) 
+                                        wait(1 * u.us, self.ro_elements) 
 
                                 # Opration
                                 play( "x180"*amp(self.pi_amp_ration), f"{self.detector_qubit}_xy", duration=self.z_time_cc )
@@ -554,20 +556,20 @@ class FluxCrosstalk_2points( QMMeasurement ):
                                 wait(self.z_time_cc+15)
 
                                 # Readout
-                                multiRO_measurement( iqdata_stream, self.ro_elements[0], weights="rotated_") 
+                                multiRO_measurement( iqdata_stream, self.ro_elements, weights="rotated_") 
                         # Save the averaging iteration to get the progress bar
                         save(n, n_st)
 
                     with stream_processing():
                         # Cast the data into a 1D vector, average the 1D vectors together and store the results on the OPX processor
-                        multiRO_pre_save( iqdata_stream, self.ro_elements[0], (len(self.crosstalk_z_qua), len(self.detector_z_qua)))
+                        multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.crosstalk_z_qua), len(self.detector_z_qua)))
                         n_st.save("iteration")
 
                 return LongDrive_z_pulse
             
             elif((self.measure_method == "ramsey") & (self.z_method == "offset")):
                 with program() as Ramsey_z_offset:
-                    iqdata_stream = multiRO_declare( self.ro_elements[0] )
+                    iqdata_stream = multiRO_declare( self.ro_elements )
                     n = declare(int)
                     n_st = declare_stream()
 
@@ -582,13 +584,13 @@ class FluxCrosstalk_2points( QMMeasurement ):
                                 # Initialization
                                 # Wait for the resonator to deplete
                                 if self.initializer is None:
-                                    wait(10 * u.us, self.ro_elements[0])
+                                    wait(10 * u.us, self.ro_elements)
                                 else:
                                     try:
                                         self.initializer[0](*self.initializer[1])
                                     except:
                                         print("initializer didn't work!")
-                                        wait(1 * u.us, self.ro_elements[0]) 
+                                        wait(1 * u.us, self.ro_elements) 
 
                                 # Opration
                                 play( "x90", f"{self.detector_qubit}_xy" )
@@ -608,20 +610,20 @@ class FluxCrosstalk_2points( QMMeasurement ):
                                 wait(5) 
                                 
                                 # Readout
-                                multiRO_measurement( iqdata_stream, self.ro_elements[0], weights="rotated_") 
+                                multiRO_measurement( iqdata_stream, self.ro_elements, weights="rotated_") 
                         # Save the averaging iteration to get the progress bar
                         save(n, n_st)
 
                     with stream_processing():
                         # Cast the data into a 1D vector, average the 1D vectors together and store the results on the OPX processor
-                        multiRO_pre_save( iqdata_stream, self.ro_elements[0], (len(self.crosstalk_z_qua), len(self.detector_z_qua)))
+                        multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.crosstalk_z_qua), len(self.detector_z_qua)))
                         n_st.save("iteration")
 
                 return Ramsey_z_offset
 
             elif((self.measure_method == "long_drive") & (self.z_method == "offset")):
                 with program() as LongDrive_z_offset:
-                    iqdata_stream = multiRO_declare( self.ro_elements[0] )
+                    iqdata_stream = multiRO_declare( self.ro_elements )
                     n = declare(int)
                     n_st = declare_stream()
 
@@ -638,13 +640,13 @@ class FluxCrosstalk_2points( QMMeasurement ):
                                 # set_dc_offset( f"{self.crosstalk_qubit}_z", "single", get_offset(f"{self.crosstalk_qubit}_z",self.config)+z_crosstalk )
                                 # set_dc_offset( f"{self.detector_qubit}_z", "single", get_offset(f"{self.detector_qubit}_z",self.config)+z_detector )
                                 if self.initializer is None:
-                                    wait(10 * u.us, self.ro_elements[0])
+                                    wait(10 * u.us, self.ro_elements)
                                 else:
                                     try:
                                         self.initializer[0](*self.initializer[1])
                                     except:
                                         print("initializer didn't work!")
-                                        wait(1 * u.us, self.ro_elements[0]) 
+                                        wait(1 * u.us, self.ro_elements) 
 
                                 # Opration
                                 play( "x180"*amp(self.pi_amp_ration), f"{self.detector_qubit}_xy", duration=self.z_time_cc )
@@ -656,13 +658,13 @@ class FluxCrosstalk_2points( QMMeasurement ):
                                 set_dc_offset( f"{self.detector_qubit}_z", "single", get_offset(f"{self.detector_qubit}_z",self.config) )
                                 
                                 # Readout
-                                multiRO_measurement( iqdata_stream, self.ro_elements[0], weights="rotated_") 
+                                multiRO_measurement( iqdata_stream, self.ro_elements, weights="rotated_") 
                         # Save the averaging iteration to get the progress bar
                         save(n, n_st)
 
                     with stream_processing():
                         # Cast the data into a 1D vector, average the 1D vectors together and store the results on the OPX processor
-                        multiRO_pre_save( iqdata_stream, self.ro_elements[0], (len(self.crosstalk_z_qua), len(self.detector_z_qua)))
+                        multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.crosstalk_z_qua), len(self.detector_z_qua)))
                         n_st.save("iteration")
 
                 return LongDrive_z_offset
@@ -671,7 +673,7 @@ class FluxCrosstalk_2points( QMMeasurement ):
                 print("unknown measure_method or z_method")
         else:
             with program() as Is_coupler:
-                    iqdata_stream = multiRO_declare( self.ro_elements[0] )
+                    iqdata_stream = multiRO_declare( self.ro_elements )
                     n = declare(int)
                     n_st = declare_stream()
 
@@ -686,13 +688,13 @@ class FluxCrosstalk_2points( QMMeasurement ):
                                 # Initialization
                                 # Wait for the resonator to deplete
                                 if self.initializer is None:
-                                    wait(10 * u.us, self.ro_elements[0])
+                                    wait(10 * u.us, self.ro_elements)
                                 else:
                                     try:
                                         self.initializer[0](*self.initializer[1])
                                     except:
                                         print("initializer didn't work!")
-                                        wait(1 * u.us, self.ro_elements[0]) 
+                                        wait(1 * u.us, self.ro_elements) 
 
                                 # Opration
                                 # play( "x180", f"{self.detector_qubit}_xy", duration=self.z_time_cc )
@@ -703,19 +705,19 @@ class FluxCrosstalk_2points( QMMeasurement ):
                                 wait(5)
                                 play("const"*amp( 0.05 ), f"{self.detector_qubit}_xy", duration=self.z_time_cc)
                                 for i, ro in enumerate(self.ro_elements):
-                                    # wait(4000, self.ro_elements[0])
+                                    # wait(4000, self.ro_elements)
                                     wait( int(self.z_time_qua-gc.get_ro_length(ro,self.config)//4), ro )
 
                                 # wait(self.z_time_cc+15)
 
                                 # Readout
-                                multiRO_measurement( iqdata_stream, self.ro_elements[0], weights="rotated_") 
+                                multiRO_measurement( iqdata_stream, self.ro_elements, weights="rotated_") 
                         # Save the averaging iteration to get the progress bar
                         save(n, n_st)
 
                     with stream_processing():
                         # Cast the data into a 1D vector, average the 1D vectors together and store the results on the OPX processor
-                        multiRO_pre_save( iqdata_stream, self.ro_elements[0], (len(self.crosstalk_z_qua), len(self.detector_z_qua)))
+                        multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.crosstalk_z_qua), len(self.detector_z_qua)))
                         n_st.save("iteration")
 
             return Is_coupler

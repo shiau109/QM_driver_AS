@@ -71,6 +71,7 @@ def plot_crosstalk_3Dscalar(data):
         fig, ax = plt.subplots()
         picture = ax.pcolormesh(crosstalk_z * 1e3, detector_z * 1e3, data[q][0, :, :].T, cmap='RdBu')
 
+        ax.set_title(f"{q}", fontsize=15)
         ax.set_xlabel(f"{crosstalk_qubit}_z Delta Voltage (mV)", fontsize=15)
         ax.set_ylabel(f"{detector_qubit}_z Delta Voltage (mV)", fontsize=15)
         ax.set_aspect(1 / expect_crosstalk)
@@ -84,33 +85,7 @@ def plot_crosstalk_3Dscalar(data):
 
     return figures
 
-# def plot_crosstalk_3Dscalar( data ):
-#     """
-#     Plot zline crosstalk data.
-    
-#     Parameters:
-#     data (xarray.Dataset): Data in shape (M, N)
-#         - M is the crosstalk z point.
-#         - N is the detector z point.
-#     """
-#     q = list(data.data_vars.keys())[0]
-#     crosstalk_z = data.coords["crosstalk_z"].values
-#     detector_z = data.coords["detector_z"].values
-#     crosstalk_qubit = data.attrs["crosstalk_qubit"]
-#     detector_qubit = data.attrs["detector_qubit"]
-#     expect_crosstalk = data.attrs["expect_crosstalk"]
 
-#     fig, ax = plt.subplots()
-#     picture = ax.pcolormesh( crosstalk_z*1e3, detector_z*1e3, data[q][0, :, :].T, cmap='RdBu')
-
-#     ax.set_xlabel(f"{crosstalk_qubit}_z Delta Voltage (mV)", fontsize=15)
-#     ax.set_ylabel(f"{detector_qubit}_z Delta Voltage (mV)", fontsize=15)
-#     ax.set_aspect(1/expect_crosstalk)
-
-#     # 添加 colorbar
-#     cbar = fig.colorbar(picture, ax=ax)
-#     cbar.set_label("Intensity", fontsize=15)
-#     cbar.ax.tick_params(labelsize=12)
 
 def plot_analysis( data ):
     """
@@ -196,7 +171,7 @@ def _plot_2Dfft( x, y, z, ax=None  ):
 
 
 # Load the NetCDF file
-file_path = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240814_DR3_5Q4C_0430#7\good_20us\20240822_0128_detector_q4_crosstalk_q8_long_drive_pulse_expectcrosstalk_0.05_20mius.nc"
+file_path = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240814_DR3_5Q4C_0430#7\compensation_test\20240825_2032_detector_q4_crosstalk_q1_long_drive_pulse_expectcrosstalk_0.05_20mius.nc"
 
 dataset = xr.open_dataset(file_path)
 
