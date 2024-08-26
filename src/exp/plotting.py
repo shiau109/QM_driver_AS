@@ -109,11 +109,12 @@ def plot_and_save_t1_repeateRun(dataset, time, single_name, folder_save_dir = 0,
     from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting
     import numpy as np
     rep = dataset.coords["repetition"].values
+    dataset = dataset.transpose("mixer","repetition","time")
     for ro_name, data in [(single_name, dataset[single_name])]:
         acc_T1 = []
         for i in range(rep.shape[-1]):
             fit_result = qubit_relaxation_fitting(time, data.values[0][i])
-            acc_T1.append(fit_result.params["T1"].value)
+            acc_T1.append(fit_result.params["tau"].value)
         fig, ax = plt.subplots()
         plot_time_dep_qubit_T1_relaxation_2Dmap( rep, time, data.values[0], ax, fit_result=acc_T1)
         print(acc_T1)
