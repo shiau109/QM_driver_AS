@@ -1,4 +1,6 @@
 import numpy as np
+from scipy.optimize import curve_fit
+import matplotlib.pyplot as plt
 
 def get_freq_axes( axes ):
     f_axes = []
@@ -88,7 +90,7 @@ def get_fft_mag( data ):
     magnitude_spectrum = np.abs(fft_result_shifted)
     return magnitude_spectrum
 
-def analysis_crosstalk_value(dataset ):
+def analysis_crosstalk_value_fft(dataset ):
     """
     z1 is shape (N,),  crosstalk voltage (other)\n
     z2 is shape (M,), compensation voltage (self)\n
@@ -116,3 +118,68 @@ def analysis_crosstalk_value(dataset ):
     print(f"crosstalk: {crosstalk}")
 
     return crosstalk, f_axes, magnitude_spectrum
+
+def analysis_crosstalk_value_fft(dataset ):
+    """
+    z1 is shape (N,),  crosstalk voltage (other)\n
+    z2 is shape (M,), compensation voltage (self)\n
+    data with shape (N,M)
+    """
+    q = list(dataset.data_vars.keys())[0]
+    z1 = dataset.attrs["crosstalk_qubit"]
+    z2 = dataset.attrs["detector_qubit"]
+    data = dataset[q][0, :, :].T
+    offset = np.mean(data)
+    data -= offset
+
+    data, axes = get_extend(data, [z1, z2], 1000)
+    # data, axes = get_interp(data, [d_z_target_amp, d_z_crosstalk_amp], 100)
+    # print(axes[0].shape, axes[1].shape, data.shape)
+    f_axes = get_freq_axes( axes )
+    magnitude_spectrum = get_fft_mag(data)
+    #  get_weighted_pos(magnitude_spectrum, f_axes )
+    f_z_crosstalk_pos, f_z_target_pos = get_max_pos(magnitude_spectrum, f_axes)
+    print(f"f_z_target: {f_z_crosstalk_pos}")
+    print(f"f_z_crosstalk: {f_z_target_pos}")
+    z_slope = f_z_target_pos/f_z_crosstalk_pos
+    crosstalk = -1/z_slope
+    print(f"k space: {z_slope}")
+    print(f"crosstalk: {crosstalk}")
+
+    return crosstalk, f_axes, magnitude_spectrum
+
+def linear_fit(x, m, b):
+    return m * x + b
+
+def analysis_crosstalk_value_fitting(dataset):
+    """
+    z1 is shape (N,), crosstalk voltage (other)\n
+    z2 is shape (M,), compensation voltage (self)\n
+    data with shape (N, M)
+    """
+    q = list(dataset.data_vars.keys())[0]
+    z1 = dataset.attrs["crosstalk_qubit"]
+    z2 = dataset.attrs["detector_qubit"]
+    data = dataset[q][0, :, :].T
+    offset = np.mean(data)
+    data -= offset
+
+    # 初始化數據點
+    x_vals = []
+    y_vals = []
+
+    # 對每一條 compensation voltage 的數據進行處理
+    for i in range(data.shape[1]):  # 迭代每一列 (對應不同的 compensation voltage)
+        col_data = data[:, i]
+        max_index = np.argmax(col_data)  # 找到最大值的索引
+        x_vals.append(z1[max_index])  # 取出對應的 crosstalk voltage
+        y_vals.append(z2[i])  # 取出當前的 compensation voltage
+
+    # 執行線性擬合
+    popt, pcov = curve_fit(linear_fit, x_vals, y_vals)
+    slope, intercept = popt
+
+    print(f"Fitted Line: y = {slope} * x + {intercept}")
+    
+    # 返回擬合線的參數以便繪圖
+    return slope, intercept
