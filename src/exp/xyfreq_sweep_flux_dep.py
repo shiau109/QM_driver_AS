@@ -52,7 +52,7 @@ class XYFreqFlux( QMMeasurement ):
         self.preprocess = "ave"
         self.initializer = None
         
-        self.sweep_type = "z_pulse"
+        self.sweep_type = "z_pulse" #z_pulse or overlap
         self.xy_driving_time = 10
         self.xy_amp_mod = 0.1
         self.z_amp_ratio_range = (0.5, 1.5)

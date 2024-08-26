@@ -11,7 +11,6 @@ from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 warnings.filterwarnings("ignore")
 import exp.config_par as gc
 import xarray as xr
-import time
 from exp.QMMeasurement import QMMeasurement
 
 class ROFreqSweep( QMMeasurement ):
@@ -40,8 +39,9 @@ class ROFreqSweep( QMMeasurement ):
     
 
     def _get_qua_program( self ):
-        
+
         self.frequencies_qua = self._lin_freq_array( )
+        self._attribute_config()
 
         with program() as resonator_spec:
 
@@ -89,16 +89,21 @@ class ROFreqSweep( QMMeasurement ):
             },
             coords={"frequency": frequencies_mhz, "mixer":np.array(["I","Q"]) }
         )
+        self._attribute_config()
+        dataset.attrs["ro_LO"] = self.ref_ro_LO
+        dataset.attrs["ro_IF"] = self.ref_ro_IF
+
         return dataset
 
     def _lin_freq_array( self ):
         return np.arange( self.freq_range[0]*u.MHz, self.freq_range[1]*u.MHz, self.resolution* u.MHz )
     
 
-    def _get_ro_elements_info( self ):
-
-        ref_ro_LO = {}
-        for ro_name in self.ro_elements:
-            ref_ro_LO[ro_name] = gc.get_LO(self.ro_elements[0], self.config)
+    def _attribute_config( self ):
+        self.ref_ro_IF = []
+        self.ref_ro_LO = []
+        for r in self.ro_elements:
+            self.ref_ro_IF.append(gc.get_IF(r, self.config))
+            self.ref_ro_LO.append(gc.get_LO(r, self.config))
 
 

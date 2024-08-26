@@ -107,15 +107,15 @@ class ROAmp( QMMeasurement ):
 
         coords = { 
             "mixer":np.array(["I","Q"]), 
-            "amp_ratio": freqs_mhz, 
+            "amplitude_ratio": freqs_mhz, 
             "prepare_state": np.array([0,1]),
             }
         match self.preprocess:
             case "shot":
-                dims_order = ["mixer","shot","amp_ratio","prepare_state"]
+                dims_order = ["mixer","shot","amplitude_ratio","prepare_state"]
                 coords["shot"] = np.arange(self.shot_num)
             case _:
-                dims_order = ["mixer","amp_ratio","prepare_state"]
+                dims_order = ["mixer","amplitude_ratio","prepare_state"]
 
         output_data = {}
         for r_idx, r_name in enumerate(self.ro_elements):

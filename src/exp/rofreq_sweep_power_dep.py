@@ -47,6 +47,7 @@ class ROFreqSweepPowerDep( QMMeasurement ):
     def _get_qua_program( self ):
         
         self.amp_ratio = self._get_amp_ratio_array()
+        print(self.amp_ratio)
         self.freqs_qua = self._lin_freq_array()
         self._attribute_config()
         
@@ -137,11 +138,11 @@ class ROFreqSweepPowerDep( QMMeasurement ):
         return freqs_qua
 
     def _lin_amp_ratio_array( self ):
-        amp_ratio = np.arange( self.amp_mod_range[0],self.amp_mod_range[1], self.amp_resolution)
+        amp_ratio = np.arange( self.amp_mod_range[0],self.amp_mod_range[1]+self.amp_resolution/2, self.amp_resolution)
         return amp_ratio
     
     def _log_amp_ratio_array( self ):
-        amp_num = (self.amp_mod_range[1]-self.amp_mod_range[0])/self.amp_resolution
+        amp_num = int( (self.amp_mod_range[1]-self.amp_mod_range[0])/self.amp_resolution )
         amp_ratio = np.logspace(self.amp_mod_range[0], self.amp_mod_range[1], amp_num)
         return amp_ratio
     
