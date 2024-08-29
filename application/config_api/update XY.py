@@ -11,23 +11,55 @@ from qspec.update import update_controlFreq, update_controlWaveform
 import numpy as np
 
 xy_infos = [
-    {
+    {   # unfinish
         "name":"q0",
-        "q_freq": 5.2, # GHz
-        "LO": 5.2, # GHz
-        "pi_amp": 0.1,
+        "q_freq": 3.05, # GHz
+        "LO": 3.0, # GHz
+        "pi_amp": 0.15,
+        "pi_len": 40,
+        "90_corr": 1
+    },
+    {   
+        "name":"q1",
+        "q_freq": 4.049, # GHz
+        "LO": 4.2, # GHz
+        "pi_amp": 0.15*0.58,
+        "pi_len": 40,
+        "90_corr": 1
+    },
+    {   # unfinish, maybe low T1
+        "name":"q2",
+        "q_freq": 4.79, # GHz
+        "LO": 4.7, # GHz
+        "pi_amp": 0.5,
         "pi_len": 1000,
         "90_corr": 1,
-        "wf": "sin",
-    }
-    # },{
-    #     "name":"q1",
-    #     "q_freq": 4.516-0.0012, # GHz
-    #     "LO": 4.6, # GHz
-    #     "pi_amp": 0.15,
-    #     "pi_len": 40,
-    #     "90_corr": 1
-    # },
+        # "wf": "sin",
+    },
+    {   
+        "name":"q3",
+        "q_freq": 3.627, # GHz
+        "LO": 3.7, # GHz
+        "pi_amp": 0.5,
+        "pi_len": 40,
+        "90_corr": 1
+    },
+    {   # unfinish, maybe low T1
+        "name":"q4",
+        "q_freq": 4.036, # GHz
+        "LO": 4.2, # GHz
+        "pi_amp": 0.5,
+        "pi_len": 40,
+        "90_corr": 1
+    },
+    {   # unfinish, maybe low T1
+        "name":"q5",
+        "q_freq": 4.45, # GHz
+        "LO": 4.4, # GHz
+        "pi_amp": 0.5,
+        "pi_len": 40,
+        "90_corr": 1
+    },
     
 ]
 # name, q_freq(GHz), LO(GHz), amp, len, half

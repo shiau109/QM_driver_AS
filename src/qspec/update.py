@@ -40,23 +40,22 @@ def update_controlWaveform(config:Configuration,updatedSpec:dict={},target_q:str
         Give the specific target qubit "q1" to update if it's necessary, default for all the qubits.\n
         kwargs for assign update constant wf or saturation wf, USE: other=True/False.
     '''
-    if updatedSpec != {}:
-        waveform_remaker = EnvelopeBuilder(updatedSpec)
-    else:
+    if updatedSpec == {}:
         raise ValueError("The updated spec should be given!")
     qs = [target_q] if target_q != 'all' else updatedSpec["register"]
     for q in qs:
+        waveform_remaker = EnvelopeBuilder(xyInfo=updatedSpec[q])
         element_name = f"{q}_xy"
         print(f"{q} update controlWaveform")
         # Default constant pulse
-        config.waveforms[f"{q}_xy_const_wf"].sample = updatedSpec[q]["const_amp"]
+        config.waveforms[f"{element_name}_const_wf"].sample = updatedSpec[q]["const_amp"]
 
         for opration in config.elements[element_name].operations: 
             
            
-            pulse_name = f"{q}_xy_{opration}_pulse"
+            pulse_name = f"{element_name}_{opration}_pulse"
             # Single Q operation
-            if opration in ["x180", "-x180", "y180", "x90", "-x90", "y90", "-y90"]: 
+            if opration in ["x180", "-x180", "y180", "x90", "-x90", "y90", "-y90", "multisin"]: 
                 conv_table = {
                     "x180": "x",
                     "-x180": "-x",
@@ -64,11 +63,12 @@ def update_controlWaveform(config:Configuration,updatedSpec:dict={},target_q:str
                     "x90": "x/2",
                     "-x90": "-x/2",
                     "y90": "y/2",
-                    "-y90": "-y/2"
+                    "-y90": "-y/2",
+                    "xmultisin": "xmultisin"
                 }
-                wf = waveform_remaker.build_XYwaveform(target_q=q,axis=conv_table[opration])
+                wf = waveform_remaker.build_XYwaveform(axis=conv_table[opration])
                 for if_port in ["I","Q"]:
-                    waveform_name = f"{q}_xy_{opration}_wf_{if_port}"
+                    waveform_name = f"{element_name}_{opration}_wf_{if_port}"
                     config.waveforms[waveform_name].sample = wf[if_port].tolist()
                 # pi_len check
                 config.pulses[pulse_name].length = updatedSpec[q]['pi_len']
@@ -100,13 +100,35 @@ def update_z_crosstalk(config:Configuration,zInfo:dict,wire:dict):
     z_output[channel].crosstalk = zInfo["crosstalk"]   
    
 
-def update_zConstWaveform(config,updatedZspec:dict):
+def update_zWaveform(config,updatedZspec:dict,target_q:str="all"):
     """
         Update the waveforms about 'const_flux_wf' in config.waveforms by the given updated z spec.
     """
-    config.__config["waveforms"][f"const_flux_wf"]={
-        "type": "constant", "sample": updatedZspec['const_flux_amp']
-    }
+
+    if updatedZspec == {}:
+        raise ValueError("The updated spec should be given!")
+        
+    qs = [target_q] if target_q != 'all' else updatedZspec["register"]
+    for q in qs:
+        waveform_remaker = EnvelopeBuilder(zInfo=updatedZspec[q])
+        element_name = f"{q}_z"
+        print(f"{q} update controlWaveform")
+        # Default constant pulse
+        config.waveforms[f"{element_name}_const_wf"].sample = updatedZspec[q]["z_amp"]
+
+        for opration in config.elements[element_name].operations: 
+            
+            pulse_name = f"{element_name}_{opration}_pulse"
+            # Single Q operation
+            if opration in ["sin_flux"]: 
+                conv_table = {
+                    "sin_flux": "sin_flux",
+                }
+                wf = waveform_remaker.build_zWaveform(axis=conv_table[opration])
+                waveform_name = f"{q}_z_{opration}_wf"
+                config.waveforms[waveform_name].sample = wf.tolist()
+                # pi_len check
+                config.pulses[pulse_name].length = updatedZspec[q]['z_len']
 
 def update_zWiring(config,target_q:str='all',updatedZspec:dict={}):
     """

@@ -22,13 +22,14 @@ from exp.rabi import RabiTime
 my_exp = RabiTime(config, qmm)
 my_exp.initializer = initializer(200000,mode='wait')
 
-my_exp.ro_elements = ["q1_ro"]
-my_exp.xy_elements = ['q1_xy']
-my_exp.amp_range = (0, 1.5) 
-my_exp.amp_resolution = 0.02
+my_exp.ro_elements = ["q4_ro"]
+my_exp.xy_elements = ['q4_xy']
 
-my_exp.freq_range = (-20,20)
-my_exp.freq_resolution = 2
+my_exp.amp_range = (0, 4) 
+my_exp.amp_resolution = 0.05
+
+my_exp.freq_range = (-10,10)
+my_exp.freq_resolution = 1
 
 my_exp.time_range = (16,200) # ns
 my_exp.time_resolution = 8
@@ -40,7 +41,6 @@ dataset = my_exp.run(200)
 save_data = False
 save_dir = link_config["path"]["output_root"]
 save_name = f"{my_exp.xy_elements[0]}_{my_exp.process}_Rabi"
-
 if save_data: save_nc(save_dir, save_name, dataset)
 
 y = dataset.coords["amplitude"].values

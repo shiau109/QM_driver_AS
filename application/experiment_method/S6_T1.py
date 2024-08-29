@@ -20,18 +20,18 @@ from exp.relaxation_time import exp_relaxation_time
 
 #Set parameters
 my_exp = exp_relaxation_time(config, qmm)
-my_exp.initializer = initializer(200000,mode='wait')
-my_exp.ro_element = ["q0_ro"]
-my_exp.q_name = ["q0_xy"]
-my_exp.max_time = 60
-my_exp.time_resolution = 0.6
-dataset = my_exp.run(400)
+my_exp.initializer = initializer(100000,mode='wait')
+my_exp.ro_element = ["q5_ro"]
+my_exp.q_name = ["q5_xy"]
+my_exp.max_time = 6
+my_exp.time_resolution = 0.02
+dataset = my_exp.run(2000)
 
 
 #saving the data
 save_data = True
 save_dir = link_config["path"]["output_root"]
-save_name = "q0_xy_T1" #change the file name here
+save_name = "q3_xy_T1" #change the file name here
 if save_data: save_nc(save_dir, save_name, dataset)
 
 time = (dataset.coords["time"].values)/1000
@@ -46,15 +46,15 @@ for ro_name, data in dataset.data_vars.items():
     print(fit_result.params)
     fig, ax = plt.subplots()
     plot_qubit_relaxation(time, data[0], ax, fit_result)
-# plt.show()
+plt.show()
 
 from exp.repetition_measurement import RepetitionMeasurement
 re_exp = RepetitionMeasurement()
 re_exp.exp_list = [my_exp]
 re_exp.exp_name = ["T1_relaxation"]
-my_exp.shot_num = 400
-dataset = re_exp.run(10)
-save_name = "T1_stat"
+my_exp.shot_num = 2000
+dataset = re_exp.run(0)
+save_name = "q5_T1_stat"
 if save_data: save_nc(save_dir, save_name, dataset["T1_relaxation"])
 
 #To plot the result of multiple measurements (2D graph and histogram), use the following block of code
@@ -73,7 +73,7 @@ dataset = dataset.transpose( "mixer", "repetition",  "time")
 rep = dataset.coords["repetition"].values
 # dataset["T1_relaxation"].data_vars.items()
 print(dataset)
-single_name = "q1_ro"
+single_name = "q5_ro"
 for ro_name, data in [(single_name, dataset[single_name])]:
     acc_T1 = []
     for i in range(rep.shape[-1]):

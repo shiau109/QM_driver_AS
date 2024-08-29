@@ -20,9 +20,9 @@ def multi_sine_pulse_waveforms(
     :return: Returns a tuple of two lists. The first list is the I waveform (real part) and the second is the
         Q waveform (imaginary part)
     """
-    wx2_amp = kwargs.get("wx2amp", None)
-    wx3_amp = kwargs.get("wx3amp", None)
-    wx4_amp = kwargs.get("wx4amp", None)
+    wx2_amp = kwargs.get("wx2amp", 0)
+    wx3_amp = kwargs.get("wx3amp", 0)
+    wx4_amp = kwargs.get("wx4amp", 0)
 
 
     if anharmonicity == 0:
@@ -33,9 +33,10 @@ def multi_sine_pulse_waveforms(
         0.5 * amplitude * (1 - np.cos(t * 2 * np.pi / end_point))
     )  # The cosine function
     sin_wave = (
-        0.5
-        * amplitude
-        * np.sin(t * 2 * np.pi / end_point)
+        0.5 * amplitude * np.sin(t * np.pi / end_point)+
+        0.5 * wx2_amp * np.sin(2 * t * np.pi / end_point)+
+        0.5 * wx3_amp * np.sin(3 * t * np.pi / end_point)+
+        0.5 * wx4_amp * np.sin(4 * t * np.pi / end_point)
     )  # The derivative of cosine function
     z = sin_wave + 1j * 0
     I_wf = z.real.tolist()  # The `I` component is the real part of the waveform
@@ -43,3 +44,30 @@ def multi_sine_pulse_waveforms(
         z.imag.tolist()
     )  # The `Q` component is the imaginary part of the waveform
     return I_wf, Q_wf
+
+# --------------------------z pulse waveform----------------------------------
+
+def z_sine_pulse_waveforms(
+    amplitude, length, **kwargs
+):
+    """
+    Creates sine waveforms.
+
+    :param float amplitude: The amplitude in volts.
+    :param int length: The pulse length in ns.
+    :return: Returns a tuple of one lists.
+    """
+
+    t = np.arange(length, dtype=int)  # An array of size pulse length in ns
+    end_point = length - 1
+    cos_wave = (
+        amplitude * (1 - np.cos(t * 2 * np.pi / end_point))
+    )  # The cosine function
+    sin_wave = (
+        amplitude * np.sin(t * np.pi / end_point)
+
+    )  # The derivative of cosine function
+    z = sin_wave + 1j * 0
+    wf = z.real.tolist()  # The `I` component is the real part of the waveform
+
+    return wf

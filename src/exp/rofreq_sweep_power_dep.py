@@ -116,7 +116,7 @@ class ROFreqSweepPowerDep( QMMeasurement ):
 
         match self.amp_scale:
             case "lin": output_amp_ratio = self.amp_ratio
-            case "log": output_amp_ratio = 20*np.log10(self.amp_ratio)
+            case "log": output_amp_ratio = self.amp_ratio
             case _: output_amp_ratio = self.amp_ratio
 
         dataset = xr.Dataset(
@@ -143,7 +143,7 @@ class ROFreqSweepPowerDep( QMMeasurement ):
         return amp_ratio
     
     def _log_amp_ratio_array( self ):
-        amp_num = (self.amp_mod_range[1]-self.amp_mod_range[0])/self.amp_resolution
+        amp_num = int((self.amp_mod_range[1]-self.amp_mod_range[0])//self.amp_resolution)
         amp_ratio = np.logspace(self.amp_mod_range[0], self.amp_mod_range[1], amp_num)
         return amp_ratio
     

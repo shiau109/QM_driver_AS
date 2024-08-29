@@ -16,11 +16,11 @@ from exp.single_spin_echo import SpinEcho
 my_exp = SpinEcho( config, qmm )
 from ab.QM_config_dynamic import initializer
 my_exp.initializer = initializer(300000,mode='wait')
-my_exp.ro_elements = ["q0_ro", "q1_ro"]
+my_exp.ro_elements = ["q1_ro"]
 my_exp.xy_elements = ["q1_xy"]
-my_exp.time_range = ( 40, 12000 )
-my_exp.time_resolution = 60
-dataset = my_exp.run(400)
+my_exp.time_range = ( 40, 10000 )
+my_exp.time_resolution = 20
+dataset = my_exp.run(1000)
 
 
 from exp.save_data import save_nc, save_fig
@@ -49,7 +49,7 @@ re_exp = RepetitionMeasurement()
 re_exp.exp_list = [my_exp]
 re_exp.exp_name = ["spin_echo"]
 my_exp.shot_num = 400
-dataset = re_exp.run(50)
+dataset = re_exp.run(0)
 save_name = f"{my_exp.xy_elements[0]}_EchoT2_stat"
 if save_data: save_nc(save_dir, save_name, dataset["spin_echo"])
 

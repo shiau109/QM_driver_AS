@@ -16,11 +16,11 @@ from exp.save_data import save_nc, save_fig
 import matplotlib.pyplot as plt
 
 # Set parameters
-init_macro = initializer(10000,mode='wait')
+init_macro = initializer(1000,mode='wait')
 
 ro_elements = ["q0_ro"]
 q_name = ['q0_xy']
-z_name = ['q0_z']
+z_name = ['q4_z']
 
 sweep_type = "two_tone"      # "z_pulse", "const_z", "two_tone"
 
@@ -28,11 +28,11 @@ saturation_len = 20  # In us (should be < FFT of df)
 saturation_ampRatio = 0.05 # pre-factor to the value defined in the config - restricted to [-2; 2)
 n_avg = 1000
 
-flux_range = (0.0,0.1)
+flux_range = (-0.05,0.05)
 flux_resolution = 0.05
 
-freq_range = (-200,200)
-freq_resolution = 1
+freq_range = (-400,400)
+freq_resolution = 2
 
 
 # Start meausrement
@@ -47,9 +47,10 @@ my_exp.z_amp_ratio_range = flux_range
 my_exp.z_amp_ratio_resolution = flux_resolution
 my_exp.freq_range = freq_range
 my_exp.freq_resolution = freq_resolution
+my_exp.sweep_type = "overlap"
 dataset = my_exp.run( n_avg )
 
-save_data = False
+save_data = True
 save_name = f"Spectrum_{q_name[0]}_{z_name[0]}_{sweep_type}"
 save_dir = link_config["path"]["output_root"]
 if save_data: save_nc( save_dir, save_name, dataset)

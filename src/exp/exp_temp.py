@@ -51,8 +51,8 @@ class ExpTemp( QMMeasurement ):
 
             with for_(n, 0, n < self.shot_num, n + 1):
                 
-                for q in self.xy_elements:
-                    play("x180", q)
+                for q in self.z_elements:
+                    play("sin", q)
                 # Measurement
                 align()
                 multiRO_measurement(iqdata_stream, self.ro_elements, weights="rotated_")

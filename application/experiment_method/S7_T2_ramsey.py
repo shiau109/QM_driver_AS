@@ -21,12 +21,12 @@ import numpy as np
 #Set parameters
 my_exp = exp_ramsey(config, qmm)
 from ab.QM_config_dynamic import initializer
-my_exp.initializer = initializer(200000,mode='wait')
-my_exp.ro_elements = ["q1_ro"]
-my_exp.xy_elements = ["q1_xy"]
-my_exp.virtual_detune = -1.2
-my_exp.max_time = 30
-my_exp.time_resolution = 0.2
+my_exp.initializer = initializer(50000,mode='wait')
+my_exp.ro_elements = ["q3_ro"]
+my_exp.xy_elements = ["q3_xy"]
+my_exp.virtual_detune = 1
+my_exp.max_time = 8
+my_exp.time_resolution = 0.02
 dataset = my_exp.run(400)
 
 from exp.save_data import save_nc, save_fig

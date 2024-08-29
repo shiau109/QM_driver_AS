@@ -5,7 +5,7 @@ link_path = Path(__file__).resolve().parent/"config_link.toml"
 from QM_driver_AS.ultitly.config_io import import_config
 config_obj, spec = import_config( link_path )
 
-from config_component.update import update_z_offset, update_z_crosstalk
+from qspec.update import update_z_offset, update_z_crosstalk, update_zWaveform
 
 # [[ 0.99954093  0.00685605 -0.01088031 -0.01185879 -0.01199802]
 #  [ 0.02307034  0.99941776 -0.01729353 -0.01564188 -0.01406762]
@@ -15,25 +15,45 @@ from config_component.update import update_z_offset, update_z_crosstalk
 
 z_infos = [
     {
-        "name":"q0",
+        "name":"q2",
+        "offset": 0.2,
+        "crosstalk":{},
+        "z_amp": 0.1,
+        "z_len": 1000,
+    },
+    {
+        "name":"q3",
         "offset": 0.0,
-        "crosstalk":{}
-    },{
-        "name":"q1",
-        "offset": 0.0,
-        "crosstalk":{}
+        "crosstalk":{},
+        "z_amp": 0.1,
+        "z_len": 1000,
+    },
+    {
+        "name":"q4",
+        "offset": -0.01,
+        "crosstalk":{},
+        "z_amp": 0.1,
+        "z_len": 1000,
     },
 ]
 for i in z_infos:
+    q_name = i["name"]
     wiring = spec.get_spec_forConfig('wire')
+    z_amp = i["z_amp"]
+    z_len = i["z_len"]
+    if "wf" in i.keys():
+        qubit_wf = i["wf"]
+    else:
+        qubit_wf = 0
 
     # Tune Z offset
-    z_info = spec.update_ZInfo_for(target_q=i["name"],offset=i["offset"])
+    z_info = spec.update_ZInfo_for(target_q=q_name,offset=i["offset"])
     # print(wiring[i[0]])
-    update_z_offset( config_obj, z_info, wiring[i["name"]], mode='offset')
+    update_z_offset( config_obj, z_info, wiring[q_name], mode='offset')
 
-    z_info = spec.update_ZInfo_for(target_q=i["name"],crosstalk=i["crosstalk"])
-    update_z_crosstalk( config_obj, z_info, wiring[i["name"]])
+    z_info = spec.update_ZInfo_for(target_q=q_name,crosstalk=i["crosstalk"])
+    update_z_crosstalk( config_obj, z_info, wiring[q_name])
+    update_zWaveform(config_obj, spec.get_spec_forConfig("z"), target_q=q_name )
     config_dict = config_obj.get_config() 
 
 
