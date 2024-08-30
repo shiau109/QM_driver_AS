@@ -73,7 +73,91 @@ class PainterPowerDepRes( RawDataPainter ):
 
         return fig
     
-#S2
+class PainterFindFluxPeriod( RawDataPainter ):
+
+    def _data_parser( self ):
+        dataarray = self.plot_data
+        self.freqs = dataarray.coords["frequency"].values
+        self.flux = dataarray.coords["flux"].values
+
+        idata = dataarray.values[0]
+        qdata = dataarray.values[1]
+        self.zdata = idata +1j*qdata
+
+    def _plot_method( self ):
+        s21 = self.zdata
+        freqs = self.freqs
+        flux = self.flux
+        title = self.title
+        fig, ax = plt.subplots(2)
+        # if yscale == "log":
+        #     pcm = ax.pcolormesh(freqs, np.log10(amp_ratio), np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+        # else:
+        pcm = ax[0].pcolormesh(flux, freqs, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+        ax[0].set_title(f"{title} Magnitude")
+        ax[0].set_xlabel("Flux")
+        ax[0].set_ylabel("Additional IF freq (MHz)")
+        plt.colorbar(pcm, label='Value')
+
+        pcm = ax[1].pcolormesh(flux, freqs, np.angle(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+        ax[0].set_title(f"{title} Phase")
+        ax[1].set_xlabel("Flux")
+        ax[1].set_ylabel("Additional IF freq (MHz)")
+        plt.colorbar(pcm, label='Value')
+
+        return fig
+
+# add LO&IF&IDLE freq
+class PainterFluxDepQubit( RawDataPainter ):
+
+    def _data_parser( self ):
+        dataarray = self.plot_data
+        self.freqs = dataarray.coords["frequency"].values
+        self.flux = dataarray.coords["amp_ratio"].values
+
+        self.xy_LO = dataarray.attrs["xy_LO"][0]/1e6
+        self.xy_IF_idle = dataarray.attrs["xy_IF"][0]/1e6
+        self.z_offset = dataarray.attrs["z_offset"][0]
+
+        idata = dataarray.values[0]
+        qdata = dataarray.values[1]
+        self.zdata = idata +1j*qdata
+
+    def _plot_method( self ):
+        s21 = self.zdata
+        freqs = self.freqs
+        flux = self.flux
+        title = self.title
+        fig, ax = plt.subplots(2)
+
+        abs_freq = self.xy_LO+self.xy_IF_idle+freqs
+        
+        # if yscale == "log":
+        #     pcm = ax.pcolormesh(freqs, np.log10(amp_ratio), np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+        # else:
+        pcm = ax[0].pcolormesh(abs_freq, flux, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+        ax[0].axvline(x=self.xy_LO+self.xy_IF_idle, color='b', linestyle='--', label='ref IF')
+        ax[0].axvline(x=self.xy_LO, color='r', linestyle='--', label='LO')
+        ax[0].axhline(y=self.z_offset, color='black', linestyle='--', label='idle z')
+        ax[0].set_title(f"{title} Magnitude")
+        ax[0].set_xlabel("Flux")
+        ax[0].set_ylabel("Additional IF freq (MHz)")
+        plt.colorbar(pcm, label='Value')
+        ax[0].legend()
+
+        pcm = ax[1].pcolormesh(abs_freq, flux, np.angle(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+        ax[1].set_title(f"{title} Phase")
+        ax[1].axvline(x=self.xy_LO+self.xy_IF_idle, color='b', linestyle='--', label='ref IF')
+        ax[1].axvline(x=self.xy_LO, color='r', linestyle='--', label='LO')
+        ax[1].axhline(y=self.z_offset, color='black', linestyle='--', label='idle z')
+        ax[1].set_xlabel("Flux")
+        ax[1].set_ylabel("Additional IF freq (MHz)")
+        plt.colorbar(pcm, label='Value')
+        ax[1].legend()
+
+        return fig
+    
+#S2 finished
 def plot_and_save_dispersive_limit(dataset, folder_save_dir, my_exp, save_data = True):
     dfs = dataset.coords["frequency"].values
     amps = dataset.coords["amp_ratio"].values
@@ -89,8 +173,7 @@ def plot_and_save_dispersive_limit(dataset, folder_save_dir, my_exp, save_data =
         
     plt.show()
 
-
-#S3
+#S3 finished
 def plot_and_save_flux_period(dataset, folder_save_dir = 0, save_data = True):
     dfs = dataset.coords["frequency"].values
     amps = dataset.coords["flux"].values   
@@ -103,7 +186,7 @@ def plot_and_save_flux_period(dataset, folder_save_dir = 0, save_data = True):
 
     plt.show()
 
-#S4
+#S4 finished
 def plot_and_save_flux_dep_Qubit(dataset, folder_save_dir = 0, save_data = True):
     from exp.xyfreq_sweep_flux_dep import plot_ana_flux_dep_qubit
     freqs = dataset.coords["frequency"].values
