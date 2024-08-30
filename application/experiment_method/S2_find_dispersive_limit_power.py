@@ -17,7 +17,7 @@ from exp.plotting import plot_and_save_dispersive_limit
 from exp.rofreq_sweep_power_dep import ROFreqSweepPowerDep
 my_exp = ROFreqSweepPowerDep(config, qmm)
 my_exp.initializer = initializer(10000,mode='wait')
-my_exp.ro_elements = ["q3_ro",] #"q2_ro","q3_ro","q4_ro","q5_ro",
+my_exp.ro_elements = ["q0_ro",] #"q2_ro","q3_ro","q4_ro","q5_ro",
 # my_exp.ro_elements = ["q1_ro"]
 my_exp.freq_range = (-10,10)
 my_exp.freq_resolution = 0.05
@@ -32,13 +32,13 @@ if save_data:
     save_dir = link_config["path"]["output_root"]
     dp = DataPackager( save_dir, folder_label )
     dp.save_config(config)
-    dp.save_nc(dataset,"power_dep_resonator")
+    dp.save_nc(dataset,folder_label)
 
 # Plot
 save_figure = 1
 from exp.plotting import PainterPowerDepRes
 painter = PainterPowerDepRes()
-figs = painter.plot(dataset,"power_dep_resonator")
+figs = painter.plot(dataset,folder_label)
 if save_figure: dp.save_figs( figs )
     
 # plot_and_save_dispersive_limit(dataset, save_dir, my_exp, save_data)

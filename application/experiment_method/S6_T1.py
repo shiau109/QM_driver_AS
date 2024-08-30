@@ -49,7 +49,7 @@ re_exp.exp_list = [my_exp]
 re_exp.exp_name = ["T1_relaxation"]
 my_exp.shot_num = 2000
 
-dataset = re_exp.run(2)
+dataset = re_exp.run(10)
 
 save_data = 1
 if save_data: 
@@ -68,4 +68,4 @@ import qcat.visualization.qubit_relaxation as qv
 single_name = my_exp.ro_elements[0]
 
 
-plot_and_save_t1_repeateRun(dataset["T1_relaxation"], time, single_name, save_dir, save_data)
+plot_and_save_t1_repeateRun(dataset, time, single_name, save_dir, save_data)
