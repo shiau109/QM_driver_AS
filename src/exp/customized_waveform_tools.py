@@ -48,23 +48,28 @@ def multi_sine_pulse_waveforms(
 # --------------------------z pulse waveform----------------------------------
 
 def z_sine_pulse_waveforms(
-    amplitude, length, **kwargs
+    amplitude, 
+    length, 
+    freq = 1,
+    phase = 0,
+    **kwargs
 ):
     """
     Creates sine waveforms.
 
     :param float amplitude: The amplitude in volts.
     :param int length: The pulse length in ns.
+    :kwarg 'freq': frequency factor of sin. Default = 1, where sin pulse has frequency = 1/[2*(length-1)]
+    :kwarg 'phase': phase shift of sin in degree. Default = 0.
     :return: Returns a tuple of one lists.
     """
-
     t = np.arange(length, dtype=int)  # An array of size pulse length in ns
     end_point = length - 1
     cos_wave = (
         amplitude * (1 - np.cos(t * 2 * np.pi / end_point))
     )  # The cosine function
     sin_wave = (
-        amplitude * np.sin(t * np.pi / end_point)
+        amplitude * np.sin(freq * t * np.pi / end_point + phase/180 * np.pi)
 
     )  # The derivative of cosine function
     z = sin_wave + 1j * 0

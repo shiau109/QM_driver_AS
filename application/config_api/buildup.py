@@ -77,7 +77,7 @@ from qspec.construct import create_qubit, create_roChannel, create_zChannel, cre
 for x_wire in [("q0",("con1",3),("con1",4)),("q3",("con1",7),("con1",8))]:
     spec.update_WireInfo_for(x_wire[0],xy_I=x_wire[1],xy_Q=x_wire[2])
 
-for z_wire in [("q2",("con1",5)),("q3",("con1",6)),("q4",("con1",9)),("q5",("con1",10))]:
+for z_wire in [("q0",("con1",5)),("q3",("con1",6)),("q4",("con1",9)),("q5",("con1",10))]:
     spec.update_WireInfo_for(z_wire[0],z=z_wire[1])
 
 # for z_wire in [("q5",("con2",6)), ("q6",("con2",9)), ("q7",("con2",10)), ("q8",("con2",5))]:

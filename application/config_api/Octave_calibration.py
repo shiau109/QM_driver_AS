@@ -22,7 +22,7 @@ q5_xy = ElementsSettings("q5_xy", gain=18)
 
 # Add the "octave" elements
 # elements_settings = [rr0]
-elements_settings = [rr0,q0_xy]
+elements_settings = [rr0]
 
 
 ###################

@@ -92,11 +92,9 @@ class EnvelopeBuilder:
         
     def build_zWaveform(self,axis:str,**kwargs)->dict:
         ''' Create the pulse waveform for XY control for target qubit\n
-            func: "drag" or "gauss"\n
-            axis: "x" or "y" or "x/2" or "y/2" or "-x/2" or "-y/2"\n
-            kwargs: "sfactor" for pi-pulse sigma,\n
-            "given_wf_array"(** not done!) a dict contains key "I" and "Q" for the given array waveform (arbitrary),\n
-            ex. given_wf_array = {"I":array([0.1,0.1,0.1]),"Q":array([0.1,0.8,0.1])}
+            func: "sin"\n
+            "given_wf_array"(** not done!) a dict contains key "manual" for the given array waveform (arbitrary),\n
+            ex. given_wf_array = {"manual":array([0.1,0.1,0.1])}
         '''
         from qualang_tools.config.waveform_tools import drag_gaussian_pulse_waveforms, drag_cosine_pulse_waveforms
         from exp.customized_waveform_tools import z_sine_pulse_waveforms
@@ -105,19 +103,19 @@ class EnvelopeBuilder:
         func = 'sin' if self.QszInfo["waveform_func"] == 0 else self.QszInfo["waveform_func"]
         if func.lower() in ['sin','sine']:
             def wf_func(amp, width, *args):
-                return z_sine_pulse_waveforms(amp, width)
+                return z_sine_pulse_waveforms(amp, width, args[0], args[1])
         else:
             raise ValueError("Only surpport sine waveform!")
 
         if kwargs != {} and "given_wf_array" in list(kwargs.keys()):
-            if "wf" in list(kwargs["given_wf_array"].keys()):
+            if "manual" in list(kwargs["given_wf_array"].keys()):
                 given_wf = kwargs["given_wf_array"]
                 return given_wf
             else:
                 raise ValueError(f"The keynames in given_wf_array dict should be 'wf', but recieved keynames: {kwargs['given_wf_array'].keys()}")
         elif 'sin' in axis[:].lower():  
             wf = array(
-                wf_func(self.QszInfo["z_amp"], self.QszInfo["z_len"])
+                wf_func(self.QszInfo["z_amp"], self.QszInfo["z_len"], self.QszInfo["z_freq"], self.QszInfo["z_phase"])
             )
         else:
             print(axis[0].lower())

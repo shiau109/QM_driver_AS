@@ -120,9 +120,9 @@ def update_zWaveform(config,updatedZspec:dict,target_q:str="all"):
             
             pulse_name = f"{element_name}_{opration}_pulse"
             # Single Q operation
-            if opration in ["sin_flux"]: 
+            if opration in ["sin"]: 
                 conv_table = {
-                    "sin_flux": "sin_flux",
+                    "sin": "sin",
                 }
                 wf = waveform_remaker.build_zWaveform(axis=conv_table[opration])
                 waveform_name = f"{q}_z_{opration}_wf"

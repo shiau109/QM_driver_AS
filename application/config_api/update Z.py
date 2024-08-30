@@ -13,45 +13,71 @@ from qspec.update import update_z_offset, update_z_crosstalk, update_zWaveform
 #  [ 0.02022993  0.01678385  0.01898975  0.99923273 -0.02882381]
 #  [ 0.01681398  0.01113205  0.00966305 -0.00497131  0.99965561]]
 
-z_infos = [
-    {
-        "name":"q2",
+z_infos = {
+
+# e.g.
+# "q0":{
+#         "offset": 0.0,      # float in volt
+#         "crosstalk":{}, 
+#         "z_wf":"sin",       # input: 'sin'
+#         "z_amp": 0.2,       # float in volt
+#         "z_len": 1000,      # int in ns
+#         "z_freq": 2.0,      # float in factor
+#         "z_phase": 60.0,    # float in degree
+#     },
+
+    "q0":{
+        "offset": 0.0,
+        "crosstalk":{},
+        "z_wf":"sin",
+        "z_amp": 0.2,
+        "z_len": 1000,
+        "z_freq": 2.2,
+        "z_phase": 65,
+    },
+    "q2":{
         "offset": 0.2,
         "crosstalk":{},
         "z_amp": 0.1,
         "z_len": 1000,
     },
-    {
-        "name":"q3",
+    "q3":{
         "offset": 0.0,
         "crosstalk":{},
         "z_amp": 0.1,
         "z_len": 1000,
     },
-    {
-        "name":"q4",
+    "q4":{
         "offset": -0.01,
         "crosstalk":{},
         "z_amp": 0.1,
         "z_len": 1000,
     },
-]
-for i in z_infos:
-    q_name = i["name"]
+}
+updating_qubit = ["q0","q3"]
+
+for i in updating_qubit:
+    q_name = i
     wiring = spec.get_spec_forConfig('wire')
-    z_amp = i["z_amp"]
-    z_len = i["z_len"]
-    if "wf" in i.keys():
-        qubit_wf = i["wf"]
-    else:
-        qubit_wf = 0
+
+    z_wf = z_infos[i]["z_wf"] if "z_wf" in z_infos[i].keys() else "sin"
+    z_amp = z_infos[i]["z_amp"] if "z_amp" in z_infos[i].keys() else 0.1
+    z_len = z_infos[i]["z_len"] if "z_amp" in z_infos[i].keys() else 40
+    z_freq = z_infos[i]["z_freq"] if "z_freq" in z_infos[i].keys() else 1
+    z_phase = z_infos[i]["z_phase"] if "z_phase" in z_infos[i].keys() else 0
 
     # Tune Z offset
-    z_info = spec.update_ZInfo_for(target_q=q_name,offset=i["offset"])
+    z_info = spec.update_ZInfo_for(target_q=q_name,
+                                   offset=z_infos[i]["offset"],
+                                   crosstalk=z_infos[i]["crosstalk"],
+                                   wf=z_wf,
+                                   amp=z_amp,
+                                   len=z_len,
+                                   freq=z_freq,
+                                   phase=z_phase,
+                                   )
     # print(wiring[i[0]])
     update_z_offset( config_obj, z_info, wiring[q_name], mode='offset')
-
-    z_info = spec.update_ZInfo_for(target_q=q_name,crosstalk=i["crosstalk"])
     update_z_crosstalk( config_obj, z_info, wiring[q_name])
     update_zWaveform(config_obj, spec.get_spec_forConfig("z"), target_q=q_name )
     config_dict = config_obj.get_config() 
