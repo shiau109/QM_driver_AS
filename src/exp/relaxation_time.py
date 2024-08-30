@@ -39,7 +39,6 @@ class exp_relaxation_time( QMMeasurement):
         self.xy_elements = None
         self.ro_elements = None
         self.initializer = None
-    
     def _get_qua_program( self ):
         cc_max_qua = (self.max_time/4) * u.us
         cc_resolution_qua = (self.time_resolution/4) * u.us
@@ -83,7 +82,7 @@ class exp_relaxation_time( QMMeasurement):
 
     def _get_fetch_data_list( self ):
         ro_ch_name = []
-        for r_name in self.ro_elements:
+        for r_name in self.ro_element:
             ro_ch_name.append(f"{r_name}_I")
             ro_ch_name.append(f"{r_name}_Q")
 

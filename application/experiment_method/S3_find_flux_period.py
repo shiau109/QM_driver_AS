@@ -16,9 +16,8 @@ from exp.plotting import plot_and_save_flux_period
 
 # Set parameters
 init_macro = initializer(10000,mode='wait')
-#ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
-ro_elements = ["q1_ro","q3_ro"]
-z_elements = ['q3_z']
+ro_elements = ["q4_ro"]
+z_elements = ['q4_z']
 
 save_data = True
 folder_label = "Find_Flux_Period__0815_q1" #your data and plots with be saved under a new folder with this name

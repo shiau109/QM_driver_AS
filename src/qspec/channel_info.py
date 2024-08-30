@@ -354,8 +354,11 @@ class ChannelInfo:
                 "OFFbias":0.0,
                 "idle":0.0,
                 "crosstalk":{},
-                "const_flux_len" : 600,
-                "const_flux_amp" : 0.5
+                "z_len" : 600,
+                "z_amp" : 0.5,
+                "z_freq" : 1,
+                "z_phase" : 0,
+                "waveform_func" : "sin"
             }
 
         self._ZInfo["settle_time"] = 500 * u.ns
@@ -375,8 +378,10 @@ class ChannelInfo:
                     self._ZInfo[target_q][info] = kwargs[info]
                 elif info.lower() in ["settle"]:
                     self._ZInfo["settle_time"] = int(kwargs[info]*u.ns)
-                elif info.lower() in ["len","amp"]:
-                    self._ZInfo[f"const_flux_{info.lower()}"] = kwargs[info]
+                elif info.lower() in ["len","amp","freq","phase"]:
+                    self._ZInfo[target_q][f"z_{info.lower()}"] = kwargs[info]
+                elif info.lower() in ['waveform',"func",'wf']:
+                    self._ZInfo[target_q]["waveform_func"] = kwargs[info]
                 else:
                     raise KeyError("Some variables can't be identified, check the kwargs!")
         else:

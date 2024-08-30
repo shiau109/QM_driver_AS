@@ -18,7 +18,7 @@ class RepetitionMeasurement():
         for i in range(self.repetition):
             print(f"{i}/{self.repetition}")
             for name, exp in zip(self.exp_name, self.exp_list):
-                dataset = exp.run()
+                dataset = exp.run(exp.shot_num)
                 repetition_dataset[name].append(dataset)
         
         for name in self.exp_name:

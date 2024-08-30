@@ -24,11 +24,12 @@ class Ramsey( QMMeasurement ):
         time_max unit in us.\n
         time_resolution unit in us.\n
         """
-        self.max_time = 5
-        self.time_resolution = 10
+
+        self.ro_elements = ["q0_ro"]
         self.xy_elements = ["q0_xy"]
         self.virtual_detune = 0
-        self.ro_element = None
+        self.max_time = 5
+        self.time_resolution = 10
         self.n_avg = 100
         self.initializer = None
         self.simulate = False
@@ -177,20 +178,3 @@ def plot_multiT2( data, rep, time ):
     ax[1].pcolormesh( time, rep, qdata, cmap='RdBu')# , vmin=z_min, vmax=z_max)
     return fig
 
-if __name__ == '__main__':
-    from configuration import *
-
-    n_avg = 750
-    idle_times = np.arange(4, 200, 1)  
-    detuning = 1e6  
-    operation_flux_point = [0, -3.000e-01, -0.2525, -0.3433, -3.400e-01] 
-    q_id = [0,1,2,3]
-    Qi = 3
-
-    qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-    I,Q = T2_exp(Qi,n_avg,idle_times,operation_flux_point,q_id,qmm)
-    T2_plot(I, Q, Qi, True)
-    # m = 3
-    # T2_I, T2_Q = multi_T2_exp(m, Qi, n_avg,idle_times,operation_flux_point,q_id,qmm)
-    # T2_hist(T2_I,15,'I')
-    # T2_hist(T2_Q,15,'Q')

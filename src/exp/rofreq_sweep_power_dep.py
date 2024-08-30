@@ -13,6 +13,8 @@ import xarray as xr
 import exp.config_par as gc
 from exp.QMMeasurement import QMMeasurement
 
+import numpy as np
+
 class ROFreqSweepPowerDep( QMMeasurement ):
     """
     Parameters:\n
@@ -115,7 +117,7 @@ class ROFreqSweepPowerDep( QMMeasurement ):
 
         match self.amp_scale:
             case "lin": output_amp_ratio = self.amp_ratio
-            case "log": output_amp_ratio = 20*np.log10(self.amp_ratio)
+            case "log": output_amp_ratio = self.amp_ratio
             case _: output_amp_ratio = self.amp_ratio
 
         dataset = xr.Dataset(

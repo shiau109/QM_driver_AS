@@ -16,17 +16,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 from exp.ramsey import Ramsey
 
+import numpy as np
 
 #Set parameters
 my_exp = Ramsey(config, qmm)
 from ab.QM_config_dynamic import initializer
-my_exp.initializer = initializer(100000,mode='wait')
-my_exp.ro_elements = ["q1_ro","q3_ro"]
-my_exp.xy_elements = ["q1_xy"]
-my_exp.n_avg = 200
+my_exp.initializer = initializer(50000,mode='wait')
+my_exp.ro_elements = ["q3_ro"]
+my_exp.xy_elements = ["q3_xy"]
 my_exp.virtual_detune = 1
-my_exp.max_time = 10
-my_exp.time_resolution = 0.1
+my_exp.max_time = 8
+my_exp.time_resolution = 0.02
 dataset = my_exp.run(400)
 
 from exp.save_data import save_nc, save_fig
