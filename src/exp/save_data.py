@@ -34,36 +34,36 @@ class DataPackager():
         print(f"Directory '{full_path}' created successfully.")
         return full_path
 
-    def save_npz( self, file_name, data:dict, time_label:str|None=None, time_format:str="%Y%m%d_%H%M" ):
+    def save_npz( self, file_name, data:dict, time_label:str|None=None, time_format:str="%Y%m%d_%H%M%S" ):
         save_dir = self.package_root
         save_path = f"{save_dir}/{_add_time_label(file_name, time_label, time_format)}.npz"
         np.savez(save_path, **data)
 
-    def save_nc( self, data:xr.Dataset, file_name, time_label:str|None=None, time_format:str="%Y%m%d_%H%M" ):
+    def save_nc( self, data:xr.Dataset, file_name, time_label:str|None=None, time_format:str="%Y%m%d_%H%M%S" ):
         save_dir = self.package_root
 
         save_path = f"{save_dir}/{_add_time_label(file_name, time_label, time_format)}.nc"
         data.to_netcdf(save_path, engine='netcdf4')
 
 
-    def save_fig( self, fig:Figure, file_name, time_label:str|None=None, time_format:str="%Y%m%d_%H%M" ):
+    def save_fig( self, fig:Figure, file_name, time_label:str|None=None, time_format:str="%Y%m%d_%H%M%S" ):
         save_dir = self.package_root
         save_path = f"{save_dir}/{_add_time_label(file_name, time_label, time_format)}.png"
         fig.savefig(f"{save_path}", dpi = 500)
 
-    def save_figs( self, figs:list, time_label:str|None=None, time_format:str="%Y%m%d_%H%M" ):
+    def save_figs( self, figs:list, time_label:str|None=None, time_format:str="%Y%m%d_%H%M%S" ):
         save_dir = self.package_root
         for (name, fig) in figs:
             save_path = f"{save_dir}/{_add_time_label(name, time_label, time_format)}.png"
             fig.savefig(f"{save_path}", dpi = 500)
 
-    def save_config( self, config:dict, file_name:str="config", time_label:str|None=None, time_format:str="%Y%m%d_%H%M" ):
+    def save_config( self, config:dict, file_name:str="config", time_label:str|None=None, time_format:str="%Y%m%d_%H%M%S" ):
         save_dir = self.package_root
         save_path = f"{save_dir}/{_add_time_label(file_name, time_label, time_format)}.json"
         with open(save_path, 'w') as json_file:
             json.dump(config, json_file, indent=2)
 
-def _add_time_label( file_name, time_label:str|None="prefix", time_format:str="%Y%m%d_%H%M" ):
+def _add_time_label( file_name, time_label:str|None="prefix", time_format:str="%Y%m%d_%H%M%S" ):
     save_time = str(datetime.now().strftime(time_format))
 
     match time_label:

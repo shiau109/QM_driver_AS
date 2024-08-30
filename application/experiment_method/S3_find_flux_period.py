@@ -10,19 +10,13 @@ config = config_obj.get_config()
 qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
-from exp.save_data import save_nc, save_fig, create_folder
 import matplotlib.pyplot as plt
 from exp.plotting import plot_and_save_flux_period
 
 # Set parameters
 init_macro = initializer(10000,mode='wait')
-ro_elements = ["q4_ro"]
-z_elements = ['q4_z']
-
-save_data = True
-folder_label = "Find_Flux_Period__0815_q1" #your data and plots with be saved under a new folder with this name
-save_dir = link_config["path"]["output_root"]
-save_name = f"flux_resonator_{ro_elements[0]}_{z_elements[0]}"
+ro_elements = ["q3_ro"]
+z_elements = ['q3_z']
 
 n_avg = 100
 freq_range = (-5,5)
@@ -34,9 +28,14 @@ from exp.rofreq_sweep_flux_dep import *
 dataset = freq_sweep_flux_dep(ro_elements, z_elements, config, qmm, freq_range=freq_range, freq_resolution=freq_resolution, flux_settle_time=1, flux_range=flux_range, flux_resolution=flux_resolution, n_avg=n_avg, initializer=init_macro)
 # dataset = freq_sweep_flux_dep_stable(ro_elements, z_elements, config, qmm, freq_range=freq_range, freq_resolution=freq_resolution, flux_settle_time=1, flux_range=flux_range, flux_resolution=flux_resolution, n_avg=n_avg, initializer=init_macro)
 
+save_data = 1
 if save_data: 
-    save_dir = create_folder(save_dir, folder_label)
-    save_nc( save_dir, save_name, dataset)
+    from exp.save_data import DataPackager
+    folder_label = "Find_Flux_Period" #your data and plots will be saved under a new folder with this name
+    save_dir = link_config["path"]["output_root"]
+    dp = DataPackager( save_dir, folder_label )
+    dp.save_config(config)
+    dp.save_nc(dataset,"Find_Flux_Period")
     
 
 # Plot

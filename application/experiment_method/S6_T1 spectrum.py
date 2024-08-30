@@ -11,7 +11,6 @@ qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
 
-from exp.save_data import save_nc, save_fig, create_folder
 from exp.plotting import plot_and_save_T1_spectrum
 
 import matplotlib.pyplot as plt
@@ -22,11 +21,6 @@ ro_elements = ["q0_ro"]
 q_name = ["q0_xy"]
 z_name = ['q0_z']
 
-save_data = False
-save_dir = link_config["path"]["output_root"]
-folder_label = "T1_spectrum_1" #your data and plots with be saved under a new folder with this name
-save_name = f"{q_name[0]}_T1spectrum"
-
 n_avg = 200
 max_time = 60 #us
 time_resolution = 0.6 #us
@@ -36,10 +30,14 @@ flux_resolution = 0.0015
 from exp.z_pulse_relaxation_time import z_pulse_relaxation_time
 dataset = z_pulse_relaxation_time( max_time, time_resolution, flux_range, flux_resolution, q_name, z_name, ro_elements, config, qmm, n_avg=n_avg, initializer=init_macro)
 
-folder_save_dir = 0
+save_data = 1
 if save_data: 
-    save_dir = create_folder(save_dir, folder_label)
-    save_nc( save_dir, save_name, dataset) 
+    from exp.save_data import DataPackager
+    folder_label = "T1_spectrum" #your data and plots will be saved under a new folder with this name
+    save_dir = link_config["path"]["output_root"]
+    dp = DataPackager( save_dir, folder_label )
+    dp.save_config(config)
+    dp.save_nc(dataset,"T1_spectrum")
 
 
 # Plot

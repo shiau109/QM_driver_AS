@@ -179,7 +179,7 @@ def plot_power_dep_resonator( freqs, amp_ratio, data, ax=None, yscale="lin" ):
         ax.set_title('pcolormesh')
         fig.show()
     if yscale == "log":
-        pcm = ax.pcolormesh(freqs, np.log10(amp_ratio), np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+        pcm = ax.pcolormesh(freqs, amp_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
     else:
         pcm = ax.pcolormesh(freqs, amp_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
     plt.colorbar(pcm, label='Value')
