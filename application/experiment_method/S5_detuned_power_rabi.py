@@ -23,12 +23,13 @@ from exp.plotting import plot_and_save_rabi
 my_exp = RabiTime(config, qmm)
 my_exp.initializer = initializer(20000,mode='wait')
 
-my_exp.ro_elements = ["q1_ro", "q3_ro"]
-my_exp.xy_elements = ['q1_xy']
-my_exp.amp_range = (0, 1.5) 
-my_exp.amp_resolution = 0.02
+my_exp.ro_elements = ["q4_ro"]
+my_exp.xy_elements = ['q4_xy']
 
-my_exp.freq_range = (-20,20)
+my_exp.amp_range = (0, 4) 
+my_exp.amp_resolution = 0.05
+
+my_exp.freq_range = (-10,10)
 my_exp.freq_resolution = 1
 
 
@@ -36,7 +37,7 @@ my_exp.process = "power"
 
 dataset = my_exp.run(200)
 
-save_data = True
+save_data = False
 save_dir = link_config["path"]["output_root"]
 folder_label = "detuned_power_rabi_0815" #your data and plots with be saved under a new folder with this name
 save_name = f"{my_exp.xy_elements[0]}_{my_exp.process}_Rabi"

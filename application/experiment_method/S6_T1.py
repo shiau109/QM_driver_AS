@@ -52,11 +52,10 @@ re_exp = RepetitionMeasurement()
 re_exp.exp_list = [my_exp]
 re_exp.exp_name = ["T1_relaxation"]
 my_exp.shot_num = 2000
-dataset = re_exp.run(100)
 
-save_name = "_T1_stat_#12_q4"
-if save_data: 
-    save_nc( save_dir, save_name, dataset["T1_relaxation"])
+dataset = re_exp.run(10)
+save_name = "q5_T1_stat"
+if save_data: save_nc(save_dir, save_name, dataset["T1_relaxation"])
 
 #To plot the result of multiple measurements (2D graph and histogram), use the following block of code
 #================================================================================================#
@@ -64,5 +63,6 @@ print(dataset["T1_relaxation"])
 
 import qcat.visualization.qubit_relaxation as qv
 single_name = my_exp.ro_elements[0]
+
 
 plot_and_save_t1_repeateRun(dataset["T1_relaxation"], time, single_name, save_dir, save_data)

@@ -1,5 +1,5 @@
 Metadata-Version: 2.1
-Name: QM-driver-AS
+Name: QM_driver_AS
 Version: 0.0.10
 Summary: An experimental data
 Home-page: https://github.com/shiau109/PYQUM_data
@@ -11,33 +11,30 @@ Classifier: Programming Language :: Python :: 3.10
 Classifier: Operating System :: OS Independent
 Requires-Python: >=3.10
 Description-Content-Type: text/markdown
+Requires-Dist: numpy>=1.26.0
+Requires-Dist: scipy>=1.13.0
+Requires-Dist: matplotlib>=3.9
+Requires-Dist: xarray>=2024.6.0
+Requires-Dist: tomlkit>=0.12.5
 
-pip install -e .
+## About this Project
+This project is use to run common experiment for Transmon on Quantum Machine and record data.
 
+## How to use
+1. Install this package.
+2. Set config file in /application/config_api
+3. Run experiment in /application/experiment_method
 
+## How to Install 
+1. Open anaconda prompt
+2. Use pip to install the package in editable mode (-e)
+   
+    pip install -e path/of/this/package
 
+    You can get the path from Github desktop
+    Repository -> Show in Explorer
+4. Check QUA version 
+    1. qm-octave==1.2.0
+    2. qm-qua==1.1.3
+    3. qualang-tools==0.15.2
 
-
-# To add the module path into python site-packages with ***.pth*** file
-1. Add the whole QM_opt module path into the python site-packages folder. 
-2. Check the root to the QM_opt folder use: 
-    `import os`  
-    `print(os.getcwd())`
-    , print it in a py in that folder.
-3. Get the python site-packages absolute path use:
-    `import sys`
-    `print(sys.path)`
-    , you can also print it in the same file as the previous step.
-    
-4. Open a terminal and active the virtual environment which will run the py file. Type in:
-    `cd {site-packages path}`
-    fill the actual path into the { }.
-5. For different system
-- <span style="color:red">Mac</span>
-Add the path use:
-    `sudo echo "{QM_opt module path}" > {arbitrary name}.pth`
-    fill the actual path and a name into the { }.
-- <span style="color:red">Windows</span>  
-Add a **.pth** file with arbitrary name like`QM.pth` in the **site-packages** folder, and this file contains the absolute path about the module from __Step_2__.
-6. Check it works or not.
-    

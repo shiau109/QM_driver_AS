@@ -1,10 +1,13 @@
 from numpy import array
 
 class EnvelopeBuilder:
-    def __init__(self,xyInfo:dict):
+    def __init__(self,xyInfo:dict={},zInfo:dict={}):
+        ''' xyInfo, zInfo are the information inside a qubit
+            ex. EnvelopeBuilder(xyInfo=updatedSpec[q]), EnvelopeBuilder(zInfo=updatedZspec[q])
+        '''
         self.QsXyInfo = xyInfo
-        # print(self.QsXyInfo)
-
+        self.QszInfo = zInfo
+    
     def build_XYwaveform(self,axis:str,**kwargs)->dict:
         ''' Create the pulse waveform for XY control for target qubit\n
             func: "drag" or "gauss"\n
@@ -14,7 +17,7 @@ class EnvelopeBuilder:
             ex. given_wf_array = {"I":array([0.1,0.1,0.1]),"Q":array([0.1,0.8,0.1])}
         '''
         from qualang_tools.config.waveform_tools import drag_gaussian_pulse_waveforms, drag_cosine_pulse_waveforms
-        # from exp.customized_waveform_tools import multi_sine_pulse_waveforms
+        from exp.customized_waveform_tools import multi_sine_pulse_waveforms
 
         # search the waveform function
         
@@ -25,9 +28,9 @@ class EnvelopeBuilder:
         elif func.lower() in ['gauss','g','gaussian']:
             def wf_func(amp, width, sigma, *args):
                 return drag_gaussian_pulse_waveforms(amp, width, sigma, 0, args[1], args[2])
-        # elif func.lower() in ['sin','sine']:
-        #     def wf_func(amp, width, *args):
-        #         return multi_sine_pulse_waveforms(amp, width, args[1], args[2])
+        elif func.lower() in ['sin','sine']:
+            def wf_func(amp, width, *args):
+                return multi_sine_pulse_waveforms(amp, width, args[1], args[2])
         else:
             raise ValueError("Only surpport Gaussian or DRAG-gaussian waveform!")
         
@@ -51,6 +54,7 @@ class EnvelopeBuilder:
             S_factor = kwargs["sfactor"]
         else:
             S_factor = 4
+
         if kwargs != {} and "given_wf_array" in list(kwargs.keys()):
             use_given_wf = True
             if "I" in list(kwargs["given_wf_array"].keys()) and "Q" in list(kwargs["given_wf_array"].keys()):
@@ -72,6 +76,12 @@ class EnvelopeBuilder:
             )
             I_wf = (-1)*der_wf
             Q_wf = wf 
+        elif 'multisin' in axis[:].lower():
+            wf, der_wf = array(
+                wf_func(self.QsXyInfo["pi_amp"]*scale, self.QsXyInfo["pi_len"], self.QsXyInfo["anharmonicity"], self.QsXyInfo["AC_stark_detuning"])
+            )
+            I_wf = wf
+            Q_wf = der_wf
         else:
             print(axis[0].lower())
             raise ValueError("Check the given axis, It should start with 'x' or 'y'!")
@@ -80,3 +90,36 @@ class EnvelopeBuilder:
             return given_wf
         else:
             return {"I":I_wf, "Q":Q_wf}
+        
+    def build_zWaveform(self,axis:str,**kwargs)->dict:
+        ''' Create the pulse waveform for XY control for target qubit\n
+            func: "sin"\n
+            "given_wf_array"(** not done!) a dict contains key "manual" for the given array waveform (arbitrary),\n
+            ex. given_wf_array = {"manual":array([0.1,0.1,0.1])}
+        '''
+        from qualang_tools.config.waveform_tools import drag_gaussian_pulse_waveforms, drag_cosine_pulse_waveforms
+        from exp.customized_waveform_tools import z_sine_pulse_waveforms
+
+        # search the waveform function
+        func = 'sin' if self.QszInfo["waveform_func"] == 0 else self.QszInfo["waveform_func"]
+        if func.lower() in ['sin','sine']:
+            def wf_func(amp, width, *args):
+                return z_sine_pulse_waveforms(amp, width, args[0], args[1])
+        else:
+            raise ValueError("Only surpport sine waveform!")
+
+        if kwargs != {} and "given_wf_array" in list(kwargs.keys()):
+            if "manual" in list(kwargs["given_wf_array"].keys()):
+                given_wf = kwargs["given_wf_array"]
+                return given_wf
+            else:
+                raise ValueError(f"The keynames in given_wf_array dict should be 'wf', but recieved keynames: {kwargs['given_wf_array'].keys()}")
+        elif 'sin' in axis[:].lower():  
+            wf = array(
+                wf_func(self.QszInfo["z_amp"], self.QszInfo["z_len"], self.QszInfo["z_freq"], self.QszInfo["z_phase"])
+            )
+        else:
+            print(axis[0].lower())
+            raise ValueError("Check the given axis, It should start with 'sin'!")
+        
+        return wf

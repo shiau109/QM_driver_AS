@@ -75,28 +75,60 @@ def create_zChannel(config:Configuration, name:str, zInfo:dict, wireInfo:dict):
         create the z elements for target_q, includes elements, pulses, waveforms.
     """  
 
-    pulse_name = f"{name}_const_flux_pulse"
-    waveform_name = f"{name}_const_flux_wf"
+    pulse_name = f"{name}_const_pulse"
+    waveform_name = f"{name}_const_wf"
+
+    default_native_gates = ["sin"]
     # elements value
     element = Element( name, input_type="singleInput" )
     element.input_map.port = wireInfo["z"]
-    element.operations["const"] = pulse_name
+    element.operations = {
+        "const": pulse_name,
+    }
 
     # pulses value
     pulse = Pulse(pulse_name)
     pulse.operation = "control"
-    pulse.length = zInfo["const_flux_len"]
+    pulse.length = zInfo["z_len"]
     pulse.waveforms.single = waveform_name
-    
+    config._pulses[pulse_name] = pulse
 
     # waveforms value
     waveform = Waveform(waveform_name)
     waveform.type = "constant"
-    waveform.sample = zInfo['const_flux_amp']
-
-    config._elements[name] = element
-    config._pulses[pulse_name] = pulse
+    waveform.sample = zInfo['z_amp']
     config._waveforms[waveform_name] = waveform
+
+    # elements name
+    config._elements[name] = element
+    
+    from qspec.envelope_builder import EnvelopeBuilder
+    wave_maker = EnvelopeBuilder(zInfo=zInfo)
+
+    for gate_name in default_native_gates:
+        pulse_name = f"{name}_{gate_name}_pulse"
+        waveform_name = f"{name}_{gate_name}_wf"
+
+        element.operations[gate_name] = pulse_name
+
+        pulse = Pulse(pulse_name)
+        pulse.operation = "control"
+        pulse.length = zInfo[f"z_len"]
+        pulse.waveforms.single = f"{waveform_name}"
+
+        config._pulses[pulse_name] = pulse
+
+        match gate_name:
+            case "sin": a = "sin"
+            case _: a = None
+
+        # Create waveform list, if spec is updated it also need to be updated
+        wf = wave_maker.build_zWaveform(axis=a)
+        waveform = Waveform(waveform_name)
+        waveform.type = "arbitrary"
+        waveform.sample = wf.tolist()
+        config._waveforms[waveform_name] = waveform
+    
 
 def create_xyChannel(config:Configuration, name, xyInfo:dict, wireInfo:dict):
     """
@@ -136,7 +168,7 @@ def create_xyChannel(config:Configuration, name, xyInfo:dict, wireInfo:dict):
 
     # create corresponding waveform name in pulses dict, create waveform list in waveforms dict
     from qspec.envelope_builder import EnvelopeBuilder
-    wave_maker = EnvelopeBuilder(xyInfo)
+    wave_maker = EnvelopeBuilder(xyInfo=xyInfo)
     waveform = Waveform(waveform_name)
     waveform.type = "constant"
     waveform.sample = xyInfo["const_amp"]
