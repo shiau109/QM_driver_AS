@@ -11,8 +11,6 @@ qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
 
-from exp.save_data import save_nc, save_fig, create_folder
-
 import matplotlib.pyplot as plt
 
 # Set parameters
@@ -23,8 +21,8 @@ from exp.plotting import plot_and_save_rabi
 my_exp = RabiTime(config, qmm)
 my_exp.initializer = initializer(20000,mode='wait')
 
-my_exp.ro_elements = ["q4_ro"]
-my_exp.xy_elements = ['q4_xy']
+my_exp.ro_elements = ["q3_ro"]
+my_exp.xy_elements = ['q3_xy']
 
 my_exp.amp_range = (0, 4) 
 my_exp.amp_resolution = 0.05
@@ -37,14 +35,14 @@ my_exp.process = "power"
 
 dataset = my_exp.run(200)
 
-save_data = False
-save_dir = link_config["path"]["output_root"]
-folder_label = "detuned_power_rabi_0815" #your data and plots with be saved under a new folder with this name
-save_name = f"{my_exp.xy_elements[0]}_{my_exp.process}_Rabi"
-
+save_data = 1
 if save_data: 
-    save_dir = create_folder(save_dir, folder_label)
-    save_nc(save_dir, save_name, dataset)
+    from exp.save_data import DataPackager
+    folder_label = "detuned_power_rabi" #your data and plots will be saved under a new folder with this name
+    save_dir = link_config["path"]["output_root"]
+    dp = DataPackager( save_dir, folder_label )
+    dp.save_config(config)
+    dp.save_nc(dataset,"detuned_power_rabi")
 
 y = dataset.coords["amplitude"].values
 freqs = dataset.coords["frequency"].values

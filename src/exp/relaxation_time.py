@@ -82,7 +82,7 @@ class exp_relaxation_time( QMMeasurement):
 
     def _get_fetch_data_list( self ):
         ro_ch_name = []
-        for r_name in self.ro_element:
+        for r_name in self.ro_elements:
             ro_ch_name.append(f"{r_name}_I")
             ro_ch_name.append(f"{r_name}_Q")
 

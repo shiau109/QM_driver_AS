@@ -11,8 +11,6 @@ qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
 
-from exp.save_data import save_nc, save_fig, create_folder
-
 import matplotlib.pyplot as plt
 
 # Start meausrement
@@ -28,14 +26,14 @@ my_exp.freq_resolution = 4
 my_exp.sweep_type = "overlap"
 dataset = my_exp.run( 500 )
 
-save_data = True
-save_name = f"Spectrum_{my_exp.sweep_type}"
-folder_label = "Flux_dep_Qubit_0821_q2" #your data and plots with be saved under a new folder with this name
-save_dir = link_config["path"]["output_root"]
-
+save_data = 1
 if save_data: 
-    save_dir = create_folder(save_dir, folder_label)
-    save_nc( save_dir, save_name, dataset)
+    from exp.save_data import DataPackager
+    folder_label = "Flux_dep_Qubit" #your data and plots will be saved under a new folder with this name
+    save_dir = link_config["path"]["output_root"]
+    dp = DataPackager( save_dir, folder_label )
+    dp.save_config(config)
+    dp.save_nc(dataset,"Flux_dep_Qubit")
 
 # Plot
 from exp.xyfreq_sweep import plot_ana_flux_dep_qubit_1D
