@@ -58,7 +58,7 @@ if save_data:
     save_dir = link_config["path"]["output_root"]
     dp = DataPackager( save_dir, folder_label )
     dp.save_config(config)
-    dp.save_nc(dataset,"T1_rep")
+    dp.save_nc(dataset[re_exp.exp_name],"T1_rep")
 
 #To plot the result of multiple measurements (2D graph and histogram), use the following block of code
 #================================================================================================#

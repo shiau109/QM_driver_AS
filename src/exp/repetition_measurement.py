@@ -25,4 +25,4 @@ class RepetitionMeasurement():
             condensed_dataset[name] = xr.concat(repetition_dataset[name], dim='repetition')
             condensed_dataset[name].coords["repetition"] = np.arange(repetition)
 
-        return condensed_dataset[name]
+        return condensed_dataset
