@@ -12,8 +12,6 @@ qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
 
-from exp.save_data import save_nc, save_fig
-
 import matplotlib.pyplot as plt
 
 # Set parameters
@@ -25,7 +23,7 @@ my_exp = ROFreqSweep(config, qmm)
 my_exp.freq_range = (-400, 400)
 my_exp.resolution = 0.1
 my_exp.initializer = initializer(2000,mode='wait')
-dataset = my_exp.run( 1000 )
+dataset = my_exp.run( 100 )
 # Plot
 import numpy as np
 idata = dataset["q0_ro"].sel(mixer='I').values

@@ -1,27 +1,67 @@
 from datetime import datetime
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 import xarray as xr
+from matplotlib.figure import Figure
+import json
 
-def save_npz( save_dir, file_name, output_data:dict, time_label:str|None="prefix", time_format:str="%Y%m%d_%H%M" ):
+class DataPackager():
+    def __init__( self, output_path, name, time_label_type:str|None="prefix", ):
+        self.package_name = name
+        self.output_path = output_path
+        self.package_root = f"{output_path}/{_add_time_label(name, time_label_type)}"
+        self.time_label_type = time_label_type
 
-    save_path = f"{save_dir}/{_add_time_label(file_name, time_label, time_format)}.npz"
-    np.savez(save_path, **output_data)
+        self._create_folder()
 
-def save_nc( save_dir, file_name, output_data:xr.Dataset, time_label:str|None="prefix", time_format:str="%Y%m%d_%H%M" ):
+    def _create_folder( self ):
+        # Combine fixed part with user input
+        folder_name = self.package_name
+        save_dir = self.output_path
+        full_path = self.package_root
 
-    save_path = f"{save_dir}/{_add_time_label(file_name, time_label, time_format)}.nc"
-    output_data.to_netcdf(save_path)
+        if os.path.exists( full_path ):
+            print(f"Warning: The directory '{full_path}' already exists, creating separate folder")
+            count = 0
+            while os.path.exists(full_path):
+                new_folder_name = f"{folder_name}_{count}"
+                full_path = os.path.join(save_dir, new_folder_name)
+                count+=1
+            self.package_root = full_path
+        
+        # Create the directory
+        os.makedirs(full_path, exist_ok=True)
+        print(f"Directory '{full_path}' created successfully.")
+        return full_path
+
+    def save_npz( self, file_name, data:dict, time_label:str|None=None, time_format:str="%Y%m%d_%H%M" ):
+        save_dir = self.package_root
+        save_path = f"{save_dir}/{_add_time_label(file_name, time_label, time_format)}.npz"
+        np.savez(save_path, **data)
+
+    def save_nc( self, data:xr.Dataset, file_name, time_label:str|None=None, time_format:str="%Y%m%d_%H%M" ):
+        save_dir = self.package_root
+
+        save_path = f"{save_dir}/{_add_time_label(file_name, time_label, time_format)}.nc"
+        data.to_netcdf(save_path, engine='netcdf4')
 
 
-def save_fig( save_dir, file_name, time_label:str|None="prefix", time_format:str="%Y%m%d_%H%M" ):
-    
-    save_path = f"{save_dir}/{_add_time_label(file_name, time_label, time_format)}.png"
-    figure = plt.gcf()
-    figure.set_size_inches(16, 8)
-    plt.tight_layout()
-    plt.savefig(f"{save_path}", dpi = 500)
+    def save_fig( self, fig:Figure, file_name, time_label:str|None=None, time_format:str="%Y%m%d_%H%M" ):
+        save_dir = self.package_root
+        save_path = f"{save_dir}/{_add_time_label(file_name, time_label, time_format)}.png"
+        fig.savefig(f"{save_path}", dpi = 500)
+
+    def save_figs( self, figs:list, time_label:str|None=None, time_format:str="%Y%m%d_%H%M" ):
+        save_dir = self.package_root
+        for (name, fig) in figs:
+            save_path = f"{save_dir}/{_add_time_label(name, time_label, time_format)}.png"
+            fig.savefig(f"{save_path}", dpi = 500)
+
+    def save_config( self, config:dict, file_name:str="config", time_label:str|None=None, time_format:str="%Y%m%d_%H%M" ):
+        save_dir = self.package_root
+        save_path = f"{save_dir}/{_add_time_label(file_name, time_label, time_format)}.json"
+        with open(save_path, 'w') as json_file:
+            json.dump(config, json_file, indent=2)
 
 def _add_time_label( file_name, time_label:str|None="prefix", time_format:str="%Y%m%d_%H%M" ):
     save_time = str(datetime.now().strftime(time_format))
@@ -34,24 +74,4 @@ def _add_time_label( file_name, time_label:str|None="prefix", time_format:str="%
         case _:
             new_file_name = f"{file_name}"  
     return new_file_name
-
-def create_folder(save_dir, folder_name):
-    # Combine fixed part with user input
-    folder_name = f"Experiment_{folder_name}"
-    full_path = os.path.join(save_dir, folder_name)
-
-    if os.path.exists(full_path):
-        print(f"Warning: The directory '{full_path}' already exists, creating separate folder")
-        count = 0
-        while os.path.exists(full_path):
-            new_folder_name = f"{folder_name}_{count}"
-            full_path = os.path.join(save_dir, new_folder_name)
-            count+=1
-        os.makedirs(full_path, exist_ok=True)
-        return full_path
-    else:
-        # Create the directory
-        os.makedirs(full_path, exist_ok=True)
-        print(f"Directory '{full_path}' created successfully.")
-        return full_path
 

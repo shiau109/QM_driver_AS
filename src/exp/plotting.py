@@ -1,9 +1,78 @@
-from exp.save_data import save_nc, save_fig, create_folder
+
 import matplotlib.pyplot as plt
 from exp.rofreq_sweep_power_dep import plot_power_dep_resonator
 from exp.rofreq_sweep_flux_dep import plot_flux_dep_resonator
 import numpy as np
+from matplotlib.figure import Figure
+from abc import ABC, abstractmethod
 
+from xarray import Dataset, DataArray
+class RawDataPainter():
+
+    def __init__( self ):
+        self.output_fig = []
+        self.mode = "ave"
+
+    @abstractmethod
+    def _plot_method( self ):
+        pass
+
+    @abstractmethod
+    def _data_parser( self ):
+        pass
+
+    def plot( self, dataset:Dataset, fig_name:str, show:bool=True ):
+
+        self.output_fig = []
+
+        for ro_name, data in dataset.data_vars.items():
+
+            data.attrs = dataset.attrs
+            self.plot_data = data
+            self.title = ro_name
+            self._data_parser()
+            fig = self._plot_method()
+
+            file_name = f"{fig_name}_{ro_name}"
+            self.output_fig.append((file_name,fig))
+        if show: plt.show()
+        return self.output_fig
+
+
+class PainterPowerDepRes( RawDataPainter ):
+
+    def _data_parser( self ):
+        dataarray = self.plot_data
+        self.freqs = dataarray.coords["frequency"].values
+        self.amp_ratio = dataarray.coords["amp_ratio"].values
+
+        idata = dataarray.values[0]
+        qdata = dataarray.values[1]
+        self.zdata = idata +1j*qdata
+
+    def _plot_method( self ):
+        s21 = self.zdata/self.amp_ratio[:,None]
+        freqs = self.freqs
+        amp_ratio = self.amp_ratio
+        title = self.title
+        fig, ax = plt.subplots(2)
+        # if yscale == "log":
+        #     pcm = ax.pcolormesh(freqs, np.log10(amp_ratio), np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+        # else:
+        pcm = ax[0].pcolormesh(freqs, amp_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+        ax[0].set_title(f"{title} Magnitude")
+        ax[0].set_xlabel("Additional IF freq (MHz)")
+        ax[0].set_ylabel("Amplitude Ratio")
+        plt.colorbar(pcm, label='Value')
+
+        pcm = ax[1].pcolormesh(freqs, amp_ratio, np.angle(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+        ax[0].set_title(f"{title} Phase")
+        ax[1].set_xlabel("Additional IF freq (MHz)")
+        ax[1].set_ylabel("Amplitude Ratio")
+        plt.colorbar(pcm, label='Value')
+
+        return fig
+    
 #S2
 def plot_and_save_dispersive_limit(dataset, folder_save_dir, my_exp, save_data = True):
     dfs = dataset.coords["frequency"].values
@@ -16,9 +85,10 @@ def plot_and_save_dispersive_limit(dataset, folder_save_dir, my_exp, save_data =
         ax.set_xlabel("additional IF freq (MHz)")
         ax.set_ylabel("amp scale")
         file_name = f"power_dep_resonator_{ro_name}"
-        if save_data: save_fig( folder_save_dir, file_name)
+        # if save_data: save_fig( folder_save_dir, file_name)
         
     plt.show()
+
 
 #S3
 def plot_and_save_flux_period(dataset, folder_save_dir = 0, save_data = True):
@@ -29,7 +99,7 @@ def plot_and_save_flux_period(dataset, folder_save_dir = 0, save_data = True):
         plot_flux_dep_resonator( data.values, dfs, amps, ax)
         ax.set_title(ro_name)
         save_name = f"flux_resonator_{ro_name}"
-        if save_data: save_fig( folder_save_dir, save_name)
+        # if save_data: save_fig( folder_save_dir, save_name)
 
     plt.show()
 
@@ -52,7 +122,7 @@ def plot_and_save_flux_dep_Qubit(dataset, folder_save_dir = 0, save_data = True)
         ax[0].set_title(ro_name)
         ax[1].set_title(ro_name)
         save_name = f"flux_dep_Qubit_{ro_name}"
-        if save_data: save_fig(folder_save_dir, save_name)
+        # if save_data: save_fig(folder_save_dir, save_name)
 
 
 
@@ -69,7 +139,7 @@ def plot_and_save_rabi(dataset, freqs, y, name, folder_save_dir = 0, save_data =
         ax[0].set_title(ro_name)
         ax[1].set_title(ro_name)
         save_name = f"detuned_{name}_rabi_{ro_name}"
-        if save_data: save_fig(folder_save_dir, save_name)
+        # if save_data: save_fig(folder_save_dir, save_name)
 
     plt.show()
 
@@ -86,7 +156,7 @@ def plot_and_save_T1_spectrum(dataset, time, flux, folder_save_dir = 0, save_dat
         pcm = ax.pcolormesh( time/1000, flux, data.values[0], cmap='RdBu')# , vmin=z_min, vmax=z_max)
         plt.colorbar(pcm, label='Value')
         save_name = f"T1_spectrum_{ro_name}"
-        if save_data: save_fig( folder_save_dir, save_name ) 
+        # if save_data: save_fig( folder_save_dir, save_name ) 
 
     plt.show()
 
@@ -100,8 +170,7 @@ def plot_and_save_t1_singleRun(dataset, time, folder_save_dir = 0, save_data = T
         fig, ax = plt.subplots()
         plot_qubit_relaxation(time, data[0], ax, fit_result)
         save_name = f"T1_stat_singleRun_{ro_name}"
-        if save_data: 
-            save_fig(folder_save_dir, save_name)
+        # if save_data: save_fig(folder_save_dir, save_name)
     plt.show()
 
 def plot_and_save_t1_repeateRun(dataset, time, single_name, folder_save_dir = 0, save_data = True ):
@@ -119,12 +188,12 @@ def plot_and_save_t1_repeateRun(dataset, time, single_name, folder_save_dir = 0,
         plot_time_dep_qubit_T1_relaxation_2Dmap( rep, time, data.values[0], ax, fit_result=acc_T1)
         print(acc_T1)
         save_name = f"T1_2Dmap_{ro_name}"
-        if save_data: save_fig( folder_save_dir, save_name)
+        # if save_data: save_fig( folder_save_dir, save_name)
         fig1, ax1 = plt.subplots()
         
         plot_qubit_T1_relaxation_hist( np.array(acc_T1), ax1 )
         save_name = f"T1_hist_{ro_name}"
-        if save_data: save_fig( folder_save_dir, save_name)
+        # if save_data: save_fig( folder_save_dir, save_name)
     plt.show()
 
 #S7
@@ -140,7 +209,7 @@ def plot_and_save_t2_spinEcho(dataset, folder_save_dir = 0, save_data = True ):
         # rep = dataset.coords["repetition"].values
         # plot_multiT2( data, rep, time )
         save_name = f"T2_spin_echo_{ro_name}"
-        if save_data: save_fig(folder_save_dir, save_name, dataset)
+        # if save_data: save_fig(folder_save_dir, save_name, dataset)
     plt.show()
 
 #ramsey
@@ -155,7 +224,7 @@ def plot_and_save_t2_ramsey_singleRun(dataset, time, folder_save_dir = 0, save_d
         fig, ax = plt.subplots()
         plot_qubit_relaxation(time, data[0], ax, fit_result)
         save_name = f"T2_ramsey_singleRun_{ro_name}"
-        if save_data: save_fig(folder_save_dir, save_name, dataset)
+        # if save_data: save_fig(folder_save_dir, save_name, dataset)
 
     plt.show()
 
@@ -173,12 +242,12 @@ def plot_and_save_t2_ramsey_repeateRun(dataset, time, single_name, folder_save_d
         plot_time_dep_qubit_T2_relaxation_2Dmap( rep, time, data.values[0], ax, fit_result=acc_T2)
         print(acc_T2)
         save_name = f"T2_2Dmap_{ro_name}"
-        if save_data: save_fig( folder_save_dir, save_name)
+        # if save_data: save_fig( folder_save_dir, save_name)
         fig1, ax1 = plt.subplots()
 
         plot_qubit_T2_relaxation_hist( np.array(acc_T2), ax1 )
         save_name = f"T2_hist_{ro_name}"
-        if save_data: save_fig( folder_save_dir, save_name)
+        # if save_data: save_fig( folder_save_dir, save_name)
     plt.show()
 
 #S9
@@ -220,7 +289,7 @@ def plot_and_save_cryoscope_bk(dataset, pad_zeros, const_flux_len, folder_save_d
         ax[2].plot(time, detuning-virtual_detune, label=f"{virtual_detune}")
 
         save_name = f"cryoscope_bk_{ro_name}"
-        if save_data: save_fig(folder_save_dir, save_name, dataset)
+        # if save_data: save_fig(folder_save_dir, save_name, dataset)
 
     plt.show()
 
@@ -262,7 +331,7 @@ def plot_and_save_cryoscope_cc(dataset, my_exp, folder_save_dir = 0, save_data =
         ax[2].plot(time, detuning-virtual_detune, label=f"{virtual_detune}")
 
         save_name = f"cryoscope_cc_{ro_name}"
-        if save_data: save_fig(folder_save_dir, save_name, dataset)
+        # if save_data: save_fig(folder_save_dir, save_name, dataset)
 
     plt.show()
 
@@ -281,8 +350,7 @@ def plot_and_save_piscope(dataset, folder_save_dir = 0, save_data = True ):
         plt.colorbar(pcm, label='Value')
 
         save_name = f"piscope_{ro_name}"
-        if save_data: 
-            save_fig(folder_save_dir, save_name, dataset)
+        # if save_data: save_fig(folder_save_dir, save_name, dataset)
 
     plt.show()
 
@@ -299,7 +367,7 @@ def plot_and_save_xy_amp(dataset, folder_save_dir = 0, save_data = True ):
         ax.plot(amps,data[0][1], label="x180")
         fig.legend()
         save_name = save_name = f"xy_amp_{ro_name}"
-        if save_data: save_fig(folder_save_dir, save_name)
+        # if save_data: save_fig(folder_save_dir, save_name)
 
     plt.show()
 
@@ -318,7 +386,7 @@ def plot_and_save_readout_freq(dataset, my_exp, folder_save_dir = 0, save_data =
         plot_freq_signal( dfs, data, ro_name, ax )
         fig.suptitle(f"{ro_name} RO freq")
         save_name = save_name = f"ro_freq_{ro_name}"
-        if save_data: save_fig(folder_save_dir, save_name)
+        # if save_data: save_fig(folder_save_dir, save_name)
 
     plt.show()
 
@@ -334,7 +402,7 @@ def plot_and_save_readout_amp(dataset, folder_save_dir = 0, save_data = True ):
         plot_amp_signal_phase( amps, data, ro_name, ax[1] )
         fig.suptitle(f"{ro_name} RO amplitude")
         save_name = save_name = f"ro_amp_{ro_name}"
-        if save_data: save_fig(folder_save_dir, save_name)
+        # if save_data: save_fig(folder_save_dir, save_name)
     plt.show()
 
 #CR3
@@ -350,7 +418,7 @@ def plot_and_save_readout_fidelity(dataset, folder_save_dir = 0, save_data = Tru
         create_img(new_data, gmm_model)
         two_state_discriminator(data[0][0], data[1][0], data[0][1], data[1][1], True, True)
         save_name = save_name = f"ro_fidelity_{ro_name}"
-        if save_data: save_fig(folder_save_dir, save_name)
+        # if save_data: save_fig(folder_save_dir, save_name)
 
     plt.show()
 
@@ -369,7 +437,7 @@ def plot_and_save_readout_mapping(dataset, folder_save_dir = 0, save_data = True
         pcm = ax.pcolormesh( freq, amp, dist.transpose(), cmap='RdBu')# , vmin=z_min, vmax=z_max)
         plt.colorbar(pcm, label='Value')
         save_name = save_name = f"ro_mapping_{ro_name}"
-        if save_data: save_fig( folder_save_dir, save_name ) 
+        # if save_data: save_fig( folder_save_dir, save_name ) 
 
     plt.show()
 
@@ -383,5 +451,5 @@ def plot_and_save_cz_chavron(dataset, save_dir = 0, save_data = True ):
         fig, ax = plt.subplots()
         plot_cz_chavron(time,amps,data.values[0],ax)
         save_name = save_name = f"cz_chavron_{ro_name}"
-        if save_data: save_fig( save_dir, save_name ) 
+        # if save_data: save_fig( save_dir, save_name ) 
     plt.show()
