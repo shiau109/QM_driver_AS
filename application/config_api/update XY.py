@@ -6,34 +6,48 @@ link_path = Path(__file__).resolve().parent/"config_link.toml"
 from QM_driver_AS.ultitly.config_io import import_config
 config_obj, spec = import_config( link_path )
 
-from config_component.update import update_controlFreq, update_controlWaveform
+from qspec.update import update_controlFreq, update_controlWaveform
 
 import numpy as np
 
 xy_infos = [
     {
-        "name":"q0",
-        "q_freq": 4.65, # GHz
-        "LO": 4.8, # GHz
-        "pi_amp": 0.2,
-        "pi_len": 40,
-        "90_corr": 1
-    },
-    {
         "name":"q3",
-        "q_freq": 4.8, # GHz
-        "LO": 4.85, # GHz
+        "q_freq": 5.39, # GHz
+        "LO": 5.7, # GHz
         "pi_amp": 0.2,
-        "pi_len": 40,
+        "pi_len": 80,
         "90_corr": 1
     },{
         "name":"q4",
-        "q_freq": 4.9547 +0.12e-3, # GHz
-        "LO": 5.10, # GHz
-        "pi_amp": 0.2 *1.12 *1.26 *0.976 *0.95,
-        "pi_len": 40,
-        "90_corr": 1 *1.05
+        "q_freq": 3.774, # GHz
+        "LO": 4, # GHz
+        "pi_amp": 0.2*0.313,
+        "pi_len": 80,
+        "90_corr": 1
     }
+    # {
+    #     "name":"q3",
+    #     "q_freq": 7.670, # GHz
+    #     "LO": 7.8, # GHz
+    #     "pi_amp": 0.2*1.5,
+    #     "pi_len": 80,
+    #     "90_corr": 1
+    # },{
+    #     "name":"q2",
+    #     "q_freq": 4.66, # GHz
+    #     "LO": 5, # GHz
+    #     "pi_amp": 0.2*1.9*1.49,
+    #     "pi_len": 80,
+    #     "90_corr": 1
+    # },{
+    #     "name":"q5",
+    #     "q_freq": 6.617, # GHz
+    #     "LO": 6.8, # GHz
+    #     "pi_amp": 0.2*0.474,
+    #     "pi_len": 80,
+    #     "90_corr": 1
+    # }
     
 ]
 # name, q_freq(GHz), LO(GHz), amp, len, half
@@ -55,6 +69,7 @@ for i in xy_infos:
         ref_IF = np.sign(ref_IF)*350
 
     spec.update_aXyInfo_for(target_q=q_name, amp=pi_amp, len=pi_len, half=i["90_corr"])
+    print(spec.get_spec_forConfig("xy").keys())
     update_controlWaveform(config_obj, spec.get_spec_forConfig("xy"), target_q=q_name )
 
 from QM_driver_AS.ultitly.config_io import output_config

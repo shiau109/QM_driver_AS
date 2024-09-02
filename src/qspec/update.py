@@ -1,6 +1,7 @@
 
 from config_component.configuration import Configuration
-from config_component.channel_info import Waveform
+from qspec.envelope_builder import EnvelopeBuilder
+
 import numpy as np
 # ===================== Update about XY =====================================
 ### directly update the frequency info into config ### 
@@ -35,12 +36,12 @@ def update_controlFreq( config:Configuration, updatedInfo:dict ):
 def update_controlWaveform(config:Configuration,updatedSpec:dict={},target_q:str="all",**kwargs):
     '''
         If the spec about control had been updated need to re-build the waveforms in the config.\n
-        A updated spec is given and call the Waveform class re-build the config.\n
+        A updated spec is given and call the EnvelopeBuilder class re-build the config.\n
         Give the specific target qubit "q1" to update if it's necessary, default for all the qubits.\n
         kwargs for assign update constant wf or saturation wf, USE: other=True/False.
     '''
     if updatedSpec != {}:
-        waveform_remaker = Waveform(updatedSpec)
+        waveform_remaker = EnvelopeBuilder(updatedSpec)
     else:
         raise ValueError("The updated spec should be given!")
     qs = [target_q] if target_q != 'all' else updatedSpec["register"]
@@ -65,6 +66,7 @@ def update_controlWaveform(config:Configuration,updatedSpec:dict={},target_q:str
                     "y90": "y/2",
                     "-y90": "-y/2"
                 }
+                waveform_remaker.QsXyInfo = updatedSpec[q]
                 wf = waveform_remaker.build_XYwaveform(target_q=q,axis=conv_table[opration])
                 for if_port in ["I","Q"]:
                     waveform_name = f"{q}_xy_{opration}_wf_{if_port}"

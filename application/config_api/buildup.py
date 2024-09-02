@@ -1,6 +1,6 @@
 
-cluster_name = "OPX_3"  # Write your cluster_name if version >= QOP220
-qop_ip = "192.168.1.136"  # Write the QM router IP address
+cluster_name = "Cluster_1"  # Write your cluster_name if version >= QOP220
+qop_ip = "192.168.1.94"  # Write the QM router IP address
 qop_port = None 
 
 # Default
@@ -28,16 +28,16 @@ port_mapping = {
 ("con2", 10): ("octave2", "Q5"),
 }
 
-qubit_num = 9
+qubit_num = 5
 
-from config_component.channel_info import ChannelInfo
+from qspec.channel_info import ChannelInfo
 spec = ChannelInfo(qubit_num)
 
 # Set QMM
 spec.update_HardwareInfo(qop_ip=qop_ip, qop_port=qop_port, cluster_name=cluster_name)
 # Set Octave
-spec.update_octave( "octave1", ip=qop_ip, port=11253, con="con1", port_map=port_mapping, clock="Internal")
-# spec.update_octave( "octave2", ip=qop_ip, port=11249, con="con2", port_map=port_mapping, clock="External_1000MHz")
+spec.update_octave( "octave1", ip=qop_ip, port=11252, con="con1", port_map=port_mapping, clock="External_1000MHz")
+spec.update_octave( "octave2", ip=qop_ip, port=11249, con="con2", port_map=port_mapping, clock="External_1000MHz")
 
 # Only for opx+
 opxp_hardware = {
@@ -71,14 +71,14 @@ config_obj = Configuration()
 # Create controller
 from config_component.controller import controller_read_dict
 config_obj._controllers["con1"] = controller_read_dict("con1", opxp_hardware)
-# config_obj._controllers["con2"] = controller_read_dict("con2", opxp_hardware)
+config_obj._controllers["con2"] = controller_read_dict("con2", opxp_hardware)
 # Create qubit
-from config_component.construct import create_qubit, create_roChannel, create_zChannel, create_xyChannel
+from qspec.construct import create_qubit, create_roChannel, create_zChannel, create_xyChannel
 
-for x_wire in [("q3",("con1",3),("con1",4)), ("q4",("con1",7),("con1",8))]:
+for x_wire in [("q0",("con1",3),("con1",4)),("q1",("con1",7),("con1",8))]:
     spec.update_WireInfo_for(x_wire[0],xy_I=x_wire[1],xy_Q=x_wire[2])
 
-for z_wire in [("q3",("con1",6)), ("q4",("con1",10)), ("q7",("con1",5)), ("q8",("con1",9))]:
+for z_wire in [("q0",("con1",5)),("q1",("con1",6)),("q2",("con1",9)),("q3",("con1",10))]:
     spec.update_WireInfo_for(z_wire[0],z=z_wire[1])
 
 # for z_wire in [("q5",("con2",6)), ("q6",("con2",9)), ("q7",("con2",10)), ("q8",("con2",5))]:

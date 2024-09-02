@@ -14,114 +14,97 @@ from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
 import xarray as xr
 import time
+from exp.QMMeasurement import QMMeasurement
 
-def exp_ramsey(time_max,time_resolution,ro_element,xy_element,n_avg,config,qmm,virtual_detune=0,simulate:bool=False,initializer=None):
-    """
+class Ramsey( QMMeasurement ):
+    def __init__( self, config, qmm: QuantumMachinesManager):
+        super().__init__( config, qmm )
+        """
+        virtual_detune unit in MHz.\n
+        time_max unit in us.\n
+        time_resolution unit in us.\n
+        """
+        self.max_time = 5
+        self.time_resolution = 10
+        self.xy_elements = ["q0_xy"]
+        self.virtual_detune = 0
+        self.ro_element = None
+        self.n_avg = 100
+        self.initializer = None
+        self.simulate = False
 
-    virtual_detune unit in MHz.\n
-    time_max unit in us.\n
-    time_resolution unit in us.\n
-    """
-    v_detune_qua = virtual_detune *u.MHz
-    print(virtual_detune)
-    cc_resolution = (time_resolution/4.) *u.us
-    cc_max_qua = (time_max/4.) *u.us
-    cc_qua = np.arange( 4, cc_max_qua, cc_resolution)
-    print(cc_qua)
+    def _get_qua_program( self ):
+        v_detune_qua = self.virtual_detune *u.MHz
+        print(self.virtual_detune)
+        cc_resolution = (self.time_resolution/4.) *u.us
+        cc_max_qua = (self.max_time/4.) *u.us
+        cc_qua = np.arange( 4, cc_max_qua, cc_resolution)
+        print(cc_qua)
 
-    evo_time = cc_qua*4
-    time_len = len(cc_qua)
-    with program() as ramsey:
-        iqdata_stream = multiRO_declare( ro_element )
-        n = declare(int)
-        n_st = declare_stream()
-        cc = declare(int)  # QUA variable for the idle time, unit in clock cycle
-        phi = declare(fixed)  # Phase to apply the virtual Z-rotation
-        with for_(n, 0, n < n_avg, n + 1):
-            with for_( *from_array(cc, cc_qua) ):
-                
-                    # Init
-                    if initializer is None:
-                        wait(100*u.us)
-                    else:
-                        try:
-                            initializer[0](*initializer[1])
-                        except:
-                            print("Initializer didn't work!")
+        self.evo_time = cc_qua*4
+        time_len = len(cc_qua)
+        with program() as ramsey:
+            iqdata_stream = multiRO_declare( self.ro_element )
+            n = declare(int)
+            n_st = declare_stream()
+            cc = declare(int)  # QUA variable for the idle time, unit in clock cycle
+            phi = declare(fixed)  # Phase to apply the virtual Z-rotation
+            with for_(n, 0, n < self.n_avg, n + 1):
+                with for_( *from_array(cc, cc_qua) ):
+                    
+                        # Init
+                        if self.initializer is None:
                             wait(100*u.us)
+                        else:
+                            try:
+                                self.initializer[0](*self.initializer[1])
+                            except:
+                                print("Initializer didn't work!")
+                                wait(100*u.us)
 
-                    # Operation
-                    phi = Cast.mul_fixed_by_int( virtual_detune/1e3, 4 *cc)
-                    # True_value =  v_detune_qua*4*cc
-                    # False_value = v_detune_qua*4*cc
+                        # Operation
+                        phi = Cast.mul_fixed_by_int( self.virtual_detune/1e3, 4 *cc)
+                        # True_value =  v_detune_qua*4*cc
+                        # False_value = v_detune_qua*4*cc
 
-                    for xy in xy_element:
-                        play("x90", xy)  # 1st x90 gate
-                        wait(cc, xy)
-                        frame_rotation_2pi(phi, xy)  # Virtual Z-rotation
-                        play("x90", xy)  # 2st x90 gate
+                        for xy in self.xy_element:
+                            play("x90", xy)  # 1st x90 gate
+                            wait(cc, xy)
+                            frame_rotation_2pi(phi, xy)  # Virtual Z-rotation
+                            play("x90", xy)  # 2st x90 gate
 
-                    # Align after playing the qubit pulses.
-                    align()
-                    # Readout
-                    multiRO_measurement(iqdata_stream, ro_element, weights="rotated_")         
-                
+                        # Align after playing the qubit pulses.
+                        align()
+                        # Readout
+                        multiRO_measurement(iqdata_stream, self.ro_element, weights="rotated_")         
+                    
 
-            # Save the averaging iteration to get the progress bar
-            save(n, n_st)
+                # Save the averaging iteration to get the progress bar
+                save(n, n_st)
 
-        with stream_processing():
-            n_st.save("iteration")
-            multiRO_pre_save(iqdata_stream, ro_element, (time_len,) )
-
-    ###########################
-    # Run or Simulate Program #
-    ###########################
-
-
-    if simulate:
-        # Simulates the QUA program for the specified duration
-        simulation_config = SimulationConfig(duration=20_000)  # In clock cycles = 4ns
-        job = qmm.simulate(config, ramsey, simulation_config)
-        job.get_simulated_samples().con1.plot()
-        job.get_simulated_samples().con2.plot()
-        plt.show()
-
-    else:
-        # Open the quantum machine
-        qm = qmm.open_qm(config)
-        # Send the QUA program to the OPX, which compiles and executes it
-        job = qm.execute(ramsey)
-        # Get results from QUA program
+            with stream_processing():
+                n_st.save("iteration")
+                multiRO_pre_save(iqdata_stream, self.ro_element, (time_len,) )
+        return ramsey
+    
+    def _get_fetch_data_list( self ):
         ro_ch_name = []
-        for r_name in ro_element:
+        for r_name in self.ro_elements:
             ro_ch_name.append(f"{r_name}_I")
             ro_ch_name.append(f"{r_name}_Q")
+
         data_list = ro_ch_name + ["iteration"]   
-        results = fetching_tool(job, data_list=data_list, mode="live")
-
-        # Live plotting
-        while results.is_processing():
-            # Fetch results
-            fetch_data = results.fetch_all()
-            # Progress bar
-            iteration = fetch_data[-1]
-            progress_counter(iteration, n_avg, start_time=results.start_time)
-            # Plot
-            plt.tight_layout()
-            time.sleep(1)
-
-        # Measurement finished 
-        fetch_data = results.fetch_all()
-        qm.close()
+        return data_list
+    
+    def _data_formation( self ):
         output_data = {}
 
-        for r_idx, r_name in enumerate(ro_element):
+        for r_idx, r_name in enumerate(self.ro_element):
             output_data[r_name] = ( ["mixer","time"],
-                                np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]]) )
+                                np.array([self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]]) )
         dataset = xr.Dataset(
             output_data,
-            coords={ "mixer":np.array(["I","Q"]), "time": evo_time }
+            coords={ "mixer":np.array(["I","Q"]), "time": self.evo_time }
         )
 
         return dataset
@@ -136,7 +119,7 @@ def T2_fitting(signal):
         qubit_T2 = 0
     return qubit_T2
 
-def multi_T2_exp( repeat, time_max,time_resolution,ro_element,xy_element,n_avg,config,qmm,virtual_detune=0,initializer=None ):
+def multi_T2_exp( repeat, time_max,time_resolution,ro_element,xy_elements,n_avg,config,qmm,virtual_detune=0,initializer=None ):
 
     raw_data = {}
     repetition = np.arange(repeat)
@@ -145,7 +128,7 @@ def multi_T2_exp( repeat, time_max,time_resolution,ro_element,xy_element,n_avg,c
 
     for i in range(repeat):
         print(f"{i}th T2")
-        dataset = exp_ramsey( time_max,time_resolution,ro_element,xy_element,n_avg,config,qmm,virtual_detune=virtual_detune,initializer=initializer )
+        dataset = exp_ramsey( time_max,time_resolution,ro_element,xy_elements,n_avg,config,qmm,virtual_detune=virtual_detune,initializer=initializer )
         time = dataset.coords["time"].values
         for ro_name, data in dataset.data_vars.items():
             raw_data[ro_name].append(data)

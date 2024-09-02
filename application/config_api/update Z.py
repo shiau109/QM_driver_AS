@@ -5,7 +5,7 @@ link_path = Path(__file__).resolve().parent/"config_link.toml"
 from QM_driver_AS.ultitly.config_io import import_config
 config_obj, spec = import_config( link_path )
 
-from config_component.update import update_z_offset, update_z_crosstalk
+from qspec.update import update_z_offset, update_z_crosstalk
 
 # [[ 0.99954093  0.00685605 -0.01088031 -0.01185879 -0.01199802]
 #  [ 0.02307034  0.99941776 -0.01729353 -0.01564188 -0.01406762]
@@ -15,22 +15,19 @@ from config_component.update import update_z_offset, update_z_crosstalk
 
 z_infos = [
     {
-        "name":"q3",
-        "offset": 0.,
-        "crosstalk":{}
-    },{
-        "name":"q4",
-        "offset": -0.0495,
-        "crosstalk":{}
-    },{
-        "name":"q7",
-        "offset": -0.0,
-        "crosstalk":{}
-    },{
-        "name":"q8",
-        "offset": -0.05,
+       "name":"q4",
+       "offset": 0.1,#0.1087,
         "crosstalk":{}
     }
+    # {
+    #     "name":"q3",
+    #     "offset": 0.2,
+    #     "crosstalk":{}
+    # },{
+    #     "name":"q2",
+    #     "offset": 0.205,
+    #     "crosstalk":{}
+    # }
 ]
 for i in z_infos:
     wiring = spec.get_spec_forConfig('wire')

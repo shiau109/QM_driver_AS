@@ -11,7 +11,7 @@ qmm, _ = spec.buildup_qmm()
 
 
 from exp.single_spin_echo import SpinEcho
-
+from exp.plotting import plot_and_save_t2_repeateRun
 # Set parameters
 my_exp = SpinEcho( config, qmm )
 from ab.QM_config_dynamic import initializer
@@ -23,26 +23,22 @@ my_exp.time_resolution = 60
 dataset = my_exp.run(400)
 
 
-from exp.save_data import save_nc, save_fig
+from exp.save_data import save_nc, save_fig, create_folder    
+from exp.plotting import plot_and_save_t2_spinEcho
 save_data = True
 save_dir = link_config["path"]["output_root"]
 save_name = f"{my_exp.xy_elements[0]}_EchoT2"
-if save_data: save_nc(save_dir, save_name, dataset)
+folder_label = "T2_spin_echo_1" #your data and plots with be saved under a new folder with this name
+
+folder_save_dir = 0
+if save_data: 
+    save_dir = create_folder(save_dir, folder_label)
+    save_nc(save_dir, save_name, dataset)
 
 # Plot
 import matplotlib.pyplot as plt
 
-from exp.ramsey import plot_ramsey_oscillation
-time = dataset.coords["time"].values
-for ro_name, data in dataset.data_vars.items():
-    fig, ax = plt.subplots(2)
-    # print(data.shape)
-    plot_ramsey_oscillation(time, data[0], ax[0])
-    plot_ramsey_oscillation(time, data[1], ax[1])
-    # rep = dataset.coords["repetition"].values
-    # plot_multiT2( data, rep, time )
-if save_data: save_fig(save_dir, save_name, dataset)
-plt.show()
+plot_and_save_t2_spinEcho(dataset, folder_save_dir, save_data = True )
 
 from exp.repetition_measurement import RepetitionMeasurement
 re_exp = RepetitionMeasurement()
@@ -51,5 +47,9 @@ re_exp.exp_name = ["spin_echo"]
 my_exp.shot_num = 400
 dataset = re_exp.run(50)
 save_name = f"{my_exp.xy_elements[0]}_EchoT2_stat"
-if save_data: save_nc(save_dir, save_name, dataset["spin_echo"])
+if save_data: 
+    save_nc( save_dir, save_name, dataset["spin_echo"])
 
+time = (dataset.coords["time"].values)
+single_name = "q1_ro"
+plot_and_save_t2_repeateRun(dataset, time, single_name, save_dir, save_data)
