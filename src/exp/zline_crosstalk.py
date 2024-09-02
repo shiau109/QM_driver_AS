@@ -62,20 +62,20 @@ class FluxCrosstalk( QMMeasurement ):
     def __init__( self, config, qmm: QuantumMachinesManager ):
         super().__init__( config, qmm )
 
-        self.ro_elements = ["q8_ro"]
-        self.detector_qubit = "q8"
+        self.ro_elements = ["q3_ro"]
+        self.detector_qubit = "q3"
         self.detector_is_coupler = "True"
-        self.crosstalk_qubit = "q3"
+        self.crosstalk_qubit = "q4"
         self.initializer = None
 
-        self.expect_crosstalk = 0.01
-        self.z_modify_range = 0.4
-        self.z_resolution = 0.008
+        self.expect_crosstalk = 0.05
+        self.z_modify_range = 0.1
+        self.z_resolution = 0.004
         self.z_time = 20
         self.z_time_qua = self.z_time/4 *u.us
 
         self.measure_method = "long_drive"   #long_drive, ramsey
-        self.z_method = "offset"     #offset, pulse
+        self.z_method = "pulse"     #offset, pulse
 
 
     def _get_qua_program( self ):
@@ -83,7 +83,7 @@ class FluxCrosstalk( QMMeasurement ):
         self.detector_z_qua = self.expect_crosstalk*self.crosstalk_z_qua
         self.z_time_cc = self.z_time*u.us//4
         self.pi_length = self._get_pi_length( )
-        self.pi_amp_ration = self.pi_length/(self.z_time*u.us)
+        self.pi_amp_ratio = self.pi_length/(self.z_time*u.us)
         if(self.detector_is_coupler == False):
             if ((self.measure_method == "ramsey") & (self.z_method == "pulse")):
                 with program() as Ramsey_z_pulse:
@@ -161,8 +161,8 @@ class FluxCrosstalk( QMMeasurement ):
                                         wait(1 * u.us, self.ro_elements) 
 
                                 # Opration
-                                play( "x180"*amp(self.pi_amp_ration), f"{self.detector_qubit}_xy", duration=self.z_time_cc )
-                                # play("const"*amp( 0.00005 ), f"{self.detector_qubit}_xy", duration=self.z_time_cc)
+                                play( "x180"*amp(self.pi_amp_ratio), f"{self.detector_qubit}_xy", duration=self.z_time_cc )
+                                # play("const"*amp( self.pi_amp_ratio ), f"{self.detector_qubit}_xy", duration=self.z_time_cc)
                                 wait(17-5)    #不加這個wait的話x180會比z慢17cc，到底為啥???
                                 play("const"*amp(z_crosstalk*2.), f"{self.crosstalk_qubit}_z", self.z_time_cc+10)         #const 預設0.5
                                 play("const"*amp(z_detector*2.), f"{self.detector_qubit}_z", self.z_time_cc+10)
@@ -262,7 +262,7 @@ class FluxCrosstalk( QMMeasurement ):
                                         wait(1 * u.us, self.ro_elements) 
 
                                 # Opration
-                                play( "x180"*amp(self.pi_amp_ration), f"{self.detector_qubit}_xy", duration=self.z_time_cc )
+                                play( "x180"*amp(self.pi_amp_ratio), f"{self.detector_qubit}_xy", duration=self.z_time_cc )
                                 wait(22-5)  #不加這個wait的話x180會比z慢22cc，到底為啥???
                                 set_dc_offset( f"{self.crosstalk_qubit}_z", "single", get_offset(f"{self.crosstalk_qubit}_z",self.config)+z_crosstalk )
                                 set_dc_offset( f"{self.detector_qubit}_z", "single", get_offset(f"{self.detector_qubit}_z",self.config)+z_detector )
@@ -472,7 +472,7 @@ class FluxCrosstalk_2points( QMMeasurement ):
         self.detector_z_qua = [self.expect_crosstalk[0], self.expect_crosstalk[-1]] *self.crosstalk_z_qua
         self.z_time_cc = self.z_time*u.us//4
         self.pi_length = self._get_pi_length( )
-        self.pi_amp_ration = self.pi_length/(self.z_time*u.us)
+        self.pi_amp_ratio = self.pi_length/(self.z_time*u.us)
         if(self.detector_is_coupler == False):
             if ((self.measure_method == "ramsey") & (self.z_method == "pulse")):
                 with program() as Ramsey_z_pulse:
@@ -549,7 +549,7 @@ class FluxCrosstalk_2points( QMMeasurement ):
                                         wait(1 * u.us, self.ro_elements) 
 
                                 # Opration
-                                play( "x180"*amp(self.pi_amp_ration), f"{self.detector_qubit}_xy", duration=self.z_time_cc )
+                                play( "x180"*amp(self.pi_amp_ratio), f"{self.detector_qubit}_xy", duration=self.z_time_cc )
                                 wait(17-5)    #不加這個wait的話x180會比z慢17cc，到底為啥???
                                 play("const"*amp(z_crosstalk*2.), f"{self.crosstalk_qubit}_z", self.z_time_cc+10)         #const 預設0.5
                                 play("const"*amp(z_detector*2.), f"{self.detector_qubit}_z", self.z_time_cc+10)
@@ -649,7 +649,7 @@ class FluxCrosstalk_2points( QMMeasurement ):
                                         wait(1 * u.us, self.ro_elements) 
 
                                 # Opration
-                                play( "x180"*amp(self.pi_amp_ration), f"{self.detector_qubit}_xy", duration=self.z_time_cc )
+                                play( "x180"*amp(self.pi_amp_ratio), f"{self.detector_qubit}_xy", duration=self.z_time_cc )
                                 wait(22-5)  #不加這個wait的話x180會比z慢22cc，到底為啥???
                                 set_dc_offset( f"{self.crosstalk_qubit}_z", "single", get_offset(f"{self.crosstalk_qubit}_z",self.config)+z_crosstalk )
                                 set_dc_offset( f"{self.detector_qubit}_z", "single", get_offset(f"{self.detector_qubit}_z",self.config)+z_detector )
