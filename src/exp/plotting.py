@@ -7,7 +7,7 @@ from matplotlib.figure import Figure
 from abc import ABC, abstractmethod
 
 from xarray import Dataset, DataArray
-class RawDataPainter():
+class RawDataPainter(ABC):
 
     def __init__( self ):
         self.output_fig = []
