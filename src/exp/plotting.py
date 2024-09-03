@@ -90,16 +90,13 @@ class PainterFindFluxPeriod( RawDataPainter ):
         flux = self.flux
         title = self.title
         fig, ax = plt.subplots(2)
-        # if yscale == "log":
-        #     pcm = ax.pcolormesh(freqs, np.log10(amp_ratio), np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
-        # else:
-        pcm = ax[0].pcolormesh(flux, freqs, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+        pcm = ax[0].pcolormesh(flux, freqs, np.real(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
         ax[0].set_title(f"{title} Magnitude")
         ax[0].set_xlabel("Flux")
         ax[0].set_ylabel("Additional IF freq (MHz)")
         plt.colorbar(pcm, label='Value')
 
-        pcm = ax[1].pcolormesh(flux, freqs, np.angle(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+        pcm = ax[1].pcolormesh(flux, freqs, np.imag(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
         ax[0].set_title(f"{title} Phase")
         ax[1].set_xlabel("Flux")
         ax[1].set_ylabel("Additional IF freq (MHz)")
@@ -107,7 +104,6 @@ class PainterFindFluxPeriod( RawDataPainter ):
 
         return fig
 
-# add LO&IF&IDLE freq
 class PainterFluxDepQubit( RawDataPainter ):
 
     def _data_parser( self ):
@@ -135,7 +131,7 @@ class PainterFluxDepQubit( RawDataPainter ):
         # if yscale == "log":
         #     pcm = ax.pcolormesh(freqs, np.log10(amp_ratio), np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
         # else:
-        pcm = ax[0].pcolormesh(abs_freq, flux, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+        pcm = ax[0].pcolormesh(abs_freq, flux, np.real(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
         ax[0].axvline(x=self.xy_LO+self.xy_IF_idle, color='b', linestyle='--', label='ref IF')
         ax[0].axvline(x=self.xy_LO, color='r', linestyle='--', label='LO')
         ax[0].axhline(y=self.z_offset, color='black', linestyle='--', label='idle z')
@@ -145,7 +141,7 @@ class PainterFluxDepQubit( RawDataPainter ):
         plt.colorbar(pcm, label='Value')
         ax[0].legend()
 
-        pcm = ax[1].pcolormesh(abs_freq, flux, np.angle(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+        pcm = ax[1].pcolormesh(abs_freq, flux, np.imag(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
         ax[1].set_title(f"{title} Phase")
         ax[1].axvline(x=self.xy_LO+self.xy_IF_idle, color='b', linestyle='--', label='ref IF')
         ax[1].axvline(x=self.xy_LO, color='r', linestyle='--', label='LO')
@@ -153,6 +149,51 @@ class PainterFluxDepQubit( RawDataPainter ):
         ax[1].set_xlabel("Flux")
         ax[1].set_ylabel("Additional IF freq (MHz)")
         plt.colorbar(pcm, label='Value')
+        ax[1].legend()
+
+        return fig
+    
+class PainterRabi( RawDataPainter ):
+    def __init__(self, Rabi_type):
+        self.Rabi_type = Rabi_type
+        
+    def _data_parser( self ):
+        dataarray = self.plot_data
+        self.freqs = dataarray.coords["frequency"].values
+        if self.Rabi_type == 'time':
+            self.xpara = dataarray.coords["time"].values
+        elif self.Rabi_type == 'power':
+            self.xpara = dataarray.coords["amplitude"].values
+        self.freq_LO = dataarray.attrs["ref_xy_LO"][0]/1e6
+        self.freq_IF = dataarray.attrs["ref_xy_IF"][0]/1e6
+
+        idata = dataarray.values[0]
+        qdata = dataarray.values[1]
+        self.zdata = idata +1j*qdata
+
+    def _plot_method( self ):
+        s21 = self.zdata
+        freqs = self.freqs
+        xpara = self.xpara
+        title = self.title
+        ref_freq = self.freq_LO+self.freq_IF
+        fig, ax = plt.subplots(2)
+
+        pcm = ax[0].pcolormesh(xpara, ref_freq+freqs, np.real(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+        ax[0].set_title(f"{title} Magnitude")
+        ax[0].set_xlabel(self.Rabi_type)
+        ax[0].set_ylabel("Additional IF freq (MHz)")
+        plt.colorbar(pcm, label='Value')
+
+        pcm = ax[1].pcolormesh(xpara, ref_freq+freqs, np.imag(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+        ax[1].set_xlabel(self.Rabi_type)
+        ax[1].set_title(f"{title} Phase")
+        ax[1].set_ylabel("Additional IF freq (MHz)")
+        plt.colorbar(pcm, label='Value')
+        
+        ax[0].axhline(y=ref_freq, color='black', linestyle='--', label='ref IF')
+        ax[1].axhline(y=ref_freq, color='black', linestyle='--', label='ref IF')
+        ax[0].legend()
         ax[1].legend()
 
         return fig
