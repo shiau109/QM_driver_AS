@@ -28,10 +28,11 @@ from exp.rofreq_sweep_flux_dep import *
 dataset = freq_sweep_flux_dep(ro_elements, z_elements, config, qmm, freq_range=freq_range, freq_resolution=freq_resolution, flux_settle_time=1, flux_range=flux_range, flux_resolution=flux_resolution, n_avg=n_avg, initializer=init_macro)
 # dataset = freq_sweep_flux_dep_stable(ro_elements, z_elements, config, qmm, freq_range=freq_range, freq_resolution=freq_resolution, flux_settle_time=1, flux_range=flux_range, flux_resolution=flux_resolution, n_avg=n_avg, initializer=init_macro)
 
+#Save data
 save_data = 1
+folder_label = "Find_Flux_Period" #your data and plots will be saved under a new folder with this name
 if save_data: 
     from exp.save_data import DataPackager
-    folder_label = "Find_Flux_Period" #your data and plots will be saved under a new folder with this name
     save_dir = link_config["path"]["output_root"]
     dp = DataPackager( save_dir, folder_label )
     dp.save_config(config)
@@ -44,4 +45,3 @@ from exp.plotting import PainterFindFluxPeriod
 painter = PainterFindFluxPeriod()
 figs = painter.plot(dataset,folder_label)
 if save_figure: dp.save_figs( figs )
-# plot_and_save_flux_period(dataset, save_dir, save_data)

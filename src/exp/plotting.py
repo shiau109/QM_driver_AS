@@ -26,7 +26,6 @@ class RawDataPainter():
         self.output_fig = []
 
         for ro_name, data in dataset.data_vars.items():
-
             data.attrs = dataset.attrs
             self.plot_data = data
             self.title = ro_name
@@ -35,6 +34,24 @@ class RawDataPainter():
 
             file_name = f"{fig_name}_{ro_name}"
             self.output_fig.append((file_name,fig))
+            plt.tight_layout()
+        if show: plt.show()
+        return self.output_fig
+    
+    def plot_rep( self, dataset:Dataset, fig_name:str, show:bool=True ):
+
+        self.output_fig = []
+        self.rep = dataset.coords["repetition"].values
+        for ro_name, data in dataset.data_vars.items():
+            data = data.transpose("mixer","repetition","time")
+            self.plot_data = data
+            self.title = ro_name
+            self._data_parser()
+            fig = self._plot_method()
+
+            file_name = f"{fig_name}_{ro_name}"
+            self.output_fig.append((file_name,fig))
+            plt.tight_layout()
         if show: plt.show()
         return self.output_fig
 
@@ -91,13 +108,13 @@ class PainterFindFluxPeriod( RawDataPainter ):
         title = self.title
         fig, ax = plt.subplots(2)
         pcm = ax[0].pcolormesh(flux, freqs, np.real(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
-        ax[0].set_title(f"{title} Magnitude")
+        ax[0].set_title(f"{title} I value")
         ax[0].set_xlabel("Flux")
         ax[0].set_ylabel("Additional IF freq (MHz)")
         plt.colorbar(pcm, label='Value')
 
         pcm = ax[1].pcolormesh(flux, freqs, np.imag(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
-        ax[0].set_title(f"{title} Phase")
+        ax[0].set_title(f"{title} Q value")
         ax[1].set_xlabel("Flux")
         ax[1].set_ylabel("Additional IF freq (MHz)")
         plt.colorbar(pcm, label='Value')
@@ -135,14 +152,14 @@ class PainterFluxDepQubit( RawDataPainter ):
         ax[0].axvline(x=self.xy_LO+self.xy_IF_idle, color='b', linestyle='--', label='ref IF')
         ax[0].axvline(x=self.xy_LO, color='r', linestyle='--', label='LO')
         ax[0].axhline(y=self.z_offset, color='black', linestyle='--', label='idle z')
-        ax[0].set_title(f"{title} Magnitude")
+        ax[0].set_title(f"{title} I value")
         ax[0].set_xlabel("Flux")
         ax[0].set_ylabel("Additional IF freq (MHz)")
         plt.colorbar(pcm, label='Value')
         ax[0].legend()
 
         pcm = ax[1].pcolormesh(abs_freq, flux, np.imag(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
-        ax[1].set_title(f"{title} Phase")
+        ax[1].set_title(f"{title} Q value")
         ax[1].axvline(x=self.xy_LO+self.xy_IF_idle, color='b', linestyle='--', label='ref IF')
         ax[1].axvline(x=self.xy_LO, color='r', linestyle='--', label='LO')
         ax[1].axhline(y=self.z_offset, color='black', linestyle='--', label='idle z')
@@ -180,14 +197,14 @@ class PainterRabi( RawDataPainter ):
         fig, ax = plt.subplots(2)
 
         pcm = ax[0].pcolormesh(xpara, ref_freq+freqs, np.real(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
-        ax[0].set_title(f"{title} Magnitude")
+        ax[0].set_title(f"{title} I value")
         ax[0].set_xlabel(self.Rabi_type)
         ax[0].set_ylabel("Additional IF freq (MHz)")
         plt.colorbar(pcm, label='Value')
 
         pcm = ax[1].pcolormesh(xpara, ref_freq+freqs, np.imag(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
         ax[1].set_xlabel(self.Rabi_type)
-        ax[1].set_title(f"{title} Phase")
+        ax[1].set_title(f"{title} Q value")
         ax[1].set_ylabel("Additional IF freq (MHz)")
         plt.colorbar(pcm, label='Value')
         
@@ -198,6 +215,85 @@ class PainterRabi( RawDataPainter ):
 
         return fig
     
+class PainterT1Single( RawDataPainter ):
+        
+    def _data_parser( self ):
+        from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting
+    
+        dataarray = self.plot_data
+        self.time = (dataarray.coords["time"].values)/1000
+        idata = dataarray.values[0]
+        qdata = dataarray.values[1]
+        self.fit_result_i = qubit_relaxation_fitting(self.time, idata)
+        self.fit_result_q = qubit_relaxation_fitting(self.time, qdata)
+        self.zdata = idata +1j*qdata
+
+    def _plot_method( self ):
+        s21 = self.zdata
+        time = self.time
+        fit_result_i = self.fit_result_i
+        fit_result_q = self.fit_result_q
+        title = self.title
+        fig, ax = plt.subplots(2)
+
+        ax[0].set_title(f"{title} I data")
+        ax[0].set_xlabel("Wait time (us)")
+        ax[0].set_ylabel(f"voltage (mV)")
+        ax[0].plot( time, np.real(s21),"o", label="data",markersize=1)
+        if fit_result_i is not None:
+            ax[0].plot( time, fit_result_i.best_fit, label="fit")
+
+        ax[1].set_title(f"{title} Q data")
+        ax[1].set_xlabel("Wait time (us)")
+        ax[1].set_ylabel(f"voltage (mV)")
+        ax[1].plot( time, np.real(s21),"o", label="data",markersize=1)
+        if fit_result_q is not None:
+            ax[1].plot( time, fit_result_q.best_fit, label="fit")
+
+        return fig
+    
+class PainterT1Repeat( RawDataPainter ):
+        
+    def _data_parser( self ):
+        from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting
+        
+        dataarray = self.plot_data
+        self.time = (dataarray.coords["time"].values)/1000
+        self.acc_T1 = []
+        for i in range(self.rep.shape[-1]):
+            fit_result = qubit_relaxation_fitting(self.time, dataarray.values[0][i])
+            self.acc_T1.append(fit_result.params["tau"].value)
+        self.idata = dataarray.values[0]
+
+        mean_t1 = np.mean(self.acc_T1)
+        bin_width = mean_t1 *0.05
+        start_value = mean_t1*0.5
+        end_value = mean_t1*1.5
+        self.custom_bins = [start_value + i * bin_width for i in range(int((end_value - start_value) / bin_width) + 1)]
+
+    def _plot_method( self ):
+        idata = self.idata
+        acc_T1 = self.acc_T1
+        rep = self.rep
+        time = self.time
+        title = self.title
+        custom_bins = self.custom_bins
+
+        fig, ax = plt.subplots(2)
+
+        ax[0].set_title(f"Time dependent T1")
+        ax[0].set_xlabel("Wait time (us)")
+        ax[0].set_ylabel(f"Rep")
+        ax[0].pcolormesh( time, rep, idata, cmap='RdBu')
+        if acc_T1 is not None:
+            ax[0].plot(acc_T1,rep)
+
+        ax[1].set_title(f"{title} Histogram")
+        ax[1].set_xlabel("T1 time")
+        ax[1].set_ylabel(f"Number")
+        ax[1].hist(acc_T1, custom_bins, density=False, alpha=0.7, label='Histogram')
+
+        return fig
 #S2 finished
 def plot_and_save_dispersive_limit(dataset, folder_save_dir, my_exp, save_data = True):
     dfs = dataset.coords["frequency"].values
@@ -252,7 +348,7 @@ def plot_and_save_flux_dep_Qubit(dataset, folder_save_dir = 0, save_data = True)
 
     plt.show()
 
-#S5
+#S5 finished
 def plot_and_save_rabi(dataset, freqs, y, name, folder_save_dir = 0, save_data = True ):
     from exp.old_version.rabi import plot_ana_freq_time_rabi 
     for ro_name, data in dataset.data_vars.items():
@@ -267,7 +363,7 @@ def plot_and_save_rabi(dataset, freqs, y, name, folder_save_dir = 0, save_data =
 
     plt.show()
 
-#S6
+#S6 
 def plot_and_save_T1_spectrum(dataset, time, flux, folder_save_dir = 0, save_data = True ):
     for ro_name, data in dataset.data_vars.items():
         fig_0, ax_0 = plt.subplots()
@@ -284,6 +380,7 @@ def plot_and_save_T1_spectrum(dataset, time, flux, folder_save_dir = 0, save_dat
 
     plt.show()
 
+#S6 finished
 def plot_and_save_t1_singleRun(dataset, time, folder_save_dir = 0, save_data = True ):
     from qcat.visualization.qubit_relaxation import plot_qubit_relaxation
     from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting
@@ -297,6 +394,7 @@ def plot_and_save_t1_singleRun(dataset, time, folder_save_dir = 0, save_data = T
         # if save_data: save_fig(folder_save_dir, save_name)
     plt.show()
 
+#S6 rep
 def plot_and_save_t1_repeateRun(dataset, time, single_name, folder_save_dir = 0, save_data = True ):
     from qcat.visualization.qubit_relaxation import plot_time_dep_qubit_T1_relaxation_2Dmap, plot_qubit_T1_relaxation_hist
     from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting

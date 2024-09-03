@@ -26,10 +26,11 @@ my_exp.freq_resolution = 4
 my_exp.sweep_type = "overlap"
 dataset = my_exp.run( 500 )
 
+#Save data
 save_data = 1
+folder_label = "Flux_dep_Qubit" #your data and plots will be saved under a new folder with this name
 if save_data: 
     from exp.save_data import DataPackager
-    folder_label = "Flux_dep_Qubit" #your data and plots will be saved under a new folder with this name
     save_dir = link_config["path"]["output_root"]
     dp = DataPackager( save_dir, folder_label )
     dp.save_config(config)
@@ -41,9 +42,9 @@ ro_name = my_exp.ro_elements[0]
 data = dataset[ro_name].values
 print(data.shape)
 
-dfs = dataset.coords["frequency"]
-freq_LO = dataset.attrs["xy_LO"][0]
-freq_IF = dataset.attrs["xy_IF"][0]
+# dfs = dataset.coords["frequency"]
+# freq_LO = dataset.attrs["xy_LO"][0]
+# freq_IF = dataset.attrs["xy_IF"][0]
 
-plot_ana_flux_dep_qubit_1D( data, dfs, freq_LO, freq_IF)   
-plt.show()
+# plot_ana_flux_dep_qubit_1D( data, dfs, freq_LO, freq_IF)   
+# plt.show()

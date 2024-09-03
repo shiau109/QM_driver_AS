@@ -29,31 +29,40 @@ my_exp.max_time = 8
 my_exp.time_resolution = 0.02
 dataset = my_exp.run(400)
 
-from exp.save_data import save_nc, save_fig
-from exp.plotting import plot_and_save_t2_ramsey_singleRun, plot_and_save_t2_repeateRun
-save_data = True
-save_dir = link_config["path"]["output_root"]
-folder_label = "T2_ramsey_0815" #your data and plots with be saved under a new folder with this name
-save_name = f"{my_exp.xy_elements[0]}_T2"
 
-folder_save_dir = 0
+from exp.plotting import plot_and_save_t2_ramsey_singleRun, plot_and_save_t2_repeateRun
+
+#Save data
+save_data = 1
 if save_data: 
-    folder_save_dir = create_folder(save_dir, folder_label)
-    save_nc( folder_save_dir, save_name, dataset)
+    from exp.save_data import DataPackager
+    folder_label = "ramseyT2_stat" #your data and plots will be saved under a new folder with this name
+    save_dir = link_config["path"]["output_root"]
+    dp = DataPackager( save_dir, folder_label )
+    dp.save_config(config)
+    dp.save_nc(dataset,"ramseyT2_stat")
 
 # Plot
-time = (dataset.coords["time"].values)/1000
-plot_and_save_t2_ramsey_singleRun(dataset, time, folder_save_dir, save_data)
 
+# time = (dataset.coords["time"].values)/1000
+# plot_and_save_t2_ramsey_singleRun(dataset, time, folder_save_dir, save_data)
 
+#Repetition T2
 from exp.repetition_measurement import RepetitionMeasurement
 re_exp = RepetitionMeasurement()
 re_exp.exp_list = [my_exp]
 re_exp.exp_name = ["T2"]
 my_exp.shot_num = 400
-dataset = re_exp.run(400)
-save_name = f"{my_exp.xy_elements[0]}_ramseyT2_stat"
-if save_data: save_nc( folder_save_dir, save_name, dataset["Ramsey"])
+dataset = re_exp.run(10)
+
+save_data = 1
+if save_data: 
+    from exp.save_data import DataPackager
+    folder_label = "ramseyT2_rep" #your data and plots will be saved under a new folder with this name
+    save_dir = link_config["path"]["output_root"]
+    dp = DataPackager( save_dir, folder_label )
+    dp.save_config(config)
+    dp.save_nc(dataset,"ramseyT2_rep")
 
 #To plot the result of multiple measurements (2D graph and histogram), use the following block of code
 #================================================================================================#

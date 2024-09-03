@@ -37,9 +37,9 @@ dataset = my_exp.run(20)
 
 #Save data
 save_data = 1
+folder_label = "detuned_power_rabi" #your data and plots will be saved under a new folder with this name
 if save_data: 
     from exp.save_data import DataPackager
-    folder_label = "detuned_power_rabi" #your data and plots will be saved under a new folder with this name
     save_dir = link_config["path"]["output_root"]
     dp = DataPackager( save_dir, folder_label )
     dp.save_config(config)
@@ -53,7 +53,7 @@ painter = PainterRabi('power')
 figs = painter.plot(dataset,folder_label)
 if save_figure: dp.save_figs( figs )
 
-y = dataset.coords["amplitude"].values
-freqs = dataset.coords["frequency"].values
+# y = dataset.coords["amplitude"].values
+# freqs = dataset.coords["frequency"].values
 
-plot_and_save_rabi(dataset, freqs, y, save_dir, "power", save_data)
+# plot_and_save_rabi(dataset, freqs, y, save_dir, "power", save_data)
