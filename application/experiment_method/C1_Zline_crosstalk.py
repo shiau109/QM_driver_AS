@@ -31,6 +31,7 @@ my_exp.crosstalk_qubit = "q4"
 my_exp.ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
 
 my_exp.expect_crosstalk = 0.05
+my_exp.detector_bias = -0.1
 my_exp.z_modify_range = 0.2
 my_exp.z_resolution = 0.008
 my_exp.z_time = 100
