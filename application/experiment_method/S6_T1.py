@@ -19,42 +19,46 @@ from exp.relaxation_time import exp_relaxation_time
 #Set parameters
 my_exp = exp_relaxation_time(config, qmm)
 my_exp.initializer = initializer(30000,mode='wait')
-my_exp.ro_elements = ["q1_ro"]
+my_exp.ro_elements = ["q1_ro",]
 my_exp.xy_elements = ["q1_xy"]
 my_exp.max_time = 8
-my_exp.time_resolution = 0.02
-dataset = my_exp.run(2000)
+my_exp.time_resolution = 0.2
+dataset = my_exp.run(20)
 
+#Save data
 save_data = 1
+folder_label = "T1_stat" #your data and plots will be saved under a new folder with this name
+
 if save_data: 
     from exp.save_data import DataPackager
-    folder_label = "T1_stat" #your data and plots will be saved under a new folder with this name
     save_dir = link_config["path"]["output_root"]
     dp = DataPackager( save_dir, folder_label )
     dp.save_config(config)
     dp.save_nc(dataset,"T1_stat")
 
-time = (dataset.coords["time"].values)/1000
+# Plot
+from exp.plotting import PainterT1Single
+painter = PainterT1Single()
+figs = painter.plot(dataset,folder_label)
+if save_data: dp.save_figs( figs )
 
-from qcat.visualization.qubit_relaxation import plot_qubit_relaxation
-from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting
-from exp.plotting import plot_and_save_t1_singleRun, plot_and_save_t1_repeateRun
+# from exp.plotting import plot_and_save_t1_singleRun
+# plot_and_save_t1_singleRun(dataset, time, save_dir, save_data)
 
-#plotting
-plot_and_save_t1_singleRun(dataset, time, save_dir, save_data)
-
+#Repetition T1
 from exp.repetition_measurement import RepetitionMeasurement
 re_exp = RepetitionMeasurement()
 re_exp.exp_list = [my_exp]
 re_exp.exp_name = ["T1_relaxation"]
-my_exp.shot_num = 2000
+my_exp.shot_num = 20
 
-dataset = re_exp.run(10)
+dataset = re_exp.run(2)
 
+#Save data
 save_data = 1
+folder_label = "T1_rep" #your data and plots will be saved under a new folder with this name
 if save_data: 
     from exp.save_data import DataPackager
-    folder_label = "T1_rep" #your data and plots will be saved under a new folder with this name
     save_dir = link_config["path"]["output_root"]
     dp = DataPackager( save_dir, folder_label )
     dp.save_config(config)
@@ -62,10 +66,15 @@ if save_data:
 
 #To plot the result of multiple measurements (2D graph and histogram), use the following block of code
 #================================================================================================#
-print(dataset)
+from exp.plotting import PainterT1Repeat
+painter = PainterT1Repeat()
+figs = painter.plot(dataset,folder_label)
+if save_data: dp.save_figs( figs )
 
-import qcat.visualization.qubit_relaxation as qv
-single_name = my_exp.ro_elements[0]
+#OLD VER
 
-
-plot_and_save_t1_repeateRun(dataset, time, single_name, save_dir, save_data)
+# single_name = my_exp.ro_elements[0]
+# time = (dataset.coords["time"].values)/1000
+# save_dir = link_config["path"]["output_root"]
+# from exp.plotting import plot_and_save_t1_repeateRun
+# plot_and_save_t1_repeateRun(dataset, time, single_name, save_dir, save_data)

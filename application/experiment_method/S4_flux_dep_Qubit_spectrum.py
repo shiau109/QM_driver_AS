@@ -17,7 +17,7 @@ from exp.plotting import plot_and_save_flux_dep_Qubit
 # Start meausrement
 from exp.xyfreq_sweep_flux_dep import XYFreqFlux
 my_exp = XYFreqFlux(config, qmm)
-my_exp.ro_elements = ["q4_ro"]
+my_exp.ro_elements = ["q4_ro","q3_ro"]
 my_exp.xy_elements = ['q4_xy']
 my_exp.z_elements = ['q3_z']
 my_exp.initializer=initializer(10000,mode='wait')
@@ -28,12 +28,13 @@ my_exp.z_amp_ratio_resolution = 0.02
 my_exp.freq_range = (-400,400)
 my_exp.freq_resolution = 4
 my_exp.sweep_type = "overlap"
-dataset = my_exp.run( 1000 )
+dataset = my_exp.run( 10 )
 
+#Save data
 save_data = 1
+folder_label = "Flux_dep_Qubit" #your data and plots will be saved under a new folder with this name
 if save_data: 
     from exp.save_data import DataPackager
-    folder_label = "Flux_dep_Qubit" #your data and plots will be saved under a new folder with this name
     save_dir = link_config["path"]["output_root"]
     dp = DataPackager( save_dir, folder_label )
     dp.save_config(config)
@@ -45,5 +46,3 @@ from exp.plotting import PainterFluxDepQubit
 painter = PainterFluxDepQubit()
 figs = painter.plot(dataset,folder_label)
 if save_figure: dp.save_figs( figs )
-
-# plot_and_save_flux_dep_Qubit(dataset, save_dir, save_data)
