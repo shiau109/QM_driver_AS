@@ -4,10 +4,9 @@ import warnings
 warnings.filterwarnings("ignore")
 import xarray as xr
 import numpy as np
-from analysis.zline_crosstalk_analysis import analysis_crosstalk_value_fft, analysis_crosstalk_value_fitting
-from qualang_tools.plot.fitting import Fit
+from analysis.zline_crosstalk_analysis import analysis_crosstalk_value_fft, analysis_crosstalk_value_fitting, analysis_crosstalk_ellipse
 
-def plot_crosstalk_3Dscalar(data):
+def plot_crosstalk_3Dscalar(dataset):
     """
     Plot zline crosstalk data and return the figure and axis.
 
@@ -19,18 +18,18 @@ def plot_crosstalk_3Dscalar(data):
     Returns:
     List of tuples (fig, ax, q): List of figure and axis objects along with the corresponding variable name.
     """
-    q_list = list(data.data_vars.keys())
-    crosstalk_z = data.coords["crosstalk_z"].values
-    detector_z = data.coords["detector_z"].values
-    crosstalk_qubit = data.attrs["crosstalk_qubit"]
-    detector_qubit = data.attrs["detector_qubit"]
-    expect_crosstalk = data.attrs["expect_crosstalk"]
+    q_list = list(dataset.data_vars.keys())
+    crosstalk_z = dataset.coords["crosstalk_z"].values
+    detector_z = dataset.coords["detector_z"].values
+    crosstalk_qubit = dataset.attrs["crosstalk_qubit"]
+    detector_qubit = dataset.attrs["detector_qubit"]
+    expect_crosstalk = dataset.attrs["expect_crosstalk"]
 
     figures = []
     
     for q in q_list:
         fig, ax = plt.subplots()
-        picture = ax.pcolormesh(crosstalk_z * 1e3, detector_z * 1e3, data[q][0, :, :].T, cmap='RdBu')
+        picture = ax.pcolormesh(crosstalk_z * 1e3, detector_z * 1e3, dataset[q][0, :, :].T, cmap='RdBu')
 
         ax.set_title(f"{q}", fontsize=15)
         ax.set_xlabel(f"{crosstalk_qubit}_z Delta Voltage (mV)", fontsize=15)
@@ -125,7 +124,7 @@ def plot_crosstalk_fitting(dataset):
     return figures
 
 
-def plot_crosstalk_FFT(data):
+def plot_crosstalk_FFT(dataset):
     """
     Plot zline crosstalk data.
     
@@ -217,20 +216,93 @@ def _plot_2Dfft( x, y, z, ax=None  ):
 
 
 
+def plot_heatmap_with_ellipse(dataset):
+    # Get all data_vars keys
+    data_vars = list(dataset.data_vars.keys())
+    figures = []
+
+    for q in data_vars:
+        print(f"Processing {q}...")
+        dataset_q = dataset[q][0, :, :].T
+
+        edge_coords, ellipse_params = analysis_crosstalk_ellipse(dataset_q)
+
+        if edge_coords is None or ellipse_params is None:
+            print(f"Analysis failed for {q}")
+            continue
+
+        xc, yc, a, b, theta = ellipse_params
+        z1 = dataset.coords["crosstalk_z"].values
+        z2 = dataset.coords["detector_z"].values
+        data = dataset_q
+
+        # Create the plot
+        fig, ax = plt.subplots(figsize=(10, 8))
+        pmesh = ax.pcolormesh(z1, z2, data, shading='auto', cmap='RdBu')
+
+        # Plot edges
+        edge_x_real = np.interp(edge_coords[:, 0], np.arange(data.shape[1]), z1)
+        edge_y_real = np.interp(edge_coords[:, 1], np.arange(data.shape[0]), z2)
+        ax.scatter(edge_x_real, edge_y_real, color='yellow', s=1, label='Edges')
+
+        # Calculate ellipse boundary
+        t = np.linspace(0, 2 * np.pi, 100)
+        ellipse_x = a * np.cos(t)
+        ellipse_y = b * np.sin(t)
+        rot_x = ellipse_x * np.cos(theta) - ellipse_y * np.sin(theta) + xc
+        rot_y = ellipse_x * np.sin(theta) + ellipse_y * np.cos(theta) + yc
+
+        # Use interpolation to find the real positions
+        rot_x_real = np.interp(rot_x, np.arange(data.shape[1]), z1)
+        rot_y_real = np.interp(rot_y, np.arange(data.shape[0]), z2)
+        ax.plot(rot_x_real, rot_y_real, 'g--', linewidth=2, label='Fitted Ellipse')
+
+        # Ellipse major axis
+        x_endpoints = np.array([a * np.cos(0) * np.cos(theta) - b * np.sin(0) * np.sin(theta) + xc, a * np.cos(np.pi) * np.cos(theta) - b * np.sin(np.pi) * np.sin(theta) + xc])
+        y_endpoints = np.array([a * np.cos(0) * np.sin(theta) + b * np.sin(0) * np.cos(theta) + yc, a * np.cos(np.pi) * np.sin(theta) + b * np.sin(np.pi) * np.cos(theta) + yc])
+
+        # Use interpolation to find the real endpoints
+        x_endpoints_real = np.interp(x_endpoints, np.arange(data.shape[1]), z1)
+        y_endpoints_real = np.interp(y_endpoints, np.arange(data.shape[0]), z2)
+
+        # Plot major axis
+        ax.plot(x_endpoints_real, y_endpoints_real, 'b-', linewidth=2, label='Major Axis')
+
+        ax.set_title(f"{q}", fontsize=15)
+        ax.set_xlabel(f'Crosstalk_z Delta Voltage ({dataset.attrs["crosstalk_qubit"]})', fontsize=15)
+        ax.set_ylabel(f'Detector_z Delta Voltage ({dataset.attrs["detector_qubit"]})', fontsize=15)
+        fig.colorbar(pmesh, ax=ax, label=q)
+        ax.legend()
+        ax.grid(True)
+
+        # Calculate and display slope
+        slope = np.tan(theta) * dataset.attrs["expect_crosstalk"]
+        ax.text(0.05, 0.95, f"Slope: {slope:.3f}", transform=ax.transAxes, fontsize=12, verticalalignment='top')
+
+        # Print slope
+        print(f"Slope for {q}: {slope}")
+
+        figures.append((fig, ax, q))
+
+    return figures
+
+
+
 
 
 
 
 # Load the NetCDF file
-file_path = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240814_DR3_5Q4C_0430#7\raw_data\20240822_0117_detector_q4_crosstalk_q3_ramsey_pulse_expectcrosstalk_0.05_20mius.nc"
+file_path = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240814_DR3_5Q4C_0430#7\good_20us\20240822_0128_detector_q4_crosstalk_q8_long_drive_pulse_expectcrosstalk_0.05_20mius.nc"
 
 dataset = xr.open_dataset(file_path)
-analysis_figures = plot_analysis(dataset)
-raw_figures = plot_crosstalk_3Dscalar(dataset)
+analysis_figures = plot_heatmap_with_ellipse(dataset)
+# analysis_figures = plot_analysis(dataset)
+# raw_figures = plot_crosstalk_3Dscalar(dataset)
 
-for fig, ax, q in raw_figures:
-    plt.figure(fig.number)  # 设置当前图形对象
-    plt.show()  # 显示图像
+# for fig, ax, q in raw_figures:
+#     plt.figure(fig.number)  # 设置当前图形对象
+#     plt.show()  # 显示图像
 
 for fig, ax, q in analysis_figures:
     plt.figure(fig.number)  # 设置当前图形对象

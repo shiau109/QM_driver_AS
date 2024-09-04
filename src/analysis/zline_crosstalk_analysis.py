@@ -129,7 +129,7 @@ def analysis_crosstalk_value_fitting(dataset):
     data with shape (N,M)
     """
     z1 = dataset.coords["crosstalk_z"].values[:]
-    z2 = dataset.coords["detector_z"].values
+    z2 = dataset.coords["detector_z"].values[:]
     data = dataset[0, :, :].values.T
     offset = np.mean(data)
     data -= offset
@@ -185,3 +185,34 @@ def analysis_crosstalk_value_fitting(dataset):
     except Exception as e3:
         print(f"Linear fitting failed: {str(e3)}")
         return None, None, None, None
+
+def analysis_crosstalk_ellipse(dataset_q):
+    from scipy.ndimage import gaussian_filter
+    from skimage import feature, measure
+    # Apply Gaussian filter
+    heatmap = gaussian_filter(dataset_q, sigma=2)
+
+    # Normalize the heatmap data
+    heatmap_min = np.min(heatmap)
+    heatmap_max = np.max(heatmap)
+    heatmap_normalized = (heatmap - heatmap_min) / (heatmap_max - heatmap_min)
+
+    # Perform Canny edge detection
+    edges = feature.canny(heatmap_normalized, sigma=2)
+
+    # Get edge coordinates
+    edge_y, edge_x = np.nonzero(edges)
+    edge_coords = np.column_stack([edge_x, edge_y])
+
+    # Fit an ellipse to the edge points
+    ellipse = measure.EllipseModel()
+    success = ellipse.estimate(edge_coords)
+
+    if not success:
+        print("Ellipse fitting failed")
+        return None, None
+
+    # Extract ellipse parameters
+    xc, yc, a, b, theta = ellipse.params
+
+    return edge_coords, (xc, yc, a, b, theta)

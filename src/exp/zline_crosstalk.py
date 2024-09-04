@@ -69,6 +69,7 @@ class FluxCrosstalk( QMMeasurement ):
         self.initializer = None
 
         self.expect_crosstalk = 0.05
+        self.detector_bias = -0.1
         self.z_modify_range = 0.1
         self.z_resolution = 0.004
         self.z_time = 20
@@ -80,7 +81,7 @@ class FluxCrosstalk( QMMeasurement ):
 
     def _get_qua_program( self ):
         self.crosstalk_z_qua = self._lin_z_array( )
-        self.detector_z_qua = self.expect_crosstalk*self.crosstalk_z_qua
+        self.detector_z_qua = self.expect_crosstalk * self.crosstalk_z_qua + self.detector_bias
         self.z_time_cc = self.z_time*u.us//4
         self.pi_length = self._get_pi_length( )
         self.pi_amp_ratio = self.pi_length/(self.z_time*u.us)
@@ -360,6 +361,7 @@ class FluxCrosstalk( QMMeasurement ):
         self._attribute_config()
         dataset.attrs["expect_crosstalk"] = self.expect_crosstalk
         dataset.attrs["z_time"] = self.z_time
+        dataset.attrs["detector_bias"] = self.detector_bias
         dataset.attrs["z_modify_range"] = self.z_modify_range
         dataset.attrs["z_resolution"] = self.z_resolution
         dataset.attrs["measure_method"] = self.measure_method
