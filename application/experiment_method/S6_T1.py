@@ -26,7 +26,7 @@ my_exp.time_resolution = 0.2
 dataset = my_exp.run(20)
 
 #Save data
-save_data = 0
+save_data = 1
 folder_label = "T1_stat" #your data and plots will be saved under a new folder with this name
 
 if save_data: 
@@ -68,7 +68,7 @@ if save_data:
 #================================================================================================#
 from exp.plotting import PainterT1Repeat
 painter = PainterT1Repeat()
-figs = painter.plot_rep(dataset,folder_label)
+figs = painter.plot(dataset,folder_label)
 if save_data: dp.save_figs( figs )
 
 #OLD VER

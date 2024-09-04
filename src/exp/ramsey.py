@@ -45,7 +45,7 @@ class Ramsey( QMMeasurement ):
         self.evo_time = cc_qua*4
         time_len = len(cc_qua)
         with program() as ramsey:
-            iqdata_stream = multiRO_declare( self.ro_element )
+            iqdata_stream = multiRO_declare( self.ro_elements )
             n = declare(int)
             n_st = declare_stream()
             cc = declare(int)  # QUA variable for the idle time, unit in clock cycle
@@ -68,7 +68,7 @@ class Ramsey( QMMeasurement ):
                         # True_value =  v_detune_qua*4*cc
                         # False_value = v_detune_qua*4*cc
 
-                        for xy in self.xy_element:
+                        for xy in self.xy_elements:
                             play("x90", xy)  # 1st x90 gate
                             wait(cc, xy)
                             frame_rotation_2pi(phi, xy)  # Virtual Z-rotation
@@ -77,7 +77,7 @@ class Ramsey( QMMeasurement ):
                         # Align after playing the qubit pulses.
                         align()
                         # Readout
-                        multiRO_measurement(iqdata_stream, self.ro_element, weights="rotated_")         
+                        multiRO_measurement(iqdata_stream, self.ro_elements, weights="rotated_")         
                     
 
                 # Save the averaging iteration to get the progress bar
@@ -85,7 +85,7 @@ class Ramsey( QMMeasurement ):
 
             with stream_processing():
                 n_st.save("iteration")
-                multiRO_pre_save(iqdata_stream, self.ro_element, (time_len,) )
+                multiRO_pre_save(iqdata_stream, self.ro_elements, (time_len,) )
         return ramsey
     
     def _get_fetch_data_list( self ):
@@ -100,7 +100,7 @@ class Ramsey( QMMeasurement ):
     def _data_formation( self ):
         output_data = {}
 
-        for r_idx, r_name in enumerate(self.ro_element):
+        for r_idx, r_name in enumerate(self.ro_elements):
             output_data[r_name] = ( ["mixer","time"],
                                 np.array([self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]]) )
         dataset = xr.Dataset(

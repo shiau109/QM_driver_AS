@@ -25,33 +25,30 @@ class RawDataPainter():
 
         self.output_fig = []
 
-        for ro_name, data in dataset.data_vars.items():
-            data.attrs = dataset.attrs
-            self.plot_data = data
-            self.title = ro_name
-            self._data_parser()
-            fig = self._plot_method()
+        if "repetition" in dataset.coords:
+            self.rep = dataset.coords["repetition"].values
+            for ro_name, data in dataset.data_vars.items():
+                data = data.transpose("mixer","repetition","time")
+                self.plot_data = data
+                self.title = ro_name
+                self._data_parser()
+                fig = self._plot_method()
 
-            file_name = f"{fig_name}_{ro_name}"
-            self.output_fig.append((file_name,fig))
-            plt.tight_layout()
-        if show: plt.show()
-        return self.output_fig
-    
-    def plot_rep( self, dataset:Dataset, fig_name:str, show:bool=True ):
+                file_name = f"{fig_name}_{ro_name}"
+                self.output_fig.append((file_name,fig))
 
-        self.output_fig = []
-        self.rep = dataset.coords["repetition"].values
-        for ro_name, data in dataset.data_vars.items():
-            data = data.transpose("mixer","repetition","time")
-            self.plot_data = data
-            self.title = ro_name
-            self._data_parser()
-            fig = self._plot_method()
+        else:
+            for ro_name, data in dataset.data_vars.items():
+                data.attrs = dataset.attrs
+                self.plot_data = data
+                self.title = ro_name
+                self._data_parser()
+                fig = self._plot_method()
 
-            file_name = f"{fig_name}_{ro_name}"
-            self.output_fig.append((file_name,fig))
-            plt.tight_layout()
+                file_name = f"{fig_name}_{ro_name}"
+                self.output_fig.append((file_name,fig))
+
+        plt.tight_layout()
         if show: plt.show()
         return self.output_fig
 
@@ -236,14 +233,14 @@ class PainterT1Single( RawDataPainter ):
         title = self.title
         fig, ax = plt.subplots(2)
 
-        ax[0].set_title(f"{title} I data")
+        ax[0].set_title(f"{title} T1 I data")
         ax[0].set_xlabel("Wait time (us)")
         ax[0].set_ylabel(f"voltage (mV)")
         ax[0].plot( time, np.real(s21),"o", label="data",markersize=1)
         if fit_result_i is not None:
             ax[0].plot( time, fit_result_i.best_fit, label="fit")
 
-        ax[1].set_title(f"{title} Q data")
+        ax[1].set_title(f"{title} T1 Q data")
         ax[1].set_xlabel("Wait time (us)")
         ax[1].set_ylabel(f"voltage (mV)")
         ax[1].plot( time, np.real(s21),"o", label="data",markersize=1)
@@ -294,6 +291,124 @@ class PainterT1Repeat( RawDataPainter ):
         ax[1].hist(acc_T1, custom_bins, density=False, alpha=0.7, label='Histogram')
 
         return fig
+
+class PainterT2Ramsey( RawDataPainter ):
+        
+    def _data_parser( self ):
+        from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting
+    
+        dataarray = self.plot_data
+        self.time = (dataarray.coords["time"].values)/1000
+        idata = dataarray.values[0]
+        qdata = dataarray.values[1]
+        self.fit_result_i = qubit_relaxation_fitting(self.time, idata)
+        self.fit_result_q = qubit_relaxation_fitting(self.time, qdata)
+        self.zdata = idata +1j*qdata
+
+    def _plot_method( self ):
+        s21 = self.zdata
+        time = self.time
+        fit_result_i = self.fit_result_i
+        fit_result_q = self.fit_result_q
+        title = self.title
+        fig, ax = plt.subplots(2)
+
+        ax[0].set_title(f"{title} T2 Ramsey I data")
+        ax[0].set_xlabel("Wait time (us)")
+        ax[0].set_ylabel(f"voltage (mV)")
+        ax[0].plot( time, np.real(s21),"o", label="data",markersize=1)
+        if fit_result_i is not None:
+            ax[0].plot( time, fit_result_i.best_fit, label="fit")
+
+        ax[1].set_title(f"{title} T2 Ramsey Q data")
+        ax[1].set_xlabel("Wait time (us)")
+        ax[1].set_ylabel(f"voltage (mV)")
+        ax[1].plot( time, np.real(s21),"o", label="data",markersize=1)
+        if fit_result_q is not None:
+            ax[1].plot( time, fit_result_q.best_fit, label="fit")
+
+        return fig
+    
+class PainterT2SpinEcho( RawDataPainter ):
+        
+    def _data_parser( self ):
+        from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting
+    
+        dataarray = self.plot_data
+        self.time = (dataarray.coords["time"].values)/1000
+        idata = dataarray.values[0]
+        qdata = dataarray.values[1]
+        self.fit_result_i = qubit_relaxation_fitting(self.time, idata)
+        self.fit_result_q = qubit_relaxation_fitting(self.time, qdata)
+        self.zdata = idata +1j*qdata
+
+    def _plot_method( self ):
+        s21 = self.zdata
+        time = self.time
+        fit_result_i = self.fit_result_i
+        fit_result_q = self.fit_result_q
+        title = self.title
+        fig, ax = plt.subplots(2)
+
+        ax[0].set_title(f"{title} spin echo I data")
+        ax[0].set_xlabel("Wait time (us)")
+        ax[0].set_ylabel(f"voltage (mV)")
+        ax[0].plot( time, np.real(s21),"o", label="data",markersize=1)
+        if fit_result_i is not None:
+            ax[0].plot( time, fit_result_i.best_fit, label="fit")
+
+        ax[1].set_title(f"{title} spin echo Q data")
+        ax[1].set_xlabel("Wait time (us)")
+        ax[1].set_ylabel(f"voltage (mV)")
+        ax[1].plot( time, np.real(s21),"o", label="data",markersize=1)
+        if fit_result_q is not None:
+            ax[1].plot( time, fit_result_q.best_fit, label="fit")
+
+        return fig
+
+class PainterT2Repeat( RawDataPainter ):
+        
+    def _data_parser( self ):
+        from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting
+        
+        dataarray = self.plot_data
+        self.time = (dataarray.coords["time"].values)/1000
+        self.acc_T2 = []
+        for i in range(self.rep.shape[-1]):
+            fit_result = qubit_relaxation_fitting(self.time, dataarray.values[0][i])
+            self.acc_T2.append(fit_result.params["tau"].value)
+        self.idata = dataarray.values[0]
+
+        mean_t1 = np.mean(self.acc_T2)
+        bin_width = mean_t1 *0.05
+        start_value = mean_t1*0.5
+        end_value = mean_t1*1.5
+        self.custom_bins = [start_value + i * bin_width for i in range(int((end_value - start_value) / bin_width) + 1)]
+
+    def _plot_method( self ):
+        idata = self.idata
+        acc_T2 = self.acc_T2
+        rep = self.rep
+        time = self.time
+        title = self.title
+        custom_bins = self.custom_bins
+
+        fig, ax = plt.subplots(2)
+
+        ax[0].set_title(f"Repeat T2")
+        ax[0].set_xlabel("Wait time (us)")
+        ax[0].set_ylabel(f"Rep")
+        ax[0].pcolormesh( time, rep, idata, cmap='RdBu')
+        if acc_T2 is not None:
+            ax[0].plot(acc_T2,rep)
+
+        ax[1].set_title(f"{title} Histogram")
+        ax[1].set_xlabel("T2 time")
+        ax[1].set_ylabel(f"Number")
+        ax[1].hist(acc_T2, custom_bins, density=False, alpha=0.7, label='Histogram')
+
+        return fig
+
 #S2 finished
 def plot_and_save_dispersive_limit(dataset, folder_save_dir, my_exp, save_data = True):
     dfs = dataset.coords["frequency"].values
@@ -394,7 +509,7 @@ def plot_and_save_t1_singleRun(dataset, time, folder_save_dir = 0, save_data = T
         # if save_data: save_fig(folder_save_dir, save_name)
     plt.show()
 
-#S6 rep
+#S6 rep finished
 def plot_and_save_t1_repeateRun(dataset, time, single_name, folder_save_dir = 0, save_data = True ):
     from qcat.visualization.qubit_relaxation import plot_time_dep_qubit_T1_relaxation_2Dmap, plot_qubit_T1_relaxation_hist
     from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting
@@ -450,6 +565,7 @@ def plot_and_save_t2_ramsey_singleRun(dataset, time, folder_save_dir = 0, save_d
 
     plt.show()
 
+#S7 rep
 def plot_and_save_t2_ramsey_repeateRun(dataset, time, single_name, folder_save_dir = 0, save_data = True ):
     from qcat.visualization.qubit_relaxation import plot_time_dep_qubit_T2_relaxation_2Dmap, plot_qubit_T2_relaxation_hist
     from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting

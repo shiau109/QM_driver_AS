@@ -10,13 +10,7 @@ config = config_obj.get_config()
 qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
-
-from exp.save_data import save_nc, save_fig, create_folder
-import numpy as np
-import matplotlib.pyplot as plt
 from exp.ramsey import Ramsey
-
-import numpy as np
 
 #Set parameters
 my_exp = Ramsey(config, qmm)
@@ -26,11 +20,8 @@ my_exp.ro_elements = ["q3_ro"]
 my_exp.xy_elements = ["q3_xy"]
 my_exp.virtual_detune = 1
 my_exp.max_time = 8
-my_exp.time_resolution = 0.02
-dataset = my_exp.run(400)
-
-
-from exp.plotting import plot_and_save_t2_ramsey_singleRun, plot_and_save_t2_repeateRun
+my_exp.time_resolution = 0.2
+dataset = my_exp.run(40)
 
 #Save data
 save_data = 1
@@ -43,7 +34,10 @@ if save_data:
     dp.save_nc(dataset,"ramseyT2_stat")
 
 # Plot
-
+from exp.plotting import PainterT2Ramsey
+painter = PainterT2Ramsey()
+figs = painter.plot(dataset,folder_label)
+if save_data: dp.save_figs( figs )
 # time = (dataset.coords["time"].values)/1000
 # plot_and_save_t2_ramsey_singleRun(dataset, time, folder_save_dir, save_data)
 
@@ -66,8 +60,13 @@ if save_data:
 
 #To plot the result of multiple measurements (2D graph and histogram), use the following block of code
 #================================================================================================#
-import qcat.visualization.qubit_relaxation as qv
-print(dir(qv))
-dataset.data_vars.items()
-single_name = "q1_ro"
-plot_and_save_t2_ramsey_repeateRun(dataset, time, single_name, folder_save_dir, save_data)
+from exp.plotting import PainterT2Repeat
+painter = PainterT2Repeat()
+figs = painter.plot(dataset,folder_label)
+if save_data: dp.save_figs( figs )
+
+# import qcat.visualization.qubit_relaxation as qv
+# print(dir(qv))
+# dataset.data_vars.items()
+# single_name = "q1_ro"
+# plot_and_save_t2_ramsey_repeateRun(dataset, time, single_name, folder_save_dir, save_data)
