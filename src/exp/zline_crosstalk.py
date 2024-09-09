@@ -62,17 +62,17 @@ class FluxCrosstalk( QMMeasurement ):
     def __init__( self, config, qmm: QuantumMachinesManager ):
         super().__init__( config, qmm )
 
-        self.ro_elements = ["q3_ro"]
-        self.detector_qubit = "q3"
-        self.detector_is_coupler = "True"
+        self.ro_elements = ["q8_ro"]
+        self.detector_qubit = "q8"
+        self.detector_is_coupler = False
         self.crosstalk_qubit = "q4"
         self.initializer = None
 
-        self.expect_crosstalk = 0.05
-        self.detector_bias = -0.1
-        self.z_modify_range = 0.1
-        self.z_resolution = 0.004
-        self.z_time = 20
+        self.expect_crosstalk = 0.5
+        self.detector_bias = -0.
+        self.z_modify_range = 0.4
+        self.z_resolution = 0.016
+        self.z_time = 0.16
         self.z_time_qua = self.z_time/4 *u.us
 
         self.measure_method = "long_drive"   #long_drive, ramsey
@@ -162,12 +162,15 @@ class FluxCrosstalk( QMMeasurement ):
                                         wait(1 * u.us, self.ro_elements) 
 
                                 # Opration
-                                play( "x180"*amp(self.pi_amp_ratio), f"{self.detector_qubit}_xy", duration=self.z_time_cc )
-                                # play("const"*amp( self.pi_amp_ratio ), f"{self.detector_qubit}_xy", duration=self.z_time_cc)
-                                wait(17-5)    #不加這個wait的話x180會比z慢17cc，到底為啥???
-                                play("const"*amp(z_crosstalk*2.), f"{self.crosstalk_qubit}_z", self.z_time_cc+10)         #const 預設0.5
-                                play("const"*amp(z_detector*2.), f"{self.detector_qubit}_z", self.z_time_cc+10)
-                                wait(self.z_time_cc+15)
+                                play("const"*amp(z_crosstalk*10.), f"{self.crosstalk_qubit}_z", self.z_time_cc+10)         #const 預設0.5
+                                play("const"*amp(z_detector*10.), f"{self.detector_qubit}_z", self.z_time_cc+10)
+                                wait(5)
+                                # play( "x180"*amp(self.pi_amp_ratio), f"{self.detector_qubit}_xy", duration=self.z_time_cc )
+                                play("const"*amp( 0.2 ), f"{self.detector_qubit}_xy", duration=self.z_time_cc)
+                                # wait(17-5, f"{self.crosstalk_qubit}_z")    #不加這個wait的話x180會比z慢17cc，到底為啥???
+                                # wait(17-5, f"{self.detector_qubit}_z")    #不加這個wait的話x180會比z慢17cc，到底為啥???
+
+                                wait(self.z_time_cc+10)
 
                                 # Readout
                                 multiRO_measurement( iqdata_stream, self.ro_elements, weights="rotated_") 

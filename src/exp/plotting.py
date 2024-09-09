@@ -150,8 +150,8 @@ class PainterFluxDepQubit( RawDataPainter ):
         ax[0].axvline(x=self.xy_LO, color='r', linestyle='--', label='LO')
         ax[0].axhline(y=self.z_offset, color='black', linestyle='--', label='idle z')
         ax[0].set_title(f"{title} I value")
-        ax[0].set_xlabel("Flux")
-        ax[0].set_ylabel("Additional IF freq (MHz)")
+        ax[0].set_ylabel("Flux")
+        ax[0].set_xlabel("Additional IF freq (MHz)")
         plt.colorbar(pcm, label='Value')
         ax[0].legend()
 
@@ -160,13 +160,56 @@ class PainterFluxDepQubit( RawDataPainter ):
         ax[1].axvline(x=self.xy_LO+self.xy_IF_idle, color='b', linestyle='--', label='ref IF')
         ax[1].axvline(x=self.xy_LO, color='r', linestyle='--', label='LO')
         ax[1].axhline(y=self.z_offset, color='black', linestyle='--', label='idle z')
-        ax[1].set_xlabel("Flux")
-        ax[1].set_ylabel("Additional IF freq (MHz)")
+        ax[1].set_ylabel("Flux")
+        ax[1].set_xlabel("Additional IF freq (MHz)")
         plt.colorbar(pcm, label='Value')
         ax[1].legend()
 
         return fig
     
+class PainterFluxCheck( RawDataPainter ):
+
+    def _data_parser( self ):
+        dataarray = self.plot_data
+        self.freqs = dataarray.coords["frequency"].values
+
+        self.xy_LO = dataarray.attrs["xy_LO"][0]/1e6
+        self.xy_IF_idle = dataarray.attrs["xy_IF"][0]/1e6
+        self.z_offset = dataarray.attrs["z_offset"][0]
+
+        idata = dataarray.values[0]
+        qdata = dataarray.values[1]
+        self.zdata = idata +1j*qdata
+
+    def _plot_method( self ):
+        s21 = self.zdata
+        freqs = self.freqs
+        title = self.title
+        fig, ax = plt.subplots(2)
+
+        abs_freq = self.xy_LO+self.xy_IF_idle+freqs
+        
+        ax[0].plot(abs_freq, np.real(s21), color='b', label='I value')  
+        ax[0].axvline(x=self.xy_LO+self.xy_IF_idle, color='b', linestyle='--', label='ref IF')
+        ax[0].axvline(x=self.xy_LO, color='r', linestyle='--', label='LO')
+        ax[0].axhline(y=self.z_offset, color='black', linestyle='--', label='idle z')
+        ax[0].set_title(f"{title} I value")
+        ax[0].set_ylabel("I value")
+        ax[0].set_xlabel("Additional IF freq (MHz)")
+        ax[0].legend()
+
+        # 绘制 Q (虚部) 数据的线图
+        ax[1].plot(abs_freq, np.imag(s21), color='r', label='Q value')
+        ax[1].axvline(x=self.xy_LO+self.xy_IF_idle, color='b', linestyle='--', label='ref IF')
+        ax[1].axvline(x=self.xy_LO, color='r', linestyle='--', label='LO')
+        ax[1].axhline(y=self.z_offset, color='black', linestyle='--', label='idle z')
+        ax[1].set_title(f"{title} Q value")
+        ax[1].set_ylabel("Q value")
+        ax[1].set_xlabel("Additional IF freq (MHz)")
+        ax[1].legend()
+
+        return fig
+
 class PainterRabi( RawDataPainter ):
     def __init__(self, Rabi_type):
         self.Rabi_type = Rabi_type
