@@ -202,7 +202,7 @@ class XYFreqFlux( QMMeasurement ):
         
         # operation
         for i, z in enumerate(self.z_elements):
-            play( "const"*amp( 10*r_z_amp ), z, duration=self.qua_xy_driving_time)
+            play( "const"*amp( r_z_amp ), z, duration=self.qua_xy_driving_time)
         for i, xy in enumerate(self.xy_elements):
             update_frequency( xy, self.ref_xy_IF[i] +df )
             play("const"*amp( self.xy_amp_mod ), xy, duration=self.qua_xy_driving_time)
@@ -212,7 +212,7 @@ class XYFreqFlux( QMMeasurement ):
        
         # operation
         for i, z in enumerate(self.z_elements):
-            play( "const"*amp( 10*r_z_amp ), z, duration=self.qua_xy_driving_time)
+            play( "const"*amp( r_z_amp ), z, duration=self.qua_xy_driving_time)
         # wait(250)
         for i, xy in enumerate(self.xy_elements):
             update_frequency( xy, self.ref_xy_IF[i] +df )

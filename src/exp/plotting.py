@@ -123,7 +123,7 @@ class PainterFluxDepQubit( RawDataPainter ):
     def _data_parser( self ):
         dataarray = self.plot_data
         self.freqs = dataarray.coords["frequency"].values
-        self.flux = dataarray.coords["amp_ratio"].values
+        self.flux = dataarray.coords["amp_ratio"].values *dataarray.attrs["z_amp_const"]
 
         self.xy_LO = dataarray.attrs["xy_LO"][0]/1e6
         self.xy_IF_idle = dataarray.attrs["xy_IF"][0]/1e6
