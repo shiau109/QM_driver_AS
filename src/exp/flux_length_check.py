@@ -12,6 +12,7 @@ warnings.filterwarnings("ignore")
 import exp.config_par as gc
 from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
+from exp.config_par import get_offset
 
 import xarray as xr
 import time
@@ -19,7 +20,7 @@ from exp.QMMeasurement import QMMeasurement
 
 import numpy as np
 
-class XYFreqFlux( QMMeasurement ):
+class Flux_length_check( QMMeasurement ):
     """
 
     Parameters:
@@ -27,20 +28,20 @@ class XYFreqFlux( QMMeasurement ):
     xy_elements is XY \n
     Z_elements is Z \n
 
-    z_amp_ratio_range: \n
-        is a tuple ( upper bound, lower bound), unit in voltage, ref to idle offset \n
-    z_amp_ratio_resolution: \n
+    set_flux_quanta: \n
+        unit in flux quanta, ref to integer flux quanta \n
+    flux_quanta: \n
         unit in voltage.\n
     freq_range: \n
         is a tuple ( upper bound, lower bound), unit in MHz, ref to idle IF \n
     freq_resolution: \n
         is a float, unit in MHz, ref to idle IF \n
-    sweep_type: \n
-        enumerate z_pulse, overlap
+    flux_type: \n
+        enumerate offset, play
 
     return: \n
     dataset \n
-    coors: ["mixer","flux","frequency"]\n
+    coors: ["mixer","frequency"]\n
     attrs: ref_xy_IF, ref_xy_LO, z_offset\n
     """
 
@@ -54,11 +55,11 @@ class XYFreqFlux( QMMeasurement ):
         self.preprocess = "ave"
         self.initializer = None
         
-        self.sweep_type = "z_pulse" #z_pulse or overlap
+        self.flux_type = "offset" #offset or play
         self.xy_driving_time = 10
         self.xy_amp_mod = 0.1
-        self.z_amp_ratio_range = (0.5, 1.5)
-        self.z_amp_ratio_resolution = 0.1
+        self.flux_quanta = 0.2
+        self.set_flux_quanta = 0.1
 
         self.freq_range = ( -1, 1 )
         self.freq_resolution = 0.5
@@ -67,8 +68,6 @@ class XYFreqFlux( QMMeasurement ):
 
     def _get_qua_program( self ):
         
-        self.qua_z_amp_ratio_array = self._lin_z_amp_array()
-        # print(self.qua_cc_pi_timing)
         self.qua_freqs = self._lin_freq_array()
 
         self.qua_xy_driving_time = self.xy_driving_time/4 *u.us
@@ -80,41 +79,48 @@ class XYFreqFlux( QMMeasurement ):
             n = declare(int)  
             n_st = declare_stream()
             df = declare(int)  
-            r_z_amp = declare(fixed)  
-
+            if (self.flux_type == "offset"):
+                for i, z in enumerate(self.z_elements):
+                    set_dc_offset( self.z_elements[0], "single", get_offset(f"{self.crosstalk_qubit}_z",self.config)+self.set_flux_quanta*self.flux_quanta )
+            elif(self.flux_type == "play"):
+                pass
+            else:
+                print("no such flux_type")
             with for_(n, 0, n < self.shot_num, n + 1):
+                with for_(*from_array(df, self.qua_freqs)):
 
-                with for_(*from_array(r_z_amp, self.qua_z_amp_ratio_array )):
-
-                    with for_(*from_array(df, self.qua_freqs)):
-
-                        # Initialization
-                        if self.initializer is None:
+                    # Initialization
+                    if self.initializer is None:
+                        wait(1*u.us, self.ro_elements)
+                    else:
+                        try:
+                            self.initializer[0](*self.initializer[1])
+                        except:
+                            print("initializer didn't work!")
                             wait(1*u.us, self.ro_elements)
-                        else:
-                            try:
-                                self.initializer[0](*self.initializer[1])
-                            except:
-                                print("initializer didn't work!")
-                                wait(1*u.us, self.ro_elements)
 
-                        # operation
-                        match self.sweep_type:
-                            case "z_pulse":
-                                self._qua_constant_drive_z_pulse(r_z_amp, df)
-                            case "overlap":
-                                self._qua_constant_drive_overlap(r_z_amp, df)
-                            case _:
-                                self._qua_constant_drive_z_pulse(r_z_amp, df)
+                    # operation
+                    if (self.flux_type == "offset"):
+                        pass
+                    elif(self.flux_type == "play"):
+                        for i, z in enumerate(self.z_elements):
+                            play( "const"*amp( 10*self.set_flux_quanta*self.flux_quanta ), z, duration=self.qua_xy_driving_time)
+                    else:
+                        print("no such flux_type")
+                    
+                    for i, xy in enumerate(self.xy_elements):
+                        update_frequency( xy, self.ref_xy_IF[i] +df )
+                        play("const"*amp( self.xy_amp_mod ), xy, duration=self.qua_xy_driving_time)
+                    align()
 
-                        # measurement
-                        multiRO_measurement( iqdata_stream, self.ro_elements, weights='rotated_'  )
+                    # measurement
+                    multiRO_measurement( iqdata_stream, self.ro_elements, weights='rotated_'  )
 
-                    # assign(index, index + 1)
+                # assign(index, index + 1)
                 save(n, n_st)
             with stream_processing():
                 n_st.save("iteration")
-                multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.qua_z_amp_ratio_array), len(self.qua_freqs)))
+                multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.qua_freqs)))
 
         return qua_prog
         
@@ -132,19 +138,17 @@ class XYFreqFlux( QMMeasurement ):
     
     def _data_formation( self ):
         freqs_mhz = self.qua_freqs/1e6
-        amp_ratio = self.qua_z_amp_ratio_array
         coords = { 
             "mixer":np.array(["I","Q"]), 
-            "amp_ratio":amp_ratio,
             "frequency": freqs_mhz,
             #"prepare_state": np.array([0,1])
             }
         match self.preprocess:
             case "shot":
-                dims_order = ["mixer","shot","amp_ratio","frequency"]
+                dims_order = ["mixer","shot","frequency"]
                 coords["shot"] = np.arange(self.shot_num)
             case _:
-                dims_order = ["mixer","amp_ratio","frequency"]
+                dims_order = ["mixer","frequency"]
 
         output_data = {}
         for r_idx, r_name in enumerate(self.ro_elements):
@@ -192,63 +196,6 @@ class XYFreqFlux( QMMeasurement ):
         freqs_qua = np.arange(freq_r1_qua,freq_r2_qua,freq_resolution_qua )
         
         return freqs_qua
-
-    def _lin_z_amp_array( self ):
-        amp_ratio = np.arange( self.z_amp_ratio_range[0],self.z_amp_ratio_range[1], self.z_amp_ratio_resolution)
-        return amp_ratio
-    
-
-    def _qua_constant_drive_z_pulse( self, r_z_amp, df ):
-        
-        # operation
-        for i, z in enumerate(self.z_elements):
-            play( "const"*amp( 10*r_z_amp ), z, duration=self.qua_xy_driving_time)
-        for i, xy in enumerate(self.xy_elements):
-            update_frequency( xy, self.ref_xy_IF[i] +df )
-            play("const"*amp( self.xy_amp_mod ), xy, duration=self.qua_xy_driving_time)
-        align()
-
-    def _qua_constant_drive_overlap( self, r_z_amp, df ):
-       
-        # operation
-        for i, z in enumerate(self.z_elements):
-            play( "const"*amp( 10*r_z_amp ), z, duration=self.qua_xy_driving_time)
-        # wait(250)
-        for i, xy in enumerate(self.xy_elements):
-            update_frequency( xy, self.ref_xy_IF[i] +df )
-            play("const"*amp( self.xy_amp_mod ), xy, duration=self.qua_xy_driving_time)
-
-        for i, ro in enumerate(self.ro_elements):
-            wait( int(self.qua_xy_driving_time-gc.get_ro_length(ro,self.config)//4), ro )
-
-    def _qua_constant_drive_z_pulse_offset( self, r_z_amp, df ):
-        
-        # operation
-        for i, z in enumerate(self.z_elements):
-            play( "const"*amp( r_z_amp ), z, duration=self.qua_xy_driving_time)
-        for i, xy in enumerate(self.xy_elements):
-            update_frequency( xy, self.ref_xy_IF[i] +df )
-            play("const"*amp( self.xy_amp_mod ), xy, duration=self.qua_xy_driving_time)
-        align()
-
-    def _qua_constant_drive_overlap_offset( self, r_z_amp, df ):
-        # operation
-        for i, z in enumerate(self.z_elements):
-            set_dc_offset( z, "single", self.z_offset +r_z_amp)
-            # assign(index, 0)
-        # wait(25)
-        for i, xy in enumerate(self.xy_elements):
-            update_frequency( xy, self.ref_xy_IF +df )
-            play("const"*amp( self.xy_amp_mod ), xy, duration=self.qua_xy_driving_time)
-        align()
-        for i, z in enumerate(self.z_elements):
-            set_dc_offset( z, "single", self.z_offset)
-        # wait(25)
-        align()
-
-
-
-
 
 def plot_flux_dep_qubit( data, flux, dfs, ax=None ):
     """

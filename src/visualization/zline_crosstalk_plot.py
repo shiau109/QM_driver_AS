@@ -41,7 +41,7 @@ def plot_crosstalk_3Dscalar(dataset):
         cbar.set_label("Intensity", fontsize=15)
         cbar.ax.tick_params(labelsize=12)
 
-        figures.append((fig, ax, q))
+        figures.append((q, fig))
 
     return figures
 
@@ -119,7 +119,7 @@ def plot_crosstalk_fitting(dataset):
         ax.grid(True)
 
         # 添加到 figures 列表
-        figures.append((fig, ax, q))
+        figures.append((q, fig))
 
     return figures
 
@@ -148,7 +148,7 @@ def plot_crosstalk_FFT(dataset):
 
         _plot_2Dfft( freq_axes[0], freq_axes[1], mag.transpose(), ax[1] )
         
-        figures.append((fig, ax, q))
+        figures.append((q, fig))
 
     return figures
 
@@ -293,10 +293,10 @@ def plot_heatmap_with_ellipse(dataset):
 
 
 # Load the NetCDF file
-file_path = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240814_DR3_5Q4C_0430#7\good_20us\20240822_0128_detector_q4_crosstalk_q8_long_drive_pulse_expectcrosstalk_0.05_20mius.nc"
+# file_path = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240814_DR3_5Q4C_0430#7\good_20us\20240822_0128_detector_q4_crosstalk_q8_long_drive_pulse_expectcrosstalk_0.05_20mius.nc"
 
-dataset = xr.open_dataset(file_path)
-analysis_figures = plot_heatmap_with_ellipse(dataset)
+# dataset = xr.open_dataset(file_path)
+# analysis_figures = plot_heatmap_with_ellipse(dataset)
 # analysis_figures = plot_analysis(dataset)
 # raw_figures = plot_crosstalk_3Dscalar(dataset)
 
@@ -304,9 +304,9 @@ analysis_figures = plot_heatmap_with_ellipse(dataset)
 #     plt.figure(fig.number)  # 设置当前图形对象
 #     plt.show()  # 显示图像
 
-for fig, ax, q in analysis_figures:
-    plt.figure(fig.number)  # 设置当前图形对象
-    plt.show()  # 显示图像
+# for fig, ax, q in analysis_figures:
+#     plt.figure(fig.number)  # 设置当前图形对象
+#     plt.show()  # 显示图像
 
 
 

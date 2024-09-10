@@ -12,33 +12,36 @@ qmm, _ = spec.buildup_qmm()
 from ab.QM_config_dynamic import initializer
 init_macro = initializer(400000,mode='wait')
 
-from exp.save_data import save_nc, save_fig, create_folder
 save_dir = link_config["path"]["output_root"]
 
 import matplotlib.pyplot as plt
 
 # Set parameters
-ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
-q_elements = ['q4_xy']
+ro_elements = ["q7_ro", "q8_ro"]
+q_elements = ['q8_xy']
 
 save_data = True
 save_name = f"ro_fidelity_{q_elements[0]}"
 folder_label = "ro_fidelity_1"
 shot_num = 10000
-
+folder_label = "readout_fedelity"
 
 from exp.readout_fidelity import readout_fidelity
 
 import numpy as np
 dataset = readout_fidelity( q_elements, ro_elements, shot_num, config, qmm, init_macro)  
 
-
+# Data Saving 
 if save_data: 
-    folder_save_dir = create_folder(save_dir, folder_label)
-    save_nc(folder_save_dir, save_name, dataset)
+    from exp.save_data import DataPackager
+    save_dir = link_config["path"]["output_root"]
+    dp = DataPackager( save_dir, folder_label )
+    dp.save_config(config)
+    dp.save_nc(dataset,folder_label)
 
 from exp.plotting import plot_and_save_readout_fidelity
-plot_and_save_readout_fidelity(dataset, folder_save_dir, save_data)
+plot_and_save_readout_fidelity(dataset, folder_label, save_data)
+
 
 
 
