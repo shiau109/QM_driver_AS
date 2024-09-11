@@ -141,11 +141,12 @@ class PainterFluxDepQubit( RawDataPainter ):
         fig, ax = plt.subplots(2)
 
         abs_freq = self.xy_LO+self.xy_IF_idle+freqs
+        abs_flux = self.z_offset+flux
         
         # if yscale == "log":
         #     pcm = ax.pcolormesh(freqs, np.log10(amp_ratio), np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
         # else:
-        pcm = ax[0].pcolormesh(abs_freq, flux, np.real(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+        pcm = ax[0].pcolormesh(abs_freq, abs_flux, np.real(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
         ax[0].axvline(x=self.xy_LO+self.xy_IF_idle, color='b', linestyle='--', label='ref IF')
         ax[0].axvline(x=self.xy_LO, color='r', linestyle='--', label='LO')
         ax[0].axhline(y=self.z_offset, color='black', linestyle='--', label='idle z')
@@ -155,7 +156,7 @@ class PainterFluxDepQubit( RawDataPainter ):
         plt.colorbar(pcm, label='Value')
         ax[0].legend()
 
-        pcm = ax[1].pcolormesh(abs_freq, flux, np.imag(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+        pcm = ax[1].pcolormesh(abs_freq, abs_flux, np.imag(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
         ax[1].set_title(f"{title} Q value")
         ax[1].axvline(x=self.xy_LO+self.xy_IF_idle, color='b', linestyle='--', label='ref IF')
         ax[1].axvline(x=self.xy_LO, color='r', linestyle='--', label='LO')
