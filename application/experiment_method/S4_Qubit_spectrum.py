@@ -16,35 +16,30 @@ import matplotlib.pyplot as plt
 # Start meausrement
 from exp.xyfreq_sweep import XYFreq
 my_exp = XYFreq(config, qmm)
-my_exp.ro_elements = ["q5_ro"]
-my_exp.xy_elements = ['q5_xy']
+my_exp.ro_elements = ["q2_ro"]
+my_exp.xy_elements = ['q2_xy']
 my_exp.initializer=initializer(10000,mode='wait')
 my_exp.xy_driving_time = 20
-my_exp.xy_amp_mod = 0.2
-my_exp.freq_range = (-400,400)
-my_exp.freq_resolution = 4
-my_exp.sweep_type = "overlap"
+my_exp.xy_amp_mod = 0.006
+my_exp.freq_range = (-50,50)
+my_exp.freq_resolution = 0.5
+my_exp.sweep_type = "z_pulse"
 dataset = my_exp.run( 500 )
 
 #Save data
 save_data = 1
-folder_label = "Flux_dep_Qubit" #your data and plots will be saved under a new folder with this name
+folder_label = "Qubit_Spectrum" #your data and plots will be saved under a new folder with this name
 if save_data: 
     from exp.save_data import DataPackager
     save_dir = link_config["path"]["output_root"]
     dp = DataPackager( save_dir, folder_label )
     dp.save_config(config)
-    dp.save_nc(dataset,"Flux_dep_Qubit")
+    dp.save_nc(dataset,"Qubit_Spectrum")
+
 
 # Plot
-from exp.xyfreq_sweep import plot_ana_flux_dep_qubit_1D
-ro_name = my_exp.ro_elements[0]
-data = dataset[ro_name].values
-print(data.shape)
-
-# dfs = dataset.coords["frequency"]
-# freq_LO = dataset.attrs["xy_LO"][0]
-# freq_IF = dataset.attrs["xy_IF"][0]
-
-# plot_ana_flux_dep_qubit_1D( data, dfs, freq_LO, freq_IF)   
-# plt.show()
+save_figure = 1
+from exp.plotting import PainterQubitSpectrum
+painter = PainterQubitSpectrum()
+figs = painter.plot(dataset,folder_label)
+if save_figure: dp.save_figs( figs )
