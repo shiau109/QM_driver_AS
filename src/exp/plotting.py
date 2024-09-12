@@ -168,6 +168,39 @@ class PainterFluxDepQubit( RawDataPainter ):
 
         return fig
     
+class PainterQubitSpectrum( RawDataPainter ):
+
+    def _data_parser( self ):
+        dataarray = self.plot_data
+        self.freqs = dataarray.coords["frequency"].values
+        self.xy_LO = dataarray.attrs["xy_LO"][0]/1e6
+        self.xy_IF_idle = dataarray.attrs["xy_IF"][0]/1e6
+
+        idata = dataarray.values[0]
+        qdata = dataarray.values[1]
+        self.zdata = idata +1j*qdata
+
+    def _plot_method( self ):
+        s21 = self.zdata
+        freqs = self.freqs
+        title = self.title
+        fig, ax = plt.subplots(2)
+
+        abs_freq = self.xy_LO+self.xy_IF_idle+freqs
+        
+        ax[0].plot( abs_freq, np.real(s21), color='b' )
+        ax[0].set_title(f"{title} I value")
+        ax[0].set_ylabel('Amplitude [V]')
+        ax[0].set_xlabel('XY frequency [MHz]')
+        ax[0].legend()
+
+        ax[1].plot( abs_freq, np.imag(s21), color='b' )
+        ax[1].set_ylabel('Amplitude [V]')
+        ax[1].set_xlabel('XY frequency [MHz]')
+        ax[1].legend()
+
+        return fig
+    
 class PainterFluxCheck( RawDataPainter ):
 
     def _data_parser( self ):
