@@ -1,7 +1,9 @@
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm import SimulationConfig
 from qualang_tools.results import progress_counter, fetching_tool
-
+from qualang_tools.loops import from_array
+from qm.qua import *
+from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 from abc import ABC, abstractmethod
 import matplotlib.pyplot as plt
 import time
@@ -50,6 +52,7 @@ class QMMeasurement( ABC ):
         
         measurement_end_time = datetime.now()
         self.fetch_data = self._results.fetch_all()
+        self._qm.close()
 
         self.output_data = self._data_formation()
         self.output_data.attrs["start_time"] = str(measurement_start_time.strftime("%Y%m%d_%H%M%S"))
@@ -82,6 +85,7 @@ class QMMeasurement( ABC ):
 
     def __del__(self):
         print("QM object has been deleted")
+        """
         try:
             self.close()
 
@@ -89,3 +93,7 @@ class QMMeasurement( ABC ):
             # In case __inst was not initialized correctly
             print("self.close() failed.")
             pass
+        except KeyError:
+            print("self.close() failed.")
+            pass
+        """
