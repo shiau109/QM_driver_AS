@@ -95,13 +95,12 @@ class TwoQubitRb_AS(QMMeasurement):
             if "operations" not in qe:
                 qe["operations"] = {}
 
-        self._interleaving_gate: Optional[List[cirq.GateOperation]] = None,
+        self._interleaving_gate: Optional[List[cirq.GateOperation]] = None
         self._command_registry = CommandRegistry()
         self._sequence_tracker = SequenceTracker(command_registry=self._command_registry)
 
-        self.single_qubit_gate_generator: Callable[[Baking, int, float, float, float], None] = self.bake_phased_xz
-
-        self.two_qubit_gate_generators: Dict[Literal["sqr_iSWAP", "CNOT", "CZ"], Callable[[Baking, int, int], None]] = {"CZ": self.bake_cz}
+        self.single_qubit_gate_generator = self.gen_bake_phased_xz  # No parentheses here
+        self.two_qubit_gate_generators = {"CZ": self.gen_bake_cz}   # No parentheses here
 
         self._rb_baker = RBBaker(
             config, self.single_qubit_gate_generator, self.two_qubit_gate_generators, self._interleaving_gate, self._command_registry
@@ -113,29 +112,34 @@ class TwoQubitRb_AS(QMMeasurement):
         self._measure_func: Callable[[], Tuple]
         self._verify_generation: bool = False
     
-    def bake_phased_xz(self, baker: Baking, q, x, z, a):
-        if q == 1:
-            q=self.target_q
-        elif q==2:
-            q=self.control_q
-        else:
-            print("no such qubit")
-        # print(f"q={q}")
+    def gen_bake_phased_xz(self, baker: Baking, q, x, z, a):
+        def bake_phased_xz(baker: Baking, q, x, z, a):
+            if q == 1:
+                q=self.target_q
+            elif q==2:
+                q=self.control_q
+            else:
+                print("no such qubit")
+            print(f"q={q}")
 
-        baker.frame_rotation_2pi(a / 2, f"q{q}_xy")
-        baker.play("x180", f"q{q}_xy", amp=x)
-        baker.frame_rotation_2pi(-(a + z) / 2, f"q{q}_xy")
+            baker.frame_rotation_2pi(a / 2, f"{q}_xy")
+            baker.play("x180", f"{q}_xy", amp=x)
+            baker.frame_rotation_2pi(-(a + z) / 2, f"{q}_xy")
+        return bake_phased_xz
 
-    def bake_cz(self, baker: Baking, q1, q2):
-        # single qubit phase corrections in units of 2pi applied after the CZ gate
-        # print(f"q={q1}, {q2}")
+    def gen_bake_cz(self, baker: Baking, q1, q2):
+        def bake_cz(baker: Baking, q1, q2):
 
-        baker.play("const", f"{self.control_q}_z", amp=self.cz_control_q_amp)
-        baker.play("const", f"{self.coupler}_z", amp=self.cz_coupler_amp)
-        baker.align()
-        baker.frame_rotation_2pi(self.target_q_frame_correction, f"{self.target_q}_xy")
-        baker.frame_rotation_2pi(self.control_q_frame_correction, f"{self.control_q}_xy")
-        baker.align()
+            # single qubit phase corrections in units of 2pi applied after the CZ gate
+            print(f"q={q1}, {q2}")
+
+            baker.play("const", f"{self.control_q}_z", amp=self.cz_control_q_amp)
+            baker.play("const", f"{self.coupler}_z", amp=self.cz_coupler_amp)
+            baker.align()
+            baker.frame_rotation_2pi(self.target_q_frame_correction, f"{self.target_q}_xy")
+            baker.frame_rotation_2pi(self.control_q_frame_correction, f"{self.control_q}_xy")
+            baker.align()
+        return bake_cz
     
     def _get_qua_program( self ):
         self._attribute_config()
@@ -181,19 +185,18 @@ class TwoQubitRb_AS(QMMeasurement):
 
                         # measurement
                         multiRO_measurement( iqdata_stream, self.ro_elements, weights='rotated_'  )
-                        iqdata_stream
                         assign(state_target, iqdata_stream[0][0] > self.target_q_ro_threshold)  # assume that all information is in I
                         assign(state_control, iqdata_stream[0][1] > self.control_q_ro_threshold)  # assume that all information is in I
                         assign(state, (Cast.to_int(state_control) << 1) + Cast.to_int(state_target))
-                        save(state, state_os)
+                        # save(state, state_os)
 
 
                         # Save the averaging iteration to get the progress bar
                         save(n, n_st)
             with stream_processing():
-                state_os.buffer(len(self.circuit_depths), self.num_circuits_per_depth, self.shot_num).save("state")
-                n_st.save("iteration")
-                multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.circuit_depths), self.num_circuits_per_depth))
+                # state_os.buffer(len(self.circuit_depths), self.num_circuits_per_depth, self.shot_num).save("state")
+                n_st.save_all("iteration")
+                multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.circuit_depths),))
 
         return qua_prog
         
@@ -211,16 +214,14 @@ class TwoQubitRb_AS(QMMeasurement):
         coords = { 
             "mixer":np.array(["I","Q"]), 
             "circuit_depths":self.circuit_depths,
-            "num_circuits_per_depth": np.arange(1, self.num_circuits_per_depth+1)
-,
             #"prepare_state": np.array([0,1])
             }
         match self.preprocess:
             case "shot":
-                dims_order = ["mixer","shot","circuit_depths","num_circuits_per_depth"]
+                dims_order = ["mixer","shot","circuit_depths"]
                 coords["shot"] = np.arange(self.shot_num)
             case _:
-                dims_order = ["mixer","circuit_depths","num_circuits_per_depth"]
+                dims_order = ["mixer","circuit_depths"]
 
         output_data = {}
         for r_idx, r_name in enumerate(self.ro_elements):
@@ -265,8 +266,8 @@ class TwoQubitRb_AS(QMMeasurement):
         self.z_offset.append( gc.get_offset(f"{self.target_q}_z", self.config ))
         self.z_amp.append(gc.get_const_wf(f"{self.target_q}_z", self.config ))
         self.z_offset.append( gc.get_offset(f"{self.control_q}_z", self.config ))
-        self.z_amp.append(gc.get_const_wf(f"{self.control_q}_z", self.config ))        self.z_offset.append( gc.get_offset(f"{self.target_q}_z", self.config ))
-        self.z_amp.append(gc.get_const_wf(f"{self.coupler}_z", self.config ))        self.z_offset.append( gc.get_offset(f"{self.target_q}_z", self.config ))
+        self.z_amp.append(gc.get_const_wf(f"{self.control_q}_z", self.config ))
+        self.z_offset.append(gc.get_const_wf(f"{self.coupler}_z", self.config ))
         self.z_amp.append(gc.get_const_wf(f"{self.coupler}_z", self.config ))
 
     def convert_sequence_to_cirq(self, sequence: List[int]) -> List[cirq.GateOperation]:
@@ -344,45 +345,45 @@ class TwoQubitRb_AS(QMMeasurement):
                 if callback is not None:
                     callback(sequence)
 
-    def run(
-        self,
-        qmm: QuantumMachinesManager,
-        circuit_depths: List[int],
-        num_circuits_per_depth: int,
-        num_shots_per_circuit: int,
-        **kwargs,
-    ):
-        """
-        Runs the randomized benchmarking experiment. The experiment is sweep over Clifford circuits with varying depths.
-        For every depth, we generate a number of random circuits and run them. The number of different circuits is determined by
-        the num_circuits_per_depth parameter. The number of shots per individual circuit is determined by the self.num_shots_per_circuit parameter.
+    # def run(
+    #     self,
+    #     qmm: QuantumMachinesManager,
+    #     circuit_depths: List[int],
+    #     num_circuits_per_depth: int,
+    #     num_shots_per_circuit: int,
+    #     **kwargs,
+    # ):
+    #     """
+    #     Runs the randomized benchmarking experiment. The experiment is sweep over Clifford circuits with varying depths.
+    #     For every depth, we generate a number of random circuits and run them. The number of different circuits is determined by
+    #     the num_circuits_per_depth parameter. The number of shots per individual circuit is determined by the self.num_shots_per_circuit parameter.
 
-        Args:
-            qmm (QuantumMachinesManager): The Quantum Machines Manager object which is used to run the experiment.
-            circuit_depths (List[int]): A list of the number of Cliffords per circuit (not including inverse).
-            num_circuits_per_depth (int): The number of different circuit randomizations per depth.
-            num_shots_per_circuit (int): The number of shots per particular circuit.
+    #     Args:
+    #         qmm (QuantumMachinesManager): The Quantum Machines Manager object which is used to run the experiment.
+    #         circuit_depths (List[int]): A list of the number of Cliffords per circuit (not including inverse).
+    #         num_circuits_per_depth (int): The number of different circuit randomizations per depth.
+    #         num_shots_per_circuit (int): The number of shots per particular circuit.
 
-        """
+    #     """
 
-        prog = self._gen_qua_program(circuit_depths, num_circuits_per_depth, num_shots_per_circuit)
+    #     prog = self._gen_qua_program(circuit_depths, num_circuits_per_depth, num_shots_per_circuit)
 
-        qm = qmm.open_qm(self._config)
-        job = qm.execute(prog)
+    #     qm = qmm.open_qm(self._config)
+    #     job = qm.execute(prog)
 
-        gen_sequence_callback = kwargs["gen_sequence_callback"] if "gen_sequence_callback" in kwargs else None
-        self._insert_all_input_stream(job, circuit_depths, num_circuits_per_depth, gen_sequence_callback)
+    #     gen_sequence_callback = kwargs["gen_sequence_callback"] if "gen_sequence_callback" in kwargs else None
+    #     self._insert_all_input_stream(job, circuit_depths, num_circuits_per_depth, gen_sequence_callback)
 
-        full_progress = len(circuit_depths) * num_circuits_per_depth
-        pbar(job.result_handles, full_progress, "progress")
-        job.result_handles.wait_for_all_values()
+    #     full_progress = len(circuit_depths) * num_circuits_per_depth
+    #     pbar(job.result_handles, full_progress, "progress")
+    #     job.result_handles.wait_for_all_values()
 
-        return RBResult(
-            circuit_depths=circuit_depths,
-            num_repeats=self.num_circuits_per_depth,
-            num_averages=self.num_shots_per_circuit,
-            state=job.result_handles.get("state").fetch_all(),
-        )
+    #     return RBResult(
+    #         circuit_depths=circuit_depths,
+    #         num_repeats=self.num_circuits_per_depth,
+    #         num_averages=self.num_shots_per_circuit,
+    #         state=job.result_handles.get("state").fetch_all(),
+    #     )
 
     def print_command_mapping(self):
         """
@@ -553,9 +554,9 @@ class TwoQubitRb:
 
     def _gen_qua_program(
         self,
-        self.circuit_depths: list[int],
-        self.num_circuits_per_depth: int,
-        self.num_shots_per_circuit: int,
+        sequence_depths: list[int],
+        num_repeats: int,
+        num_averages: int,
     ):
         with program() as prog:
             sequence_depth = declare(int)
@@ -573,15 +574,15 @@ class TwoQubitRb:
             }
 
             assign(progress, 0)
-            with for_each_(sequence_depth, self.circuit_depths):
-                with for_(repeat, 0, repeat < self.num_circuits_per_depth, repeat + 1):
+            with for_each_(sequence_depth, sequence_depths):
+                with for_(repeat, 0, repeat < num_repeats, repeat + 1):
                     assign(progress, progress + 1)
                     save(progress, progress_os)
                     advance_input_stream(gates_len_is)
                     for gate_is in gates_is.values():
                         advance_input_stream(gate_is)
                     assign(length, gates_len_is[0])
-                    with for_(n_avg, 0, n_avg < self.num_shots_per_circuit, n_avg + 1):
+                    with for_(n_avg, 0, n_avg < num_averages, n_avg + 1):
                         self._prep_func()
                         self._rb_baker.run(gates_is, length)
                         out1, out2 = self._measure_func()
@@ -589,7 +590,7 @@ class TwoQubitRb:
                         save(state, state_os)
 
             with stream_processing():
-                state_os.buffer(len(self.circuit_depths), self.num_circuits_per_depth, self.num_shots_per_circuit).save("state")
+                state_os.buffer(len(sequence_depths), num_repeats, num_averages).save("state")
                 progress_os.save("progress")
         return prog
 
@@ -603,12 +604,12 @@ class TwoQubitRb:
     def _insert_all_input_stream(
         self,
         job: RunningQmJob,
-        self.circuit_depths: List[int],
-        self.num_circuits_per_depth: int,
+        sequence_depths: List[int],
+        num_repeats: int,
         callback: Optional[Callable[[List[int]], None]] = None,
     ):
-        for sequence_depth in self.circuit_depths:
-            for repeat in range(self.num_circuits_per_depth):
+        for sequence_depth in sequence_depths:
+            for repeat in range(num_repeats):
                 sequence = self._gen_rb_sequence(sequence_depth)
                 if self._sequence_tracker is not None:
                     self._sequence_tracker.make_sequence(sequence)
@@ -630,7 +631,7 @@ class TwoQubitRb:
         """
         Runs the randomized benchmarking experiment. The experiment is sweep over Clifford circuits with varying depths.
         For every depth, we generate a number of random circuits and run them. The number of different circuits is determined by
-        the num_circuits_per_depth parameter. The number of shots per individual circuit is determined by the self.num_shots_per_circuit parameter.
+        the num_circuits_per_depth parameter. The number of shots per individual circuit is determined by the num_averages parameter.
 
         Args:
             qmm (QuantumMachinesManager): The Quantum Machines Manager object which is used to run the experiment.
@@ -654,8 +655,8 @@ class TwoQubitRb:
 
         return RBResult(
             circuit_depths=circuit_depths,
-            self.num_circuits_per_depth=num_circuits_per_depth,
-            self.num_shots_per_circuit=num_shots_per_circuit,
+            num_repeats=num_circuits_per_depth,
+            num_averages=num_shots_per_circuit,
             state=job.result_handles.get("state").fetch_all(),
         )
 

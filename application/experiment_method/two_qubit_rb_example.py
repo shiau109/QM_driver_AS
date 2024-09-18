@@ -1,6 +1,6 @@
 # Import necessary file
 from pathlib import Path
-link_path = Path(__file__).resolve().parent/"config_api"/"config_link.toml"
+link_path = Path(__file__).resolve().parent.parent/"config_api"/"config_link.toml"
 
 from QM_driver_AS.ultitly.config_io import import_config, import_link
 link_config = import_link(link_path)
@@ -23,7 +23,7 @@ from qm.qua import *
 from qm import QuantumMachinesManager
 from qualang_tools.bakery.bakery import Baking
 # from configuration import *
-from src.exp.two_qubit_rb import TwoQubitRb
+from exp.two_qubit_rb import TwoQubitRb
 
 ##############################
 ## General helper functions ##
@@ -151,7 +151,7 @@ rb = TwoQubitRb(
     verify_generation=False,
 )
 
-res = rb.run(qmm, circuit_depths=[100], num_circuits_per_depth=100, num_shots_per_circuit=10)
+res = rb.run(qmm, circuit_depths=[100], num_circuits_per_depth=100, num_shots_per_circuit=100)
 
 # circuit_depths ~ how many consecutive Clifford gates within one executed circuit
 # (https://qiskit.org/documentation/apidoc/circuit.html)

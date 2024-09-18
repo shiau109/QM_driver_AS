@@ -1,4 +1,4 @@
-from .TwoQubitRB import TwoQubitRb, TwoQubitRb_AS
+from .TwoQubitRB import TwoQubitRb_AS, TwoQubitRb
 from .simple_tableau import SimpleTableau
 from .RBBaker import RBBaker
 from .RBResult import RBResult

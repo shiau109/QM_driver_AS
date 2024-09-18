@@ -1,6 +1,6 @@
 # Import necessary file
 from pathlib import Path
-link_path = Path(__file__).resolve().parent/"config_api"/"config_link.toml"
+link_path = Path(__file__).resolve().parent.parent/"config_api"/"config_link.toml"
 
 from QM_driver_AS.ultitly.config_io import import_config, import_link
 link_config = import_link(link_path)
@@ -22,12 +22,15 @@ from qm.jobs.running_qm_job import RunningQmJob
 
 from ab.QM_config_dynamic import initializer
 
-from src.exp.two_qubit_rb.TwoQubitRB import TwoQubitRb_AS
+from exp.two_qubit_rb.TwoQubitRB import TwoQubitRb_AS
 my_exp = TwoQubitRb_AS(config, qmm)
-shot_num = 100
+my_exp.circuit_depths = [1]
+my_exp.num_circuits_per_depth = 1
+shot_num = 1
+
 dataset = my_exp.run(shot_num)
 
-from src.exp.two_qubit_rb.RBResult import RBResult
+from exp.two_qubit_rb.RBResult import RBResult
 res = RBResult(
             circuit_depths=my_exp.circuit_depths,
             num_repeats=my_exp.num_circuits_per_depth,
