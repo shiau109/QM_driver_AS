@@ -27,6 +27,9 @@ import exp.config_par as gc
 from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
 import xarray as xr
+from datetime import datetime
+from qualang_tools.results import progress_counter, fetching_tool
+
 
 class TwoQubitRb_AS(QMMeasurement):
     """
@@ -88,7 +91,7 @@ class TwoQubitRb_AS(QMMeasurement):
         self.circuit_depths: list[int] = [100]
         self.num_circuits_per_depth: int = 100
 
-        self.preprocess = "ave"
+        self.preprocess = "shot"
         self.initializer = None
 
         for i, qe in config["elements"].items():
@@ -108,6 +111,7 @@ class TwoQubitRb_AS(QMMeasurement):
 
         self._interleaving_tableau = tableau_from_cirq(self._interleaving_gate) if self._interleaving_gate is not None else None
         self._config = self._rb_baker.bake()
+        print(self._config["controllers"].keys())
         self._symplectic_generator = GateGenerator(set(self.two_qubit_gate_generators.keys()))
         self._measure_func: Callable[[], Tuple]
         self._verify_generation: bool = False
@@ -185,18 +189,24 @@ class TwoQubitRb_AS(QMMeasurement):
 
                         # measurement
                         multiRO_measurement( iqdata_stream, self.ro_elements, weights='rotated_'  )
-                        assign(state_target, iqdata_stream[0][0] > self.target_q_ro_threshold)  # assume that all information is in I
-                        assign(state_control, iqdata_stream[0][1] > self.control_q_ro_threshold)  # assume that all information is in I
-                        assign(state, (Cast.to_int(state_control) << 1) + Cast.to_int(state_target))
+                        # print(iqdata_stream)
+
+                        # assign(state_target, iqdata_stream[0][0] > self.target_q_ro_threshold)  # assume that all information is in I
+                        # assign(state_control, iqdata_stream[0][1] > self.control_q_ro_threshold)  # assume that all information is in I
+                        # assign(state, (Cast.to_int(state_control) << 1) + Cast.to_int(state_target))
                         # save(state, state_os)
 
 
                         # Save the averaging iteration to get the progress bar
-                        save(n, n_st)
+                        #save(n, n_st)
             with stream_processing():
                 # state_os.buffer(len(self.circuit_depths), self.num_circuits_per_depth, self.shot_num).save("state")
-                n_st.save_all("iteration")
-                multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.circuit_depths),))
+                #n_st.save("iteration")
+                match self.preprocess:
+                    case "shot":
+                        multiRO_pre_save(iqdata_stream, self.ro_elements, ( len(self.circuit_depths), self.num_circuits_per_depth, self.shot_num,) ,stream_preprocess="shot")
+                    case _:
+                        print("Only support single shot preprocess mode")
 
         return qua_prog
         
@@ -206,7 +216,7 @@ class TwoQubitRb_AS(QMMeasurement):
             ro_ch_name.append(f"{r_name}_I")
             ro_ch_name.append(f"{r_name}_Q")
 
-        data_list = ro_ch_name + ["iteration"]   
+        data_list = ro_ch_name #+ ["iteration"]   
         return data_list
     
     def _data_formation( self ):
@@ -214,14 +224,15 @@ class TwoQubitRb_AS(QMMeasurement):
         coords = { 
             "mixer":np.array(["I","Q"]), 
             "circuit_depths":self.circuit_depths,
+            "num_circuit":np.arange(self.num_circuits_per_depth)
             #"prepare_state": np.array([0,1])
             }
         match self.preprocess:
             case "shot":
-                dims_order = ["mixer","shot","circuit_depths"]
+                dims_order = ["mixer","circuit_depths", "num_circuit","shot"]
                 coords["shot"] = np.arange(self.shot_num)
             case _:
-                dims_order = ["mixer","circuit_depths"]
+                dims_order = ["mixer","circuit_depths", "num_circuit"]
 
         output_data = {}
         for r_idx, r_name in enumerate(self.ro_elements):
@@ -345,6 +356,48 @@ class TwoQubitRb_AS(QMMeasurement):
                 if callback is not None:
                     callback(sequence)
 
+    def run( self, shot_num:int=None, save_path:str=None , **kwargs,):
+
+        if shot_num is not None:
+            print(f"New setting {shot_num} shots")
+            self.shot_num = shot_num
+        self._qm = self.qmm.open_qm( self.config )
+        qua_program = self._get_qua_program()
+
+        measurement_start_time = datetime.now()
+
+        job = self._qm.execute(qua_program)
+        gen_sequence_callback = kwargs["gen_sequence_callback"] if "gen_sequence_callback" in kwargs else None
+        self._insert_all_input_stream(job, gen_sequence_callback)
+
+        match self.fetch_mode:
+            case 'live':
+                self._results = fetching_tool(job, data_list=self._get_fetch_data_list(), mode="live")
+                while self._results.is_processing():
+                    # Fetch results
+                    fetch_data = self._results.fetch_all()
+                    # Progress bar
+                    # iteration = fetch_data[-1]
+                    # progress_counter(iteration, self.shot_num, start_time=self._results.start_time)
+                    # time.sleep(1)
+
+            case _:
+                self._results = fetching_tool(job, data_list=self._get_fetch_data_list())
+                
+        
+        measurement_end_time = datetime.now()
+        self.fetch_data = self._results.fetch_all()
+        self._qm.close()
+
+        self.output_data = self._data_formation()
+        self.output_data.attrs["start_time"] = str(measurement_start_time.strftime("%Y%m%d_%H%M%S"))
+        self.output_data.attrs["end_time"] = str(measurement_end_time.strftime("%Y%m%d_%H%M%S"))
+
+        if save_path is not None:
+            self.output_data.to_netcdf(save_path)
+            
+        return self.output_data
+   
     # def run(
     #     self,
     #     qmm: QuantumMachinesManager,

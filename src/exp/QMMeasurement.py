@@ -16,6 +16,7 @@ class QMMeasurement( ABC ):
         self.__describe()
         self.config = config
         self.qmm = qmm
+        self.fetch_mode = "wait_for_all"
 
     @abstractmethod
     def _get_qua_program( self ):
@@ -41,14 +42,20 @@ class QMMeasurement( ABC ):
 
         job = self._qm.execute(qua_program)
 
-        self._results = fetching_tool(job, data_list=self._get_fetch_data_list(), mode="live")
-        while self._results.is_processing():
-            # Fetch results
-            fetch_data = self._results.fetch_all()
-            # Progress bar
-            iteration = fetch_data[-1]
-            progress_counter(iteration, self.shot_num, start_time=self._results.start_time)
-            time.sleep(1)
+        match self.fetch_mode:
+            case 'live':
+                self._results = fetching_tool(job, data_list=self._get_fetch_data_list(), mode="live")
+                while self._results.is_processing():
+                    # Fetch results
+                    fetch_data = self._results.fetch_all()
+                    # Progress bar
+                    iteration = fetch_data[-1]
+                    progress_counter(iteration, self.shot_num, start_time=self._results.start_time)
+                    time.sleep(1)
+
+            case _:
+                self._results = fetching_tool(job, data_list=self._get_fetch_data_list())
+                
         
         measurement_end_time = datetime.now()
         self.fetch_data = self._results.fetch_all()
@@ -70,8 +77,7 @@ class QMMeasurement( ABC ):
         simulation_config = SimulationConfig(duration=max_time)  # In clock cycles = 4ns
         qua_program = self._get_qua_program()
         job = self.qmm.simulate(self.config, qua_program, simulation_config)
-
-        for con_name in controllers:
+        for con_name in controllers:      
             getattr(job.get_simulated_samples(), con_name).plot()
         plt.show()
 

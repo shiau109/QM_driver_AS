@@ -23,7 +23,7 @@ class SequenceTracker:
         of gates and command ids
         """
         self._record_sequence_as_list_of_command_ids(command_ids)
-        self._record_sequence_as_list_of_gates(command_ids)
+        # self._record_sequence_as_list_of_gates(command_ids)
 
     def _record_sequence_as_list_of_command_ids(self, command_ids: list[int]):
         self._sequences_as_command_ids.append([])
