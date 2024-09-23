@@ -24,29 +24,29 @@ from ab.QM_config_dynamic import initializer
 
 from exp.two_qubit_rb.TwoQubitRB import TwoQubitRb_AS
 my_exp = TwoQubitRb_AS(config, qmm)
-my_exp.circuit_depths = [1,]
+my_exp.circuit_depths = [0, 1]
 my_exp.num_circuits_per_depth = 2
 shot_num = 2
 my_exp.preprocess = "shot"
 dataset = my_exp.run(shot_num)
 print(dataset)
 from exp.two_qubit_rb.RBResult import RBResult
-# res = RBResult(
-#             circuit_depths=my_exp.circuit_depths,
-#             num_repeats=my_exp.num_circuits_per_depth,
-#             num_averages=shot_num,
-#             state=dataset.coords["state"],
-#         )
+res = RBResult(
+            circuit_depths=my_exp.circuit_depths,
+            num_repeats=my_exp.num_circuits_per_depth,
+            num_averages=shot_num,
+            state=dataset.coords["state"],
+        )
 # circuit_depths ~ how many consecutive Clifford gates within one executed circuit
 # (https://qiskit.org/documentation/apidoc/circuit.html)
 # num_circuits_per_depth ~ how many random circuits within one depth
 # num_shots_per_circuit ~ repetitions of the same circuit (averaging)
 
-res.plot_hist()
-plt.show()
+# res.plot_hist()
+# plt.show()
 
-res.plot_with_fidelity()
-plt.show()
+# res.plot_with_fidelity()
+# plt.show()
 
 save_dir = link_config["path"]["output_root"]
 # verify/save the random sequences created during the experiment

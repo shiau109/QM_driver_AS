@@ -16,7 +16,7 @@ class QMMeasurement( ABC ):
         self.__describe()
         self.config = config
         self.qmm = qmm
-        self.fetch_mode = "wait_for_all"
+        self.fetch_mode = "live"
 
     @abstractmethod
     def _get_qua_program( self ):

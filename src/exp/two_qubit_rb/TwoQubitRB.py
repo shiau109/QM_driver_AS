@@ -223,16 +223,15 @@ class TwoQubitRb_AS(QMMeasurement):
 
         coords = { 
             "mixer":np.array(["I","Q"]), 
-            "circuit_depths":self.circuit_depths,
-            "num_circuit":np.arange(self.num_circuits_per_depth)
-            #"prepare_state": np.array([0,1])
+            "circuit_depth":self.circuit_depths,
+            "repeat":np.arange(self.num_circuits_per_depth),
+            "average":np.arange(self.shot_num),
             }
         match self.preprocess:
             case "shot":
-                dims_order = ["mixer","circuit_depths", "num_circuit","shot"]
-                coords["shot"] = np.arange(self.shot_num)
+                dims_order = ["mixer","circuit_depth", "repeat", "average"]
             case _:
-                dims_order = ["mixer","circuit_depths", "num_circuit"]
+                dims_order = ["mixer","circuit_depth", "repeat", "average"]
 
         output_data = {}
         for r_idx, r_name in enumerate(self.ro_elements):
@@ -250,7 +249,8 @@ class TwoQubitRb_AS(QMMeasurement):
         dataset.attrs["xy_IF"] = self.ref_xy_IF
         dataset.attrs["z_offset"] = self.z_offset
 
-        dataset.attrs["z_amp_const"] = self.z_amp
+        dataset.attrs["control_q_ro_threshold"] = self.control_q_ro_threshold
+        dataset.attrs["target_q_ro_threshold"] = self.target_q_ro_threshold
         return dataset
 
     def _attribute_config( self ):
@@ -265,12 +265,12 @@ class TwoQubitRb_AS(QMMeasurement):
 
         self.ref_xy_IF = []
         self.ref_xy_LO = []
-        self.ref_ro_IF.append(gc.get_IF(f"{self.target_q}_xy", self.config))
-        self.ref_ro_LO.append(gc.get_LO(f"{self.target_q}_xy", self.config))
-        self.ref_ro_IF.append(gc.get_IF(f"{self.control_q}_xy", self.config))
-        self.ref_ro_LO.append(gc.get_LO(f"{self.control_q}_xy", self.config))
-        self.ref_ro_IF.append(gc.get_IF(f"{self.coupler}_xy", self.config))
-        self.ref_ro_LO.append(gc.get_LO(f"{self.coupler}_xy", self.config))
+        self.ref_xy_IF.append(gc.get_IF(f"{self.target_q}_xy", self.config))
+        self.ref_xy_LO.append(gc.get_LO(f"{self.target_q}_xy", self.config))
+        self.ref_xy_IF.append(gc.get_IF(f"{self.control_q}_xy", self.config))
+        self.ref_xy_LO.append(gc.get_LO(f"{self.control_q}_xy", self.config))
+        self.ref_xy_IF.append(gc.get_IF(f"{self.coupler}_xy", self.config))
+        self.ref_xy_LO.append(gc.get_LO(f"{self.coupler}_xy", self.config))
 
         self.z_offset = []
         self.z_amp = []

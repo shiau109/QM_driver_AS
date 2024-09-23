@@ -25,26 +25,26 @@ import xarray as xr
 # Set parameters
 from exp.zline_crosstalk import FluxCrosstalk
 my_exp = FluxCrosstalk(config, qmm)
-my_exp.detector_qubit = "q8"
+my_exp.detector_qubit = "q0"
 my_exp.detector_is_coupler = False
-my_exp.crosstalk_qubit = "q4"
-my_exp.ro_elements = ["q7_ro", "q8_ro"]
+my_exp.crosstalk_qubit = "q1"
+my_exp.ro_elements = ["q0_ro", "q1_ro"]
 
-my_exp.expect_crosstalk = 0.5
+my_exp.expect_crosstalk = 0.05
 my_exp.detector_bias = 0.
 my_exp.z_modify_range = 0.2
-my_exp.z_resolution = 0.008
-my_exp.z_time = 0.16
+my_exp.z_resolution = 0.004
+my_exp.z_time = 5
 
 my_exp.measure_method = "long_drive"   #long_drive, ramsey
 my_exp.z_method = "pulse"     #offset, pulse
 
-my_exp.initializer = initializer(50000,mode='wait')
+my_exp.initializer = initializer(2000000,mode='wait')
 dataset = my_exp.run( 100 )
 
 
 save_data = True
-folder_label = "Zline_crosstalk_1" #your data and plots with be saved under a new folder with this name
+folder_label = f"Zline_crosstalk_{my_exp.z_time}" #your data and plots with be saved under a new folder with this name
 file_name = f"detector_{my_exp.detector_qubit}_crosstalk_{my_exp.crosstalk_qubit}_{my_exp.measure_method}_{my_exp.z_method}_expectcrosstalk_{my_exp.expect_crosstalk}_{my_exp.z_time}mius"
 if save_data: 
     from exp.save_data import DataPackager
@@ -59,8 +59,8 @@ raw_figures = plot_crosstalk_3Dscalar(dataset)
 from exp.save_data import DataPackager
 
 dp.save_figs(raw_figures)
-# dp.save_figs(analysis_figures)
-
+dp.save_figs(analysis_figures)
+plt.show()
 # # 保存每个图像并显示
 # for fig, ax, q in raw_figures:
 #     plt.figure(fig.number)  # 设置当前图形对象
