@@ -249,8 +249,16 @@ class TwoQubitRb_AS(QMMeasurement):
         dataset.attrs["xy_IF"] = self.ref_xy_IF
         dataset.attrs["z_offset"] = self.z_offset
 
+
+        dataset.attrs["control_q"] = self.control_q
+        dataset.attrs["target_q"] = self.target_q
+        dataset.attrs["coupler"] = self.coupler
         dataset.attrs["control_q_ro_threshold"] = self.control_q_ro_threshold
+        dataset.attrs["control_q_frame_correction"] = self.control_q_frame_correction
         dataset.attrs["target_q_ro_threshold"] = self.target_q_ro_threshold
+        dataset.attrs["target_q_frame_correction"] = self.target_q_frame_correction
+        dataset.attrs["cz_control_q_amp"] = self.cz_control_q_amp
+        dataset.attrs["cz_coupler_amp"] = self.cz_coupler_amp
         return dataset
 
     def _attribute_config( self ):
