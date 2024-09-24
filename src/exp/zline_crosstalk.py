@@ -115,8 +115,8 @@ class FluxCrosstalk( QMMeasurement ):
                                 play( "x90", f"{self.detector_qubit}_xy" )
                                 align()
                                 wait(5)
-                                play("const"*amp(z_crosstalk*2.), f"{self.crosstalk_qubit}_z", self.z_time_cc)         #const 預設0.5, microsecond transfrom to cc
-                                play("const"*amp(z_detector*2.), f"{self.detector_qubit}_z", self.z_time_cc)
+                                play("const"*amp(z_crosstalk/self.config["waveforms"][f"{self.crosstalk_qubit}_z_const_wf"]["sample"]), f"{self.crosstalk_qubit}_z", self.z_time_cc)         #const 預設0.5, microsecond transfrom to cc
+                                play("const"*amp(z_detector/self.config["waveforms"][f"{self.detector_qubit}_z_const_wf"]["sample"]), f"{self.detector_qubit}_z", self.z_time_cc)
                                 align()
                                 wait(5) 
                                 play( "x90", f"{self.detector_qubit}_xy" )
@@ -162,11 +162,11 @@ class FluxCrosstalk( QMMeasurement ):
                                         wait(1 * u.us, self.ro_elements) 
 
                                 # Opration
-                                play("const"*amp(z_crosstalk*10.), f"{self.crosstalk_qubit}_z", self.z_time_cc+10)         #const 預設0.5
-                                play("const"*amp(z_detector*10.), f"{self.detector_qubit}_z", self.z_time_cc+10)
+                                play("const"*amp(z_crosstalk/self.config["waveforms"][f"{self.crosstalk_qubit}_z_const_wf"]["sample"]), f"{self.crosstalk_qubit}_z", self.z_time_cc+10)         #const 預設0.5
+                                play("const"*amp(z_detector/self.config["waveforms"][f"{self.detector_qubit}_z_const_wf"]["sample"]), f"{self.detector_qubit}_z", self.z_time_cc+10)
                                 wait(5)
-                                # play( "x180"*amp(self.pi_amp_ratio), f"{self.detector_qubit}_xy", duration=self.z_time_cc )
-                                play("const"*amp( 0.2 ), f"{self.detector_qubit}_xy", duration=self.z_time_cc)
+                                play( "x180"*amp(self.pi_amp_ratio), f"{self.detector_qubit}_xy", duration=self.z_time_cc )
+                                # play("const"*amp( 0.2 ), f"{self.detector_qubit}_xy", duration=self.z_time_cc)
                                 # wait(17-5, f"{self.crosstalk_qubit}_z")    #不加這個wait的話x180會比z慢17cc，到底為啥???
                                 # wait(17-5, f"{self.detector_qubit}_z")    #不加這個wait的話x180會比z慢17cc，到底為啥???
 
@@ -317,8 +317,8 @@ class FluxCrosstalk( QMMeasurement ):
                                 # play( "x180", f"{self.detector_qubit}_xy", duration=self.z_time_cc )
                                 # play("const"*amp( 0.05 ), f"{self.detector_qubit}_xy", duration=self.z_time_cc)
                                 # wait(17-5)    #不加這個wait的話x180會比z慢17cc，到底為啥???
-                                play("const"*amp(z_crosstalk*2.), f"{self.crosstalk_qubit}_z", self.z_time_cc+10)         #const 預設0.5
-                                play("const"*amp(z_detector*2.), f"{self.detector_qubit}_z", self.z_time_cc+10)
+                                play("const"*amp(z_crosstalk/self.config["waveforms"][f"{self.crosstalk_qubit}_z_const_wf"]["sample"]), f"{self.crosstalk_qubit}_z", self.z_time_cc+10)         #const 預設0.5
+                                play("const"*amp(z_detector/self.config["waveforms"][f"{self.detector_qubit}_z_const_wf"]["sample"]), f"{self.detector_qubit}_z", self.z_time_cc+10)
                                 wait(5)
                                 play("const"*amp( 0.2 ), f"{self.detector_qubit}_xy", duration=self.z_time_cc)
                                 for i, ro in enumerate(self.ro_elements):
@@ -508,8 +508,8 @@ class FluxCrosstalk_2points( QMMeasurement ):
                                 play( "x90", f"{self.detector_qubit}_xy" )
                                 align()
                                 wait(5)
-                                play("const"*amp(z_crosstalk*2.), f"{self.crosstalk_qubit}_z", self.z_time_cc)         #const 預設0.5, microsecond transfrom to cc
-                                play("const"*amp(z_detector*2.), f"{self.detector_qubit}_z", self.z_time_cc)
+                                play("const"*amp(z_crosstalk/self.config["waveforms"][f"{self.crosstalk_qubit}_z_const_wf"]["sample"]), f"{self.crosstalk_qubit}_z", self.z_time_cc)         #const 預設0.5, microsecond transfrom to cc
+                                play("const"*amp(z_detector/self.config["waveforms"][f"{self.detector_qubit}_z_const_wf"]["sample"]), f"{self.detector_qubit}_z", self.z_time_cc)
                                 align()
                                 wait(5) 
                                 play( "x90", f"{self.detector_qubit}_xy" )
@@ -556,8 +556,8 @@ class FluxCrosstalk_2points( QMMeasurement ):
                                 # Opration
                                 play( "x180"*amp(self.pi_amp_ratio), f"{self.detector_qubit}_xy", duration=self.z_time_cc )
                                 wait(17-5)    #不加這個wait的話x180會比z慢17cc，到底為啥???
-                                play("const"*amp(z_crosstalk*2.), f"{self.crosstalk_qubit}_z", self.z_time_cc+10)         #const 預設0.5
-                                play("const"*amp(z_detector*2.), f"{self.detector_qubit}_z", self.z_time_cc+10)
+                                play("const"*amp(z_crosstalk/self.config["waveforms"][f"{self.crosstalk_qubit}_z_const_wf"]["sample"]), f"{self.crosstalk_qubit}_z", self.z_time_cc+10)         #const 預設0.5
+                                play("const"*amp(z_detector/self.config["waveforms"][f"{self.detector_qubit}_z_const_wf"]["sample"]), f"{self.detector_qubit}_z", self.z_time_cc+10)
                                 wait(self.z_time_cc+15)
 
                                 # Readout
@@ -705,8 +705,8 @@ class FluxCrosstalk_2points( QMMeasurement ):
                                 # play( "x180", f"{self.detector_qubit}_xy", duration=self.z_time_cc )
                                 # play("const"*amp( 0.05 ), f"{self.detector_qubit}_xy", duration=self.z_time_cc)
                                 # wait(17-5)    #不加這個wait的話x180會比z慢17cc，到底為啥???
-                                play("const"*amp(z_crosstalk*2.), f"{self.crosstalk_qubit}_z", self.z_time_cc+10)         #const 預設0.5
-                                play("const"*amp(z_detector*2.), f"{self.detector_qubit}_z", self.z_time_cc+10)
+                                play("const"*amp(z_crosstalk/self.config["waveforms"][f"{self.crosstalk_qubit}_z_const_wf"]["sample"]), f"{self.crosstalk_qubit}_z", self.z_time_cc+10)         #const 預設0.5
+                                play("const"*amp(z_detector/self.config["waveforms"][f"{self.detector_qubit}_z_const_wf"]["sample"]), f"{self.detector_qubit}_z", self.z_time_cc+10)
                                 wait(5)
                                 play("const"*amp( 0.05 ), f"{self.detector_qubit}_xy", duration=self.z_time_cc)
                                 for i, ro in enumerate(self.ro_elements):

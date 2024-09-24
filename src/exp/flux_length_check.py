@@ -37,7 +37,7 @@ class Flux_length_check( QMMeasurement ):
     freq_resolution: \n
         is a float, unit in MHz, ref to idle IF \n
     flux_type: \n
-        enumerate offset, play
+        enumerate offset, pulse
 
     return: \n
     dataset \n
@@ -48,21 +48,21 @@ class Flux_length_check( QMMeasurement ):
     def __init__( self, config, qmm: QuantumMachinesManager ):
         super().__init__( config, qmm )
 
-        self.ro_elements = ["q4_ro"]
-        self.z_elements = ["q0_z"]
-        self.xy_elements = ["q4_xy"]
+        self.ro_elements = ["q1_ro"]
+        self.z_elements = ["q1_z"]
+        self.xy_elements = ["q1_xy"]
         
         self.preprocess = "ave"
         self.initializer = None
         
-        self.flux_type = "offset" #offset or play
+        self.flux_type = "pulse" #offset or pulse
         self.xy_driving_time = 10
-        self.xy_amp_mod = 0.1
-        self.flux_quanta = 0.2
+        self.xy_amp_mod = 0.01
+        self.flux_quanta = 0.6
         self.set_flux_quanta = 0.1
 
-        self.freq_range = ( -1, 1 )
-        self.freq_resolution = 0.5
+        self.freq_range = ( -10, 10 )
+        self.freq_resolution = 0.2
 
         
 
@@ -81,8 +81,8 @@ class Flux_length_check( QMMeasurement ):
             df = declare(int)  
             if (self.flux_type == "offset"):
                 for i, z in enumerate(self.z_elements):
-                    set_dc_offset( self.z_elements[0], "single", get_offset(f"{self.crosstalk_qubit}_z",self.config)+self.set_flux_quanta*self.flux_quanta )
-            elif(self.flux_type == "play"):
+                    set_dc_offset( self.z_elements[0], "single", get_offset(self.z_elements[0],self.config)+self.set_flux_quanta*self.flux_quanta )
+            elif(self.flux_type == "pulse"):
                 pass
             else:
                 print("no such flux_type")
@@ -102,9 +102,10 @@ class Flux_length_check( QMMeasurement ):
                     # operation
                     if (self.flux_type == "offset"):
                         pass
-                    elif(self.flux_type == "play"):
+                    elif(self.flux_type == "pulse"):
                         for i, z in enumerate(self.z_elements):
-                            play( "const"*amp( 10*self.set_flux_quanta*self.flux_quanta ), z, duration=self.qua_xy_driving_time)
+                            play( "const"*amp( self.set_flux_quanta*self.flux_quanta/self.config["waveforms"][f"{self.z_elements[0]}_const_wf"]["sample"] ), z, duration=self.qua_xy_driving_time+10)
+                            wait(5)
                     else:
                         print("no such flux_type")
                     
@@ -120,7 +121,7 @@ class Flux_length_check( QMMeasurement ):
                 save(n, n_st)
             with stream_processing():
                 n_st.save("iteration")
-                multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.qua_freqs)))
+                multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.qua_freqs),))
 
         return qua_prog
         
@@ -167,6 +168,14 @@ class Flux_length_check( QMMeasurement ):
         dataset.attrs["z_offset"] = self.z_offset
 
         dataset.attrs["z_amp_const"] = self.z_amp
+        dataset.attrs["flux_type"] = self.flux_type
+        dataset.attrs["xy_driving_time"] = self.xy_driving_time
+        dataset.attrs["xy_amp_mod"] = self.xy_amp_mod
+        dataset.attrs["flux_quanta"] = self.flux_quanta
+        dataset.attrs["set_flux_quanta"] = self.set_flux_quanta
+
+        dataset.attrs["freq_range"] = self.freq_range
+        dataset.attrs["freq_resolution"] = self.freq_resolution
         return dataset
 
     def _attribute_config( self ):

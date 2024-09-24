@@ -224,9 +224,16 @@ class PainterFluxCheck( RawDataPainter ):
         abs_freq = self.xy_LO+self.xy_IF_idle+freqs
         
         ax[0].plot(abs_freq, np.real(s21), color='b', label='I value')  
-        ax[0].axvline(x=self.xy_LO+self.xy_IF_idle, color='b', linestyle='--', label='ref IF')
-        ax[0].axvline(x=self.xy_LO, color='r', linestyle='--', label='LO')
-        ax[0].axhline(y=self.z_offset, color='black', linestyle='--', label='idle z')
+        # Find the maximum value of np.real(s21) and its corresponding frequency
+        max_idx = np.argmax(np.real(s21))  # Index of the maximum value
+        max_real_s21 = np.real(s21)[max_idx]  # Maximum I value
+        max_freq = abs_freq[max_idx]  # Corresponding frequency
+
+        # Annotate the maximum value on the plot
+        ax[0].annotate(f"Max at {max_freq:.2f} MHz", 
+                    xy=(max_freq, max_real_s21), 
+                    xytext=(max_freq, max_real_s21+1e-6),  # Adjust text position
+                    arrowprops=dict(facecolor='black', arrowstyle="->"))
         ax[0].set_title(f"{title} I value")
         ax[0].set_ylabel("I value")
         ax[0].set_xlabel("Additional IF freq (MHz)")
@@ -234,9 +241,6 @@ class PainterFluxCheck( RawDataPainter ):
 
         # 绘制 Q (虚部) 数据的线图
         ax[1].plot(abs_freq, np.imag(s21), color='r', label='Q value')
-        ax[1].axvline(x=self.xy_LO+self.xy_IF_idle, color='b', linestyle='--', label='ref IF')
-        ax[1].axvline(x=self.xy_LO, color='r', linestyle='--', label='LO')
-        ax[1].axhline(y=self.z_offset, color='black', linestyle='--', label='idle z')
         ax[1].set_title(f"{title} Q value")
         ax[1].set_ylabel("Q value")
         ax[1].set_xlabel("Additional IF freq (MHz)")
@@ -316,13 +320,14 @@ class PainterT1Single( RawDataPainter ):
         ax[0].plot( time, np.real(s21),"o", label="data",markersize=1)
         if fit_result_i is not None:
             ax[0].plot( time, fit_result_i.best_fit, label="fit")
-
+            print(fit_result_i.params['tau'].value)
         ax[1].set_title(f"{title} T1 Q data")
         ax[1].set_xlabel("Wait time (us)")
         ax[1].set_ylabel(f"voltage (mV)")
         ax[1].plot( time, np.real(s21),"o", label="data",markersize=1)
         if fit_result_q is not None:
             ax[1].plot( time, fit_result_q.best_fit, label="fit")
+            print(fit_result_q.params['tau'].value)
 
         return fig
     
