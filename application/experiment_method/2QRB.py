@@ -37,7 +37,7 @@ def assign_states_and_cleanup(ds):
     state_target_int = state_target.astype(int)
     
     # Combine the two states into a single state variable
-    state = (state_control_int ) + (state_target_int << 1)
+    state = (state_control_int << 1) + (state_target_int )
     
     # Create a new dataset containing only the combined state
     new_ds = xr.Dataset(
@@ -54,22 +54,56 @@ def assign_states_and_cleanup(ds):
     
     return new_ds
 
+def bake_phased_xz(baker: Baking, q, x, z, a):
+    if q == 1:
+        q=my_exp.target_q
+    elif q==2:
+        q=my_exp.control_q
+    else:
+        print("no such qubit")
+    print(f"q={q}")
+
+    baker.frame_rotation_2pi(a / 2, f"{q}_xy")
+    baker.play("x180", f"{q}_xy", amp=x)
+    baker.frame_rotation_2pi(-(a + z) / 2, f"{q}_xy")
+
+def bake_cz(baker: Baking, q1, q2):
+
+    # single qubit phase corrections in units of 2pi applied after the CZ gate
+    print(f"q={q1}, {q2}")
+
+    baker.play("const", f"{my_exp.control_q}_z", amp=my_exp.cz_control_q_amp)
+    baker.play("const", f"{my_exp.coupler}_z", amp=my_exp.cz_coupler_amp)
+    baker.align()
+    baker.frame_rotation_2pi(my_exp.target_q_frame_correction, f"{my_exp.target_q}_xy")
+    baker.frame_rotation_2pi(my_exp.control_q_frame_correction, f"{my_exp.control_q}_xy")
+    baker.align()
+
 from exp.two_qubit_rb.TwoQubitRB import TwoQubitRb_AS
 my_exp = TwoQubitRb_AS(config, qmm)
-my_exp.control_q = "q0"
-my_exp.target_q = "q1"
-my_exp.coupler = "q2"
-my_exp.circuit_depths = [0, 1]
-my_exp.num_circuits_per_depth = 2
-shot_num = 2
+my_exp.control_q = "q4"
+my_exp.target_q = "q3"
+my_exp.coupler = "q8"
+my_exp.control_q_frame_correction = 0.8259861205684337/2/np.pi
+my_exp.control_q_ro_threshold = 1.479e-04
+my_exp.target_q_frame_correction = -2.4383905472625473/2/np.pi
+my_exp.target_q_ro_threshold = 4.284e-05
+my_exp.single_qubit_gate_generator = bake_phased_xz
+my_exp.two_qubit_gate_generators = {"CZ": bake_cz}
+my_exp.cz_control_q_amp = -0.3
+my_exp.cz_coupler_amp = -0.212
+my_exp.circuit_depths = [10, 20]
+my_exp.num_circuits_per_depth = 10
+my_exp.initializer=initializer(200000,mode='wait')
+shot_num = 10
 my_exp.preprocess = "shot"
 dataset = my_exp.run(shot_num)
-print(dataset)
+# print(dataset)
 
 
 # Example usage
 new_ds = assign_states_and_cleanup(dataset)
-print(new_ds)
+# print(new_ds)
 
 from exp.two_qubit_rb.RBResult import RBResult
 res = RBResult(

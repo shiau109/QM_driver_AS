@@ -93,7 +93,9 @@ class TwoQubitRb_AS(QMMeasurement):
 
         self.preprocess = "shot"
         self.initializer = None
-
+        self.single_qubit_gate_generator = self.gen_bake_phased_xz  # No parentheses here
+        self.two_qubit_gate_generators = {"CZ": self.gen_bake_cz}   # No parentheses here
+        
         for i, qe in config["elements"].items():
             if "operations" not in qe:
                 qe["operations"] = {}
@@ -102,18 +104,19 @@ class TwoQubitRb_AS(QMMeasurement):
         self._command_registry = CommandRegistry()
         self._sequence_tracker = SequenceTracker(command_registry=self._command_registry)
 
-        self.single_qubit_gate_generator = self.gen_bake_phased_xz  # No parentheses here
-        self.two_qubit_gate_generators = {"CZ": self.gen_bake_cz}   # No parentheses here
-
+        self.single_qubit_gate_generator = decorate_single_qubit_generator_with_command_recording(
+            self.single_qubit_gate_generator, self._command_registry
+        )
+        self.two_qubit_gate_generators = decorate_two_qubit_gate_generator_with_command_recording(
+            self.two_qubit_gate_generators, self._command_registry
+        )
         self._rb_baker = RBBaker(
             config, self.single_qubit_gate_generator, self.two_qubit_gate_generators, self._interleaving_gate, self._command_registry
         )
 
         self._interleaving_tableau = tableau_from_cirq(self._interleaving_gate) if self._interleaving_gate is not None else None
         self._config = self._rb_baker.bake()
-        print(self._config["controllers"].keys())
         self._symplectic_generator = GateGenerator(set(self.two_qubit_gate_generators.keys()))
-        self._measure_func: Callable[[], Tuple]
         self._verify_generation: bool = False
     
     def gen_bake_phased_xz(self, baker: Baking, q, x, z, a):
@@ -129,13 +132,13 @@ class TwoQubitRb_AS(QMMeasurement):
             baker.frame_rotation_2pi(a / 2, f"{q}_xy")
             baker.play("x180", f"{q}_xy", amp=x)
             baker.frame_rotation_2pi(-(a + z) / 2, f"{q}_xy")
-        return bake_phased_xz
+        bake_phased_xz(baker, q, x, z, a)
 
     def gen_bake_cz(self, baker: Baking, q1, q2):
         def bake_cz(baker: Baking, q1, q2):
 
             # single qubit phase corrections in units of 2pi applied after the CZ gate
-            print(f"q={q1}, {q2}")
+            print(f"q={self.control_q}, {self.target_q}")
 
             baker.play("const", f"{self.control_q}_z", amp=self.cz_control_q_amp)
             baker.play("const", f"{self.coupler}_z", amp=self.cz_coupler_amp)
@@ -143,12 +146,11 @@ class TwoQubitRb_AS(QMMeasurement):
             baker.frame_rotation_2pi(self.target_q_frame_correction, f"{self.target_q}_xy")
             baker.frame_rotation_2pi(self.control_q_frame_correction, f"{self.control_q}_xy")
             baker.align()
-        return bake_cz
+        bake_cz(baker, q1, q2)
     
     def _get_qua_program( self ):
         self._attribute_config()
         self.ro_elements = [f"{self.target_q}_ro", f"{self.control_q}_ro"]
-
         with program() as qua_prog:
 
             iqdata_stream = multiRO_declare( self.ro_elements )
@@ -377,7 +379,7 @@ class TwoQubitRb_AS(QMMeasurement):
         job = self._qm.execute(qua_program)
         gen_sequence_callback = kwargs["gen_sequence_callback"] if "gen_sequence_callback" in kwargs else None
         self._insert_all_input_stream(job, gen_sequence_callback)
-
+        
         match self.fetch_mode:
             case 'live':
                 self._results = fetching_tool(job, data_list=self._get_fetch_data_list(), mode="live")
