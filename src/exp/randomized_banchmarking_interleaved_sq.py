@@ -52,7 +52,7 @@ import time
 import xarray as xr
 from exp.QMMeasurement import QMMeasurement
 
-class randomized_banchmarking_sq(QMMeasurement):
+class randomized_banchmarking_interleaved_sq(QMMeasurement):
     def __init__( self, config, qmm: QuantumMachinesManager):
         super().__init__( config, qmm )
         self.max_circuit_depth = 20
@@ -62,6 +62,7 @@ class randomized_banchmarking_sq(QMMeasurement):
         self.initializer = None
         self.n_avg = 100
         self.state_discrimination = False
+        self.interleaved_gate_index = 2
         self.initialization_macro = False
         self.seed = None
         self.gate_length = 40
@@ -94,9 +95,9 @@ class randomized_banchmarking_sq(QMMeasurement):
             with for_(m, 0, m < self.shot_num, m + 1):  # QUA for_ loop over the random sequences
                 sequence_list, inv_gate_list = self._generate_sequence()  # Generate the random sequence of length max_circuit_depth
 
-                assign(depth_target, 1)  # Initialize the current depth to 0
+                assign(depth_target, 2)  # Initialize the current depth to 0
 
-                with for_(depth, 1, depth <= self.max_circuit_depth, depth + 1):  # Loop over the depths
+                with for_(depth, 1, depth <= 2 * self.max_circuit_depth, depth + 1):  # Loop over the depths
                     # Replacing the last gate in the sequence with the sequence's inverse gate
                     # The original gate is saved in 'saved_gate' and is being restored at the end
                     assign(saved_gate, sequence_list[depth])
@@ -202,58 +203,7 @@ class randomized_banchmarking_sq(QMMeasurement):
         )
 
         return dataset
-        # ###########################
-        # # Run or Simulate Program #
-        # ###########################
-        # if self.simulate:
-        #     # Simulates the QUA program for the specified duration
-        #     simulation_config = SimulationConfig(duration=10_000)  # In clock cycles = 4ns
-        #     job = self.qmm.simulate(self.config, rb, simulation_config)
-        #     job.get_simulated_samples().con1.plot()
 
-        # else:
-        #     # Open the quantum machine
-        #     qm = self.qmm.open_qm(self.config)
-        #     # Send the QUA program to the OPX, which compiles and executes it
-        #     job = qm.execute(rb)
-        #     # Get results from QUA program
-        #     if self.state_discrimination:
-        #         results = fetching_tool(job, data_list=["state_avg", "iteration"], mode="live")
-        #     else:
-        #         results = fetching_tool(job, data_list=["I_avg", "Q_avg", "iteration"], mode="live")
-
-        #     # data analysis
-        #     x = np.arange(0, self.max_circuit_depth + 0.1, self.delta_clifford)
-        #     x[0] = 1  # to set the first value of 'x' to be depth = 1 as in the experiment
-        #     while results.is_processing():
-        #         # Fetch results
-        #         fetch_data = results.fetch_all()
-        #         # Progress bar
-        #         iteration = fetch_data[-1]
-        #         progress_counter(iteration, self.shot_num, start_time=results.start_time)
-        #         # Plot
-        #         time.sleep(1)
-
-
-            # # At the end of the program, fetch the non-averaged results to get the error-bars
-            # if self.state_discrimination:
-            #     results = fetching_tool(job, data_list=["state"])
-            #     state = results.fetch_all()[0]
-            #     value_avg = np.mean(state, axis=0)
-            #     error_avg = np.std(state, axis=0)
-            # else:
-            #     results = fetching_tool(job, data_list=["I", "Q"])
-            #     I, Q = results.fetch_all()
-            #     value_avg = np.mean(I, axis=0)
-            #     error_avg = np.std(I, axis=0)
-
-            # # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
-            # qm.close()
-
-            # return x, value_avg, error_avg
-
-    # List of recovery gates from the lookup table
-    
     def _generate_sequence( self ):
         cayley = declare(int, value=c1_table.flatten().tolist())
         inv_list = declare(int, value=inv_gates)
@@ -271,6 +221,11 @@ class randomized_banchmarking_sq(QMMeasurement):
             assign(current_state, cayley[current_state * 24 + step])
             assign(sequence[i], step)
             assign(inv_gate[i], inv_list[current_state])
+            # interleaved gate
+            assign(step, self.interleaved_gate_index)
+            assign(current_state, cayley[current_state * 24 + step])
+            assign(sequence[i + 1], step)
+            assign(inv_gate[i + 1], inv_list[current_state])
 
         return sequence, inv_gate
 
@@ -347,58 +302,3 @@ class randomized_banchmarking_sq(QMMeasurement):
                     play("-x90", self.xy_elements)
                     play("y90", self.xy_elements)
                     play("-x90", self.xy_elements)
-
-# def power_law(power, a, b, p):
-#     return a * (p**power) + b
-
-# def ana_SQRB( x, y ):
-    
-#     pars, cov = curve_fit(
-#         f=power_law,
-#         xdata=x,
-#         ydata=y,
-#         p0=[0.5, 0.5, 0.9],
-#         bounds=(-np.inf, np.inf),
-#         maxfev=2000,
-#     )
-#     stdevs = np.sqrt(np.diag(cov))
-
-#     print("#########################")
-#     print("### Fitted Parameters ###")
-#     print("#########################")
-#     print(f"A = {pars[0]:.3} ({stdevs[0]:.1}), B = {pars[1]:.3} ({stdevs[1]:.1}), p = {pars[2]:.3} ({stdevs[2]:.1})")
-#     print("Covariance Matrix")
-#     print(cov)
-
-#     one_minus_p = 1 - pars[2]
-#     r_c = one_minus_p * (1 - 1 / 2**1)
-#     r_g = r_c / 1.875  # 1.875 is the average number of gates in clifford operation
-#     r_c_std = stdevs[2] * (1 - 1 / 2**1)
-#     r_g_std = r_c_std / 1.875
-
-#     print("#########################")
-#     print("### Useful Parameters ###")
-#     print("#########################")
-#     print(
-#         f"Error rate: 1-p = {np.format_float_scientific(one_minus_p, precision=2)} ({stdevs[2]:.1})\n"
-#         f"Clifford set infidelity: r_c = {np.format_float_scientific(r_c, precision=2)} ({r_c_std:.1})\n"
-#         f"Gate infidelity: r_g = {np.format_float_scientific(r_g, precision=2)}  ({r_g_std:.1})"
-#     )
-    
-#     return pars
-
-# def plot_SQRB_live( x, y, ax ):  # ??
-#     ax.plot(x, y, marker=".")
-#     ax.set_xlabel("Number of Clifford gates")
-#     ax.set_ylabel("Sequence Fidelity")
-#     ax.set_title("Single qubit RB")
-
-# def plot_SQRB_result( x, y, yerr, fig:Figure=None ):
-
-#     fig, ax = plt.subplots()
-#     par = ana_SQRB( x, y )
-#     ax.errorbar(x, y, yerr=yerr, marker=".")
-#     ax.plot(x, power_law(x, *par), linestyle="--", linewidth=2)
-#     ax.set_xlabel("Number of Clifford gates")
-#     ax.set_ylabel("Sequence Fidelity")
-#     ax.set_title("Single qubit RB")
