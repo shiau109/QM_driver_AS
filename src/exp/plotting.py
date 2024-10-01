@@ -7,7 +7,7 @@ from matplotlib.figure import Figure
 from abc import ABC, abstractmethod
 
 from xarray import Dataset, DataArray
-class RawDataPainter():
+class RawDataPainter(ABC):
 
     def __init__( self ):
         self.output_fig = []
@@ -126,7 +126,7 @@ class PainterFluxDepQubit( RawDataPainter ):
     def _data_parser( self ):
         dataarray = self.plot_data
         self.freqs = dataarray.coords["frequency"].values
-        self.flux = dataarray.coords["amp_ratio"].values
+        self.flux = dataarray.coords["amp_ratio"].values *dataarray.attrs["z_amp_const"]
 
         self.xy_LO = dataarray.attrs["xy_LO"][0]/1e6
         self.xy_IF_idle = dataarray.attrs["xy_IF"][0]/1e6
@@ -144,11 +144,12 @@ class PainterFluxDepQubit( RawDataPainter ):
         fig, ax = plt.subplots(2)
 
         abs_freq = self.xy_LO+self.xy_IF_idle+freqs
+        abs_flux = self.z_offset+flux
         
         # if yscale == "log":
         #     pcm = ax.pcolormesh(freqs, np.log10(amp_ratio), np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
         # else:
-        pcm = ax[0].pcolormesh(abs_freq, flux, np.real(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+        pcm = ax[0].pcolormesh(abs_freq, abs_flux, np.real(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
         ax[0].axvline(x=self.xy_LO+self.xy_IF_idle, color='b', linestyle='--', label='ref IF')
         ax[0].axvline(x=self.xy_LO, color='r', linestyle='--', label='LO')
         ax[0].axhline(y=self.z_offset, color='black', linestyle='--', label='idle z')
@@ -158,7 +159,7 @@ class PainterFluxDepQubit( RawDataPainter ):
         plt.colorbar(pcm, label='Value')
         ax[0].legend()
 
-        pcm = ax[1].pcolormesh(abs_freq, flux, np.imag(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+        pcm = ax[1].pcolormesh(abs_freq, abs_flux, np.imag(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
         ax[1].set_title(f"{title} Q value")
         ax[1].axvline(x=self.xy_LO+self.xy_IF_idle, color='b', linestyle='--', label='ref IF')
         ax[1].axvline(x=self.xy_LO, color='r', linestyle='--', label='LO')
@@ -172,12 +173,12 @@ class PainterFluxDepQubit( RawDataPainter ):
 
         return fig
 
+
 class PainterQubitSpec( RawDataPainter ):
 
     def _data_parser( self ):
         dataarray = self.plot_data
         self.freqs = dataarray.coords["frequency"].values
-
         self.xy_LO = dataarray.attrs["xy_LO"][0]/1e6
         self.xy_IF_idle = dataarray.attrs["xy_IF"][0]/1e6
 
@@ -192,7 +193,7 @@ class PainterQubitSpec( RawDataPainter ):
         fig, ax = plt.subplots(2)
 
         abs_freq = self.xy_LO+self.xy_IF_idle+freqs
-        
+
         # if yscale == "log":
         #     pcm = ax.pcolormesh(freqs, np.log10(amp_ratio), np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
         # else:
@@ -215,7 +216,54 @@ class PainterQubitSpec( RawDataPainter ):
         plt.tight_layout()
 
         return fig
-   
+    
+class PainterFluxCheck( RawDataPainter ):
+
+    def _data_parser( self ):
+        dataarray = self.plot_data
+        self.freqs = dataarray.coords["frequency"].values
+
+        self.xy_LO = dataarray.attrs["xy_LO"][0]/1e6
+        self.xy_IF_idle = dataarray.attrs["xy_IF"][0]/1e6
+        self.z_offset = dataarray.attrs["z_offset"][0]
+
+        idata = dataarray.values[0]
+        qdata = dataarray.values[1]
+        self.zdata = idata +1j*qdata
+
+    def _plot_method( self ):
+        s21 = self.zdata
+        freqs = self.freqs
+        title = self.title
+        fig, ax = plt.subplots(2)
+
+        abs_freq = self.xy_LO+self.xy_IF_idle+freqs
+        
+        ax[0].plot(abs_freq, np.real(s21), color='b', label='I value')  
+        # Find the maximum value of np.real(s21) and its corresponding frequency
+        max_idx = np.argmax(np.real(s21))  # Index of the maximum value
+        max_real_s21 = np.real(s21)[max_idx]  # Maximum I value
+        max_freq = abs_freq[max_idx]  # Corresponding frequency
+
+        # Annotate the maximum value on the plot
+        ax[0].annotate(f"Max at {max_freq:.2f} MHz", 
+                    xy=(max_freq, max_real_s21), 
+                    xytext=(max_freq, max_real_s21+1e-6),  # Adjust text position
+                    arrowprops=dict(facecolor='black', arrowstyle="->"))
+        ax[0].set_title(f"{title} I value")
+        ax[0].set_ylabel("I value")
+        ax[0].set_xlabel("Additional IF freq (MHz)")
+        ax[0].legend()
+
+        # 绘制 Q (虚部) 数据的线图
+        ax[1].plot(abs_freq, np.imag(s21), color='r', label='Q value')
+        ax[1].set_title(f"{title} Q value")
+        ax[1].set_ylabel("Q value")
+        ax[1].set_xlabel("Additional IF freq (MHz)")
+        ax[1].legend()
+
+        return fig
+
 class PainterRabi( RawDataPainter ):
     def __init__(self, Rabi_type):
         self.Rabi_type = Rabi_type
@@ -290,13 +338,14 @@ class PainterT1Single( RawDataPainter ):
         ax[0].plot( time, np.real(s21),"o", label="data",markersize=1)
         if fit_result_i is not None:
             ax[0].plot( time, fit_result_i.best_fit, label="fit")
-
+            print(fit_result_i.params['tau'].value)
         ax[1].set_title(f"{title} T1 Q data")
         ax[1].set_xlabel("Wait time (us)")
         ax[1].set_ylabel(f"voltage (mV)")
         ax[1].plot( time, np.real(s21),"o", label="data",markersize=1)
         if fit_result_q is not None:
             ax[1].plot( time, fit_result_q.best_fit, label="fit")
+            print(fit_result_q.params['tau'].value)
 
         plt.tight_layout()
 
