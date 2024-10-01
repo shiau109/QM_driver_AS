@@ -150,11 +150,11 @@ def CZ_couplerz(z_amps_range,z_amps_resolution,couplerz_amps_range,couplerz_amps
                         for excited_Qi in excited_Qi:
                             play("x180", f"q{excited_Qi}_xy")
                     align()
-                    wait(40 *u.ns)
+                    #wait(40 *u.ns)
                     play("const" * amp(z_amps), f"q{flux_Qi}_z", duration=40)
                     play("const" * amp(couplerz_amps), f"q{flux_Ci}_z", duration=40)
                     align()               
-                    wait(40 * u.ns)
+                    #wait(40 * u.ns)
                     multiRO_measurement(iqdata_stream, ro_element, weights="rotated_") 
             save(n, n_st)
 
