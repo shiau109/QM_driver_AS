@@ -48,7 +48,6 @@ class RawDataPainter(ABC):
                 file_name = f"{fig_name}_{ro_name}"
                 self.output_fig.append((file_name,fig))
 
-        plt.tight_layout()
         if show: plt.show()
         return self.output_fig
 
@@ -80,10 +79,12 @@ class PainterPowerDepRes( RawDataPainter ):
         plt.colorbar(pcm, label='Value')
 
         pcm = ax[1].pcolormesh(freqs, amp_ratio, np.angle(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
-        ax[0].set_title(f"{title} Phase")
+        ax[1].set_title(f"{title} Phase")
         ax[1].set_xlabel("Additional IF freq (MHz)")
         ax[1].set_ylabel("Amplitude Ratio")
         plt.colorbar(pcm, label='Value')
+
+        plt.tight_layout()
 
         return fig
     
@@ -104,17 +105,19 @@ class PainterFindFluxPeriod( RawDataPainter ):
         flux = self.flux
         title = self.title
         fig, ax = plt.subplots(2)
-        pcm = ax[0].pcolormesh(flux, freqs, np.real(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
-        ax[0].set_title(f"{title} I value")
+        pcm = ax[0].pcolormesh(flux, freqs, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+        ax[0].set_title(f"{title} Magnitude")
         ax[0].set_xlabel("Flux")
         ax[0].set_ylabel("Additional IF freq (MHz)")
         plt.colorbar(pcm, label='Value')
 
-        pcm = ax[1].pcolormesh(flux, freqs, np.imag(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
-        ax[0].set_title(f"{title} Q value")
+        pcm = ax[1].pcolormesh(flux, freqs, np.angle(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+        ax[1].set_title(f"{title} Phase")
         ax[1].set_xlabel("Flux")
         ax[1].set_ylabel("Additional IF freq (MHz)")
         plt.colorbar(pcm, label='Value')
+
+        plt.tight_layout()
 
         return fig
 
@@ -151,8 +154,8 @@ class PainterFluxDepQubit( RawDataPainter ):
         ax[0].axvline(x=self.xy_LO, color='r', linestyle='--', label='LO')
         ax[0].axhline(y=self.z_offset, color='black', linestyle='--', label='idle z')
         ax[0].set_title(f"{title} I value")
-        ax[0].set_ylabel("Flux")
         ax[0].set_xlabel("Additional IF freq (MHz)")
+        ax[0].set_ylabel("Flux")
         plt.colorbar(pcm, label='Value')
         ax[0].legend()
 
@@ -161,14 +164,17 @@ class PainterFluxDepQubit( RawDataPainter ):
         ax[1].axvline(x=self.xy_LO+self.xy_IF_idle, color='b', linestyle='--', label='ref IF')
         ax[1].axvline(x=self.xy_LO, color='r', linestyle='--', label='LO')
         ax[1].axhline(y=self.z_offset, color='black', linestyle='--', label='idle z')
-        ax[1].set_ylabel("Flux")
         ax[1].set_xlabel("Additional IF freq (MHz)")
+        ax[1].set_ylabel("Flux")
         plt.colorbar(pcm, label='Value')
         ax[1].legend()
 
+        plt.tight_layout()
+
         return fig
-    
-class PainterQubitSpectrum( RawDataPainter ):
+
+
+class PainterQubitSpec( RawDataPainter ):
 
     def _data_parser( self ):
         dataarray = self.plot_data
@@ -187,17 +193,27 @@ class PainterQubitSpectrum( RawDataPainter ):
         fig, ax = plt.subplots(2)
 
         abs_freq = self.xy_LO+self.xy_IF_idle+freqs
-        
+
+        # if yscale == "log":
+        #     pcm = ax.pcolormesh(freqs, np.log10(amp_ratio), np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+        # else:
         ax[0].plot( abs_freq, np.real(s21), color='b' )
+        ax[0].axvline(x=self.xy_LO+self.xy_IF_idle, color='b', linestyle='--', label='ref IF')
+        ax[0].axvline(x=self.xy_LO, color='r', linestyle='--', label='LO')
         ax[0].set_title(f"{title} I value")
-        ax[0].set_ylabel('Amplitude [V]')
-        ax[0].set_xlabel('XY frequency [MHz]')
+        ax[0].set_xlabel("XY frequency [MHz]")
+        ax[0].set_ylabel("Amplitude [V]")
         ax[0].legend()
 
         ax[1].plot( abs_freq, np.imag(s21), color='b' )
-        ax[1].set_ylabel('Amplitude [V]')
-        ax[1].set_xlabel('XY frequency [MHz]')
+        ax[1].set_title(f"{title} Q value")
+        ax[1].axvline(x=self.xy_LO+self.xy_IF_idle, color='b', linestyle='--', label='ref IF')
+        ax[1].axvline(x=self.xy_LO, color='r', linestyle='--', label='LO')
+        ax[1].set_xlabel("XY frequency [MHz]")
+        ax[1].set_ylabel("Amplitude [V]")
         ax[1].legend()
+
+        plt.tight_layout()
 
         return fig
     
@@ -291,6 +307,8 @@ class PainterRabi( RawDataPainter ):
         ax[0].legend()
         ax[1].legend()
 
+        plt.tight_layout()
+
         return fig
     
 class PainterT1Single( RawDataPainter ):
@@ -328,6 +346,8 @@ class PainterT1Single( RawDataPainter ):
         if fit_result_q is not None:
             ax[1].plot( time, fit_result_q.best_fit, label="fit")
             print(fit_result_q.params['tau'].value)
+
+        plt.tight_layout()
 
         return fig
     
@@ -372,6 +392,8 @@ class PainterT1Repeat( RawDataPainter ):
         ax[1].set_ylabel(f"Number")
         ax[1].hist(acc_T1, custom_bins, density=False, alpha=0.7, label='Histogram')
 
+        plt.tight_layout()
+
         return fig
 
 class PainterT2Ramsey( RawDataPainter ):
@@ -409,6 +431,8 @@ class PainterT2Ramsey( RawDataPainter ):
         if fit_result_q is not None:
             ax[1].plot( time, fit_result_q.best_fit, label="fit")
 
+        plt.tight_layout()
+        
         return fig
     
 class PainterT2SpinEcho( RawDataPainter ):
@@ -446,6 +470,8 @@ class PainterT2SpinEcho( RawDataPainter ):
         if fit_result_q is not None:
             ax[1].plot( time, fit_result_q.best_fit, label="fit")
 
+        plt.tight_layout()
+        
         return fig
 
 class PainterT2Repeat( RawDataPainter ):
@@ -489,7 +515,159 @@ class PainterT2Repeat( RawDataPainter ):
         ax[1].set_ylabel(f"Number")
         ax[1].hist(acc_T2, custom_bins, density=False, alpha=0.7, label='Histogram')
 
+        plt.tight_layout()
+        
         return fig
+
+def power_law(power, a, b, p):
+    return a * (p**power) + b
+
+class Painter1QRB( RawDataPainter ):
+        
+    def _data_parser( self ):
+        
+        dataarray = self.plot_data
+        self.x = dataarray.coords["x"].values
+        self.val = dataarray.values[0]
+        self.err = dataarray.values[1]
+
+    def _plot_method( self ):
+        x = self.x
+        val = self.val
+        err = self.err
+        title = self.title
+
+        fig, ax = plt.subplots()
+        par = self._ana_SQRB( x, val )
+        ax.errorbar(x, val, yerr=err, marker=".")
+        ax.set_title(f"{title} Single qubit RB")
+        ax.set_xlabel("Number of Clifford gates")
+        ax.set_ylabel("Sequence Fidelity")
+        ax.plot( x, power_law(x, *par),"o", label="data",markersize=1,linestyle="--", linewidth=2)
+
+        plt.tight_layout()
+        
+        return fig
+
+    def _ana_SQRB(self, x, y ):
+        from scipy.optimize import curve_fit
+        print(x,y)
+        pars, cov = curve_fit(
+            f=power_law,
+            xdata=x,
+            ydata=y,
+            p0=[-0.05, 0.05, 0.05],
+            bounds=(-np.inf, np.inf),
+            maxfev=2000,
+        )
+        stdevs = np.sqrt(np.diag(cov))
+
+        print("#########################")
+        print("### Fitted Parameters ###")
+        print("#########################")
+        print(f"A = {pars[0]:.3} ({stdevs[0]:.1}), B = {pars[1]:.3} ({stdevs[1]:.1}), p = {pars[2]:.3} ({stdevs[2]:.1})")
+        print("Covariance Matrix")
+        print(cov)
+
+        one_minus_p = 1 - pars[2]
+        r_c = one_minus_p * (1 - 1 / 2**1)
+        r_g = r_c / 1.875  # 1.875 is the average number of gates in clifford operation
+        r_c_std = stdevs[2] * (1 - 1 / 2**1)
+        r_g_std = r_c_std / 1.875
+
+        print("#########################")
+        print("### Useful Parameters ###")
+        print("#########################")
+        print(
+            f"Error rate: 1-p = {np.format_float_scientific(one_minus_p, precision=2)} ({stdevs[2]:.1})\n"
+            f"Clifford set infidelity: r_c = {np.format_float_scientific(r_c, precision=2)} ({r_c_std:.1})\n"
+            f"Gate infidelity: r_g = {np.format_float_scientific(r_g, precision=2)}  ({r_g_std:.1})"
+        )
+        
+        return pars
+
+class Painter1QRB_interleaved( RawDataPainter ):
+
+    def __init__(self, interleaved_gate_index):
+        self.interleaved_gate_index = interleaved_gate_index
+
+    def _data_parser( self ):
+        
+        dataarray = self.plot_data
+        self.x = dataarray.coords["x"].values
+        self.val = dataarray.values[0]
+        self.err = dataarray.values[1]
+
+    def _plot_method( self ):
+        x = self.x
+        val = self.val
+        err = self.err
+        title = self.title
+
+        fig, ax = plt.subplots()
+        par = self._ana_SQRB( x, val )
+        ax.errorbar(x, val, yerr=err, marker=".")
+        ax.set_title(f"{title} SQ interleaved RB {self._get_interleaved_gate()}")
+        ax.set_xlabel("Number of Clifford gates")
+        ax.set_ylabel("Sequence Fidelity")
+        ax.plot( x, power_law(x, *par),"o", label="data",markersize=1,linestyle="--", linewidth=2)
+
+        plt.tight_layout()
+        
+        return fig
+
+    def _ana_SQRB(self, x, y ):
+        from scipy.optimize import curve_fit
+        print(x,y)
+        pars, cov = curve_fit(
+            f=power_law,
+            xdata=x,
+            ydata=y,
+            p0=[-0.05, 0.05, 0.05],
+            bounds=(-np.inf, np.inf),
+            maxfev=2000,
+        )
+        stdevs = np.sqrt(np.diag(cov))
+
+        print("#########################")
+        print("### Fitted Parameters ###")
+        print("#########################")
+        print(f"A = {pars[0]:.3} ({stdevs[0]:.1}), B = {pars[1]:.3} ({stdevs[1]:.1}), p = {pars[2]:.3} ({stdevs[2]:.1})")
+        print("Covariance Matrix")
+        print(cov)
+
+        one_minus_p = 1 - pars[2]
+        r_c = one_minus_p * (1 - 1 / 2**1)
+        r_g = r_c / 1.875  # 1.875 is the average number of gates in clifford operation
+        r_c_std = stdevs[2] * (1 - 1 / 2**1)
+        r_g_std = r_c_std / 1.875
+
+        print("#########################")
+        print("### Useful Parameters ###")
+        print("#########################")
+        print(
+            f"Error rate: 1-p = {np.format_float_scientific(one_minus_p, precision=2)} ({stdevs[2]:.1})\n"
+            f"Clifford set infidelity: r_c = {np.format_float_scientific(r_c, precision=2)} ({r_c_std:.1})\n"
+            f"Gate infidelity: r_g = {np.format_float_scientific(r_g, precision=2)}  ({r_g_std:.1})"
+        )
+        
+        return pars
+
+    def _get_interleaved_gate(self):
+        if self.interleaved_gate_index == 0:
+            return "I"
+        elif self.interleaved_gate_index == 1:
+            return "x180"
+        elif self.interleaved_gate_index == 2:
+            return "y180"
+        elif self.interleaved_gate_index == 12:
+            return "x90"
+        elif self.interleaved_gate_index == 13:
+            return "-x90"
+        elif self.interleaved_gate_index == 14:
+            return "y90"
+        elif self.interleaved_gate_index == 15:
+            return "-y90"
 
 #S2 finished
 def plot_and_save_dispersive_limit(dataset, folder_save_dir, my_exp, save_data = True):
