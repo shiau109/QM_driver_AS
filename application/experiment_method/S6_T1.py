@@ -19,11 +19,11 @@ from exp.relaxation_time import exp_relaxation_time
 #Set parameters
 my_exp = exp_relaxation_time(config, qmm)
 my_exp.initializer = initializer(30000,mode='wait')
-my_exp.ro_elements = ["q1_ro",]
-my_exp.xy_elements = ["q1_xy"]
-my_exp.max_time = 8
+my_exp.ro_elements = ["q0_ro","q1_ro"]
+my_exp.xy_elements = ["q0_xy", "q1_xy"]
+my_exp.max_time = 200
 my_exp.time_resolution = 0.2
-dataset = my_exp.run(20)
+dataset = my_exp.run(100)
 
 #Save data
 save_data = 1
@@ -53,7 +53,6 @@ re_exp.exp_name = ["T1_relaxation"]
 my_exp.shot_num = 20
 
 dataset = re_exp.run(2)
-
 #Save data
 save_data = 1
 folder_label = "T1_rep" #your data and plots will be saved under a new folder with this name
@@ -62,12 +61,13 @@ if save_data:
     save_dir = link_config["path"]["output_root"]
     dp = DataPackager( save_dir, folder_label )
     dp.save_config(config)
-    dp.save_nc(dataset,"T1_rep")
+    dp.save_nc(dataset[re_exp.exp_name[0]],"T1_rep")
 
 #To plot the result of multiple measurements (2D graph and histogram), use the following block of code
 #================================================================================================#
 from exp.plotting import PainterT1Repeat
 painter = PainterT1Repeat()
+dataset = dataset['T1_relaxation']
 figs = painter.plot(dataset,folder_label)
 if save_data: dp.save_figs( figs )
 

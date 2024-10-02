@@ -13,30 +13,31 @@ qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
 
-from exp.save_data import save_nc, save_fig, create_folder
 
 import matplotlib.pyplot as plt
 
 from exp.readout_optimization import ROFreq
 my_exp = ROFreq(config, qmm)
 my_exp.initializer = initializer(300000,mode='wait')
-my_exp.ro_elements = ["q3_ro", "q4_ro"]
-my_exp.xy_elements = ['q4_xy']
-my_exp.freq_range = (-5, 5)
-my_exp.freq_resolution = 0.1
+my_exp.ro_elements = ["q7_ro", "q8_ro"]
+my_exp.xy_elements = ['q8_xy']
+my_exp.freq_range = (-1, 1)
+my_exp.freq_resolution = 0.01
 my_exp.preprocess = "shot"
 save_data = True
 save_dir = link_config["path"]["output_root"]
 save_name = f"ro_amp_{my_exp.xy_elements[0]}"
 folder_label = "readout_freq_1"
 # Start measurement
-dataset = my_exp.run(1000)
+dataset = my_exp.run(200)
 
 # Data Saving 
 if save_data: 
-    folder_save_dir = create_folder(save_dir, folder_label)
-    save_nc( folder_save_dir, save_name, dataset)
-
+    from exp.save_data import DataPackager
+    save_dir = link_config["path"]["output_root"]
+    dp = DataPackager( save_dir, folder_label )
+    dp.save_config(config)
+    dp.save_nc(dataset,folder_label)
 # Plot
 from exp.readout_optimization import *
 if my_exp.preprocess == "shot":
@@ -45,4 +46,4 @@ if my_exp.preprocess == "shot":
 else:
     dataset = dataset.transpose("mixer","prepare_state","frequency")
 from exp.plotting import plot_and_save_readout_freq
-plot_and_save_readout_freq(dataset, my_exp, folder_save_dir, save_data)
+plot_and_save_readout_freq(dataset, my_exp, folder_label, save_data)

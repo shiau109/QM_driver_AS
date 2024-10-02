@@ -1,7 +1,9 @@
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm import SimulationConfig
 from qualang_tools.results import progress_counter, fetching_tool
-
+from qualang_tools.loops import from_array
+from qm.qua import *
+from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 from abc import ABC, abstractmethod
 import matplotlib.pyplot as plt
 import time
@@ -14,6 +16,7 @@ class QMMeasurement( ABC ):
         self.__describe()
         self.config = config
         self.qmm = qmm
+        self.fetch_mode = "live"
 
     @abstractmethod
     def _get_qua_program( self ):
@@ -39,17 +42,24 @@ class QMMeasurement( ABC ):
 
         job = self._qm.execute(qua_program)
 
-        self._results = fetching_tool(job, data_list=self._get_fetch_data_list(), mode="live")
-        while self._results.is_processing():
-            # Fetch results
-            fetch_data = self._results.fetch_all()
-            # Progress bar
-            iteration = fetch_data[-1]
-            progress_counter(iteration, self.shot_num, start_time=self._results.start_time)
-            time.sleep(1)
+        match self.fetch_mode:
+            case 'live':
+                self._results = fetching_tool(job, data_list=self._get_fetch_data_list(), mode="live")
+                while self._results.is_processing():
+                    # Fetch results
+                    fetch_data = self._results.fetch_all()
+                    # Progress bar
+                    iteration = fetch_data[-1]
+                    progress_counter(iteration, self.shot_num, start_time=self._results.start_time)
+                    time.sleep(1)
+
+            case _:
+                self._results = fetching_tool(job, data_list=self._get_fetch_data_list())
+                
         
         measurement_end_time = datetime.now()
         self.fetch_data = self._results.fetch_all()
+        self._qm.close()
 
         self.output_data = self._data_formation()
         self.output_data.attrs["start_time"] = str(measurement_start_time.strftime("%Y%m%d_%H%M%S"))
@@ -67,8 +77,7 @@ class QMMeasurement( ABC ):
         simulation_config = SimulationConfig(duration=max_time)  # In clock cycles = 4ns
         qua_program = self._get_qua_program()
         job = self.qmm.simulate(self.config, qua_program, simulation_config)
-
-        for con_name in controllers:
+        for con_name in controllers:      
             getattr(job.get_simulated_samples(), con_name).plot()
         plt.show()
 
@@ -82,6 +91,7 @@ class QMMeasurement( ABC ):
 
     def __del__(self):
         print("QM object has been deleted")
+        """
         try:
             self.close()
 
@@ -89,3 +99,7 @@ class QMMeasurement( ABC ):
             # In case __inst was not initialized correctly
             print("self.close() failed.")
             pass
+        except KeyError:
+            print("self.close() failed.")
+            pass
+        """

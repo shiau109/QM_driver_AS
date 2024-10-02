@@ -13,14 +13,13 @@ qmm, _ = spec.buildup_qmm()
 from ab.QM_config_dynamic import initializer
 init_macro = initializer(200000,mode='wait')
 
-from exp.save_data import save_nc, save_fig, create_folder
 save_dir = link_config["path"]["output_root"]
 
 import matplotlib.pyplot as plt
 
 # Set parameters
-ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", "q4_ro"]
-operate_qubit = ['q4_xy']
+ro_elements = [ "q7_ro", "q8_ro"]
+operate_qubit = ['q8_xy']
 
 save_data = True
 save_name = f"ro_amp_{operate_qubit[0]}"
@@ -37,9 +36,13 @@ dataset = power_dep_signal( amp_range, amp_resolution, operate_qubit, ro_element
 
 # Data Saving 
 if save_data: 
-    folder_save_dir = create_folder(save_dir, folder_label)
-    save_nc(save_dir, save_name, dataset)
+    from exp.save_data import DataPackager
+    save_dir = link_config["path"]["output_root"]
+    dp = DataPackager( save_dir, folder_label )
+    dp.save_config(config)
+    dp.save_nc(dataset,folder_label)
     
 from exp.plotting import plot_and_save_readout_amp
-plot_and_save_readout_amp(dataset, folder_save_dir, save_data)
+plot_and_save_readout_amp(dataset, folder_label, save_data)
+
 

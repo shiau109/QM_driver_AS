@@ -61,7 +61,7 @@ for i in updating_qubit:
     wiring = spec.get_spec_forConfig('wire')
 
     z_wf = z_infos[i]["z_wf"] if "z_wf" in z_infos[i].keys() else "sin"
-    z_amp = z_infos[i]["z_amp"] if "z_amp" in z_infos[i].keys() else 0.1
+    z_amp = z_infos[i]["z_amp"] if "z_amp" in z_infos[i].keys() else 0.5
     z_len = z_infos[i]["z_len"] if "z_amp" in z_infos[i].keys() else 40
     z_freq = z_infos[i]["z_freq"] if "z_freq" in z_infos[i].keys() else 1
     z_phase = z_infos[i]["z_phase"] if "z_phase" in z_infos[i].keys() else 0

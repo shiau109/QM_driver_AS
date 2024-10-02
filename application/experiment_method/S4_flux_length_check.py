@@ -12,34 +12,42 @@ qmm, _ = spec.buildup_qmm()
 from ab.QM_config_dynamic import initializer
 
 import matplotlib.pyplot as plt
+from exp.plotting import plot_and_save_flux_dep_Qubit
 
 # Start meausrement
-from exp.xyfreq_sweep import XYFreq
-my_exp = XYFreq(config, qmm)
-my_exp.ro_elements = ["q3_ro"]
-my_exp.xy_elements = ['q3_xy']
-my_exp.initializer=initializer(10000,mode='wait')
-my_exp.xy_driving_time = 20
-my_exp.xy_amp_mod = 0.2
-my_exp.freq_range = (-400,400)
-my_exp.freq_resolution = 0.5
-my_exp.sweep_type = "z_pulse"
-dataset = my_exp.run( 500 )
+from exp.flux_length_check import Flux_length_check
+my_exp = Flux_length_check(config, qmm)
+my_exp.ro_elements = ["q0_ro","q1_ro"]
+my_exp.xy_elements = ['q1_xy']
+my_exp.z_elements = ['q1_z']
 
+my_exp.initializer=initializer(10000,mode='wait')
+
+my_exp.flux_type = "pulse" #offset or pulse
+
+my_exp.xy_driving_time = 1000
+my_exp.xy_amp_mod = 0.005
+
+my_exp.flux_quanta = 0.608
+my_exp.set_flux_quanta = 0.1
+
+my_exp.freq_range = (-100,0)
+my_exp.freq_resolution = 0.1 
+
+dataset = my_exp.run( 100 )
 #Save data
 save_data = 1
-folder_label = "Qubit_Spectrum" #your data and plots will be saved under a new folder with this name
+folder_label = f"Flux_check_{my_exp.flux_type}_{my_exp.xy_driving_time}" #your data and plots will be saved under a new folder with this name
 if save_data: 
     from exp.save_data import DataPackager
     save_dir = link_config["path"]["output_root"]
     dp = DataPackager( save_dir, folder_label )
     dp.save_config(config)
-    dp.save_nc(dataset,"Qubit_Spectrum")
-
+    dp.save_nc(dataset,folder_label)
 
 # Plot
 save_figure = 1
-from exp.plotting import PainterQubitSpec
-painter = PainterQubitSpec()
+from exp.plotting import PainterFluxCheck
+painter = PainterFluxCheck()
 figs = painter.plot(dataset,folder_label)
 if save_figure: dp.save_figs( figs )
