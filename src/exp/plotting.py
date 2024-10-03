@@ -538,12 +538,23 @@ class Painter1QRB( RawDataPainter ):
         title = self.title
 
         fig, ax = plt.subplots()
-        par = self._ana_SQRB( x, val )
+        stdevs, pars, one_minus_p, r_c, r_g, r_c_std, r_g_std = self._ana_SQRB( x, val )
         ax.errorbar(x, val, yerr=err, marker=".")
         ax.set_title(f"{title} Single qubit RB")
         ax.set_xlabel("Number of Clifford gates")
         ax.set_ylabel("Sequence Fidelity")
-        ax.plot( x, power_law(x, *par),"o", label="data",markersize=1,linestyle="--", linewidth=2)
+        ax.plot( x, power_law(x, *pars),"o", label="data",markersize=1,linestyle="--", linewidth=2)
+        ax.text(0.04, 
+                0.96, 
+                f"Error rate: 1-p = {np.format_float_scientific(one_minus_p, precision=2)}+-{stdevs[2]:.2}\n"
+                f"Clifford set infidelity: r_c = {np.format_float_scientific(r_c, precision=2)}+-{r_c_std:.2}\n"
+                f"Gate infidelity: r_g = {np.format_float_scientific(r_g, precision=2)}+-{r_g_std:.2}", 
+                fontsize=9, 
+                color="black",
+                ha='left', 
+                va='top',
+                transform=ax.transAxes,
+                bbox=dict(facecolor='white', alpha=0.5))
 
         plt.tight_layout()
         
@@ -551,7 +562,6 @@ class Painter1QRB( RawDataPainter ):
 
     def _ana_SQRB(self, x, y ):
         from scipy.optimize import curve_fit
-        print(x,y)
         pars, cov = curve_fit(
             f=power_law,
             xdata=x,
@@ -584,7 +594,7 @@ class Painter1QRB( RawDataPainter ):
             f"Gate infidelity: r_g = {np.format_float_scientific(r_g, precision=2)}  ({r_g_std:.1})"
         )
         
-        return pars
+        return stdevs, pars, one_minus_p, r_c, r_g, r_c_std, r_g_std
 
 class Painter1QRB_interleaved( RawDataPainter ):
 
@@ -605,12 +615,23 @@ class Painter1QRB_interleaved( RawDataPainter ):
         title = self.title
 
         fig, ax = plt.subplots()
-        par = self._ana_SQRB( x, val )
+        stdevs, pars, one_minus_p, r_c, r_g, r_c_std, r_g_std = self._ana_SQRB( x, val )
         ax.errorbar(x, val, yerr=err, marker=".")
         ax.set_title(f"{title} SQ interleaved RB {self._get_interleaved_gate()}")
         ax.set_xlabel("Number of Clifford gates")
         ax.set_ylabel("Sequence Fidelity")
-        ax.plot( x, power_law(x, *par),"o", label="data",markersize=1,linestyle="--", linewidth=2)
+        ax.plot( x, power_law(x, *pars),"o", label="data",markersize=1,linestyle="--", linewidth=2)
+        ax.text(0.04, 
+                0.96, 
+                f"Error rate: 1-p = {np.format_float_scientific(one_minus_p, precision=2)}+-{stdevs[2]:.2}\n"
+                f"Clifford set infidelity: r_c = {np.format_float_scientific(r_c, precision=2)}+-{r_c_std:.2}\n"
+                f"Gate infidelity: r_g = {np.format_float_scientific(r_g, precision=2)}+-{r_g_std:.2}", 
+                fontsize=9, 
+                color="black",
+                ha='left', 
+                va='top',
+                transform=ax.transAxes,
+                bbox=dict(facecolor='white', alpha=0.5))
 
         plt.tight_layout()
         
@@ -618,7 +639,6 @@ class Painter1QRB_interleaved( RawDataPainter ):
 
     def _ana_SQRB(self, x, y ):
         from scipy.optimize import curve_fit
-        print(x,y)
         pars, cov = curve_fit(
             f=power_law,
             xdata=x,
@@ -651,7 +671,7 @@ class Painter1QRB_interleaved( RawDataPainter ):
             f"Gate infidelity: r_g = {np.format_float_scientific(r_g, precision=2)}  ({r_g_std:.1})"
         )
         
-        return pars
+        return stdevs, pars, one_minus_p, r_c, r_g, r_c_std, r_g_std
 
     def _get_interleaved_gate(self):
         if self.interleaved_gate_index == 0:
@@ -669,6 +689,126 @@ class Painter1QRB_interleaved( RawDataPainter ):
         elif self.interleaved_gate_index == 15:
             return "-y90"
 
+class Painter1QRB_infedelity( RawDataPainter ):
+
+    def __init__(self, interleaved_gate_index):
+        self.interleaved_gate_index = interleaved_gate_index 
+
+    def _data_parser( self ):
+        
+        dataarray = self.plot_data
+        self.x = dataarray.coords["x"].values
+        self.val = dataarray.values[0]
+        self.err = dataarray.values[1]
+        self.val_inl = dataarray.values[2]
+        self.err_inl = dataarray.values[3]
+
+    def _plot_method( self ):
+        x = self.x
+        val = self.val
+        err = self.err
+        val_inl = self.val_inl
+        err_inl = self.err_inl
+        title = self.title
+
+        fig, ax = plt.subplots()
+        stdevs, pars, one_minus_p, r_c, r_g, r_c_std, r_g_std = self._ana_SQRB( x, val )
+        stdevs_inl, pars_inl, one_minus_p_inl, r_c_inl, r_g_inl, r_c_std_inl, r_g_std_inl = self._ana_SQRB( x, val_inl )
+        ax.errorbar(x, val, yerr=err, marker=".")
+        ax.errorbar(x, val_inl, yerr=err_inl, marker=".")
+        ax.set_title(f"{title} 1QRB gate {self._get_interleaved_gate()} infedelity")
+        ax.set_xlabel("Number of Clifford gates")
+        ax.set_ylabel("Sequence Fidelity")
+        ax.plot( x, power_law(x, *pars),"o", label="data",markersize=1,linestyle="--", linewidth=2)
+        ax.plot( x, power_law(x, *pars_inl),"o", label="data",markersize=1,linestyle="--", linewidth=2)
+        ax.text(0.04, 
+                0.96, 
+                f"Error rate: 1-p = {np.format_float_scientific(one_minus_p, precision=2)}+-{stdevs[2]:.2}\n"
+                f"Clifford set infidelity: r_c = {np.format_float_scientific(r_c, precision=2)}+-{r_c_std:.2}\n"
+                f"Gate infidelity: r_g = {np.format_float_scientific(r_g, precision=2)}+-{r_g_std:.2}", 
+                fontsize=9, 
+                color="black",
+                ha='left', 
+                va='top',
+                transform=ax.transAxes,
+                bbox=dict(facecolor='white', alpha=0.5))
+        ax.text(0.04, 
+                0.92, 
+                f"Inl Error rate: 1-p = {np.format_float_scientific(one_minus_p_inl, precision=2)}+-{stdevs_inl[2]:.2}\n"
+                f"Inl Clifford set infidelity: r_c = {np.format_float_scientific(r_c_inl, precision=2)}+-{r_c_std_inl:.2}\n"
+                f"Inl Gate infidelity: r_g = {np.format_float_scientific(r_g_inl, precision=2)}+-{r_g_std_inl:.2}", 
+                fontsize=9, 
+                color="black",
+                ha='left',
+                va='top',
+                transform=ax.transAxes,
+                bbox=dict(facecolor='white', alpha=0.5))
+        ax.text(0.04, 
+                0.88, 
+                f"specific gate infedelity = {np.format_float_scientific(1-pars_inl[2]/pars[2], precision=2)}+-{pars_inl[2]/pars[2] * ((stdevs[2]/pars[2])**2 + (stdevs_inl[2]/pars_inl[2])**2)**(1/2):.2}",
+                fontsize=9, 
+                color="black",
+                ha='left', 
+                va='top',
+                transform=ax.transAxes,
+                bbox=dict(facecolor='white', alpha=0.5))
+
+        plt.tight_layout()
+        
+        return fig
+
+    def _ana_SQRB(self, x, y ):
+        from scipy.optimize import curve_fit
+        pars, cov = curve_fit(
+            f=power_law,
+            xdata=x,
+            ydata=y,
+            p0=[-0.05, 0.05, 0.05],
+            bounds=(-np.inf, np.inf),
+            maxfev=2000,
+        )
+        stdevs = np.sqrt(np.diag(cov))
+
+        print("#########################")
+        print("### Fitted Parameters ###")
+        print("#########################")
+        print(f"A = {pars[0]:.3} ({stdevs[0]:.1}), B = {pars[1]:.3} ({stdevs[1]:.1}), p = {pars[2]:.3} ({stdevs[2]:.1})")
+        print("Covariance Matrix")
+        print(cov)
+
+        one_minus_p = 1 - pars[2]
+        r_c = one_minus_p * (1 - 1 / 2**1)
+        r_g = r_c / 1.875  # 1.875 is the average number of gates in clifford operation
+        r_c_std = stdevs[2] * (1 - 1 / 2**1)
+        r_g_std = r_c_std / 1.875
+
+        print("#########################")
+        print("### Useful Parameters ###")
+        print("#########################")
+        print(
+            f"Error rate: 1-p = {np.format_float_scientific(one_minus_p, precision=2)} ({stdevs[2]:.1})\n"
+            f"Clifford set infidelity: r_c = {np.format_float_scientific(r_c, precision=2)} ({r_c_std:.1})\n"
+            f"Gate infidelity: r_g = {np.format_float_scientific(r_g, precision=2)}  ({r_g_std:.1})"
+        )
+        
+        return stdevs, pars, one_minus_p, r_c, r_g, r_c_std, r_g_std
+
+    def _get_interleaved_gate(self):
+        if self.interleaved_gate_index == 0:
+            return "I"
+        elif self.interleaved_gate_index == 1:
+            return "x180"
+        elif self.interleaved_gate_index == 2:
+            return "y180"
+        elif self.interleaved_gate_index == 12:
+            return "x90"
+        elif self.interleaved_gate_index == 13:
+            return "-x90"
+        elif self.interleaved_gate_index == 14:
+            return "y90"
+        elif self.interleaved_gate_index == 15:
+            return "-y90"
+        
 #S2 finished
 def plot_and_save_dispersive_limit(dataset, folder_save_dir, my_exp, save_data = True):
     dfs = dataset.coords["frequency"].values

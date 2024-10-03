@@ -83,13 +83,13 @@ class randomized_banchmarking_sq(QMMeasurement):
             a = declare(fixed)  # QUA variable for the DRAG coefficient pre-factor
             iqdata_stream = multiRO_declare( self.ro_elements )
             n_st = declare_stream()  # Stream for the averaging iteration 'n'
-            state = declare(bool)  # QUA variable for state discrimination
+            state = [declare(bool) for _ in range(len(self.ro_elements))]  # QUA variable for state discrimination
             # The relevant streams
             m_st = declare_stream()
 
     
             if self.state_discrimination:
-                state_st = declare_stream()
+                state_st = [declare_stream() for _ in range(self.ro_elements)]
 
             with for_(m, 0, m < self.shot_num, m + 1):  # QUA for_ loop over the random sequences
                 sequence_list, inv_gate_list = self._generate_sequence()  # Generate the random sequence of length max_circuit_depth
@@ -117,7 +117,8 @@ class randomized_banchmarking_sq(QMMeasurement):
                             # The strict_timing ensures that the sequence will be played without gaps
                             with strict_timing_():
                                 # Play the random sequence of desired depth
-                                self._play_sequence(sequence_list, depth)
+                                for xy in self.xy_elements:
+                                    self._play_sequence(sequence_list, depth, xy)
                             # Align the two elements to measure after playing the circuit.
                             align()
 
@@ -125,8 +126,9 @@ class randomized_banchmarking_sq(QMMeasurement):
                             multiRO_measurement(iqdata_stream, self.ro_elements, weights="rotated_")
                             # Make sure you updated the ge_threshold
                             if self.state_discrimination:
-                                assign(state, iqdata_stream[0][0] > self.threshold)
-                                save(state, state_st)
+                                for idx_res, res in enumerate(self.ro_elements):
+                                    assign(state[idx_res], iqdata_stream[0][idx_res] > self.threshold)
+                                    save(state[idx_res], state_st[idx_res])
 
                         # Go to the next depth
                         assign(depth_target, depth_target + self.delta_clifford)
@@ -138,29 +140,35 @@ class randomized_banchmarking_sq(QMMeasurement):
 
             with stream_processing():
                 m_st.save("iteration")
-                if self.state_discrimination:
-                    # saves a 2D array of depth and random pulse sequences in order to get error bars along the random sequences
-                    state_st.boolean_to_int().buffer(self.n_avg).map(FUNCTIONS.average()).buffer(
-                        gate_step
-                    ).buffer(self.shot_num).save("state")
-                    # returns a 1D array of averaged random pulse sequences vs depth of circuit for live plotting
-                    state_st.boolean_to_int().buffer(self.n_avg).map(FUNCTIONS.average()).buffer(
-                        gate_step
-                    ).average().save("state_avg")
-                else:
-                    # multiRO_pre_save(iqdata_stream, ro_elements, (gate_step,2) )
-                    iqdata_stream[1][0].buffer(self.n_avg).map(FUNCTIONS.average()).buffer(gate_step).buffer(
-                        self.shot_num
-                    ).save("I")
-                    iqdata_stream[3][0].buffer(self.n_avg).map(FUNCTIONS.average()).buffer(gate_step).buffer(
-                        self.shot_num
-                    ).save("Q")
-                    iqdata_stream[1][0].buffer(self.n_avg).map(FUNCTIONS.average()).buffer(gate_step).average().save(
-                        "I_avg"
-                    )
-                    iqdata_stream[3][0].buffer(self.n_avg).map(FUNCTIONS.average()).buffer(gate_step).average().save(
-                        "Q_avg"
-                    )
+
+                (I, I_st, Q, Q_st) = iqdata_stream
+                if type(self.ro_elements) is not list:
+                    self.ro_elements = [self.ro_elements]
+                
+                for idx_res, res in enumerate(self.ro_elements):
+                    if self.state_discrimination:
+                        # saves a 2D array of depth and random pulse sequences in order to get error bars along the random sequences
+                        state_st[idx_res].boolean_to_int().buffer(self.n_avg).map(FUNCTIONS.average()).buffer(
+                            gate_step
+                        ).buffer(self.shot_num).save(f"{res}_state")
+                        # returns a 1D array of averaged random pulse sequences vs depth_inl of circuit for live plotting
+                        state_st[idx_res].boolean_to_int().buffer(self.n_avg).map(FUNCTIONS.average()).buffer(
+                            gate_step
+                        ).average().save(f"{res}_state_avg")
+                    else:
+                        # multiRO_pre_save(iqdata_stream_inl, ro_elements, (gate_step,2) )
+                        I_st[idx_res].buffer(self.n_avg).map(FUNCTIONS.average()).buffer(gate_step).buffer(
+                            self.shot_num
+                        ).save(f"{res}_I")
+                        Q_st[idx_res].buffer(self.n_avg).map(FUNCTIONS.average()).buffer(gate_step).buffer(
+                            self.shot_num
+                        ).save(f"{res}_Q")
+                        I_st[idx_res].buffer(self.n_avg).map(FUNCTIONS.average()).buffer(gate_step).average().save(
+                            f"{res}_I_avg"
+                        )
+                        Q_st[idx_res].buffer(self.n_avg).map(FUNCTIONS.average()).buffer(gate_step).average().save(
+                            f"{res}_Q_avg"
+                        )
 
         return rb
     
@@ -168,10 +176,10 @@ class randomized_banchmarking_sq(QMMeasurement):
         ro_ch_name = []
         for r_name in self.ro_elements:
             if self.state_discrimination:
-                ro_ch_name.append(f"state")
+                ro_ch_name.append(f"{r_name}_state")
             else:
-                ro_ch_name.append(f"I")
-                ro_ch_name.append(f"Q")
+                ro_ch_name.append(f"{r_name}_I")
+                ro_ch_name.append(f"{r_name}_Q")
             data_list = ro_ch_name + ["iteration"]
         return data_list
 
@@ -274,131 +282,76 @@ class randomized_banchmarking_sq(QMMeasurement):
 
         return sequence, inv_gate
 
-    def _play_sequence(self, sequence_list, depth):
+    def _play_sequence(self, sequence_list, depth, xy):
         i = declare(int)
         with for_(i, 0, i <= depth, i + 1):
             with switch_(sequence_list[i], unsafe=True):
                 with case_(0):
-                    wait(self.gate_length // 4, self.xy_elements)
+                    wait(self.gate_length // 4, xy)
                 with case_(1):
-                    play("x180", self.xy_elements)
+                    play("x180", xy)
                 with case_(2):
-                    play("y180", self.xy_elements)
+                    play("y180", xy)
                 with case_(3):
-                    play("y180", self.xy_elements)
-                    play("x180", self.xy_elements)
+                    play("y180", xy)
+                    play("x180", xy)
                 with case_(4):
-                    play("x90", self.xy_elements)
-                    play("y90", self.xy_elements)
+                    play("x90", xy)
+                    play("y90", xy)
                 with case_(5):
-                    play("x90", self.xy_elements)
-                    play("-y90", self.xy_elements)
+                    play("x90", xy)
+                    play("-y90", xy)
                 with case_(6):
-                    play("-x90", self.xy_elements)
-                    play("y90", self.xy_elements)
+                    play("-x90", xy)
+                    play("y90", xy)
                 with case_(7):
-                    play("-x90", self.xy_elements)
-                    play("-y90", self.xy_elements)
+                    play("-x90", xy)
+                    play("-y90", xy)
                 with case_(8):
-                    play("y90", self.xy_elements)
-                    play("x90", self.xy_elements)
+                    play("y90", xy)
+                    play("x90", xy)
                 with case_(9):
-                    play("y90", self.xy_elements)
-                    play("-x90", self.xy_elements)
+                    play("y90", xy)
+                    play("-x90", xy)
                 with case_(10):
-                    play("-y90", self.xy_elements)
-                    play("x90", self.xy_elements)
+                    play("-y90", xy)
+                    play("x90", xy)
                 with case_(11):
-                    play("-y90", self.xy_elements)
-                    play("-x90", self.xy_elements)
+                    play("-y90", xy)
+                    play("-x90", xy)
                 with case_(12):
-                    play("x90", self.xy_elements)
+                    play("x90", xy)
                 with case_(13):
-                    play("-x90", self.xy_elements)
+                    play("-x90", xy)
                 with case_(14):
-                    play("y90", self.xy_elements)
+                    play("y90", xy)
                 with case_(15):
-                    play("-y90", self.xy_elements)
+                    play("-y90", xy)
                 with case_(16):
-                    play("-x90", self.xy_elements)
-                    play("y90", self.xy_elements)
-                    play("x90", self.xy_elements)
+                    play("-x90", xy)
+                    play("y90", xy)
+                    play("x90", xy)
                 with case_(17):
-                    play("-x90", self.xy_elements)
-                    play("-y90", self.xy_elements)
-                    play("x90", self.xy_elements)
+                    play("-x90", xy)
+                    play("-y90", xy)
+                    play("x90", xy)
                 with case_(18):
-                    play("x180", self.xy_elements)
-                    play("y90", self.xy_elements)
+                    play("x180", xy)
+                    play("y90", xy)
                 with case_(19):
-                    play("x180", self.xy_elements)
-                    play("-y90", self.xy_elements)
+                    play("x180", xy)
+                    play("-y90", xy)
                 with case_(20):
-                    play("y180", self.xy_elements)
-                    play("x90", self.xy_elements)
+                    play("y180", xy)
+                    play("x90", xy)
                 with case_(21):
-                    play("y180", self.xy_elements)
-                    play("-x90", self.xy_elements)
+                    play("y180", xy)
+                    play("-x90", xy)
                 with case_(22):
-                    play("x90", self.xy_elements)
-                    play("y90", self.xy_elements)
-                    play("x90", self.xy_elements)
+                    play("x90", xy)
+                    play("y90", xy)
+                    play("x90", xy)
                 with case_(23):
-                    play("-x90", self.xy_elements)
-                    play("y90", self.xy_elements)
-                    play("-x90", self.xy_elements)
-
-# def power_law(power, a, b, p):
-#     return a * (p**power) + b
-
-# def ana_SQRB( x, y ):
-    
-#     pars, cov = curve_fit(
-#         f=power_law,
-#         xdata=x,
-#         ydata=y,
-#         p0=[0.5, 0.5, 0.9],
-#         bounds=(-np.inf, np.inf),
-#         maxfev=2000,
-#     )
-#     stdevs = np.sqrt(np.diag(cov))
-
-#     print("#########################")
-#     print("### Fitted Parameters ###")
-#     print("#########################")
-#     print(f"A = {pars[0]:.3} ({stdevs[0]:.1}), B = {pars[1]:.3} ({stdevs[1]:.1}), p = {pars[2]:.3} ({stdevs[2]:.1})")
-#     print("Covariance Matrix")
-#     print(cov)
-
-#     one_minus_p = 1 - pars[2]
-#     r_c = one_minus_p * (1 - 1 / 2**1)
-#     r_g = r_c / 1.875  # 1.875 is the average number of gates in clifford operation
-#     r_c_std = stdevs[2] * (1 - 1 / 2**1)
-#     r_g_std = r_c_std / 1.875
-
-#     print("#########################")
-#     print("### Useful Parameters ###")
-#     print("#########################")
-#     print(
-#         f"Error rate: 1-p = {np.format_float_scientific(one_minus_p, precision=2)} ({stdevs[2]:.1})\n"
-#         f"Clifford set infidelity: r_c = {np.format_float_scientific(r_c, precision=2)} ({r_c_std:.1})\n"
-#         f"Gate infidelity: r_g = {np.format_float_scientific(r_g, precision=2)}  ({r_g_std:.1})"
-#     )
-    
-#     return pars
-
-# def plot_SQRB_live( x, y, ax ):  # ??
-#     ax.plot(x, y, marker=".")
-#     ax.set_xlabel("Number of Clifford gates")
-#     ax.set_ylabel("Sequence Fidelity")
-#     ax.set_title("Single qubit RB")
-
-# def plot_SQRB_result( x, y, yerr, fig:Figure=None ):
-
-#     fig, ax = plt.subplots()
-#     par = ana_SQRB( x, y )
-#     ax.errorbar(x, y, yerr=yerr, marker=".")
-#     ax.plot(x, power_law(x, *par), linestyle="--", linewidth=2)
-#     ax.set_xlabel("Number of Clifford gates")
-#     ax.set_ylabel("Sequence Fidelity")
-#     ax.set_title("Single qubit RB")
+                    play("-x90", xy)
+                    play("y90", xy)
+                    play("-x90", xy)
