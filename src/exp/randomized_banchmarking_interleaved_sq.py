@@ -130,7 +130,7 @@ class randomized_banchmarking_interleaved_sq(QMMeasurement):
                                 save(state, state_st)
 
                         # Go to the next depth
-                        assign(depth_target, depth_target + self.delta_clifford)
+                        assign(depth_target, depth_target + 2 * self.delta_clifford)
                     # Reset the last gate of the sequence back to the original Clifford gate
                     # (that was replaced by the recovery gate at the beginning)
                     assign(sequence_list[depth], saved_gate)
@@ -209,14 +209,14 @@ class randomized_banchmarking_interleaved_sq(QMMeasurement):
         inv_list = declare(int, value=inv_gates)
         current_state = declare(int)
         step = declare(int)
-        sequence = declare(int, size=self.max_circuit_depth + 1)
-        inv_gate = declare(int, size=self.max_circuit_depth + 1)
+        sequence = declare(int, size=2 * self.max_circuit_depth + 1)
+        inv_gate = declare(int, size=2 * self.max_circuit_depth*2 + 1)
         i = declare(int)
         if self.seed is None: self.seed = 345324
         rand = Random(seed=self.seed)
 
         assign(current_state, 0)
-        with for_(i, 0, i < self.max_circuit_depth, i + 1):
+        with for_(i, 0, i < 2 * self.max_circuit_depth, i + 2):
             assign(step, rand.rand_int(24))
             assign(current_state, cayley[current_state * 24 + step])
             assign(sequence[i], step)
@@ -225,7 +225,7 @@ class randomized_banchmarking_interleaved_sq(QMMeasurement):
             assign(step, self.interleaved_gate_index)
             assign(current_state, cayley[current_state * 24 + step])
             assign(sequence[i + 1], step)
-            assign(inv_gate[i + 1], inv_list[current_state])
+            assign(inv_gate[i + 1], inv_list[current_state])    
 
         return sequence, inv_gate
 
