@@ -22,15 +22,16 @@ my_exp.gate_length = 40
 ##############################
 # Program-specific variables #
 ##############################
-my_exp.xy_elements = "q3_xy"
-my_exp.ro_elements = ["q3_ro"]
+my_exp.xy_elements = ["q3_xy","q4_xy"]
+my_exp.ro_elements = ["q3_ro","q4_ro"]
 # threshold = the_specs.get_spec_forConfig('ro')[xy_element]['ge_threshold']
 
-my_exp.n_avg = 100  # Number of averaging loops for each random sequence
+my_exp.n_avg = 40  # Number of averaging loops for each random sequence
 my_exp.max_circuit_depth = 200  # Maximum circuit depth
 my_exp.delta_clifford = 1  #  Play each sequence with a depth step equals to 'delta_clifford - Must be > 1
 assert (my_exp.max_circuit_depth / my_exp.delta_clifford).is_integer(), "max_circuit_depth / delta_clifford must be an integer."
 my_exp.seed = 345324  # Pseudo-random number generator seed
+
 # Flag to enable state discrimination if the readout has been calibrated (rotated blobs and threshold)
 # state_discrimination = [1e-3]
 dataset = my_exp.run(20)
