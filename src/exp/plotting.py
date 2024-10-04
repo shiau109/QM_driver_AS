@@ -21,9 +21,25 @@ class RawDataPainter(ABC):
     def _data_parser( self ):
         pass
 
-    def plot( self, dataset:Dataset, fig_name:str, show:bool=True ):
+    def plot( self, dataset:Dataset, fig_name:str, show:bool=True, **kwargs ):
 
         self.output_fig = []
+
+        for name, value in kwargs.items():
+            if name.lower() == 'infedelity':
+                for ro_name in list(value.data_vars.keys()):
+                    
+                    self.plot_data = dataset.data_vars[ro_name]
+                    self.plot_data_2 = value.data_vars[ro_name]
+                    self.title = ro_name
+                    self._data_parser()
+                    fig = self._plot_method()
+
+                    file_name = f"{fig_name}_{ro_name}"
+                    self.output_fig.append((file_name,fig))
+                
+                if show: plt.show()
+                return self.output_fig
 
         if "repetition" in dataset.coords:
             self.rep = dataset.coords["repetition"].values
@@ -689,7 +705,7 @@ class Painter1QRB_interleaved( RawDataPainter ):
         elif self.interleaved_gate_index == 15:
             return "-y90"
 
-class Painter1QRB_infedelity( RawDataPainter ):
+class Painter1QRB_infidelity( RawDataPainter ):
 
     def __init__(self, interleaved_gate_index):
         self.interleaved_gate_index = interleaved_gate_index 
@@ -697,11 +713,12 @@ class Painter1QRB_infedelity( RawDataPainter ):
     def _data_parser( self ):
         
         dataarray = self.plot_data
+        dataarray_2 = self.plot_data_2
         self.x = dataarray.coords["x"].values
         self.val = dataarray.values[0]
         self.err = dataarray.values[1]
-        self.val_inl = dataarray.values[2]
-        self.err_inl = dataarray.values[3]
+        self.val_inl = dataarray_2.values[0]
+        self.err_inl = dataarray_2.values[1]
 
     def _plot_method( self ):
         x = self.x
@@ -722,7 +739,7 @@ class Painter1QRB_infedelity( RawDataPainter ):
         ax.plot( x, power_law(x, *pars),"o", label="data",markersize=1,linestyle="--", linewidth=2)
         ax.plot( x, power_law(x, *pars_inl),"o", label="data",markersize=1,linestyle="--", linewidth=2)
         ax.text(0.04, 
-                0.96, 
+                0.95, 
                 f"Error rate: 1-p = {np.format_float_scientific(one_minus_p, precision=2)}+-{stdevs[2]:.2}\n"
                 f"Clifford set infidelity: r_c = {np.format_float_scientific(r_c, precision=2)}+-{r_c_std:.2}\n"
                 f"Gate infidelity: r_g = {np.format_float_scientific(r_g, precision=2)}+-{r_g_std:.2}", 
@@ -733,7 +750,7 @@ class Painter1QRB_infedelity( RawDataPainter ):
                 transform=ax.transAxes,
                 bbox=dict(facecolor='white', alpha=0.5))
         ax.text(0.04, 
-                0.92, 
+                0.80, 
                 f"Inl Error rate: 1-p = {np.format_float_scientific(one_minus_p_inl, precision=2)}+-{stdevs_inl[2]:.2}\n"
                 f"Inl Clifford set infidelity: r_c = {np.format_float_scientific(r_c_inl, precision=2)}+-{r_c_std_inl:.2}\n"
                 f"Inl Gate infidelity: r_g = {np.format_float_scientific(r_g_inl, precision=2)}+-{r_g_std_inl:.2}", 
@@ -744,7 +761,7 @@ class Painter1QRB_infedelity( RawDataPainter ):
                 transform=ax.transAxes,
                 bbox=dict(facecolor='white', alpha=0.5))
         ax.text(0.04, 
-                0.88, 
+                0.65, 
                 f"specific gate infedelity = {np.format_float_scientific(1-pars_inl[2]/pars[2], precision=2)}+-{pars_inl[2]/pars[2] * ((stdevs[2]/pars[2])**2 + (stdevs_inl[2]/pars_inl[2])**2)**(1/2):.2}",
                 fontsize=9, 
                 color="black",

@@ -55,17 +55,17 @@ from exp.QMMeasurement import QMMeasurement
 class randomized_banchmarking_interleaved_sq(QMMeasurement):
     def __init__( self, config, qmm: QuantumMachinesManager):
         super().__init__( config, qmm )
-        self.max_circuit_depth = 20
-        self.delta_clifford = 200
         self.xy_elements = None
         self.ro_elements = None
+        self.gate_length = 40
+        self.max_circuit_depth = 20
+        self.delta_clifford = 200
         self.initializer = None
         self.n_avg = 100
         self.state_discrimination = False
         self.interleaved_gate_index = 2
         self.initialization_macro = False
         self.seed = None
-        self.gate_length = 40
         self.threshold = 0
 
     def _get_qua_program(self):
