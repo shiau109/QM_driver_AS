@@ -733,7 +733,7 @@ class Painter1QRB_infidelity( RawDataPainter ):
         stdevs_inl, pars_inl, one_minus_p_inl, r_c_inl, r_g_inl, r_c_std_inl, r_g_std_inl = self._ana_SQRB( x, val_inl )
         ax.errorbar(x, val, yerr=err, marker=".")
         ax.errorbar(x, val_inl, yerr=err_inl, marker=".")
-        ax.set_title(f"{title} 1QRB gate {self._get_interleaved_gate()} infedelity")
+        ax.set_title(f"{title} 1QRB gate {self._get_interleaved_gate()} infidelity")
         ax.set_xlabel("Number of Clifford gates")
         ax.set_ylabel("Sequence Fidelity")
         ax.plot( x, power_law(x, *pars),"o", label="data",markersize=1,linestyle="--", linewidth=2)
@@ -762,7 +762,7 @@ class Painter1QRB_infidelity( RawDataPainter ):
                 bbox=dict(facecolor='white', alpha=0.5))
         ax.text(0.04, 
                 0.65, 
-                f"specific gate infedelity = {np.format_float_scientific(1-pars_inl[2]/pars[2], precision=2)}+-{pars_inl[2]/pars[2] * ((stdevs[2]/pars[2])**2 + (stdevs_inl[2]/pars_inl[2])**2)**(1/2):.2}",
+                f"specific gate infidelity = {np.format_float_scientific(1-pars_inl[2]/pars[2], precision=2)}+-{pars_inl[2]/pars[2] * ((stdevs[2]/pars[2])**2 + (stdevs_inl[2]/pars_inl[2])**2)**(1/2):.2}",
                 fontsize=9, 
                 color="black",
                 ha='left', 
