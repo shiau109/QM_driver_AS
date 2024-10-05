@@ -25,6 +25,121 @@ def cz_gate_compensate(flux_Qi, flux_Ci,cz_amp,cz_time,c_amp,control_Qi,target_Q
     #frame_rotation_2pi(1.958/(2*np.pi), f"q{control_Qi}_xy")
     frame_rotation_2pi(-0.051673306854385946/(2*np.pi), f"q{target_Qi}_xy")
 
+def CZ_phase_ramsey(cz_amps_range,cz_amps_resolution,cz_time,couplerz_amps_range,couplerz_amps_resolution,ro_element,flux_Qi,control_Qi,target_Qi,flux_Ci,preprocess,qmm,config,n_avg=1,initializer=None,simulate=True):
+    cz_amps_array = np.arange(cz_amps_range[0],cz_amps_range[1],cz_amps_resolution)
+    couplerz_amps_array = np.arange(couplerz_amps_range[0],couplerz_amps_range[1],couplerz_amps_resolution)
+    phase_array = np.linspace(0, 1, 50)
+    amps_len = len(cz_amps_array)
+    camps_len = len(couplerz_amps_array)
+    phase_array_len = len(phase_array)
+
+    with program() as cz_phase:
+        iqdata_stream = multiRO_declare( ro_element )
+        n = declare(int)
+        n_st = declare_stream()
+        cz_amps = declare(fixed)
+        couplerz_amps = declare(fixed)
+        control = declare(int) # control qubit at 0 or 1
+        phase = declare(fixed)  # second gate is x90 or y90 
+        with for_(n, 0, n < n_avg, n + 1):
+            with for_(*from_array(couplerz_amps, couplerz_amps_array)):
+                with for_(*from_array(cz_amps, cz_amps_array)):
+                    with for_each_( control, [0,1]):
+                        with for_(*from_array(phase, phase_array)):
+                            # initializaion
+                            if initializer is None:
+                                wait(1*u.us,ro_element)
+                            else:
+                                try:
+                                    initializer[0](*initializer[1])
+                                except:
+                                    wait(1*u.us,ro_element)
+
+                            # operation
+                            with if_(control==1):
+                                play("x180",f"q{control_Qi}_xy")
+                            play("y90", f"q{target_Qi}_xy")
+                            align(f"q{target_Qi}_xy",f"q{flux_Qi}_z",f'q{flux_Ci}_z')
+                            wait(5)
+                            cz_gate(flux_Qi,flux_Ci,cz_amps,cz_time,couplerz_amps)
+                            align(f"q{flux_Qi}_z",f"q{target_Qi}_xy")
+                            wait(5)
+                            
+                            frame_rotation_2pi(phase,f"q{target_Qi}_xy")
+                            play("-y90", f"q{target_Qi}_xy")
+                            align()
+                            wait(5)
+                                
+                            # wait(cz_time*u.ns)
+                            
+
+                            # Readout
+                            multiRO_measurement(iqdata_stream, ro_element, weights="rotated_")
+            save(n, n_st)
+
+        with stream_processing():
+            n_st.save("iteration")
+            match preprocess:
+                case "shot":
+                    multiRO_pre_save(iqdata_stream, ro_element, (n_avg,camps_len,amps_len,2,phase_array_len) ,stream_preprocess="shot")
+                case _:
+                    multiRO_pre_save(iqdata_stream, ro_element, (camps_len,amps_len,2,phase_array_len))
+    if simulate:
+        simulation_config = SimulationConfig(duration=20000)  # In clock cycles = 4ns
+        job = qmm.simulate(config, cz_phase, simulation_config)
+        job.get_simulated_samples().con1.plot()
+        job.get_simulated_samples().con2.plot()
+        plt.show()
+    else:
+        # Open the quantum machine
+        qm = qmm.open_qm(config)
+        # Send the QUA program to the OPX, which compiles and executes it
+        job = qm.execute(cz_phase)
+        # Get results from QUA program
+        ro_ch_name = []
+        for r_name in ro_element:
+            ro_ch_name.append(f"{r_name}_I")
+            ro_ch_name.append(f"{r_name}_Q")
+        data_list = ro_ch_name + ["iteration"]   
+        results = fetching_tool(job, data_list=data_list, mode="live")
+
+        # Live plotting
+        while results.is_processing():
+            # Fetch results
+            fetch_data = results.fetch_all()
+            # Progress bar
+            iteration = fetch_data[-1]
+            progress_counter(iteration, n_avg, start_time=results.start_time)
+            # Plot
+            plt.tight_layout()
+            time.sleep(1)
+
+        # Measurement finished 
+        fetch_data = results.fetch_all()
+        qm.close()
+        output_data = {}
+
+        match preprocess:
+            case "shot":
+                for r_idx, r_name in enumerate(ro_element):
+                    output_data[r_name] = ( ["mixer","shot","c_amp","cz_amp","control","phase"],
+                                np.squeeze(np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]]) ))
+                dataset = xr.Dataset(
+                    output_data,
+                    coords={ "mixer":np.array(["I","Q"]), "shot":np.arange(n_avg),"c_amp":couplerz_amps_array, "cz_amp": cz_amps_array, "control":[0,1], "phase":phase_array }
+                )
+            case _:
+                for r_idx, r_name in enumerate(ro_element):
+                    output_data[r_name] = ( ["mixer","c_amp","cz_amp","control","phase"],
+                                np.array([fetch_data[r_idx*2], fetch_data[r_idx*2+1]]) )
+                dataset = xr.Dataset(
+                    output_data,
+                    coords={ "mixer":np.array(["I","Q"]), "c_amp":couplerz_amps_array, "cz_amp": cz_amps_array, "control":[0,1], "phase":phase_array }
+                )
+
+        return dataset
+
+
 def CZ_phase_diff(cz_amps_range,cz_amps_resolution,cz_time,couplerz_amps_range,couplerz_amps_resolution,ro_element,flux_Qi,control_Qi,target_Qi,flux_Ci,preprocess,qmm,config,n_avg=1,initializer=None,simulate=True):
     cz_amps_array = np.arange(cz_amps_range[0],cz_amps_range[1],cz_amps_resolution)
     couplerz_amps_array = np.arange(couplerz_amps_range[0],couplerz_amps_range[1],couplerz_amps_resolution)
