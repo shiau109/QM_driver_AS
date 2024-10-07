@@ -16,18 +16,18 @@ import matplotlib.pyplot as plt
 # Program-specific variables #
 ##############################
 gate_length = 40
-xy_elements = ["q3_xy"]
-ro_elements = ["q3_ro"]
+xy_elements = ["q3_xy","q4_xy"]
+ro_elements = ["q3_ro","q4_ro"]
 
 # threshold = the_specs.get_spec_forConfig('ro')[xy_element]['ge_threshold']
-n_avg = 200  # Number of averaging loops for each random sequence
-max_circuit_depth = 300  # Maximum circuit depth
+n_avg = 20  # Number of averaging loops for each random sequence
+max_circuit_depth = 100  # Maximum circuit depth
 delta_clifford = 1  #  Play each sequence with a depth step equals to 'delta_clifford - Must be > 1
 
 seed = 345324  # Pseudo-random number generator seed
 interleaved_gate_index = 2
 same_seq = True
-shot_num = 100
+shot_num = 20
 # Flag to enable state discrimination if the readout has been calibrated (rotated blobs and threshold)
 # state_discrimination = [1e-3]
 
@@ -74,8 +74,8 @@ if save_data:
     dp.save_nc(dataset,"1QRB")
     dp.save_nc(dataset_interleaved,"1QRB_interleaved")
 
-from exp.plotting import Painter1QRB_infedelity
-painter = Painter1QRB_infedelity(my_exp.interleaved_gate_index)
+from exp.plotting import Painter1QRB_infidelity
+painter = Painter1QRB_infidelity(my_exp.interleaved_gate_index)
 figs = painter.plot(dataset,folder_label,infedelity=dataset_interleaved)
 if save_data: dp.save_figs( figs )
 
