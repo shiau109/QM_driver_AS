@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import xarray as xr
 
+
 filename = r"C:\Users\admin\SynologyDrive\09 Data\Fridge Data\Qubit\20240920_DRKe_5Q4C\raw_data\20241004_111446_CZ_diff\q1q0_cz_phasediff_shot.nc"
 dataset = xr.open_dataset(filename,engine='netcdf4', format='NETCDF4')
 cz_amp = dataset.coords["cz_amp"].values
@@ -11,6 +12,7 @@ c_amp = dataset.coords["c_amp"].values
 threhold_q3 = 5.865e-05#2.615e-5#6.097e-5
 threhold_q4 = -1.611e-04#8.246e-7
 ro_element = "q0_ro" # target qubit readout
+
 shot_num = 500
 data = dataset[ro_element].values[0]
 print(data.shape)
@@ -33,9 +35,11 @@ g_sqrt_map = np.zeros((len(c_amp),len(cz_amp)))
 g_Sz_map = np.zeros((len(c_amp),len(cz_amp)))
 
 
+
 for i in range(shot_num):
     for j in range(len(c_amp)):
         for k in range(len(cz_amp)):
+
             if data[i,j,k,0,0] >= threhold_q3:
                 population_gx[j,k] += 1
             if data[i,j,k,0,1] >= threhold_q3:
@@ -93,6 +97,7 @@ for i in range(len(c_amp)):
         e_Sz_map[i, j] = ez
         #print((g_phi-e_phi))
 
+
 """
 z_offset = 0.05
 z = 0.22
@@ -113,6 +118,7 @@ J_max2 = (fc2*1000 +Ec)**2/(8*Ec*(np.cos(phi2)**2+0.3**2*np.sin(phi2)**2)**0.5)
 zc2 = np.arange(0.2-0.17, 0.2+0.05, 0.001)
 fq2 = (8*Ec*J_max2*(np.cos(np.pi/period2*(cz_amp-z_offset2))**2+0.3**2*np.sin(np.pi/period2*(cz_amp-z_offset2))**2)**0.5)**0.5 - Ec
 """
+
 
 # 第一張圖
 fig1, ax1 = plt.subplots()
@@ -157,3 +163,4 @@ ax6.set_ylabel("coupler z")
 plt.colorbar(a6, ax=ax6, label="phase difference - pi")
 
 plt.show()
+
