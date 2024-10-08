@@ -337,6 +337,133 @@ def plot_cz_chavron(x,y,z,ax=None):
     a1 = ax.pcolormesh(x,y,z,cmap='RdBu')
     plt.colorbar(a1,ax=ax, label="|11> population")
 
+def plot_coupler_z_vs_time(x,y,z,ax=None):
+    """
+    x in shape (N,) \n
+    y in shape (M,) \n
+    z in shape (M,N) \n
+    N is pulse time \n
+    M is flux
+    """
+    if ax is None:
+        fig, ax = plt.subplots()
+        
+    # Set the title and labels
+    ax.set_title('pcolormesh')
+    ax.set_xlabel("coupler flux (V)")  # Reversed
+    ax.set_ylabel("interaction time (ns)")  # Reversed
+    
+    # Reverse x and y in pcolormesh
+    a1 = ax.pcolormesh(y, x, z.T, cmap='RdBu')
+    
+    # Add colorbar
+    plt.colorbar(a1, ax=ax, label="|11> population")
+
+from qualang_tools.plot.fitting import Fit
+import numpy as np
+
+def plot_cz_frequency_vs_flux(x, y, z, threshold=5, ax=None):
+    """
+    x in shape (N,) \n
+    y in shape (M,) \n
+    z in shape (M,N) \n
+    N is pulse time \n
+    M is flux
+    threshold: maximum allowable difference between adjacent points (in MHz)
+    """
+    if ax is None:
+        fig, ax = plt.subplots()
+
+    # Arrays to store fitted frequencies
+    freqs = []
+
+    # Perform Ramsey fit for each coupler flux (y-axis)
+    for i in range(len(y)):
+        try:
+            # Try to perform Ramsey fit on the interaction time (x) for each coupler flux
+            fit = Fit()
+            ana_dict_pos = fit.ramsey(x, z[i], plot=False)  # Perform the Ramsey fit
+            freq_pos = ana_dict_pos['f'][0] * 1e3  # Frequency in MHz
+            freqs.append(freq_pos)  # Store frequency
+        except Exception as e:
+            # If fit fails, append NaN to mark this point as invalid
+            freqs.append(np.nan)
+
+    # Convert lists to arrays for further processing
+    freqs = np.array(freqs)
+
+    # Remove frequency jumps that are too large
+    for i in range(1, len(freqs) - 1):
+        if (abs(freqs[i] - freqs[i - 1]) > threshold and 
+            abs(freqs[i] - freqs[i + 1]) > threshold):
+            freqs[i] = np.nan  # Mark this point as invalid if it jumps too much
+
+    # Plot frequency vs coupler flux
+    ax.set_title('Frequency vs Coupler Flux')
+    ax.set_xlabel("Coupler flux (V)")
+    ax.set_ylabel("Frequency (MHz)")
+
+    # Plotting frequency with missing (NaN) points automatically skipped
+    ax.plot(y, freqs, 'o', label="Fitted Frequency (MHz)")
+    ax.legend()
+
+    # Optionally return the fitted frequencies if needed
+    return freqs
+
+def plot_cz_period_vs_flux(x, y, z, threshold=5, ax=None):
+    """
+    x in shape (N,) \n
+    y in shape (M,) \n
+    z in shape (M,N) \n
+    N is pulse time \n
+    M is flux
+    threshold: maximum allowable difference between adjacent points (in MHz)
+    """
+    if ax is None:
+        fig, ax = plt.subplots()
+
+    # Arrays to store fitted periods (calculated as 1/frequency)
+    periods = []
+
+    # Perform Ramsey fit for each coupler flux (y-axis)
+    for i in range(len(y)):
+        try:
+            # Try to perform Ramsey fit on the interaction time (x) for each coupler flux
+            fit = Fit()
+            ana_dict_pos = fit.ramsey(x, z[i], plot=False)  # Perform the Ramsey fit
+            freq_pos = ana_dict_pos['f'][0] * 1e3  # Frequency in MHz
+            # Convert frequency to period (T = 1/f) in nanoseconds
+            if freq_pos > 0:  # Ensure frequency is positive to avoid division by zero
+                period = 1 / freq_pos*1e3
+                periods.append(period)  # Store period
+            else:
+                periods.append(np.nan)  # Handle zero or negative frequencies
+        except Exception as e:
+            # If fit fails, append NaN to mark this point as invalid
+            periods.append(np.nan)
+
+    # Convert lists to arrays for further processing
+    periods = np.array(periods)
+
+    # Remove period jumps that are too large (using threshold in frequency domain)
+    for i in range(1, len(periods) - 1):
+        if (abs(periods[i] - periods[i - 1]) > threshold and 
+            abs(periods[i] - periods[i + 1]) > threshold):
+            periods[i] = np.nan  # Mark this point as invalid if it jumps too much
+
+    # Plot period vs coupler flux
+    ax.set_title('Period vs Coupler Flux')
+    ax.set_xlabel("Coupler flux (V)")
+    ax.set_ylabel("Period (ns)")
+
+    # Plotting periods with missing (NaN) points automatically skipped
+    ax.plot(y, periods, 'o', linestyle='', label="Fitted Period (ns)")
+    ax.legend()
+
+    # Optionally return the fitted periods if needed
+    return periods
+
+
 def plot_cz_couplerz(x,y,z,ax=None):
     """
     x in shape (N,) \n

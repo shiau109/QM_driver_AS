@@ -54,15 +54,22 @@ if save_data:
 
 # Plot
 save_figure = 1
+# import xarray as xr
+# import matplotlib.pyplot as plt
+# dataset = xr.open_dataset(r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240920_DRKe_5Q4C\save_data\CZ_sweet\crosstalk_not_compensated\20241004_055553_CZ\q1q0_cz_couplerz.nc")
 
 time = dataset.coords["time"].values
 # coupler_flux = dataset.coords["c_amps"].values
 flux = dataset.coords["amps"].values
 
-from exp.cz_chavron import plot_cz_chavron,plot_cz_couplerz
+import numpy as np
+from exp.cz_chavron import plot_cz_chavron,plot_cz_couplerz, plot_coupler_z_vs_time, plot_cz_frequency_vs_flux, plot_cz_period_vs_flux
 for ro_name, data in dataset.data_vars.items():
     fig, ax = plt.subplots()
-    plot_cz_chavron(time,flux,data.values[0],ax)
+    # plot_cz_chavron(time,flux,data.values[0],ax)
+    # plot_cz_frequency_vs_flux(time, flux, data.values[0], np.inf,ax)
+    # plot_cz_period_vs_flux(time, flux, data.values[0], np.inf,ax)
+    plot_coupler_z_vs_time(time, flux, data.values[0],ax)
     # plot_cz_couplerz(flux,coupler_flux,data.values[0],ax)
-    if save_figure: dp.save_fig(fig, f"{save_name}_{ro_name}")
+    # if save_figure: dp.save_fig(fig, f"{save_name}_{ro_name}")
 plt.show()
