@@ -116,7 +116,7 @@ def update_zWaveform(config,updatedZspec:dict,target_q:str="all"):
         print(f"{q} update controlWaveform")
         # Default constant pulse
         config.waveforms[f"{element_name}_const_wf"].sample = updatedZspec[q]["z_amp"]
-
+        config.pulses[f"{element_name}_const_pulse"].length = updatedZspec[q]['z_len']
         for opration in config.elements[element_name].operations: 
             
             pulse_name = f"{element_name}_{opration}_pulse"
