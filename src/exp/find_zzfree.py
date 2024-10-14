@@ -51,7 +51,7 @@ class ZZCouplerFreqRamsey( QMMeasurement ):
         self.flux_qua = self._lin_flux_array( )
         self.evo_time_tick_qua = self._evo_time_tick_array( )
         with program() as ZZfree:
-            iqdata_stream = multiRO_declare( self.ro_elements[0] )
+            iqdata_stream = multiRO_declare( self.ro_elements )
             n = declare(int)
             n_st = declare_stream()
 
@@ -69,13 +69,13 @@ class ZZCouplerFreqRamsey( QMMeasurement ):
                                 # Initialization
                                 # Wait for the resonator to deplete
                                 if self.initializer is None:
-                                    wait(10 * u.us, self.ro_elements[0])
+                                    wait(10 * u.us, self.ro_elements)
                                 else:
                                     try:
                                         self.initializer[0](*self.initializer[1])
                                     except:
                                         print("initializer didn't work!")
-                                        wait(1 * u.us, self.ro_elements[0]) 
+                                        wait(1 * u.us, self.ro_elements) 
                                 # Operation
                                 True_value = Cast.mul_fixed_by_int(self.virtual_detune_qua[0] * 1e-9, 4 * t)
                                 False_value = Cast.mul_fixed_by_int(self.virtual_detune_qua[1] * 1e-9, 4 * t)
@@ -94,13 +94,13 @@ class ZZCouplerFreqRamsey( QMMeasurement ):
                                 play("x90", self.zz_detector_xy[0])  # 2st x90 gate
                                 align()
                                 # Readout
-                                multiRO_measurement( iqdata_stream, self.ro_elements[0], weights="rotated_") 
+                                multiRO_measurement( iqdata_stream, self.ro_elements, weights="rotated_") 
                 # Save the averaging iteration to get the progress bar
                 save(n, n_st)
 
             with stream_processing():
                 # Cast the data into a 1D vector, average the 1D vectors together and store the results on the OPX processor
-                multiRO_pre_save( iqdata_stream, self.ro_elements[0], (2, 2, len(self.flux_qua), len(self.evo_time_tick_qua)))
+                multiRO_pre_save( iqdata_stream, self.ro_elements, (2, 2, len(self.flux_qua), len(self.evo_time_tick_qua)))
                 n_st.save("iteration")
 
         return ZZfree
@@ -166,6 +166,8 @@ class ZZCouplerFreqEcho( QMMeasurement ):
         self.zz_source_xy = ["q2_xy"]
         self.coupler_z = ["q6_z"]
         self.predict_detune = 0.1
+
+        self.preprocess = "ave"
         self.initializer = None
         
         self.flux_range = ( -0.1, 0.1 )
@@ -175,7 +177,7 @@ class ZZCouplerFreqEcho( QMMeasurement ):
         self.flux_qua = self._lin_flux_array( )
         self.evo_time_tick_qua = self._evo_time_tick_array( )
         with program() as ZZfree:
-            iqdata_stream = multiRO_declare( self.ro_elements[0] )
+            iqdata_stream = multiRO_declare( self.ro_elements )
             n = declare(int)
             n_st = declare_stream()
 
@@ -188,25 +190,25 @@ class ZZCouplerFreqEcho( QMMeasurement ):
                         # Initialization
                         # Wait for the resonator to deplete
                         if self.initializer is None:
-                            wait(10 * u.us, self.ro_elements[0])
+                            wait(10 * u.us, self.ro_elements)
                         else:
                             try:
                                 self.initializer[0](*self.initializer[1])
                             except:
                                 print("initializer didn't work!")
-                                wait(1 * u.us, self.ro_elements[0]) 
+                                wait(1 * u.us, self.ro_elements) 
 
                         play("x90", self.zz_detector_xy[0])  # 1st x90 gate
                         wait(5)
                         align()
-                        play("const"*amp(dc*2.), self.coupler_z[0], t)    # const 預設0.5
+                        play("const"*amp(dc), self.coupler_z[0], t)    # const 預設0.5
                         align()
                         play("x180", self.zz_detector_xy[0])     #flip
                         play("x180", self.zz_source_xy[0])      #make ZZ crosstalk
                         wait(5)
                         align()
 
-                        play("const"*amp(dc*2.), self.coupler_z[0], t)    # const 預設0.5
+                        play("const"*amp(dc), self.coupler_z[0], t)    # const 預設0.5
                         align()
                         # wait(5)
                         # frame_rotation_2pi(0.5, self.zz_detector_xy[0])  # Virtual Z-rotation
@@ -214,13 +216,13 @@ class ZZCouplerFreqEcho( QMMeasurement ):
                         align()
                         
                         # Readout
-                        multiRO_measurement( iqdata_stream, self.ro_elements[0], weights="rotated_") 
+                        multiRO_measurement( iqdata_stream, self.ro_elements, weights="rotated_") 
                 # Save the averaging iteration to get the progress bar
                 save(n, n_st)
 
             with stream_processing():
                 # Cast the data into a 1D vector, average the 1D vectors together and store the results on the OPX processor
-                multiRO_pre_save( iqdata_stream, self.ro_elements[0], (len(self.flux_qua), len(self.evo_time_tick_qua)))
+                multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.flux_qua), len(self.evo_time_tick_qua)))
                 n_st.save("iteration")
 
         return ZZfree
@@ -234,16 +236,29 @@ class ZZCouplerFreqEcho( QMMeasurement ):
         data_list = ro_ch_name + ["iteration"]   
         return data_list
      
-    def _data_formation( self ):
-        output_data = {}
 
+    def _data_formation( self ):
+        coords = { 
+            "mixer":np.array(["I","Q"]), 
+            "flux":self.flux_qua,
+            "time":4*self.evo_time_tick_qua,
+            #"prepare_state": np.array([0,1])
+            }
+        match self.preprocess:
+            case "shot":
+                dims_order = ["mixer","shot", "flux", "time"]
+                coords["shot"] = np.arange(self.shot_num)
+            case _:
+                dims_order = ["mixer","flux","time"]
+
+        output_data = {}
         for r_idx, r_name in enumerate(self.ro_elements):
-            output_data[r_name] = ( ["mixer","flux","time"],
-                                np.array([self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]]) )
-        dataset = xr.Dataset(
-            output_data,
-            coords={"mixer":np.array(["I","Q"]), "flux": self.flux_qua, "time": 4*self.evo_time_tick_qua}
-        )
+            data_array = np.array([ self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]])
+            output_data[r_name] = ( dims_order, np.squeeze(data_array))
+
+        dataset = xr.Dataset( output_data, coords=coords )
+
+        # dataset = dataset.transpose("mixer", "prepare_state", "frequency", "amp_ratio")
 
         self._attribute_config()
         dataset.attrs["ro_LO"] = self.ref_ro_LO
