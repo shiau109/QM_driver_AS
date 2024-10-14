@@ -582,7 +582,7 @@ class Painter1QRB( RawDataPainter ):
             f=power_law,
             xdata=x,
             ydata=y,
-            p0=[-0.05, 0.05, 0.05],
+            p0=[-0.0001, 0.0001, 0.0001],
             bounds=(-np.inf, np.inf),
             maxfev=2000,
         )
@@ -659,7 +659,7 @@ class Painter1QRB_interleaved( RawDataPainter ):
             f=power_law,
             xdata=x,
             ydata=y,
-            p0=[-0.05, 0.05, 0.05],
+            p0=[-0.0001, 0.0001, 0.0001],
             bounds=(-np.inf, np.inf),
             maxfev=2000,
         )
@@ -738,35 +738,35 @@ class Painter1QRB_infidelity( RawDataPainter ):
         ax.set_ylabel("Sequence Fidelity")
         ax.plot( x, power_law(x, *pars),"o", label="data",markersize=1,linestyle="--", linewidth=2)
         ax.plot( x, power_law(x, *pars_inl),"o", label="data",markersize=1,linestyle="--", linewidth=2)
-        ax.text(0.04, 
-                0.95, 
+        ax.text(0.96, 
+                0.28, 
                 f"Error rate: 1-p = {np.format_float_scientific(one_minus_p, precision=2)}+-{stdevs[2]:.2}\n"
                 f"Clifford set infidelity: r_c = {np.format_float_scientific(r_c, precision=2)}+-{r_c_std:.2}\n"
                 f"Gate infidelity: r_g = {np.format_float_scientific(r_g, precision=2)}+-{r_g_std:.2}", 
                 fontsize=9, 
                 color="black",
-                ha='left', 
-                va='top',
+                ha='right', 
+                va='bottom',
                 transform=ax.transAxes,
                 bbox=dict(facecolor='white', alpha=0.5))
-        ax.text(0.04, 
-                0.80, 
+        ax.text(0.96, 
+                0.13, 
                 f"Inl Error rate: 1-p = {np.format_float_scientific(one_minus_p_inl, precision=2)}+-{stdevs_inl[2]:.2}\n"
                 f"Inl Clifford set infidelity: r_c = {np.format_float_scientific(r_c_inl, precision=2)}+-{r_c_std_inl:.2}\n"
                 f"Inl Gate infidelity: r_g = {np.format_float_scientific(r_g_inl, precision=2)}+-{r_g_std_inl:.2}", 
                 fontsize=9, 
                 color="black",
-                ha='left',
-                va='top',
+                ha='right', 
+                va='bottom',
                 transform=ax.transAxes,
                 bbox=dict(facecolor='white', alpha=0.5))
-        ax.text(0.04, 
-                0.65, 
+        ax.text(0.96, 
+                0.05, 
                 f"specific gate infidelity = {np.format_float_scientific(1-pars_inl[2]/pars[2], precision=2)}+-{pars_inl[2]/pars[2] * ((stdevs[2]/pars[2])**2 + (stdevs_inl[2]/pars_inl[2])**2)**(1/2):.2}",
                 fontsize=9, 
                 color="black",
-                ha='left', 
-                va='top',
+                ha='right', 
+                va='bottom',
                 transform=ax.transAxes,
                 bbox=dict(facecolor='white', alpha=0.5))
 
@@ -780,7 +780,7 @@ class Painter1QRB_infidelity( RawDataPainter ):
             f=power_law,
             xdata=x,
             ydata=y,
-            p0=[-0.05, 0.05, 0.05],
+            p0=[-0.0001, 0.0001, 0.0001],
             bounds=(-np.inf, np.inf),
             maxfev=2000,
         )

@@ -58,8 +58,8 @@ class randomized_banchmarking_interleaved_sq(QMMeasurement):
         self.xy_elements = None
         self.ro_elements = None
         self.gate_length = 40
-        self.max_circuit_depth = 20
-        self.delta_clifford = 200
+        self.max_circuit_depth = 200
+        self.base_clifford = 2
         self.initializer = None
         self.n_avg = 100
         self.state_discrimination = False
@@ -67,10 +67,16 @@ class randomized_banchmarking_interleaved_sq(QMMeasurement):
         self.initialization_macro = False
         self.seed = None
         self.threshold = 0
+        self.x = np.array([])
 
     def _get_qua_program(self):
 
-        gate_step = self.max_circuit_depth / self.delta_clifford
+        gate_num = 1
+        gate_step = 0
+        while gate_num <= self.max_circuit_depth:
+            self.x = np.append(self.x, [gate_num])
+            gate_step = gate_step + 1
+            gate_num = self.base_clifford * gate_num
         ###################
         # The QUA program #
         ###################
@@ -132,7 +138,7 @@ class randomized_banchmarking_interleaved_sq(QMMeasurement):
                                     save(state[idx_res], state_st[idx_res])
 
                         # Go to the next depth
-                        assign(depth_target, depth_target + 2 * self.delta_clifford)
+                        assign(depth_target, self.base_clifford * depth_target)
                     # Reset the last gate of the sequence back to the original Clifford gate
                     # (that was replaced by the recovery gate at the beginning)
                     assign(sequence_list[depth], saved_gate)
@@ -202,12 +208,10 @@ class randomized_banchmarking_interleaved_sq(QMMeasurement):
                 output_data[r_name] = ( ["mixer","x"],
                     np.array([value_avg,error_avg]))
                 
-        x = np.arange(1, self.max_circuit_depth + 0.1, self.delta_clifford)
-        # x[0] = 1  # to set the first value of 'x' to be depth = 1 as in the experiment
 
         dataset = xr.Dataset(
             output_data,
-            coords={ "mixer":np.array(["val","err"]), "x":x}
+            coords={ "mixer":np.array(["val","err"]), "x":self.x}
         )
 
         return dataset

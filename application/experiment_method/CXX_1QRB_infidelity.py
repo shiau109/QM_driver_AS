@@ -10,24 +10,29 @@ qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
 
-import matplotlib.pyplot as plt
-
 ##############################
 # Program-specific variables #
 ##############################
 gate_length = 40
-xy_elements = ["q3_xy","q4_xy"]
-ro_elements = ["q3_ro","q4_ro"]
+xy_elements = ["q3_xy"]
+ro_elements = ["q3_ro"]
 
 # threshold = the_specs.get_spec_forConfig('ro')[xy_element]['ge_threshold']
-n_avg = 20  # Number of averaging loops for each random sequence
-max_circuit_depth = 100  # Maximum circuit depth
-delta_clifford = 1  #  Play each sequence with a depth step equals to 'delta_clifford - Must be > 1
-
+n_avg = 50  # Number of averaging loops for each random sequence
+max_circuit_depth = 1024  # Maximum circuit depth
+base_clifford = 2  #  Play each sequence with a depth step equals to 'delta_clifford - Must be > 1
+assert base_clifford > 1, 'base must > 1'
 seed = 345324  # Pseudo-random number generator seed
 interleaved_gate_index = 2
-same_seq = True
-shot_num = 20
+## Gate intex to gate
+## 0 = I
+## 1 = x180
+## 2 = y180
+## 12 = x90
+## 13 = -x90
+## 14 = y90
+## 15 = -y90
+shot_num = 50
 # Flag to enable state discrimination if the readout has been calibrated (rotated blobs and threshold)
 # state_discrimination = [1e-3]
 
@@ -42,8 +47,8 @@ my_exp.ro_elements = ro_elements
 # my_exp.threshold = threshold
 my_exp.n_avg = n_avg
 my_exp.max_circuit_depth = max_circuit_depth 
-my_exp.delta_clifford = delta_clifford
-assert (my_exp.max_circuit_depth / my_exp.delta_clifford).is_integer(), "max_circuit_depth / delta_clifford must be an integer."
+my_exp.base_clifford = base_clifford
+assert my_exp.base_clifford > 1, 'base must > 1'
 my_exp.seed = seed 
 dataset = my_exp.run(shot_num)
 
@@ -57,8 +62,8 @@ my_exp.ro_elements = ro_elements
 # my_exp.threshold = threshold
 my_exp.n_avg = n_avg
 my_exp.max_circuit_depth = max_circuit_depth 
-my_exp.delta_clifford = delta_clifford
-assert (my_exp.max_circuit_depth / my_exp.delta_clifford).is_integer(), "max_circuit_depth / delta_clifford must be an integer."
+my_exp.base_clifford = base_clifford
+assert my_exp.base_clifford > 1, 'base must > 1'
 my_exp.seed = seed 
 my_exp.interleaved_gate_index = interleaved_gate_index
 dataset_interleaved = my_exp.run(shot_num)
