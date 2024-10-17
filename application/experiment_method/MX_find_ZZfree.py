@@ -20,17 +20,19 @@ import xarray as xr
 # Set parameters
 from exp.find_zzfree import ZZCouplerFreqRamsey, ZZCouplerFreqEcho
 my_exp = ZZCouplerFreqEcho(config, qmm)
-my_exp.ro_elements = ["q3_ro"]
+my_exp.ro_elements = ["q3_ro", "q4_ro"]
 my_exp.zz_detector_xy = ["q3_xy"]
 my_exp.zz_source_xy = ["q4_xy"] # conditional x gate
 my_exp.coupler_z = ["q8_z"]
-my_exp.predict_detune = 0.1 #MHz
-my_exp.flux_range = ( -1, 1 )
-my_exp.resolution = 0.01
+my_exp.time_range = (4, 40000) #ns
+my_exp.time_resolution = 400
+my_exp.predict_detune = 0.2 #MHz 
+my_exp.flux_range = ( -1.5, 1.5 )
+my_exp.resolution = 0.03
 
 
 my_exp.initializer = initializer(200000,mode='wait')
-dataset = my_exp.run( 100 )
+dataset = my_exp.run( 1000 )
 
 #Save data
 save_data = True
@@ -50,4 +52,5 @@ save_figure = 1
 fig = plot_pureZZ(dataset)
 if save_figure: dp.save_fig( fig, folder_label )
 plt.show()
+
 

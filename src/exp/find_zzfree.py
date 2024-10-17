@@ -87,7 +87,7 @@ class ZZCouplerFreqRamsey( QMMeasurement ):
 
                                 play("x90", self.zz_detector_xy[0])  # 1st x90 gate
                                 align()
-                                play("const"*amp(dc*2.), self.coupler_z[0], t)    # const 預設0.1
+                                play("const"*amp(dc), self.coupler_z[0], t)    # const 預設0.1
                                 wait(t, self.zz_detector_xy[0])
                                 align()
                                 frame_rotation_2pi(phi, self.zz_detector_xy[0])  # Virtual Z-rotation
@@ -170,12 +170,15 @@ class ZZCouplerFreqEcho( QMMeasurement ):
         self.preprocess = "ave"
         self.initializer = None
         
+        self.time_range = (4, 20000) #ns
+        self.time_resolution = 200
         self.flux_range = ( -0.1, 0.1 )
         self.resolution = 0.001
 
     def _get_qua_program( self ):
         self.flux_qua = self._lin_flux_array( )
-        self.evo_time_tick_qua = self._evo_time_tick_array( )
+        # self.evo_time_tick_qua = self._evo_time_tick_array( )
+        self.evo_time_tick_qua = np.arange(self.time_range[0], self.time_range[1], self.time_resolution)//4
         with program() as ZZfree:
             iqdata_stream = multiRO_declare( self.ro_elements )
             n = declare(int)
@@ -199,18 +202,20 @@ class ZZCouplerFreqEcho( QMMeasurement ):
                                 wait(1 * u.us, self.ro_elements) 
 
                         play("x90", self.zz_detector_xy[0])  # 1st x90 gate
-                        wait(5)
                         align()
+                        wait(5)
                         play("const"*amp(dc), self.coupler_z[0], t)    # const 預設0.5
                         align()
+                        wait(5)
                         play("x180", self.zz_detector_xy[0])     #flip
                         play("x180", self.zz_source_xy[0])      #make ZZ crosstalk
-                        wait(5)
                         align()
+                        wait(5)
+
 
                         play("const"*amp(dc), self.coupler_z[0], t)    # const 預設0.5
                         align()
-                        # wait(5)
+                        wait(5)
                         # frame_rotation_2pi(0.5, self.zz_detector_xy[0])  # Virtual Z-rotation
                         play("-x90", self.zz_detector_xy[0])  # 2nd x90 gate
                         align()
@@ -240,7 +245,7 @@ class ZZCouplerFreqEcho( QMMeasurement ):
     def _data_formation( self ):
         coords = { 
             "mixer":np.array(["I","Q"]), 
-            "flux":self.flux_qua,
+            "flux":self.flux_qua * gc.get_const_wf(self.coupler_z[0],self.config),
             "time":4*self.evo_time_tick_qua,
             #"prepare_state": np.array([0,1])
             }
@@ -296,7 +301,7 @@ class ZZCouplerFreqEcho( QMMeasurement ):
         return np.arange( self.flux_range[0], self.flux_range[1], self.resolution )
     
     def _evo_time_tick_array( self ):
-        point_per_period = 20
+        point_per_period = 100
         Ramsey_period = (1e3/self.predict_detune)* u.ns
         tick_resolution = (Ramsey_period//(4*point_per_period))
         evo_time_tick_max = tick_resolution *point_per_period*6
