@@ -26,7 +26,7 @@ class RawDataPainter(ABC):
         self.output_fig = []
 
         for name, value in kwargs.items():
-            if name.lower() == 'infedelity':
+            if name.lower() == 'infidelity':
                 for ro_name in list(value.data_vars.keys()):
                     
                     self.plot_data = dataset.data_vars[ro_name]
@@ -40,6 +40,9 @@ class RawDataPainter(ABC):
                 
                 if show: plt.show()
                 return self.output_fig
+            elif name.lower() == 'opt_result':
+                self.best_para = value.x
+                self.best_inf = value.fun
 
         if "repetition" in dataset.coords:
             self.rep = dataset.coords["repetition"].values
@@ -535,11 +538,13 @@ class PainterT2Repeat( RawDataPainter ):
         
         return fig
 
-def power_law(power, a, b, p):
+def power_law(power, a, p, b):
     return a * (p**power) + b
 
 class Painter1QRB( RawDataPainter ):
-        
+    def __init__(self):
+        self.state_discrimination = False
+
     def _data_parser( self ):
         
         dataarray = self.plot_data
@@ -559,10 +564,13 @@ class Painter1QRB( RawDataPainter ):
         ax.set_title(f"{title} Single qubit RB")
         ax.set_xlabel("Number of Clifford gates")
         ax.set_ylabel("Sequence Fidelity")
-        ax.plot( x, power_law(x, *pars),"o", label="data",markersize=1,linestyle="--", linewidth=2)
+        if self.state_discrimination == True:
+            ax.plot( x, power_law(x, *pars, 0.5),"o", label="data",markersize=1,linestyle="--", linewidth=2)
+        else:
+            ax.plot( x, power_law(x, *pars),"o", label="data",markersize=1,linestyle="--", linewidth=2)
         ax.text(0.04, 
                 0.96, 
-                f"Error rate: 1-p = {np.format_float_scientific(one_minus_p, precision=2)}+-{stdevs[2]:.2}\n"
+                f"Error rate: 1-p = {np.format_float_scientific(one_minus_p, precision=2)}+-{stdevs[1]:.2}\n"
                 f"Clifford set infidelity: r_c = {np.format_float_scientific(r_c, precision=2)}+-{r_c_std:.2}\n"
                 f"Gate infidelity: r_g = {np.format_float_scientific(r_g, precision=2)}+-{r_g_std:.2}", 
                 fontsize=9, 
@@ -578,11 +586,19 @@ class Painter1QRB( RawDataPainter ):
 
     def _ana_SQRB(self, x, y ):
         from scipy.optimize import curve_fit
+        if self.state_discrimination == True:
+            p0 = [-0.4, 1]
+            def fit_func(power, a, p):
+                return power_law(power, a, p, 0.5)
+        else:
+            p0=[-0.0001, 0.0001, 0.0001]
+            def fit_func(power, a, p, b):
+                return power_law(power, a, p, b)
         pars, cov = curve_fit(
-            f=power_law,
+            f=fit_func,
             xdata=x,
             ydata=y,
-            p0=[-0.0001, 0.0001, 0.0001],
+            p0=p0,
             bounds=(-np.inf, np.inf),
             maxfev=2000,
         )
@@ -591,7 +607,10 @@ class Painter1QRB( RawDataPainter ):
         print("#########################")
         print("### Fitted Parameters ###")
         print("#########################")
-        print(f"A = {pars[0]:.3} ({stdevs[0]:.1}), B = {pars[1]:.3} ({stdevs[1]:.1}), p = {pars[2]:.3} ({stdevs[2]:.1})")
+        if self.state_discrimination == True:
+            print(f"A = {pars[0]:.3} ({stdevs[0]:.1}), P = {pars[1]:.3} ({stdevs[1]:.1})")
+        else:
+            print(f"A = {pars[0]:.3} ({stdevs[0]:.1}), P = {pars[1]:.3} ({stdevs[1]:.1}), B = {pars[2]:.3} ({stdevs[2]:.1})")
         print("Covariance Matrix")
         print(cov)
 
@@ -614,8 +633,9 @@ class Painter1QRB( RawDataPainter ):
 
 class Painter1QRB_interleaved( RawDataPainter ):
 
-    def __init__(self, interleaved_gate_index):
-        self.interleaved_gate_index = interleaved_gate_index
+    def __init__(self):
+        self.interleaved_gate_index = 0
+        self.state_discrimination = False
 
     def _data_parser( self ):
         
@@ -639,7 +659,7 @@ class Painter1QRB_interleaved( RawDataPainter ):
         ax.plot( x, power_law(x, *pars),"o", label="data",markersize=1,linestyle="--", linewidth=2)
         ax.text(0.04, 
                 0.96, 
-                f"Error rate: 1-p = {np.format_float_scientific(one_minus_p, precision=2)}+-{stdevs[2]:.2}\n"
+                f"Error rate: 1-p = {np.format_float_scientific(one_minus_p, precision=2)}+-{stdevs[1]:.2}\n"
                 f"Clifford set infidelity: r_c = {np.format_float_scientific(r_c, precision=2)}+-{r_c_std:.2}\n"
                 f"Gate infidelity: r_g = {np.format_float_scientific(r_g, precision=2)}+-{r_g_std:.2}", 
                 fontsize=9, 
@@ -667,22 +687,24 @@ class Painter1QRB_interleaved( RawDataPainter ):
 
         print("#########################")
         print("### Fitted Parameters ###")
-        print("#########################")
-        print(f"A = {pars[0]:.3} ({stdevs[0]:.1}), B = {pars[1]:.3} ({stdevs[1]:.1}), p = {pars[2]:.3} ({stdevs[2]:.1})")
+        if self.state_discrimination == True:
+            print(f"A = {pars[0]:.3} ({stdevs[0]:.1}), P = {pars[1]:.3} ({stdevs[1]:.1})")
+        else:
+            print(f"A = {pars[0]:.3} ({stdevs[0]:.1}), P = {pars[1]:.3} ({stdevs[1]:.1}), B = {pars[2]:.3} ({stdevs[2]:.1})")
         print("Covariance Matrix")
         print(cov)
 
-        one_minus_p = 1 - pars[2]
+        one_minus_p = 1 - pars[1]
         r_c = one_minus_p * (1 - 1 / 2**1)
         r_g = r_c / 1.875  # 1.875 is the average number of gates in clifford operation
-        r_c_std = stdevs[2] * (1 - 1 / 2**1)
+        r_c_std = stdevs[1] * (1 - 1 / 2**1)
         r_g_std = r_c_std / 1.875
 
         print("#########################")
         print("### Useful Parameters ###")
         print("#########################")
         print(
-            f"Error rate: 1-p = {np.format_float_scientific(one_minus_p, precision=2)} ({stdevs[2]:.1})\n"
+            f"Error rate: 1-p = {np.format_float_scientific(one_minus_p, precision=2)} ({stdevs[1]:.1})\n"
             f"Clifford set infidelity: r_c = {np.format_float_scientific(r_c, precision=2)} ({r_c_std:.1})\n"
             f"Gate infidelity: r_g = {np.format_float_scientific(r_g, precision=2)}  ({r_g_std:.1})"
         )
@@ -707,8 +729,9 @@ class Painter1QRB_interleaved( RawDataPainter ):
 
 class Painter1QRB_infidelity( RawDataPainter ):
 
-    def __init__(self, interleaved_gate_index):
-        self.interleaved_gate_index = interleaved_gate_index 
+    def __init__(self):
+        self.interleaved_gate_index = 0
+        self.state_discrimination = False
 
     def _data_parser( self ):
         
@@ -736,13 +759,18 @@ class Painter1QRB_infidelity( RawDataPainter ):
         ax.set_title(f"{title} 1QRB gate {self._get_interleaved_gate()} infidelity")
         ax.set_xlabel("Number of Clifford gates")
         ax.set_ylabel("Sequence Fidelity")
-        ax.plot( x, power_law(x, *pars),"o", label="data",markersize=1,linestyle="--", linewidth=2)
-        ax.plot( x, power_law(x, *pars_inl),"o", label="data",markersize=1,linestyle="--", linewidth=2)
+        if self.state_discrimination == True:
+            ax.plot( x, power_law(x, *pars, 0.5),"o", label="data",markersize=1,linestyle="--", linewidth=2)
+            ax.plot( x, power_law(x, *pars_inl, 0.5),"o", label="data_inl",markersize=1,linestyle="--", linewidth=2)
+        else:
+            ax.plot( x, power_law(x, *pars),"o", label="data",markersize=1,linestyle="--", linewidth=2)
+            ax.plot( x, power_law(x, *pars_inl),"o", label="data_inl",markersize=1,linestyle="--", linewidth=2)
+        ax.legend()
         ax.text(0.96, 
                 0.28, 
-                f"Error rate: 1-p = {np.format_float_scientific(one_minus_p, precision=2)}+-{stdevs[2]:.2}\n"
-                f"Clifford set infidelity: r_c = {np.format_float_scientific(r_c, precision=2)}+-{r_c_std:.2}\n"
-                f"Gate infidelity: r_g = {np.format_float_scientific(r_g, precision=2)}+-{r_g_std:.2}", 
+                f"Error rate: 1-p = {np.format_float_scientific(one_minus_p, precision=3)}+-{stdevs[1]:.3}\n"
+                f"Clifford set infidelity: r_c = {np.format_float_scientific(r_c, precision=3)}+-{r_c_std:.3}\n"
+                f"Gate infidelity: r_g = {np.format_float_scientific(r_g, precision=3)}+-{r_g_std:.3}", 
                 fontsize=9, 
                 color="black",
                 ha='right', 
@@ -751,9 +779,9 @@ class Painter1QRB_infidelity( RawDataPainter ):
                 bbox=dict(facecolor='white', alpha=0.5))
         ax.text(0.96, 
                 0.13, 
-                f"Inl Error rate: 1-p = {np.format_float_scientific(one_minus_p_inl, precision=2)}+-{stdevs_inl[2]:.2}\n"
-                f"Inl Clifford set infidelity: r_c = {np.format_float_scientific(r_c_inl, precision=2)}+-{r_c_std_inl:.2}\n"
-                f"Inl Gate infidelity: r_g = {np.format_float_scientific(r_g_inl, precision=2)}+-{r_g_std_inl:.2}", 
+                f"Inl Error rate: 1-p = {np.format_float_scientific(one_minus_p_inl, precision=3)}+-{stdevs_inl[1]:.3}\n"
+                f"Inl Clifford set infidelity: r_c = {np.format_float_scientific(r_c_inl, precision=3)}+-{r_c_std_inl:.3}\n"
+                f"Inl Gate infidelity: r_g = {np.format_float_scientific(r_g_inl, precision=3)}+-{r_g_std_inl:.3}", 
                 fontsize=9, 
                 color="black",
                 ha='right', 
@@ -762,7 +790,7 @@ class Painter1QRB_infidelity( RawDataPainter ):
                 bbox=dict(facecolor='white', alpha=0.5))
         ax.text(0.96, 
                 0.05, 
-                f"specific gate infidelity = {np.format_float_scientific(1-pars_inl[2]/pars[2], precision=2)}+-{pars_inl[2]/pars[2] * ((stdevs[2]/pars[2])**2 + (stdevs_inl[2]/pars_inl[2])**2)**(1/2):.2}",
+                f"specific gate infidelity = {np.format_float_scientific(1-pars_inl[1]/pars[1], precision=3)}+-{pars_inl[1]/pars[1] * ((stdevs[1]/pars[1])**2 + (stdevs_inl[1]/pars_inl[1])**2)**(1/2):.3}",
                 fontsize=9, 
                 color="black",
                 ha='right', 
@@ -776,11 +804,19 @@ class Painter1QRB_infidelity( RawDataPainter ):
 
     def _ana_SQRB(self, x, y ):
         from scipy.optimize import curve_fit
+        if self.state_discrimination == True:
+            p0 = [-0.4, 1]
+            def fit_func(power, a, p):
+                return power_law(power, a, p, 0.5)
+        else:
+            p0=[-0.0001, 0.0001, 0.0001]
+            def fit_func(power, a, p, b):
+                return power_law(power, a, p, b)
         pars, cov = curve_fit(
-            f=power_law,
+            f=fit_func,
             xdata=x,
             ydata=y,
-            p0=[-0.0001, 0.0001, 0.0001],
+            p0=p0,
             bounds=(-np.inf, np.inf),
             maxfev=2000,
         )
@@ -789,21 +825,24 @@ class Painter1QRB_infidelity( RawDataPainter ):
         print("#########################")
         print("### Fitted Parameters ###")
         print("#########################")
-        print(f"A = {pars[0]:.3} ({stdevs[0]:.1}), B = {pars[1]:.3} ({stdevs[1]:.1}), p = {pars[2]:.3} ({stdevs[2]:.1})")
+        if self.state_discrimination == True:
+            print(f"A = {pars[0]:.3} ({stdevs[0]:.1}), P = {pars[1]:.3} ({stdevs[1]:.1})")
+        else:
+            print(f"A = {pars[0]:.3} ({stdevs[0]:.1}), P = {pars[1]:.3} ({stdevs[1]:.1}), B = {pars[2]:.3} ({stdevs[2]:.1})")
         print("Covariance Matrix")
         print(cov)
 
-        one_minus_p = 1 - pars[2]
+        one_minus_p = 1 - pars[1]
         r_c = one_minus_p * (1 - 1 / 2**1)
         r_g = r_c / 1.875  # 1.875 is the average number of gates in clifford operation
-        r_c_std = stdevs[2] * (1 - 1 / 2**1)
+        r_c_std = stdevs[1] * (1 - 1 / 2**1)
         r_g_std = r_c_std / 1.875
 
         print("#########################")
         print("### Useful Parameters ###")
         print("#########################")
         print(
-            f"Error rate: 1-p = {np.format_float_scientific(one_minus_p, precision=2)} ({stdevs[2]:.1})\n"
+            f"Error rate: 1-p = {np.format_float_scientific(one_minus_p, precision=2)} ({stdevs[1]:.1})\n"
             f"Clifford set infidelity: r_c = {np.format_float_scientific(r_c, precision=2)} ({r_c_std:.1})\n"
             f"Gate infidelity: r_g = {np.format_float_scientific(r_g, precision=2)}  ({r_g_std:.1})"
         )
@@ -825,7 +864,60 @@ class Painter1QRB_infidelity( RawDataPainter ):
             return "y90"
         elif self.interleaved_gate_index == 15:
             return "-y90"
+
+class Painter1QRB_gate_optimization( RawDataPainter ):
+
+    def __init__(self, interleaved_gate_index):
+        self.interleaved_gate_index = interleaved_gate_index
         
+    def _data_parser( self ):
+        
+        dataarray = self.plot_data
+        self.itr = dataarray.coords["iteration"].values
+        self.inf = dataarray.values[0]
+
+    def _plot_method( self ):
+        itr = self.itr
+        inf = self.inf
+        title = self.title
+
+        fig, ax = plt.subplots()
+        # ax.errorbar(x, val, yerr=err, marker=".")
+        ax.set_title(f"{title} 1QRB gate {self._get_interleaved_gate()} optimization")
+        ax.set_xlabel("Number of Iteration")
+        ax.set_ylabel("Sequence Fidelity")
+        ax.plot( itr, inf,"o", label="data",markersize=1,linestyle="--", linewidth=2)
+        ax.text(0.04, 
+                0.96, 
+                f"Best gate parameters : {self.best_para}\n"
+                f"Best gate infidelity : {self.best_inf}\n",
+                fontsize=9, 
+                color="black",
+                ha='left', 
+                va='top',
+                transform=ax.transAxes,
+                bbox=dict(facecolor='white', alpha=0.5))
+        
+        plt.tight_layout()
+        
+        return fig
+        
+    def _get_interleaved_gate(self):
+        if self.interleaved_gate_index == 0:
+            return "I"
+        elif self.interleaved_gate_index == 1:
+            return "x180"
+        elif self.interleaved_gate_index == 2:
+            return "y180"
+        elif self.interleaved_gate_index == 12:
+            return "x90"
+        elif self.interleaved_gate_index == 13:
+            return "-x90"
+        elif self.interleaved_gate_index == 14:
+            return "y90"
+        elif self.interleaved_gate_index == 15:
+            return "-y90"
+
 #S2 finished
 def plot_and_save_dispersive_limit(dataset, folder_save_dir, my_exp, save_data = True):
     dfs = dataset.coords["frequency"].values
