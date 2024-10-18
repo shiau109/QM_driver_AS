@@ -17,40 +17,48 @@ from ab.QM_config_dynamic import initializer
 
 # -------------- Needed function ------------------
 import numpy as np
-def power_law(power, a, b, p):
+def power_law(power, a, p, b):
     return a * (p**power) + b
 
 def ana_SQRB(x, y ):
     from scipy.optimize import curve_fit
+    if state_discrimination == True:
+        p0 = [-0.4, 1]
+        def fit_func(power, a, p):
+            return power_law(power, a, p, 0.5)
+    else:
+        p0=[-0.0001, 0.0001, 0.0001]
+        def fit_func(power, a, p, b):
+            return power_law(power, a, p, b)
     pars, cov = curve_fit(
-        f=power_law,
+        f=fit_func,
         xdata=x,
         ydata=y,
-        p0=[-0.0001, 0.0001, 0.0001],
+        p0=p0,
         bounds=(-np.inf, np.inf),
         maxfev=2000,
     )
     stdevs = np.sqrt(np.diag(cov))
 
-    print("#########################")
-    print("### Fitted Parameters ###")
-    print("#########################")
-    print(f"A = {pars[0]:.3} ({stdevs[0]:.1}), B = {pars[1]:.3} ({stdevs[1]:.1}), p = {pars[2]:.3} ({stdevs[2]:.1})")
-    print("Covariance Matrix")
-    print(cov)
+    # print("#########################")
+    # print("### Fitted Parameters ###")
+    # print("#########################")
+    # print(f"A = {pars[0]:.3} ({stdevs[0]:.1}), B = {pars[1]:.3} ({stdevs[1]:.1}), p = {pars[2]:.3} ({stdevs[2]:.1})")
+    # print("Covariance Matrix")
+    # print(cov)
 
-    one_minus_p = 1 - pars[2]
+    one_minus_p = 1 - pars[1]
     r_c = one_minus_p * (1 - 1 / 2**1)
     r_g = r_c / 1.875  # 1.875 is the average number of gates in clifford operation
-    r_c_std = stdevs[2] * (1 - 1 / 2**1)
+    r_c_std = stdevs[1] * (1 - 1 / 2**1)
     r_g_std = r_c_std / 1.875
 
-    print("#########################")
-    print("### Useful Parameters ###")
+    # print("#########################")
+    # print("### Useful Parameters ###")
     print("#########################")
     print(
-        f"Error rate: 1-p = {np.format_float_scientific(one_minus_p, precision=2)} ({stdevs[2]:.1})\n"
-        f"Clifford set infidelity: r_c = {np.format_float_scientific(r_c, precision=2)} ({r_c_std:.1})\n"
+    #     f"Error rate: 1-p = {np.format_float_scientific(one_minus_p, precision=2)} ({stdevs[1]:.1})\n"
+    #     f"Clifford set infidelity: r_c = {np.format_float_scientific(r_c, precision=2)} ({r_c_std:.1})\n"
         f"Gate infidelity: r_g = {np.format_float_scientific(r_g, precision=2)}  ({r_g_std:.1})"
     )
     
@@ -73,7 +81,9 @@ def get_interleaved_gate(index):
             return "-y90"
 # -------------- Initial parameters ------------------
 target_q = 'q3'
-target_gate_index = 2 
+target_gate_index = 2
+state_discrimination = True
+threshold = 4.746e-05
 ## Gate intex to gate
 ## 0 = I
 ## 1 = x180
@@ -82,13 +92,19 @@ target_gate_index = 2
 ## 13 = -x90
 ## 14 = y90
 ## 15 = -y90
+wf_name = 'dragg'
+init_params = {
+    'pi_amp': 0.1,
+    'drag_coef': 0.1,
+    'ac_stark': 0.0,
+    'sfactor': 4,
+}
 
-pi_amp=  0.1114941471
-drag_coef = 0.03
 
 # -------------- Goal function ------------------
 # prepare parameters
-init_params = [pi_amp, drag_coef,]
+init_key = list(init_params.keys())
+init_value = list(init_params.values())
 
 # Settings of infidelity measurement
 gate_length = 40
@@ -105,14 +121,22 @@ shot_num = 50
 qmm, octaves = spec.buildup_qmm()
 config = config_obj.get_config()
 
-def goal_function(init_params):
+def goal_function(init_value):
 
-    amp = init_params[0]
-    draga = init_params[1]
+    amp = init_value[0]
+    draga = init_value[1]
+    ac = init_value[2]
+    wf = {
+        wf_name:{
+            init_key[3]: init_value[3]
+        }
+    }
     # Update XY
     spec.update_aXyInfo_for(target_q=target_q, 
                             amp=amp, 
                             draga=draga, 
+                            ac=ac,
+                            wf=wf,
                             )
     update_controlWaveform(config_obj, spec.get_spec_forConfig("xy"), target_q=target_q )
     output_config( link_path, config_obj, spec )
@@ -139,11 +163,12 @@ def goal_function(init_params):
     my_exp.gate_length = gate_length
     my_exp.xy_elements = [f"{target_q}_xy"]
     my_exp.ro_elements = [f"{target_q}_ro"]
-    # my_exp.threshold = threshold
     my_exp.n_avg = n_avg
     my_exp.max_circuit_depth = max_circuit_depth 
     my_exp.base_clifford = base_clifford
     my_exp.seed = seed 
+    my_exp.state_discrimination = state_discrimination
+    my_exp.threshold = threshold
     dataset = my_exp.run(shot_num)
 
     my_exp = randomized_banchmarking_interleaved_sq(config, qmm)
@@ -151,12 +176,13 @@ def goal_function(init_params):
     my_exp.gate_length = gate_length
     my_exp.xy_elements = [f"{target_q}_xy"]
     my_exp.ro_elements = [f"{target_q}_ro"]
-    # my_exp.threshold = threshold
     my_exp.n_avg = n_avg
     my_exp.max_circuit_depth = max_circuit_depth 
     my_exp.base_clifford = base_clifford
     my_exp.seed = seed 
     my_exp.interleaved_gate_index = interleaved_gate_index
+    my_exp.state_discrimination = state_discrimination
+    my_exp.threshold = threshold
     dataset_interleaved = my_exp.run(shot_num)
 
     data1 = dataset.data_vars[f"{target_q}_ro"]
@@ -171,35 +197,46 @@ def goal_function(init_params):
     stdevs, pars, one_minus_p, r_c, r_g, r_c_std, r_g_std = ana_SQRB( x, val )
     stdevs_inl, pars_inl, one_minus_p_inl, r_c_inl, r_g_inl, r_c_std_inl, r_g_std_inl = ana_SQRB( x, val_inl )
 
-    return 1-pars_inl[2]/pars[2]
+    return 1-pars_inl[1]/pars[1]
 
-# -------------- Optimization
+# -------------- Optimization -------------- 
 from scipy.optimize import minimize
 
-optimization_trace = {"amp": [], "draga": [], "infidelity": []}
+optimization_trace = {"infidelity": []}
+for i in range(len(init_key)):
+    optimization_trace[init_key[i]] = []
 
-def callback(init_params):
-    a0 = init_params[0]
-    a1 = init_params[1]
-    f_val = goal_function(init_params)
-    optimization_trace["amp"].append(a0)
-    optimization_trace["draga"].append(a1)
+def callback(init_value):
+    f_val = goal_function(init_value)
     optimization_trace["infidelity"].append(f_val)
+    for i in range(len(init_key)):
+        optimization_trace[init_key[i]].append(init_value[i])
+        
 
-result = minimize(goal_function, init_params, method='Nelder-Mead', 
-                  options={'maxiter': 20, 'maxfev': 50, 'disp': True},
-                  callback=callback)
+result = minimize(goal_function, init_value, method='Nelder-Mead', callback=callback, tol=5e-3,
+                  options={'maxdev': 200,
+                           'disp': True,
+                           'return_all': True},
+                  )
 
+# -------------- _data_formation -------------- 
 import xarray as xr
-
+output_data = {}
+output_data[f"{target_q}_ro"] = (["mixer", 'iteration'], 
+                                 np.array([optimization_trace["infidelity"], 
+                                           optimization_trace[init_key[0]],
+                                           optimization_trace[init_key[1]],
+                                           optimization_trace[init_key[2]],
+                                           optimization_trace[init_key[3]],
+                                           ]))
 dataset = xr.Dataset(
-    {"objective_values": (["iteration"], optimization_trace["infidelity"])},
+    output_data,
     coords={
+        "mixer": np.array(["infidelity",init_key[0],init_key[1],init_key[2],init_key[3]]),
         "iteration": np.arange(len(optimization_trace["infidelity"])),
-        "amp": ("iteration", optimization_trace["amp"]),
-        "draga": ("iteration", optimization_trace["draga"]),
     }
 )
+
 save_data = 1
 folder_label = f"1QRB_{get_interleaved_gate(target_gate_index)}_optimization" #your data and plots will be saved under a new folder with this name
 
@@ -210,7 +247,11 @@ if save_data:
     dp.save_config(config)
     dp.save_nc(dataset,"1QRB")
 
-print(dataset)
-# 輸出結果
-print("Best gate parameers :", result.x)
-print("Best gate infidelity", result.fun)
+from exp.plotting import Painter1QRB_gate_optimization
+painter = Painter1QRB_gate_optimization(interleaved_gate_index)
+figs = painter.plot(dataset,folder_label,opt_result=result)
+if save_data: dp.save_figs( figs )
+
+# # 輸出結果
+# print("Best gate parameers :", result.x)
+# print("Best gate infidelity", result.fun)
