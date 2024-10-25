@@ -27,34 +27,33 @@ z_infos = {
 #     },
 
     "q0":{
-        "offset": 0.0,
+        "offset": 0.0127, # max: 0.0127, 4.8GHz: -0.07
         "crosstalk":{},
-        "z_wf":"sin",
         "z_amp": 0.2,
         "z_len": 1000,
-        "z_freq": 2.2,
-        "z_phase": 65,
+        "z_wf": "sin",
+        "z_freq": 5.0,
+        "z_phase": 0,
+    },
+    "q1":{
+        "offset": -0.07, # max: -0.07, 4.495GHz: -0.162 or 0.0247
+        "crosstalk":{},
+        "z_amp": 0.14,  # 0.14 for 50MHz range
+        "z_len": 10000,
+        "z_wf": "sin",
+        "z_freq": 500.0,    # actual frequency = z_freq / [2*(z_len-1)]
+        "z_phase": 30,
     },
     "q2":{
-        "offset": 0.2,
+        "offset": -0.01 +0.4,
         "crosstalk":{},
-        "z_amp": 0.1,
+        "z_amp": 0.4,
         "z_len": 1000,
     },
-    "q3":{
-        "offset": 0.0,
-        "crosstalk":{},
-        "z_amp": 0.1,
-        "z_len": 1000,
-    },
-    "q4":{
-        "offset": -0.01,
-        "crosstalk":{},
-        "z_amp": 0.1,
-        "z_len": 1000,
-    },
+
+
 }
-updating_qubit = ["q0","q3"]
+updating_qubit = ["q0", "q1", "q2"]
 
 for i in updating_qubit:
     q_name = i
