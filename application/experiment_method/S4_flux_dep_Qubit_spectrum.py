@@ -17,22 +17,27 @@ from exp.plotting import plot_and_save_flux_dep_Qubit
 # Start meausrement
 from exp.xyfreq_sweep_flux_dep import XYFreqFlux
 my_exp = XYFreqFlux(config, qmm)
-my_exp.ro_elements = ["q4_ro","q3_ro"]
-my_exp.xy_elements = ['q4_xy']
-my_exp.z_elements = ['q3_z']
-my_exp.initializer=initializer(10000,mode='wait')
+my_exp.ro_elements = ["q1_ro"]
+my_exp.xy_elements = ["q1_xy"]
+my_exp.z_elements = ["q1_z"]
+my_exp.initializer = initializer(10000,mode='wait')
 my_exp.xy_driving_time = 20
-my_exp.xy_amp_mod = 0.02
-my_exp.z_amp_ratio_range = (-0.02,0.02)
-my_exp.z_amp_ratio_resolution = 0.02
-my_exp.freq_range = (-400,400)
+my_exp.xy_amp_mod = 0.1
+# my_exp.z_amp_ratio_range = (-0.0127*5+1 -0.1, -0.0127*5+1 +0.1
+my_exp.z_amp_ratio_range = (-3, +3)
+my_exp.z_amp_ratio_resolution = 0.1
+my_exp.freq_range = (-400,+ 40)
 my_exp.freq_resolution = 4
-my_exp.sweep_type = "overlap"
-dataset = my_exp.run( 10 )
+my_exp.sweep_type = "z_pulse"
+
+my_exp.parametric_drive = 0     # whether to apply parametric drive
+my_exp.drive_element = "q1_z"   # which qubit to apply parametric drive
+
+dataset = my_exp.run( 100 )
 
 #Save data
 save_data = 1
-folder_label = "Flux_dep_Qubit" #your data and plots will be saved under a new folder with this name
+folder_label = "S4_flux_dep_Qubit_spectrum-q1" #your data and plots will be saved under a new folder with this name
 if save_data: 
     from exp.save_data import DataPackager
     save_dir = link_config["path"]["output_root"]
