@@ -17,7 +17,7 @@ class EnvelopeBuilder:
             ex. given_wf_array = {"I":array([0.1,0.1,0.1]),"Q":array([0.1,0.8,0.1])}
         '''
         from qualang_tools.config.waveform_tools import drag_gaussian_pulse_waveforms, drag_cosine_pulse_waveforms
-        from exp.customized_waveform_tools import multi_sine_pulse_waveforms
+        from exp.customized_waveform_tools import drag_multi_sine_pulse_waveforms, double_multi_sine_pulse_waveforms
 
         # search the waveform function
         
@@ -47,18 +47,30 @@ class EnvelopeBuilder:
                                                      anharmonicity=anh,
                                                      detuning=ac,
                                                      sigma=args[0])
-        elif func.lower() in ['sin','sine']:
-            func_param = [self.QsXyInfo["waveform_func"]['multisin']['wx2_amp'],
-                          self.QsXyInfo["waveform_func"]['multisin']['wx3_amp']
+        elif func.lower() in ['double_multisin']:
+            func_param = [self.QsXyInfo["waveform_func"]['double_multisin']['wx2_amp'],
+                          self.QsXyInfo["waveform_func"]['double_multisin']['wx3_amp']
                           ]
             def wf_func(amp, width, draga, anh, ac, *args):
-                return multi_sine_pulse_waveforms(amplitude=amp, 
-                                                  length=width, 
-                                                  alpha=draga, 
-                                                  anharmonicity=anh,
-                                                  detuning=ac,
-                                                  wx2_amp=args[0],
-                                                  wx3_amp=args[1])
+                return double_multi_sine_pulse_waveforms(amplitude=amp, 
+                                                         length=width, 
+                                                         alpha=draga, 
+                                                         anharmonicity=anh,
+                                                         detuning=ac,
+                                                         wx2_amp=args[0],
+                                                         wx3_amp=args[1])
+        elif func.lower() in ['drag_multisin']:
+            func_param = [self.QsXyInfo["waveform_func"]['drag_multisin']['wx2_amp'],
+                          self.QsXyInfo["waveform_func"]['drag_multisin']['wx3_amp']
+                          ]
+            def wf_func(amp, width, draga, anh, ac, *args):
+                return drag_multi_sine_pulse_waveforms(amplitude=amp, 
+                                                       length=width, 
+                                                       alpha=draga, 
+                                                       anharmonicity=anh,
+                                                       detuning=ac,
+                                                       wx2_amp=args[0],
+                                                       wx3_amp=args[1])
         else:
             raise ValueError("Only surpport Gaussian or DRAG-gaussian waveform!")
         

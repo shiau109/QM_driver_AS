@@ -55,7 +55,7 @@ def update_controlWaveform(config:Configuration,updatedSpec:dict={},target_q:str
            
             pulse_name = f"{element_name}_{opration}_pulse"
             # Single Q operation
-            if opration in ["x180", "-x180", "y180", "x90", "-x90", "y90", "-y90", "multisin"]: 
+            if opration in ["x180", "-x180", "y180", "x90", "-x90", "y90", "-y90"]: 
                 conv_table = {
                     "x180": "x",
                     "-x180": "-x",

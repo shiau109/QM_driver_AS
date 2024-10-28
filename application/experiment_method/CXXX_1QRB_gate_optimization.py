@@ -62,7 +62,7 @@ def ana_SQRB(x, y ):
         f"Gate infidelity: r_g = {np.format_float_scientific(r_g, precision=2)}  ({r_g_std:.1})"
     )
     
-    return stdevs, pars, one_minus_p, r_c, r_g, r_c_std, r_g_std
+    return stdevs, pars
 
 def get_interleaved_gate(index):
         if index == 0:
@@ -81,9 +81,7 @@ def get_interleaved_gate(index):
             return "-y90"
 # -------------- Initial parameters ------------------
 target_q = 'q3'
-target_gate_index = 2
-state_discrimination = True
-threshold = 4.746e-05
+target_gate_index = 1
 ## Gate intex to gate
 ## 0 = I
 ## 1 = x180
@@ -92,12 +90,16 @@ threshold = 4.746e-05
 ## 13 = -x90
 ## 14 = y90
 ## 15 = -y90
-wf_name = 'dragg'
+state_discrimination = True
+threshold = 4.791e-05
+
+wf_name = 'multisin_drag'  # dragg, gauss, multisin
 init_params = {
-    'pi_amp': 0.1,
+    # 'pi_amp': 0.156,
+    # "90_corr": 1.0,
     'drag_coef': 0.1,
-    'ac_stark': 0.0,
-    'sfactor': 4,
+    # 'ac_stark': 0.0,
+    # 'sfactor': 4,
 }
 
 
@@ -114,7 +116,7 @@ max_circuit_depth = 1024  # Maximum circuit depth
 base_clifford = 2  #  Play each sequence with a depth step equals to 'delta_clifford - Must be > 1
 assert base_clifford > 1, 'base must > 1'
 seed = 345324  # Pseudo-random number generator seed
-interleaved_gate_index = 2
+interleaved_gate_index = target_gate_index
 same_seq = True
 shot_num = 50
 
@@ -125,18 +127,18 @@ def goal_function(init_value):
 
     amp = init_value[0]
     draga = init_value[1]
-    ac = init_value[2]
-    wf = {
-        wf_name:{
-            init_key[3]: init_value[3]
-        }
-    }
+    # ac = init_value[2]
+    # wf = {
+    #     wf_name:{
+    #         init_key[3]: init_value[3]
+    #     }
+    # }
     # Update XY
     spec.update_aXyInfo_for(target_q=target_q, 
                             amp=amp, 
                             draga=draga, 
-                            ac=ac,
-                            wf=wf,
+                            # ac=ac,
+                            # wf=wf,
                             )
     update_controlWaveform(config_obj, spec.get_spec_forConfig("xy"), target_q=target_q )
     output_config( link_path, config_obj, spec )
@@ -194,10 +196,10 @@ def goal_function(init_value):
     val_inl = data2.values[0]
     err_inl = data2.values[1]
 
-    stdevs, pars, one_minus_p, r_c, r_g, r_c_std, r_g_std = ana_SQRB( x, val )
-    stdevs_inl, pars_inl, one_minus_p_inl, r_c_inl, r_g_inl, r_c_std_inl, r_g_std_inl = ana_SQRB( x, val_inl )
+    stdevs, pars = ana_SQRB( x, val )
+    stdevs_inl, pars_inl = ana_SQRB( x, val_inl )
 
-    return 1-pars_inl[1]/pars[1]
+    return (1 - pars_inl[1] / pars[1]) * (1 / 2**1 )
 
 # -------------- Optimization -------------- 
 from scipy.optimize import minimize
@@ -213,7 +215,7 @@ def callback(init_value):
         optimization_trace[init_key[i]].append(init_value[i])
         
 
-result = minimize(goal_function, init_value, method='Nelder-Mead', callback=callback, tol=5e-3,
+result = minimize(goal_function, init_value, method='Nelder-Mead', callback=callback, tol=2e-3,
                   options={'maxdev': 200,
                            'disp': True,
                            'return_all': True},
@@ -225,14 +227,14 @@ output_data = {}
 output_data[f"{target_q}_ro"] = (["mixer", 'iteration'], 
                                  np.array([optimization_trace["infidelity"], 
                                            optimization_trace[init_key[0]],
-                                           optimization_trace[init_key[1]],
-                                           optimization_trace[init_key[2]],
-                                           optimization_trace[init_key[3]],
+                                        #    optimization_trace[init_key[1]],
+                                        #    optimization_trace[init_key[2]],
+                                        #    optimization_trace[init_key[3]],
                                            ]))
 dataset = xr.Dataset(
     output_data,
     coords={
-        "mixer": np.array(["infidelity",init_key[0],init_key[1],init_key[2],init_key[3]]),
+        "mixer": np.array(["infidelity",init_key[0]]),
         "iteration": np.arange(len(optimization_trace["infidelity"])),
     }
 )
@@ -245,10 +247,11 @@ if save_data:
     save_dir = link_config["path"]["output_root"]
     dp = DataPackager( save_dir, folder_label )
     dp.save_config(config)
-    dp.save_nc(dataset,"1QRB")
+    dp.save_nc(dataset,folder_label)
 
 from exp.plotting import Painter1QRB_gate_optimization
-painter = Painter1QRB_gate_optimization(interleaved_gate_index)
+painter = Painter1QRB_gate_optimization()
+painter.interleaved_gate_index = interleaved_gate_index
 figs = painter.plot(dataset,folder_label,opt_result=result)
 if save_data: dp.save_figs( figs )
 

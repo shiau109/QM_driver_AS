@@ -33,6 +33,8 @@ my_exp.base_clifford = 2  #  Play each sequence with a depth step equals to 'del
 assert my_exp.base_clifford > 1, 'base must > 1'
 my_exp.seed = 345324  # Pseudo-random number generator seed
 my_exp.interleaved_gate_index = 2
+my_exp.state_discrimination = False
+my_exp.threshold = 5.151e-05
 
 # Flag to enable state discrimination if the readout has been calibrated (rotated blobs and threshold)
 # state_discrimination = [1e-3]
