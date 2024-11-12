@@ -247,7 +247,10 @@ class ChannelInfo:
                     case "AC_stark_detuning":
                         init_value = 0 * u.MHz
                     case "waveform_func":
-                        init_value = 'dragg'
+                        init_value = {'dragg':{
+                                        'sfactor' : 4,
+                                        }
+                                    }   
                     case _:
                         init_value = {"180":1,"90":1}
                 self._XyInfo[f'q{idx}'][info] = init_value 
