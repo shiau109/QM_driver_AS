@@ -43,7 +43,7 @@ class DetunedRabiFluxPulse( QMMeasurement ):
         self.time_resolution = 80
         self.pad_zeros = ( 80, 0 )
 
-        self.amp_modify = 0.2
+        # self.amp_modify = 0.2
 
         self.freq_range = ( -300, 50 )
         self.freq_resolution = 100
@@ -86,7 +86,10 @@ class DetunedRabiFluxPulse( QMMeasurement ):
                         align()
                         for z in self.z_elements:
                             wait( (16+self.pad_zeros[0])//4,z)
-                            play("const"*amp(self.amp_modify), z, duration=self.qua_cc_duration)
+                            # play("const"*amp(self.amp_modify), z, duration=self.qua_cc_duration)
+                            wait( 4, z)
+                            play("sin", z)
+
 
                         for i, xy in enumerate(self.xy_elements):
                             update_frequency( xy, self.ref_xy_IF[i] +df )

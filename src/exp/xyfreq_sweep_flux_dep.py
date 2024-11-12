@@ -63,6 +63,8 @@ class XYFreqFlux( QMMeasurement ):
         self.freq_range = ( -1, 1 )
         self.freq_resolution = 0.5
 
+        self.parametric_drive = 0
+        self.drive_element = "q1_z"
         
 
     def _get_qua_program( self ):
@@ -203,6 +205,9 @@ class XYFreqFlux( QMMeasurement ):
         # operation
         for i, z in enumerate(self.z_elements):
             play( "const"*amp( r_z_amp ), z, duration=self.qua_xy_driving_time)
+        
+        if self.parametric_drive: play("sin", self.drive_element) # for parametric driving
+        
         for i, xy in enumerate(self.xy_elements):
             update_frequency( xy, self.ref_xy_IF[i] +df )
             play("const"*amp( self.xy_amp_mod ), xy, duration=self.qua_xy_driving_time)
@@ -214,6 +219,9 @@ class XYFreqFlux( QMMeasurement ):
         for i, z in enumerate(self.z_elements):
             play( "const"*amp( r_z_amp ), z, duration=self.qua_xy_driving_time)
         # wait(250)
+        
+        if self.parametric_drive: play("sin", self.drive_element) # for parametric driving
+
         for i, xy in enumerate(self.xy_elements):
             update_frequency( xy, self.ref_xy_IF[i] +df )
             play("const"*amp( self.xy_amp_mod ), xy, duration=self.qua_xy_driving_time)
