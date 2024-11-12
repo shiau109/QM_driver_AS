@@ -379,6 +379,8 @@ class ChannelInfo:
                     self._ZInfo[target_q][info] = kwargs[info]
                 elif info.lower() in ["crosstalk"]:
                     self._ZInfo[target_q][info] = kwargs[info]
+                elif info.lower() in ["filter"]:
+                    self._ZInfo[target_q][info] = kwargs[info]
                 elif info.lower() in ["settle"]:
                     self._ZInfo["settle_time"] = int(kwargs[info]*u.ns)
                 elif info.lower() in ["len","amp","freq","phase"]:

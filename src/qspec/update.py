@@ -100,6 +100,15 @@ def update_z_crosstalk(config:Configuration,zInfo:dict,wire:dict):
 
     z_output[channel].crosstalk = zInfo["crosstalk"]   
    
+def update_z_filter(config:Configuration,zInfo:dict,wire:dict):
+    '''
+        update the z filter in config controllers belongs to the target qubit.\n
+        zInfo is the dict belongs to the target qubit returned by the func. `Circuit_info().update_zInfo_for()`\n
+    '''
+    ctrler_name, channel = wire["z"]
+    z_output = config.controllers[ctrler_name].analog_outputs
+
+    z_output[channel].filter = zInfo["filter"] 
 
 def update_zWaveform(config,updatedZspec:dict,target_q:str="all"):
     """

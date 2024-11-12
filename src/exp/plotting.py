@@ -91,7 +91,8 @@ class PainterPowerDepRes( RawDataPainter ):
         # if yscale == "log":
         #     pcm = ax.pcolormesh(freqs, np.log10(amp_ratio), np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
         # else:
-        pcm = ax[0].pcolormesh(freqs, amp_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+        # vmax_magnitude = np.max(np.abs(s21))
+        pcm = ax[0].pcolormesh(freqs, amp_ratio, np.log(np.abs(s21)), cmap='RdBu')#, vmax=0.5e-5)
         ax[0].set_title(f"{title} Magnitude")
         ax[0].set_xlabel("Additional IF freq (MHz)")
         ax[0].set_ylabel("Amplitude Ratio")
@@ -397,12 +398,13 @@ class PainterT1Repeat( RawDataPainter ):
         time = self.time
         title = self.title
         custom_bins = self.custom_bins
-
+        total_time = np.sum(time)
         fig, ax = plt.subplots(2)
-
+        print(rep*total_time*20*1e-6/3600)
         ax[0].set_title(f"Time dependent T1")
         ax[0].set_xlabel("Wait time (us)")
-        ax[0].set_ylabel(f"Rep")
+        # ax[0].set_ylabel(f"Rep")
+        ax[0].set_ylabel(f"hour")
         ax[0].pcolormesh( time, rep, idata, cmap='RdBu')
         if acc_T1 is not None:
             ax[0].plot(acc_T1,rep)
@@ -421,6 +423,21 @@ class PainterT1Repeat( RawDataPainter ):
                    transform=ax[1].transAxes,
                    bbox=dict(facecolor='white', alpha=0.5))
 
+
+        # Calculate mean and standard deviation
+        mean_T1 = np.mean(acc_T1)
+        std_T1 = np.std(acc_T1)
+        
+        # Plot mean and standard deviation on the histogram
+        ax[1].axvline(mean_T1, color='red', linestyle='--', label=f'Mean: {mean_T1:.2f}')
+        ax[1].axvline(mean_T1 - std_T1, color='green', linestyle='--', label=f'-1 Std Dev: {mean_T1 - std_T1:.2f}')
+        ax[1].axvline(mean_T1 + std_T1, color='green', linestyle='--', label=f'+1 Std Dev: {mean_T1 + std_T1:.2f}')
+        
+        # Display mean and std as text
+        ax[1].text(mean_T1, ax[1].get_ylim()[1] * 0.8, f"Mean: {mean_T1:.2f}\nStd Dev: {std_T1:.2f}",
+                color="black", ha="center", bbox=dict(facecolor="white", alpha=0.6))
+
+        ax[1].legend()
 
         plt.tight_layout()
 
