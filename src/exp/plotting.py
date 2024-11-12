@@ -383,10 +383,11 @@ class PainterT1Repeat( RawDataPainter ):
             self.acc_T1.append(fit_result.params["tau"].value)
         self.idata = dataarray.values[0]
 
-        mean_t1 = np.mean(self.acc_T1)
-        bin_width = mean_t1 *0.05
-        start_value = mean_t1*0.5
-        end_value = mean_t1*1.5
+        self.mean_t1 = np.mean(self.acc_T1)
+        self.err_t1 = np.std(self.acc_T1)
+        bin_width = self.mean_t1 *0.05
+        start_value = self.mean_t1*0.5
+        end_value = self.mean_t1*1.5
         self.custom_bins = [start_value + i * bin_width for i in range(int((end_value - start_value) / bin_width) + 1)]
 
     def _plot_method( self ):
@@ -410,6 +411,16 @@ class PainterT1Repeat( RawDataPainter ):
         ax[1].set_xlabel("T1 time")
         ax[1].set_ylabel(f"Number")
         ax[1].hist(acc_T1, custom_bins, density=False, alpha=0.7, label='Histogram')
+        ax[1].text(0.04, 
+                   0.96, 
+                   f"T1 = {np.format_float_scientific(self.mean_t1, precision=3)}+-{self.err_t1:.2}\n",
+                   fontsize=9, 
+                   color="black",
+                   ha='left', 
+                   va='top',
+                   transform=ax[1].transAxes,
+                   bbox=dict(facecolor='white', alpha=0.5))
+
 
         plt.tight_layout()
 
@@ -506,10 +517,11 @@ class PainterT2Repeat( RawDataPainter ):
             self.acc_T2.append(fit_result.params["tau"].value)
         self.idata = dataarray.values[0]
 
-        mean_t1 = np.mean(self.acc_T2)
-        bin_width = mean_t1 *0.05
-        start_value = mean_t1*0.5
-        end_value = mean_t1*1.5
+        self.mean_t2 = np.mean(self.acc_T2)
+        self.err_t2 = np.std(self.acc_T2)
+        bin_width = self.mean_t2 *0.05
+        start_value = self.mean_t2*0.5
+        end_value = self.mean_t2*1.5
         self.custom_bins = [start_value + i * bin_width for i in range(int((end_value - start_value) / bin_width) + 1)]
 
     def _plot_method( self ):
@@ -533,6 +545,15 @@ class PainterT2Repeat( RawDataPainter ):
         ax[1].set_xlabel("T2 time")
         ax[1].set_ylabel(f"Number")
         ax[1].hist(acc_T2, custom_bins, density=False, alpha=0.7, label='Histogram')
+        ax[1].text(0.04, 
+                   0.96, 
+                   f"T1 = {np.format_float_scientific(self.mean_t2, precision=3)}+-{self.err_t2:.2}\n",
+                   fontsize=9, 
+                   color="black",
+                   ha='left', 
+                   va='top',
+                   transform=ax[1].transAxes,
+                   bbox=dict(facecolor='white', alpha=0.5))
 
         plt.tight_layout()
         
@@ -952,6 +973,48 @@ class Painter1QRB_infidelity_shift_one_param( RawDataPainter ):
             return "y90"
         elif self.interleaved_gate_index == 15:
             return "-y90"
+
+
+class PainterXYCaliAmp( RawDataPainter ):
+    def __init__(self):
+        self.process = 'amp'
+        self.gate = 1
+
+    def _data_parser( self ):
+        dataarray = self.plot_data
+        match self.process:
+            case 'amp':
+                self.x = dataarray.coords["amplitude_ratio"].values
+            case 'repeat':
+                self.x = dataarray.coords["repeat_time"].values
+            case 'freq':
+                self.x = dataarray.coords["frequency"].values
+        idata = dataarray.values[0]
+        qdata = dataarray.values[1]
+        self.zdata = idata +1j*qdata
+
+    def _plot_method( self ):
+        s21 = self.zdata
+        fig, ax = plt.subplots()
+        ax.plot(self.x, np.real(s21), label=self._gate_match())
+        fig.legend()
+        plt.tight_layout()
+
+        return fig
+    
+    def _gate_match(self):
+        match self.gate:
+            case 1:
+                return 'X X'
+            case 2:
+                return 'X -X'
+            case 3:
+                return 'Y Y'
+            case 4:
+                return 'Y -Y'
+            case 11:
+                return 'X/2 X/2 X/2 X/2'
+
 #S2 finished
 def plot_and_save_dispersive_limit(dataset, folder_save_dir, my_exp, save_data = True):
     dfs = dataset.coords["frequency"].values
