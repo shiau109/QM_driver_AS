@@ -33,68 +33,25 @@ z_infos = {
         "z_wf":"sin",
         "z_amp": 0.2,
         "z_len": 1000,
-        "z_freq": 2.2,
-        "z_phase": 65,
+        "z_wf": "sin",
+        "z_freq": 5.0,
+        "z_phase": 0,
     },
     "q1":{
-        "offset": 0.004,
+        "offset": -0.07, # max: -0.07, 4.495GHz: -0.162 or 0.0247
         "crosstalk":{},
-        "filter": {'feedforward': [], 'feedback':[]},
-        "z_amp": 0.1,
-        "z_len": 1000,
-    },
-    "q2":{
-        "offset": 0.103,
-        "crosstalk":{},
-        "filter": {'feedforward': [], 'feedback':[]},
-        "z_amp": 0.1,
-        "z_len": 1000,
-    },
-    "q3":{
-        "offset": 0.095+1.93e-3,
-        "crosstalk":{},
-        "filter": {'feedforward': [], 'feedback':[]},
-        "z_amp": 0.1,
-        "z_len": 1000,
-    },
-    "q4":{
-        "offset": 0.052,
-        "crosstalk":{},
-        "filter": {'feedforward': [], 'feedback':[]},
-        "z_amp": 0.1,
-        "z_len": 1000,
-    },
-    "q5":{
-        "offset": 0.0603,
-        "crosstalk":{},
-        "filter": {'feedforward': [], 'feedback':[]},
-        "z_amp": 0.1,
-        "z_len": 1000,
+        "z_amp": 0.14,  # 0.14 for 50MHz range
+        "z_len": 10000,
+        "z_wf": "sin",
+        "z_freq": 500.0,    # actual frequency = z_freq / [2*(z_len-1)]
+        "z_phase": 30,
+    }
+   
 
-    },
-    "q6":{
-        "offset": 0.123,
-        "crosstalk":{},
-        "filter": {'feedforward': [], 'feedback':[]},
-        "z_amp": 0.1,
-        "z_len": 1000,
-    },
-    "q7":{
-        "offset": 0.0907,#0.097,
-        "crosstalk":{},
-        "filter": {'feedforward': [], 'feedback':[]},
-        "z_amp": 0.1,
-        "z_len": 1000,
-    },
-    "q8":{
-        "offset": 0.0889,
-        "crosstalk":{},
-        "filter": {'feedforward': [], 'feedback':[]},
-        "z_amp": 0.1,
-        "z_len": 1000,
-    },
+
 }
 updating_qubit = ["q0","q1","q2","q3","q4","q5","q6","q7","q8"]
+
 
 for i in updating_qubit:
     q_name = i
