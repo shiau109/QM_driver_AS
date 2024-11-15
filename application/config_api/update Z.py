@@ -5,7 +5,7 @@ link_path = Path(__file__).resolve().parent/"config_link.toml"
 from QM_driver_AS.ultitly.config_io import import_config
 config_obj, spec = import_config( link_path )
 
-from qspec.update import update_z_offset, update_z_crosstalk, update_zWaveform
+from qspec.update import update_z_offset, update_z_crosstalk, update_z_filter, update_zWaveform
 
 # [[ 0.99954093  0.00685605 -0.01088031 -0.01185879 -0.01199802]
 #  [ 0.02307034  0.99941776 -0.01729353 -0.01564188 -0.01406762]
@@ -15,31 +15,39 @@ from qspec.update import update_z_offset, update_z_crosstalk, update_zWaveform
 
 z_infos = {
     "q0":{
-        "offset": -0.0,#0.2217,
+        "offset": 0.0805,
         "crosstalk":{},
-        "z_amp": 0.1,
+        "filter": {'feedforward': [], 'feedback':[]},
+        "z_wf":"sin",
+        "z_amp": 0.2,
         "z_len": 1000,
+        "z_wf": "sin",
+        "z_freq": 5.0,
+        "z_phase": 0,
     },
     "q1":{
-        "offset": -0.03,#0.0398,#0.1941,
+        "offset": -0.07,
         "crosstalk":{},
-        "z_amp": 0.1,
-        "z_len": 1000,
-    },
+        "z_amp": 0.14,  
+        "z_len": 10000,
+        "z_wf": "sin",
+        "z_freq": 500.0,   
+        "z_phase": 30,
+    }
     "q2":{
-        "offset": 0.071,#0.11,#0.134,#0.07,#0.0398,#0.129,#0.0398,#0.0951+0.0153,#0.0301,#0.1641,
+        "offset": 0.071,
         "crosstalk":{},
         "z_amp": 0.1,
         "z_len": 1000,
     },
     "q3":{
-        "offset": 0.062,#0.127,#0.075,#0.171,#0.019,#-0.088,#0.0301,#0.1487,
+        "offset": 0.062,
         "crosstalk":{},
         "z_amp": 0.1,
         "z_len": 1000,
     },
     "q4":{
-        "offset": 0.0,#0.256,#0.21,#0.0301,#0.15,#0.0301,#0.1519,
+        "offset": 0.0,
         "crosstalk":{},
         "z_amp": 0.1,
         "z_len": 1000,
@@ -51,19 +59,19 @@ z_infos = {
         "z_len": 1000,
     },
     "q6":{
-        "offset": 0.0,#0.16,#0.18+0.02,#0.0688+0.143,#0.186,#0.0688,#0.23,
+        "offset": 0.0,
         "crosstalk":{},
         "z_amp": 0.1,
         "z_len": 1000,
     },
     "q7":{
-        "offset": 0.067,#0.094,#+0.026,#0.192+0.036,#0.0301,#0.214,#0.0301,#0.2027,
+        "offset": 0.067,
         "crosstalk":{},
         "z_amp": 0.1,
         "z_len": 1000,
     },
     "q8":{
-        "offset": 0.0,#0.079-0.1809-0.08+0.08,#0.0192,#+0.235,#0.184,
+        "offset": 0.0,
         "crosstalk":{},
         "z_amp": 0.1,
         "z_len": 1000,
@@ -76,7 +84,7 @@ for i in updating_qubit:
     wiring = spec.get_spec_forConfig('wire')
 
     z_wf = z_infos[i]["z_wf"] if "z_wf" in z_infos[i].keys() else "sin"
-    z_amp = z_infos[i]["z_amp"] if "z_amp" in z_infos[i].keys() else 0.5
+    z_amp = z_infos[i]["z_amp"] if "z_amp" in z_infos[i].keys() else 0.1
     z_len = z_infos[i]["z_len"] if "z_amp" in z_infos[i].keys() else 40
     z_freq = z_infos[i]["z_freq"] if "z_freq" in z_infos[i].keys() else 1
     z_phase = z_infos[i]["z_phase"] if "z_phase" in z_infos[i].keys() else 0
@@ -85,6 +93,7 @@ for i in updating_qubit:
     z_info = spec.update_ZInfo_for(target_q=q_name,
                                    offset=z_infos[i]["offset"],
                                    crosstalk=z_infos[i]["crosstalk"],
+                                   filter=z_infos[i]["filter"],
                                    wf=z_wf,
                                    amp=z_amp,
                                    len=z_len,
@@ -94,6 +103,7 @@ for i in updating_qubit:
     # print(wiring[i[0]])
     update_z_offset( config_obj, z_info, wiring[q_name], mode='offset')
     update_z_crosstalk( config_obj, z_info, wiring[q_name])
+    update_z_filter( config_obj, z_info, wiring[q_name])
     update_zWaveform(config_obj, spec.get_spec_forConfig("z"), target_q=q_name )
     config_dict = config_obj.get_config() 
 
