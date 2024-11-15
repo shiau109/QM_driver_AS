@@ -14,47 +14,62 @@ from qspec.update import update_z_offset, update_z_crosstalk, update_zWaveform
 #  [ 0.01681398  0.01113205  0.00966305 -0.00497131  0.99965561]]
 
 z_infos = {
-
-# e.g.
-# "q0":{
-#         "offset": 0.0,      # float in volt
-#         "crosstalk":{}, 
-#         "z_wf":"sin",       # input: 'sin'
-#         "z_amp": 0.2,       # float in volt
-#         "z_len": 1000,      # int in ns
-#         "z_freq": 2.0,      # float in factor
-#         "z_phase": 60.0,    # float in degree
-#     },
-
     "q0":{
-        "offset": 0.0,
+        "offset": -0.0,#0.2217,
         "crosstalk":{},
-        "z_wf":"sin",
-        "z_amp": 0.2,
+        "z_amp": 0.1,
         "z_len": 1000,
-        "z_freq": 2.2,
-        "z_phase": 65,
+    },
+    "q1":{
+        "offset": -0.03,#0.0398,#0.1941,
+        "crosstalk":{},
+        "z_amp": 0.1,
+        "z_len": 1000,
     },
     "q2":{
-        "offset": 0.2,
+        "offset": 0.071,#0.11,#0.134,#0.07,#0.0398,#0.129,#0.0398,#0.0951+0.0153,#0.0301,#0.1641,
         "crosstalk":{},
         "z_amp": 0.1,
         "z_len": 1000,
     },
     "q3":{
-        "offset": 0.0,
+        "offset": 0.062,#0.127,#0.075,#0.171,#0.019,#-0.088,#0.0301,#0.1487,
         "crosstalk":{},
         "z_amp": 0.1,
         "z_len": 1000,
     },
     "q4":{
-        "offset": -0.01,
+        "offset": 0.0,#0.256,#0.21,#0.0301,#0.15,#0.0301,#0.1519,
         "crosstalk":{},
         "z_amp": 0.1,
         "z_len": 1000,
     },
+    "q5":{
+        "offset": 0.0,#0.152,
+        "crosstalk":{},
+        "z_amp": 0.1,
+        "z_len": 1000,
+    },
+    "q6":{
+        "offset": 0.0,#0.16,#0.18+0.02,#0.0688+0.143,#0.186,#0.0688,#0.23,
+        "crosstalk":{},
+        "z_amp": 0.1,
+        "z_len": 1000,
+    },
+    "q7":{
+        "offset": 0.067,#0.094,#+0.026,#0.192+0.036,#0.0301,#0.214,#0.0301,#0.2027,
+        "crosstalk":{},
+        "z_amp": 0.1,
+        "z_len": 1000,
+    },
+    "q8":{
+        "offset": 0.0,#0.079-0.1809-0.08+0.08,#0.0192,#+0.235,#0.184,
+        "crosstalk":{},
+        "z_amp": 0.1,
+        "z_len": 1000,
+    }
 }
-updating_qubit = ["q0","q3"]
+updating_qubit = ["q0","q1","q2","q3","q4","q5","q6","q7","q8"]
 
 for i in updating_qubit:
     q_name = i

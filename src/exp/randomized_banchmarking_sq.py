@@ -54,9 +54,8 @@ class randomized_banchmarking_sq(QMMeasurement):
         self.max_circuit_depth = 200
         self.base_clifford = 2 # >= 2
         self.initializer = None
-        self.n_avg = 100
+        self.n_avg = 1
         self.state_discrimination = False
-        self.initialization_macro = False
         self.seed = None
         self.threshold = 0
         self.x = np.array([])
@@ -104,13 +103,15 @@ class randomized_banchmarking_sq(QMMeasurement):
                     with if_((depth == depth_target)):
                         with for_(n, 0, n < self.n_avg, n + 1):
                             # Initialize
-                            wait(100 * u.us)
-                            if self.initialization_macro:
+                            if self.initializer is None:
+                                # wait(thermalization_time * u.ns)
                                 wait(100 * u.us)
                             else:
-                                pass
-                                # initialization_macro()
-                            align()
+                                try:
+                                    self.initializer[0](*self.initializer[1])
+                                except:
+                                    print("Initializer didn't work!")
+                                    wait(100*u.us)
 
                             # Operation
                             # The strict_timing ensures that the sequence will be played without gaps

@@ -31,16 +31,16 @@ interleaved_gate_index = 2
 ## 13 = -x90
 ## 14 = y90
 ## 15 = -y90
-shot_num = 100
+shot_num = 500
 # Flag to enable state discrimination if the readout has been calibrated (rotated blobs and threshold)
 state_discrimination = True
-threshold = 4.746e-05
+threshold = 2.016e-05
 
 # ------------------------------------------------------------
 from exp.randomized_banchmarking_sq import randomized_banchmarking_sq
 
 my_exp = randomized_banchmarking_sq(config, qmm)
-my_exp.initializer = initializer(100000,mode='wait')
+my_exp.initializer = initializer(200000,mode='wait')
 my_exp.gate_length = gate_length
 my_exp.xy_elements = xy_elements
 my_exp.ro_elements = ro_elements
@@ -56,7 +56,7 @@ dataset = my_exp.run(shot_num)
 from exp.randomized_banchmarking_interleaved_sq import randomized_banchmarking_interleaved_sq
 
 my_exp = randomized_banchmarking_interleaved_sq(config, qmm)
-my_exp.initializer = initializer(100000,mode='wait')
+my_exp.initializer = initializer(200000,mode='wait')
 my_exp.gate_length = gate_length
 my_exp.xy_elements = xy_elements
 my_exp.ro_elements = ro_elements
@@ -81,8 +81,8 @@ if save_data:
     dp.save_nc(dataset,"1QRB")
     dp.save_nc(dataset_interleaved,"1QRB_interleaved")
 
-from exp.plotting import Painter1QRB_infidelity
-painter = Painter1QRB_infidelity()
+from exp.plotting import Painter1QRBInfidelity
+painter = Painter1QRBInfidelity()
 painter.state_discrimination = my_exp.state_discrimination
 painter.interleaved_gate_index = my_exp.interleaved_gate_index
 figs = painter.plot(dataset,folder_label,infidelity=dataset_interleaved)
