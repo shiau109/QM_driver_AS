@@ -20,7 +20,8 @@ def get_IF( element, config ):
     return config["elements"][element]["intermediate_frequency"]
 
 def get_LO( element, config ):
-    return config["elements"][element]["mixInputs"]["lo_frequency"]
+    mixer_name = config["elements"][element]["mixInputs"]["mixer"]
+    return config["mixers"][mixer_name][0]["lo_frequency"]
 
 def get_ro_length( element, config ):
 

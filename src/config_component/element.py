@@ -5,14 +5,14 @@ class MixedInputs:
     def __init__( self ):
         self.I = ()
         self.Q = ()
-        self.lo_frequency = ()
+        # self.lo_frequency = ()
         self.mixer = None
     def to_dict( self ):
         return {
             "mixInputs":{
                 "I":self.I,
                 "Q":self.Q,
-                "lo_frequency":self.lo_frequency,
+                # "lo_frequency":self.lo_frequency,
                 "mixer":self.mixer
             }
         }
@@ -118,7 +118,7 @@ def mixedInputs_read_dict( infos:dict )->MixedInputs:
     mixedInputs = MixedInputs()
     mixedInputs.I = infos["I"]
     mixedInputs.Q = infos["Q"]
-    mixedInputs.lo_frequency = infos["lo_frequency"]
+    # mixedInputs.lo_frequency = int(infos["lo_frequency"])
     mixedInputs.mixer = infos["mixer"]
     return mixedInputs
 
