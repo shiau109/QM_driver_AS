@@ -98,12 +98,13 @@ class ChannelInfo:
         octaves = []
         for n, info in self._HardwareInfo["octave"].items():
             # Add the octaves
-            octaves.append( OctaveUnit( n, self._HardwareInfo["qop_ip"], port=info["port"], con=info["con"], clock=info["clock"], port_mapping=info["port_mapping"]) )
+            octaves.append( OctaveUnit( n, self._HardwareInfo["qop_ip"], port=info["port"], con=info["con"]) )
+            
         # Configure the Octaves
         octave_config = octave_declaration(octaves)
         qmm = QuantumMachinesManager(host=self._HardwareInfo["qop_ip"], port=self._HardwareInfo["qop_port"], cluster_name=self._HardwareInfo["cluster_name"], octave=octave_config)
-        
-        return qmm, octaves
+
+        return qmm, octave_config
 
     ### Below about RO information ###
     def init_roInfo(self):
@@ -116,8 +117,7 @@ class ChannelInfo:
         self._RoInfo = {}
         self._RoInfo["registered"] = []
         self._RoInfo["depletion_time"] = 1 * u.us
-        dIF = 200/self.q_num
-        init_IF = arange(-200,210,dIF)
+        init_IF = -50
         for idx in range(self.q_num):
             self._RoInfo[f"q{idx}"] = {}
             self._RoInfo[f"q{idx}"]["readout_len"] = 1500
@@ -127,7 +127,7 @@ class ChannelInfo:
                     case 'resonator_LO':
                         init_value = 6 * u.GHz
                     case 'resonator_IF':
-                        init_value = init_IF[idx] * u.MHz
+                        init_value = init_IF * u.MHz
                     case 'readout_amp':
                         init_value = 0.2 
                     case _:
@@ -303,7 +303,7 @@ class ChannelInfo:
             else:
                 print(name.lower())
                 raise KeyError("I don't know what you are talking about!")
-        print(new_freq)
+        # print(new_freq)
         return new_freq
     
     def export_spec( self, path ):

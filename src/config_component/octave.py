@@ -120,7 +120,7 @@ def RF_output_read_dict( channel_index:int, infos:dict )->RF_output:
     Input dictionary and output RF_output object
     """
     rf_output = RF_output( channel_index )
-    rf_output.LO_frequency = infos["LO_frequency"]
+    rf_output.LO_frequency = int(infos["LO_frequency"])
     rf_output.gain = infos["gain"]
     return rf_output
 
@@ -129,7 +129,7 @@ def RF_input_read_dict( channel_index:int, infos:dict )->RF_input:
     Input dictionary and output RF_input object
     """
     rf_input = RF_input( channel_index )
-    rf_input.LO_frequency = infos["LO_frequency"]
+    rf_input.LO_frequency = int(infos["LO_frequency"])
     return rf_input
 def octave_read_json( path ):
     pass

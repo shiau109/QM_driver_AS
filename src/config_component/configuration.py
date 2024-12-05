@@ -5,6 +5,8 @@ from config_component.waveform import Waveform, waveform_read_dict
 from config_component.digital_waveform import DigitalWaveform, digitalWaveform_read_dict
 from config_component.integration_weight import IntegrationWeights, integrationWeight_read_dict
 from config_component.mixer import Mixer, mixer_read_list
+from config_component.octave import Octave, octave_read_dict
+
 from typing import Dict
 
 
@@ -19,6 +21,7 @@ class Configuration():
         self._digital_waveforms = { "ON": digitalWaveform_read_dict("ON", {"samples": [(1, 0)]}) }
         self._integration_weights = {}
         self._mixers = {}
+        self._octaves = {}
 
         # Build Zero waveform
         waveform = Waveform("zero_wf")
@@ -29,8 +32,8 @@ class Configuration():
 
         config_dict = {"version": self.version}
         
-        components = ["controllers","elements","pulses","waveforms","digital_waveforms","integration_weights","mixers"]
-        component_objs = [self.controllers,self.elements,self.pulses,self.waveforms,self.digital_waveforms,self.integration_weights,self.mixers]
+        components = ["controllers","elements","pulses","waveforms","digital_waveforms","integration_weights","mixers","octaves"]
+        component_objs = [self.controllers,self.elements,self.pulses,self.waveforms,self.digital_waveforms,self.integration_weights,self.mixers, self.octaves]
         
         for c_type_name, c_objs in zip(components,component_objs):
             config_dict[c_type_name] = {}
@@ -73,7 +76,10 @@ class Configuration():
     @property
     def mixers( self )->Dict[str, Mixer]:
         return self._mixers
-                
+
+    @property
+    def octaves( self )->Dict[str, Octave]:
+        return self._octaves                
     
     
 
@@ -160,7 +166,11 @@ def configuration_read_dict( config:dict )->Configuration:
         new_config._integration_weights[name] = integrationWeight_read_dict( name, infos )
 
     for name, infos in config["mixers"].items():
-        new_config._mixers[name] = mixer_read_list( name, infos )  
+        new_config._mixers[name] = mixer_read_list( name, infos ) 
+
+    for name, infos in config["octaves"].items():
+        new_config._octaves[name] = octave_read_dict( name, infos )  
+
         # new_config.controllers[con_name]
     return new_config
 

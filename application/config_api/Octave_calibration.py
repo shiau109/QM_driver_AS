@@ -1,34 +1,15 @@
 """
-This file is used to configure the Octave ports (gain, switch_mode, down-conversion) and calibrate the up-conversion mixers.
-You need to run this file in order to update the Octaves with the new parameters.
+octave_introduction.py: shows the basic commands to control the octave's clock, synthesizers, up-converters, triggers,
+down-converters and calibration
 """
-from QM_driver_AS.ultitly.set_octave import ElementsSettings, octave_settings
 
-# Configure the Octave parameters for each element
-rr0 = ElementsSettings("q0_ro", gain=2, rf_in_port=["octave1", 1], down_convert_LO_source="Internal")
+from qm.octave.octave_manager import ClockMode
+from qm.qua import *
 
+#################################
+# Step 0 : Octave configuration #
+#################################
 
-q0_xy = ElementsSettings("q0_xy", gain=18)
-q1_xy = ElementsSettings("q1_xy", gain=18)
-q2_xy = ElementsSettings("q2_xy", gain=18)
-q3_xy = ElementsSettings("q3_xy", gain=18)
-q4_xy = ElementsSettings("q4_xy", gain=18)
-q5_xy = ElementsSettings("q5_xy", gain=18)
-# q6_xy = ElementsSettings("q6_xy", gain=18)
-# q7_xy = ElementsSettings("q7_xy", gain=18)
-# q8_xy = ElementsSettings("q8_xy", gain=18)
-
-# q2_xy = ElementsSettings("q2_xy", gain=15)
-
-# Add the "octave" elements
-# elements_settings = [rr0]
-elements_settings = [rr0]
-
-
-###################
-# Octave settings #
-###################
-# Configure the Octave according to the elements settings and calibrate
 
 # Dynamic config
 from pathlib import Path
@@ -39,17 +20,58 @@ link_path = current_file.parent/"config_link.toml"
 
 from QM_driver_AS.ultitly.config_io import import_config
 config_obj, spec = import_config( link_path )
-qmm, octaves = spec.buildup_qmm()
+qmm, octave_config = spec.buildup_qmm()
 
+octave_name = "octave1"
+elements = ["q0_xy"]
+ports = [2]
+gains = [0] # -20<gain<20
 config = config_obj.get_config()
-# dyna_config.check_mixerCorrectionPair_for('q1')
 
-octave_settings(
-    qmm=qmm,
-    config=config,
-    octaves=octaves,
-    elements_settings=elements_settings,
-    calibration=True,
-)
-qmm.close()
+from exp.config_par import get_LO
+for i, el in enumerate(elements):
+    port = ports[i]
+    gain = gains[i]
+    freq_LO = get_LO(el,config)
+    print(f"octave RF port{port}")
+    print(f"gain={gain}dB")
+    print(f"LO frequency={freq_LO/1e9}")
 
+    config_obj.octaves[octave_name].RF_outputs[port].gain=gain
+    config_obj.octaves[octave_name].RF_outputs[port].LO_frequency=freq_LO
+# The elements used to test the ports of the Octave
+
+# The configuration used here
+config = config_obj.get_config()
+qm = qmm.open_qm(config)
+qm.octave.set_clock(octave_name, clock_mode=ClockMode.Internal)
+
+
+# Simple test program that plays a continuous wave through all ports
+with program() as hello_octave:
+    with infinite_loop_():
+        for el in elements:
+            play("const", el)
+
+#################################
+# Step 5 : checking calibration #
+#################################
+import time
+
+print("-" * 37 + " Play before calibration")
+# Step 5.1: Connect RF1 and run these lines in order to see the uncalibrated signal first
+job = qm.execute(hello_octave)
+time.sleep(5)  # The program will run for 10 seconds
+job.halt()
+# Step 5.2: Run this in order to calibrate
+for element in elements:
+    print("-" * 37 + f" Calibrates {element}")
+    qm.calibrate_element(element)  # can provide many IFs for specific LO
+# Step 5.3: Run these and look at the spectrum analyzer and check if you get 1 peak at LO+IF (i.e. 6.05GHz)
+print("-" * 37 + " Play after calibration")
+job = qm.execute(hello_octave)
+time.sleep(5)  # The program will run for 30 seconds
+job.halt()
+
+from QM_driver_AS.ultitly.config_io import output_config
+output_config( link_path, config_obj )
