@@ -15,7 +15,7 @@ This project is use to run common experiment for Transmon on Quantum Machine and
     You can get the path from Github desktop
     Repository -> Show in Explorer
 4. Check QUA version 
-    1. qm-octave==1.2.0
-    2. qm-qua==1.1.3
+    1. qm-octave==2.1.0
+    2. qm-qua==1.1.7
     3. qualang-tools==0.15.2
 
