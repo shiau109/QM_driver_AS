@@ -150,8 +150,7 @@ class SQGate_calibration( QMMeasurement ):
             case 'drag':
                 a_min = 0
                 a_max = 1.5
-                draga_points = 40
-                da = (a_max-a_min)/draga_points
+                da = (a_max-a_min)/self.draga_points
                 self.amps = np.arange(a_min, a_max + da, da)  # + da/2 to add a_max to amplitudes
                 amp_len = len(self.amps)
                 with program() as qua_prog:

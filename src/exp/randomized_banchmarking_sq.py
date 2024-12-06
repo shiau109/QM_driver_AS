@@ -43,6 +43,7 @@ import time
 ###################################
 
 import xarray as xr
+from ab.QM_config_dynamic import initializer
 from exp.QMMeasurement import QMMeasurement
 
 class randomized_banchmarking_sq(QMMeasurement):
@@ -52,8 +53,9 @@ class randomized_banchmarking_sq(QMMeasurement):
         self.ro_elements = ["q0_ro"]
         self.gate_length = 40
         self.max_circuit_depth = 200
+        self.depth_scale = "lin"
         self.base_clifford = 2 # >= 2
-        self.initializer = None
+        self.initializer = initializer(120000,mode='wait')
         self.n_avg = 1
         self.state_discrimination = False
         self.seed = None
@@ -64,10 +66,17 @@ class randomized_banchmarking_sq(QMMeasurement):
 
         gate_num = 1
         gate_step = 0
-        while gate_num <= self.max_circuit_depth:
-            self.x = np.append(self.x, [gate_num])
-            gate_step = gate_step + 1
-            gate_num = self.base_clifford * gate_num
+        match self.depth_scale:
+            case "lin":
+                while gate_num <= self.max_circuit_depth:
+                    self.x = np.append(self.x, [gate_num])
+                    gate_step = gate_step + 1
+                    gate_num = self.base_clifford + gate_num
+            case 'exp':
+                while gate_num <= self.max_circuit_depth:
+                    self.x = np.append(self.x, [gate_num])
+                    gate_step = gate_step + 1
+                    gate_num = self.base_clifford * gate_num
         ###################
         # The QUA program #
         ###################
@@ -103,15 +112,11 @@ class randomized_banchmarking_sq(QMMeasurement):
                     with if_((depth == depth_target)):
                         with for_(n, 0, n < self.n_avg, n + 1):
                             # Initialize
-                            if self.initializer is None:
-                                # wait(thermalization_time * u.ns)
-                                wait(100 * u.us)
-                            else:
-                                try:
-                                    self.initializer[0](*self.initializer[1])
-                                except:
-                                    print("Initializer didn't work!")
-                                    wait(100*u.us)
+                            try:
+                                self.initializer[0](*self.initializer[1])
+                            except:
+                                print("Initializer didn't work!")
+                                wait(100*u.us)
 
                             # Operation
                             # The strict_timing ensures that the sequence will be played without gaps
@@ -131,7 +136,11 @@ class randomized_banchmarking_sq(QMMeasurement):
                                     save(state[idx_res], state_st[idx_res])
 
                         # Go to the next depth
-                        assign(depth_target, self.base_clifford * depth_target)
+                        match self.depth_scale:
+                            case "lin":
+                                assign(depth_target, self.base_clifford + depth_target)
+                            case "exp":
+                                assign(depth_target, self.base_clifford * depth_target)
                     # Reset the last gate of the sequence back to the original Clifford gate
                     # (that was replaced by the recovery gate at the beginning)
                     assign(sequence_list[depth], saved_gate)
@@ -156,7 +165,7 @@ class randomized_banchmarking_sq(QMMeasurement):
                             gate_step
                         ).average().save(f"{res}_state_avg")
                     else:
-                        # multiRO_pre_save(iqdata_stream_inl, ro_elements, (gate_step,2) )
+                        # multiRO_pre_save(iqdata_stream, self.ro_elements, (gate_step,2) )
                         I_st[idx_res].buffer(self.n_avg).map(FUNCTIONS.average()).buffer(gate_step).buffer(
                             self.shot_num
                         ).save(f"{res}_I")
@@ -207,57 +216,6 @@ class randomized_banchmarking_sq(QMMeasurement):
         )
 
         return dataset
-        # ###########################
-        # # Run or Simulate Program #
-        # ###########################
-        # if self.simulate:
-        #     # Simulates the QUA program for the specified duration
-        #     simulation_config = SimulationConfig(duration=10_000)  # In clock cycles = 4ns
-        #     job = self.qmm.simulate(self.config, rb, simulation_config)
-        #     job.get_simulated_samples().con1.plot()
-
-        # else:
-        #     # Open the quantum machine
-        #     qm = self.qmm.open_qm(self.config)
-        #     # Send the QUA program to the OPX, which compiles and executes it
-        #     job = qm.execute(rb)
-        #     # Get results from QUA program
-        #     if self.state_discrimination:
-        #         results = fetching_tool(job, data_list=["state_avg", "iteration"], mode="live")
-        #     else:
-        #         results = fetching_tool(job, data_list=["I_avg", "Q_avg", "iteration"], mode="live")
-
-        #     # data analysis
-        #     x = np.arange(0, self.max_circuit_depth + 0.1, self.delta_clifford)
-        #     x[0] = 1  # to set the first value of 'x' to be depth = 1 as in the experiment
-        #     while results.is_processing():
-        #         # Fetch results
-        #         fetch_data = results.fetch_all()
-        #         # Progress bar
-        #         iteration = fetch_data[-1]
-        #         progress_counter(iteration, self.shot_num, start_time=results.start_time)
-        #         # Plot
-        #         time.sleep(1)
-
-
-            # # At the end of the program, fetch the non-averaged results to get the error-bars
-            # if self.state_discrimination:
-            #     results = fetching_tool(job, data_list=["state"])
-            #     state = results.fetch_all()[0]
-            #     value_avg = np.mean(state, axis=0)
-            #     error_avg = np.std(state, axis=0)
-            # else:
-            #     results = fetching_tool(job, data_list=["I", "Q"])
-            #     I, Q = results.fetch_all()
-            #     value_avg = np.mean(I, axis=0)
-            #     error_avg = np.std(I, axis=0)
-
-            # # Close the quantum machines at the end in order to put all flux biases to 0 so that the fridge doesn't heat-up
-            # qm.close()
-
-            # return x, value_avg, error_avg
-
-    # List of recovery gates from the lookup table
     
     def _generate_sequence( self ):
         cayley = declare(int, value=c1_table.flatten().tolist())
@@ -271,7 +229,9 @@ class randomized_banchmarking_sq(QMMeasurement):
         rand = Random(seed=self.seed)
 
         assign(current_state, 0)
-        with for_(i, 0, i < self.max_circuit_depth, i + 1):
+        assign(sequence[0], 0)
+        assign(inv_gate[0], inv_list[current_state])
+        with for_(i, 1, i <= self.max_circuit_depth, i + 1):
             assign(step, rand.rand_int(24))
             assign(current_state, cayley[current_state * 24 + step])
             assign(sequence[i], step)
