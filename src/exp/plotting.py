@@ -1391,15 +1391,17 @@ def plot_and_save_readout_amp(dataset, folder_save_dir = 0, save_data = True ):
     from exp.readout_optimization import plot_amp_signal, plot_amp_signal_phase
     transposed_data = dataset.transpose("mixer", "state", "amplitude_ratio")
     amps = transposed_data.coords["amplitude_ratio"].values
+    figs = []
     for ro_name, data in transposed_data.data_vars.items():  
         fig = plt.figure()
         ax = fig.subplots(1,2,sharex=True)
         plot_amp_signal( amps, data, ro_name, ax[0] )
         plot_amp_signal_phase( amps, data, ro_name, ax[1] )
         fig.suptitle(f"{ro_name} RO amplitude")
-        save_name = save_name = f"ro_amp_{ro_name}"
-        # if save_data: save_fig(folder_save_dir, save_name)
-    plt.show()
+        save_name = f"ro_amp_{ro_name}"
+        figs.append((save_name,fig))
+        plt.close()
+    return figs
 
 #CR3
 def plot_and_save_readout_fidelity(dataset, folder_save_dir = 0, save_data = True )->list:
