@@ -17,8 +17,8 @@ save_dir = link_config["path"]["output_root"]
 import matplotlib.pyplot as plt
 
 # Set parameters
-ro_elements = ["q7_ro", "q8_ro"]
-q_elements = ['q8_xy']
+ro_elements = ["q2_ro"]
+q_elements = ['q0_xy']
 
 save_data = True
 save_name = f"ro_fidelity_{q_elements[0]}"
@@ -40,8 +40,8 @@ if save_data:
     dp.save_nc(dataset,folder_label)
 
 from exp.plotting import plot_and_save_readout_fidelity
-plot_and_save_readout_fidelity(dataset, folder_label, save_data)
-
+figs = plot_and_save_readout_fidelity(dataset, folder_label, save_data)
+dp.save_figs( figs )
 
 
 
