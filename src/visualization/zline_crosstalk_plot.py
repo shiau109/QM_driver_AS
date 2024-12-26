@@ -111,7 +111,7 @@ def plot_crosstalk_fitting(dataset):
         ax.plot(x_fit, y_fit, color='black', linestyle='--', label=f'Fit: y = {slope:.3f} * x + {intercept:.3f}')
 
         # 圖表細節
-        ax.set_title(f'{q}', fontsize=15)
+        ax.set_title(f'{q}\ncrosstalk:{-1*slope}', fontsize=15)
         ax.set_xlabel(f'Crosstalk_z Voltage ({dataset.attrs["crosstalk_qubit"]})', fontsize=15)
         ax.set_ylabel(f'Detector_z Voltage ({dataset.attrs["detector_qubit"]})', fontsize=15)
         fig.colorbar(pmesh, ax=ax, label=q)
@@ -120,6 +120,102 @@ def plot_crosstalk_fitting(dataset):
 
         # 添加到 figures 列表
         figures.append((q, fig))
+
+    return figures
+from matplotlib.ticker import ScalarFormatter
+
+def plot_multi_crosstalk_3Dscalar_with_fit(datasets):
+    """
+    Analyze and plot zline crosstalk data for all variables in the datasets, including fitting results.
+
+    Parameters:
+    datasets (list of xarray.Dataset): List of datasets to compare.
+
+    Returns:
+    List of tuples (fig, ax): List of figure and axis objects for all variables.
+    """
+    # 獲取所有數據集的變數名稱
+    data_vars = datasets[0].data_vars.keys()
+
+    # 扣除每個數據集的均值
+    for dataset in datasets:
+        for q in data_vars:
+            # Subtract the mean of ds[q][0, :, :]
+            dataset[q][0, :, :] = dataset[q][0, :, :] - dataset[q][0, :, :].mean()
+
+    # 獲取所有數據集的全局最小值和最大值（對每個變數分別計算）
+    global_min_max = {
+        q: (
+            min(ds[q][0, :, :].min().values.item() for ds in datasets),
+            max(ds[q][0, :, :].max().values.item() for ds in datasets),
+        )
+        for q in data_vars
+    }
+
+    # 開始繪圖
+    figures = []
+
+    for dataset in datasets:
+        crosstalk_z = dataset.coords["crosstalk_z"].values
+        detector_z = dataset.coords["detector_z"].values
+        crosstalk_qubit = dataset.attrs["crosstalk_qubit"]
+        detector_qubit = dataset.attrs["detector_qubit"]
+
+        for q in data_vars:
+            print(f"Processing {q}...")
+            dataset_q = dataset[q]
+
+            # 擬合分析
+            slope, intercept, x_vals, y_vals = analysis_crosstalk_value_fitting(dataset_q)
+
+            if slope is None or intercept is None:
+                print(f"Fitting failed for {q}")
+                continue
+
+            # 提取需要的數據
+            z1 = crosstalk_z
+            z2 = detector_z
+            data = dataset_q[0, :, :].values.T
+
+            # 繪製 colormesh 圖表
+            fig, ax = plt.subplots(figsize=(10, 8))
+            min_value, max_value = global_min_max[q]  # 獲取全局 z 軸範圍
+            pmesh = ax.pcolormesh(z1, z2, data, shading='auto', cmap='RdBu', vmin=min_value, vmax=max_value)
+
+            # 繪製最大值點
+            ax.scatter(x_vals, y_vals, color='yellow', edgecolor='black', label='Max Points')
+
+            # 計算並限制擬合線的範圍
+            x_fit = np.linspace(min(z1), max(z1), 100)
+            y_fit = slope * x_fit + intercept
+
+            # 找到 y_fit 在 z2 範圍內的部分
+            mask = (y_fit >= min(z2)) & (y_fit <= max(z2))
+            x_fit = x_fit[mask]
+            y_fit = y_fit[mask]
+
+            ax.plot(x_fit, y_fit, color='black', linestyle='--', label=f'Fit: y = {slope:.3f} * x + {intercept:.3f}')
+
+            # 圖表細節
+            ax.set_title(f'{q}\ncrosstalk: {-1 * slope:.3f}', fontsize=15)
+            ax.set_xlabel(f'Crosstalk_z Voltage ({crosstalk_qubit})', fontsize=15)
+            ax.set_ylabel(f'Detector_z Voltage ({detector_qubit})', fontsize=15)
+
+            # 添加 colorbar
+            cbar = fig.colorbar(pmesh, ax=ax)
+            cbar.set_label("Intensity", fontsize=15)
+            # 設置 colorbar 刻度為科學記號
+            formatter = ScalarFormatter(useMathText=True)
+            formatter.set_scientific(True)
+            formatter.set_powerlimits((-2, 2))
+            cbar.ax.yaxis.set_major_formatter(formatter)
+            cbar.ax.tick_params(labelsize=12)
+
+            # ax.legend()
+            ax.grid(True)
+
+            # 添加到 figures 列表
+            figures.append((f"{q}_{detector_qubit}{crosstalk_qubit}", fig))
 
     return figures
 
@@ -139,12 +235,12 @@ def plot_crosstalk_FFT(dataset):
 
     for q in data_vars:
         fig, ax = plt.subplots(ncols=2)
-        fig.set_size_inches(10, 5)
+        # fig.set_size_inches(10, 5)
         print(f"Processing {q}...")
         dataset_q = dataset[q]
         crosstalk, freq_axes, mag = analysis_crosstalk_value_fft( dataset_q )
 
-        _plot_rawdata( dataset_q, crosstalk, ax[0] )
+        _plot_rawdata( dataset_q, -crosstalk, ax[0] )
 
         _plot_2Dfft( freq_axes[0], freq_axes[1], mag.transpose(), ax[1] )
         
@@ -166,33 +262,33 @@ def _plot_rawdata( dataset, slope, ax=None ):
     x_min, x_max = min(x), max(x)
     y_min, y_max = min(y), max(y)
     # 根據斜率和x, y的範圍計算斜線的實際起止點
-    start_y = x_min * slope + y[len(y)//2]
-    end_y = x_max * slope + y[len(y)//2]
+    start_y = (x_min - x[len(x)//2]) * slope + y[len(y)//2]
+    end_y = (x_max - x[len(x)//2]) * slope + y[len(y)//2]
     # 調整斜線的起止點以符合 x 和 y 的範圍
     if slope > 0.:
         if start_y < y_min:
-            start_x = y_min / slope
+            start_x = (y_min - y[len(y)//2]) / slope + y[len(y)//2]
             start_y = y_min
         else:
             start_x = x_min
         if end_y > y_max:
-            end_x = y_max / slope
+            end_x = (y_max - y[len(y)//2]) / slope + y[len(y)//2]
             end_y = y_max
         else:
             end_x = x_max
     else:
         if start_y > y_max:
-            start_x = y_max / slope
+            start_x = (y_max - y[len(y)//2]) / slope + y[len(y)//2]
             start_y = y_max
         else:
             start_x = x_min
         if end_y < y_min:
-            end_x = y_min / slope
+            end_x = (y_min - y[len(y)//2]) / slope + y[len(y)//2]
             end_y = y_min
         else:
             end_x = x_max
     # 繪制調整後的斜線
-    ax.plot([start_x - y[len(y)//2]/slope, end_x - y[len(y)//2]/slope], [start_y, end_y], color="red", linewidth=5)
+    ax.plot([start_x, end_x], [start_y, end_y], color="red", linewidth=5)
 
 
     # ax.plot([x[0],x[-1]],[ x[0]*slope + y[len(y)//2], x[-1]*slope + y[len(y)//2] ],color="r",linewidth=5)
@@ -212,9 +308,6 @@ def _plot_2Dfft( x, y, z, ax=None  ):
     ax.set_xlabel(f"crosstalk wavenumber (1/mV)")
     # ax.set_ylabel(f"compensation wavenumber (1/mV)")
     ax.set_title('2D Fourier Transform (Magnitude Spectrum)')
-
-
-
 
 def plot_heatmap_with_ellipse(dataset):
     # Get all data_vars keys
@@ -282,29 +375,119 @@ def plot_heatmap_with_ellipse(dataset):
         # Print slope
         print(f"Slope for {q}: {slope}")
 
-        figures.append((fig, ax, q))
+        figures.append((q, ax))
 
     return figures
 
+def plot_multi_crosstalk_3Dscalar(datasets):
+    """
+    Plot zline crosstalk data for all variables in the datasets and return the figures.
+
+    Parameters:
+    datasets (list of xarray.Dataset): List of datasets to compare.
+
+    Returns:
+    List of tuples (fig, ax): List of figure and axis objects for all variables.
+    """
+    # 獲取所有數據集的變數名稱
+    data_vars = datasets[0].data_vars.keys()
+
+    # 扣除每個數據集的均值
+    for dataset in datasets:
+        for q in data_vars:
+            # Subtract the mean of ds[q][0, :, :]
+            dataset[q][0, :, :] = dataset[q][0, :, :] - dataset[q][0, :, :].mean()
+            
+
+    # 獲取所有數據集的全局最小值和最大值（對每個變數分別計算）
+    global_min_max = {
+        q: (
+            min(ds[q][0, :, :].min().values.item() for ds in datasets),
+            max(ds[q][0, :, :].max().values.item() for ds in datasets),
+        )
+        for q in data_vars
+    }
+
+    figures = []
+
+    for dataset in datasets:
+        crosstalk_z = dataset.coords["crosstalk_z"].values
+        detector_z = dataset.coords["detector_z"].values
+        crosstalk_qubit = dataset.attrs["crosstalk_qubit"]
+        detector_qubit = dataset.attrs["detector_qubit"]
+        expect_crosstalk = dataset.attrs["expect_crosstalk"]
+
+        for q in data_vars:
+            min_value, max_value = global_min_max[q]  # 獲取當前變數的全局最小值和最大值
+
+            fig, ax = plt.subplots()
+            picture = ax.pcolormesh(
+                crosstalk_z,
+                detector_z,
+                dataset[q][0, :, :].T,
+                cmap='RdBu',
+                vmin=min_value,  # 使用跨數據集的全局下界
+                vmax=max_value   # 使用跨數據集的全局上界
+            )
+
+            ax.set_title(f"{q}", fontsize=15)
+            ax.set_xlabel(f"{crosstalk_qubit}_z Delta Voltage (V)", fontsize=15)
+            ax.set_ylabel(f"{detector_qubit}_z Delta Voltage (V)", fontsize=15)
+            ax.set_aspect(1 / expect_crosstalk)
+
+            from matplotlib.ticker import ScalarFormatter
+
+            # 添加 colorbar
+            cbar = fig.colorbar(picture, ax=ax)
+            cbar.set_label("Intensity", fontsize=15)
+
+            # 設置 colorbar 刻度為科學記號
+            formatter = ScalarFormatter(useMathText=True)
+            formatter.set_scientific(True)
+            formatter.set_powerlimits((-2, 2))  # 控制科學記號的閾值，例如當值小於 10^-2 或大於 10^2 時顯示
+            cbar.ax.yaxis.set_major_formatter(formatter)
+
+            cbar.ax.tick_params(labelsize=12)
+
+
+            figures.append((f"{q}_{detector_qubit}{crosstalk_qubit}", fig))
+
+    return figures
+
+import xarray as xr
+dataset1 = xr.open_dataset(r"C:\Users\admin\SynologyDrive\09 Data\Fridge Data\Qubit\20241107_DR3_5Q4C_0430#7\20241207data\pretty_crosstalk\20241209_013805_detector_q3_bias-0.1V_crosstalk_q8_long_drive_pulse_expectcrosstalk_0.1_0.1mius\data.nc")
+dataset2 = xr.open_dataset(r"C:\Users\admin\SynologyDrive\09 Data\Fridge Data\Qubit\20241107_DR3_5Q4C_0430#7\20241207data\pretty_crosstalk\20241209_013910_detector_q3_bias-0.1V_crosstalk_q4_long_drive_pulse_expectcrosstalk_0.1_0.1mius\data.nc")
+dataset3 = xr.open_dataset(r"C:\Users\admin\SynologyDrive\09 Data\Fridge Data\Qubit\20241107_DR3_5Q4C_0430#7\20241207data\pretty_crosstalk\20241209_014015_detector_q3_bias-0.1V_crosstalk_q7_long_drive_pulse_expectcrosstalk_0.1_0.1mius\data.nc")
+
+datasets = []
+datasets.append(dataset1)
+datasets.append(dataset2)
+datasets.append(dataset3)
+
+
+
+figures = plot_multi_crosstalk_3Dscalar_with_fit(datasets)
+plt.show()
 
 
 
 
 
 
-# Load the NetCDF file
-# file_path = r"C:\Users\quant\SynologyDrive\09 Data\Fridge Data\Qubit\20240814_DR3_5Q4C_0430#7\good_20us\20240822_0128_detector_q4_crosstalk_q8_long_drive_pulse_expectcrosstalk_0.05_20mius.nc"
+# # Load the NetCDF file
+# file_path = r"C:\Users\admin\SynologyDrive\09 Data\Fridge Data\Qubit\20240920_DRKe_5Q4C\save_data\get_crosstalk\after\20240927_183531_q2q0_long_drive_pulse_expectcrosstalk_0.2_0.1mius\Zline_crosstalk_1.nc"
 
 # dataset = xr.open_dataset(file_path)
-# analysis_figures = plot_heatmap_with_ellipse(dataset)
+# # print(dataset)
+# # analysis_figures = plot_heatmap_with_ellipse(dataset)
 # analysis_figures = plot_analysis(dataset)
 # raw_figures = plot_crosstalk_3Dscalar(dataset)
 
-# for fig, ax, q in raw_figures:
+# for q, fig in raw_figures:
 #     plt.figure(fig.number)  # 设置当前图形对象
 #     plt.show()  # 显示图像
 
-# for fig, ax, q in analysis_figures:
+# for q, fig in analysis_figures:
 #     plt.figure(fig.number)  # 设置当前图形对象
 #     plt.show()  # 显示图像
 
@@ -312,10 +495,17 @@ def plot_heatmap_with_ellipse(dataset):
 
 
 # crosstalk = np.array(
-#     [[1., -0.09589142836056969],
-#     [-0.039258310703576216, 1.]])
+#     [[1., -0.0378, -0.0267, -0.0199],
+#     [0.0432, 1., -0.0565, -0.027],
+#     [0.00853, 0.0287, 1., -0.0575],
+#     [0.00265, 0.000871, 0.00833, 1.],
+#     ])
 # cancel = np.linalg.inv(crosstalk)
 # print(cancel)
+# [[ 9.98103253e-01  3.68894302e-02  2.85461874e-02  2.24996751e-02]
+#  [-4.36053746e-02  9.96750397e-01  5.49088832e-02  2.92017745e-02]
+#  [-7.40870004e-03 -2.89630714e-02  9.97695645e-01  5.64380635e-02]
+#  [-2.54527887e-03 -7.24664201e-04 -8.43427776e-03  9.99444812e-01]]
 
 
 
