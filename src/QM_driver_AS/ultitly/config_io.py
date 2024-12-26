@@ -16,13 +16,15 @@ def import_config( link_path ):
 
     return config, spec
 
-def output_config( link_path, config_obj, spec ):
+def output_config( link_path, config_obj = None, spec = None ):
 
     link_config = import_link(link_path)
-    spec.export_spec(link_config["path"]["specification"])
-    config_obj.export_config(link_config["path"]["dynamic_config"])
+    if spec is not None:
+        spec.export_spec(link_config["path"]["specification"])
     
-    import json
-    file_path = link_config["path"]["config"]
-    with open(file_path, 'w') as json_file:
-        json.dump(config_obj.get_config(), json_file, indent=2)
+    if config_obj is not None:
+        config_obj.export_config(link_config["path"]["dynamic_config"])
+        import json
+        file_path = link_config["path"]["config"]
+        with open(file_path, 'w') as json_file:
+            json.dump(config_obj.get_config(), json_file, indent=2)

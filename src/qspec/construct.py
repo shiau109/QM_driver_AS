@@ -17,7 +17,7 @@ def create_roChannel( config:Configuration, name, roInfo:dict, wireInfo:dict ):
     element = Element(name, input_type="mixInputs")
     element.input_map.I = wireInfo["rin_I"]
     element.input_map.Q = wireInfo["rin_Q"]
-    element.input_map.lo_frequency = roInfo["resonator_LO"]
+    # element.input_map.lo_frequency = roInfo["resonator_LO"]
     element.input_map.mixer = wireInfo["ro_mixer"]
     element.operations["readout"] = pulse_name
     element.intermediate_frequency = roInfo["resonator_IF"]
@@ -39,7 +39,7 @@ def create_roChannel( config:Configuration, name, roInfo:dict, wireInfo:dict ):
     mixer = Mixer(mixer_name)
     from config_component.mixer import IFChannel
     iFChannel = IFChannel()
-    iFChannel._lo_frequency = element.input_map.lo_frequency
+    iFChannel._lo_frequency = roInfo["resonator_LO"]
     iFChannel._intermediate_frequency = element.intermediate_frequency
     iFChannel._correction = (1, 0, 0, 1)
     
@@ -142,11 +142,11 @@ def create_xyChannel(config:Configuration, name, xyInfo:dict, wireInfo:dict):
     pulse_name = f"{name}_const_pulse"
     waveform_name = f"{name}_const_wf"
 
-    default_native_gates = [ "x180","-x180","y180","x90","-x90","y90","-y90" ]
+    default_native_gates = [ "x180","-x180","y180","-y180","x90","-x90","y90","-y90" ]
     element = Element(name, "mixInputs")
     element.input_map.I = wireInfo["xy_I"]
     element.input_map.Q = wireInfo["xy_Q"]
-    element.input_map.lo_frequency = xyInfo["qubit_LO"]
+    # element.input_map.lo_frequency = xyInfo["qubit_LO"]
     element.input_map.mixer = wireInfo["xy_mixer"]
     element.intermediate_frequency = xyInfo["qubit_IF"]
 
@@ -161,7 +161,7 @@ def create_xyChannel(config:Configuration, name, xyInfo:dict, wireInfo:dict):
     from config_component.mixer import IFChannel
     iFChannel = IFChannel()
     iFChannel.intermediate_frequency = element.intermediate_frequency
-    iFChannel.lo_frequency = element.input_map.lo_frequency
+    iFChannel.lo_frequency = xyInfo["qubit_LO"]
     iFChannel.correction= (1, 0, 0, 1)
     mixer.iFChannels.append(iFChannel)
     config._mixers[mixer_name] = mixer
@@ -200,6 +200,7 @@ def create_xyChannel(config:Configuration, name, xyInfo:dict, wireInfo:dict):
             case "x180": a = "x"
             case "-x180": a = "-x"
             case "y180": a = "y"
+            case "-y180": a = "-y"
             case "x90": a = "x/2"
             case "-x90": a = "-x/2"
             case "y90": a = "y/2"

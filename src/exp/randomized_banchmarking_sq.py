@@ -21,16 +21,9 @@ Prerequisites:
 
 from qm.qua import *
 from qm.QuantumMachinesManager import QuantumMachinesManager
-from qm import SimulationConfig
-from scipy.optimize import curve_fit
-
-import matplotlib.pyplot as plt
 import numpy as np
 from qualang_tools.bakery.randomized_benchmark_c1 import c1_table
 inv_gates = [int(np.where(c1_table[i, :] == 0)[0][0]) for i in range(24)]
-
-from qualang_tools.results import fetching_tool, progress_counter
-from qualang_tools.plot import interrupt_on_close
 import warnings
 warnings.filterwarnings("ignore")
 from qualang_tools.units import unit
@@ -55,21 +48,26 @@ from exp.QMMeasurement import QMMeasurement
 class randomized_banchmarking_sq(QMMeasurement):
     def __init__( self, config, qmm: QuantumMachinesManager):
         super().__init__( config, qmm )
-        self.max_circuit_depth = 20
-        self.delta_clifford = 200
-        self.xy_elements = None
-        self.ro_elements = None
-        self.initializer = None
-        self.n_avg = 100
-        self.state_discrimination = False
-        self.initialization_macro = False
-        self.seed = None
+        self.xy_elements = ["q0_xy"]
+        self.ro_elements = ["q0_ro"]
         self.gate_length = 40
+        self.max_circuit_depth = 200
+        self.base_clifford = 2 # >= 2
+        self.initializer = None
+        self.n_avg = 1
+        self.state_discrimination = False
+        self.seed = None
         self.threshold = 0
+        self.x = np.array([])
 
     def _get_qua_program(self):
 
-        gate_step = self.max_circuit_depth / self.delta_clifford
+        gate_num = 1
+        gate_step = 0
+        while gate_num <= self.max_circuit_depth:
+            self.x = np.append(self.x, [gate_num])
+            gate_step = gate_step + 1
+            gate_num = self.base_clifford * gate_num
         ###################
         # The QUA program #
         ###################
@@ -89,12 +87,12 @@ class randomized_banchmarking_sq(QMMeasurement):
 
     
             if self.state_discrimination:
-                state_st = [declare_stream() for _ in range(self.ro_elements)]
+                state_st = [declare_stream() for _ in range(len(self.ro_elements))]
 
             with for_(m, 0, m < self.shot_num, m + 1):  # QUA for_ loop over the random sequences
                 sequence_list, inv_gate_list = self._generate_sequence()  # Generate the random sequence of length max_circuit_depth
 
-                assign(depth_target, 1)  # Initialize the current depth to 0
+                assign(depth_target, 1)  # Initialize the current depth to 1
 
                 with for_(depth, 1, depth <= self.max_circuit_depth, depth + 1):  # Loop over the depths
                     # Replacing the last gate in the sequence with the sequence's inverse gate
@@ -105,13 +103,15 @@ class randomized_banchmarking_sq(QMMeasurement):
                     with if_((depth == depth_target)):
                         with for_(n, 0, n < self.n_avg, n + 1):
                             # Initialize
-                            wait(100 * u.us)
-                            if self.initialization_macro:
+                            if self.initializer is None:
+                                # wait(thermalization_time * u.ns)
                                 wait(100 * u.us)
                             else:
-                                pass
-                                # initialization_macro()
-                            align()
+                                try:
+                                    self.initializer[0](*self.initializer[1])
+                                except:
+                                    print("Initializer didn't work!")
+                                    wait(100*u.us)
 
                             # Operation
                             # The strict_timing ensures that the sequence will be played without gaps
@@ -131,7 +131,7 @@ class randomized_banchmarking_sq(QMMeasurement):
                                     save(state[idx_res], state_st[idx_res])
 
                         # Go to the next depth
-                        assign(depth_target, depth_target + self.delta_clifford)
+                        assign(depth_target, self.base_clifford * depth_target)
                     # Reset the last gate of the sequence back to the original Clifford gate
                     # (that was replaced by the recovery gate at the beginning)
                     assign(sequence_list[depth], saved_gate)
@@ -200,13 +200,10 @@ class randomized_banchmarking_sq(QMMeasurement):
                 error_avg = np.std(I, axis=0)
                 output_data[r_name] = ( ["mixer","x"],
                     np.array([value_avg,error_avg]))
-                
-        x = np.arange(1, self.max_circuit_depth + 0.1, self.delta_clifford)
-        # x[0] = 1  # to set the first value of 'x' to be depth = 1 as in the experiment
 
         dataset = xr.Dataset(
             output_data,
-            coords={ "mixer":np.array(["val","err"]), "x":x}
+            coords={ "mixer":np.array(["val","err"]), "x":self.x}
         )
 
         return dataset

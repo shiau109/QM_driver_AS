@@ -3,6 +3,11 @@ from config_component.configuration import Configuration
 from qspec.envelope_builder import EnvelopeBuilder
 
 import numpy as np
+from qualang_tools.units import unit
+u = unit(coerce_to_integer=True)
+
+
+
 # ===================== Update about XY =====================================
 ### directly update the frequency info into config ### 
 def update_controlFreq( config:Configuration, updatedInfo:dict ):
@@ -23,8 +28,8 @@ def update_controlFreq( config:Configuration, updatedInfo:dict ):
             # update LO or IF in elements and mixers
             # TODO target_q_idx should replace 0
             if info.split("_")[1] == "LO":
-                element.input_map.lo_frequency = updatedInfo[info]
                 mixer.iFChannels[0].lo_frequency = updatedInfo[info]
+
             else: 
                 element.intermediate_frequency = updatedInfo[info]
                 mixer.iFChannels[0].intermediate_frequency = updatedInfo[info]
@@ -55,16 +60,16 @@ def update_controlWaveform(config:Configuration,updatedSpec:dict={},target_q:str
            
             pulse_name = f"{element_name}_{opration}_pulse"
             # Single Q operation
-            if opration in ["x180", "-x180", "y180", "x90", "-x90", "y90", "-y90", "multisin"]: 
+            if opration in ["x180", "-x180", "y180", "-y180", "x90", "-x90", "y90", "-y90"]: 
                 conv_table = {
                     "x180": "x",
                     "-x180": "-x",
                     "y180": "y",
+                    "-y180": '-y',
                     "x90": "x/2",
                     "-x90": "-x/2",
                     "y90": "y/2",
                     "-y90": "-y/2",
-                    "xmultisin": "xmultisin"
                 }
                 waveform_remaker.QsXyInfo = updatedSpec[q]
                 wf = waveform_remaker.build_XYwaveform(target_q=q,axis=conv_table[opration])
@@ -214,4 +219,8 @@ def update_Readout(config:Configuration,target_q:str='all',roInfo:dict={}, wirin
         config.elements[element_name].time_of_flight = roInfo[q]['time_of_flight']        
         # waveforms values
         config.waveforms[wf_name].sample = roInfo[q]['readout_amp']
+
+        config.octaves["octave1"].RF_outputs[1].LO_frequency=roInfo[q]['resonator_LO']
+        config.octaves["octave1"].RF_inputs[1].LO_frequency=roInfo[q]['resonator_LO']
+
     print('RO dynamic config secessfully updated!')

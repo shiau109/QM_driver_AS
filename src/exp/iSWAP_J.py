@@ -18,7 +18,7 @@ u = unit(coerce_to_integer=True)
 
 import xarray as xr
 
-def exp_coarse_iSWAP(  coupler_z, coupler_amp, z_amp, z_time, excited_q:str, ro_element:list, z_name:list, config, qmm:QuantumMachinesManager, n_avg:int=100, simulate:bool=False, initializer=None ):
+def exp_coarse_iSWAP(  parametric_drive, drive_z, coupler_z, coupler_amp, z_amp, z_time, excited_q:str, ro_element:list, z_name:list, config, qmm:QuantumMachinesManager, n_avg:int=100, simulate:bool=False, initializer=None ):
 
 
     c_offset = gc.get_offset(coupler_z, config)
@@ -60,19 +60,12 @@ def exp_coarse_iSWAP(  coupler_z, coupler_amp, z_amp, z_time, excited_q:str, ro_
                     # Wait some time to ensure that the flux pulse will arrive after the x90 pulse
                     # "const 0.2"
                     for z in z_name:
-                        set_dc_offset( z, "single", ref_z_offset[z] +a)
-                        wait(t, z)
-                    set_dc_offset( coupler_z, "single", c_offset +coupler_amp)
+                        play("const"*amp(5* (a-ref_z_offset[z]) ), z, t)
+                    if parametric_drive:
+                        play("sin", drive_z, truncate=t)
+                    play("const"*amp(5*coupler_amp), coupler_z, t)
                     align()
-                    # Wait some time to ensure that the flux pulse will end before the readout pulse
-                    
-                    for z in z_name:
-                        set_dc_offset( z, "single", ref_z_offset[z])
-                    # Align the elements to measure after having waited a time "tau" after the qubit pulses.
-                    set_dc_offset( coupler_z, "single", c_offset)
-
-                    align()
-                    wait(25)
+                    wait(25-4)
                     # Readout
                     multiRO_measurement( iqdata_stream, ro_element, weights="rotated_")
 
@@ -171,11 +164,13 @@ def plot_ana_iSWAP_chavron( data, amp, time, ax=None, iq_rotate = 0 ):
         fig, ax = plt.subplots()
         ax.set_title('pcolormesh')
         fig.show()
-    ax[0].pcolormesh( amp, time, np.real(zdata), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    pcm = ax[0].pcolormesh( amp, time, np.real(zdata), cmap='RdBu')# , vmin=z_min, vmax=z_max)
     # ax[0].axvline(x=freq_LO+freq_IF, color='b', linestyle='--', label='ref IF')
     # ax[0].axvline(x=freq_LO, color='r', linestyle='--', label='LO')
+    plt.colorbar(pcm, label='Value')
+
 
     # ax[0].legend()
-    ax[1].pcolormesh( amp, time, np.imag(zdata), cmap='RdBu')# , vmin=z_min, vmax=z_max)
-
+    pcm = ax[1].pcolormesh( amp, time, np.imag(zdata), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    plt.colorbar(pcm, label='Value')
     # ax[1].legend()
