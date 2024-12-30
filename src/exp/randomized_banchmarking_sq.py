@@ -60,12 +60,12 @@ class randomized_banchmarking_sq(QMMeasurement):
         self.state_discrimination = False
         self.seed = None
         self.threshold = 0
-        self.x = np.array([])
 
     def _get_qua_program(self):
 
         gate_num = 1
         gate_step = 0
+        self.x = np.array([])
         match self.depth_scale:
             case "lin":
                 while gate_num <= self.max_circuit_depth:
@@ -89,12 +89,10 @@ class randomized_banchmarking_sq(QMMeasurement):
             n = declare(int)  # QUA variable for the averaging loop
             a = declare(fixed)  # QUA variable for the DRAG coefficient pre-factor
             iqdata_stream = multiRO_declare( self.ro_elements )
-            n_st = declare_stream()  # Stream for the averaging iteration 'n'
             state = [declare(bool) for _ in range(len(self.ro_elements))]  # QUA variable for state discrimination
             # The relevant streams
             m_st = declare_stream()
-
-    
+            
             if self.state_discrimination:
                 state_st = [declare_stream() for _ in range(len(self.ro_elements))]
 
@@ -189,7 +187,7 @@ class randomized_banchmarking_sq(QMMeasurement):
             else:
                 ro_ch_name.append(f"{r_name}_I")
                 ro_ch_name.append(f"{r_name}_Q")
-            data_list = ro_ch_name + ["iteration"]
+        data_list = ro_ch_name + ["iteration"]
         return data_list
 
     def _data_formation( self ):

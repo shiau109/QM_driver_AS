@@ -12,20 +12,22 @@ qmm, _ = spec.buildup_qmm()
 from ab.QM_config_dynamic import initializer
 
 # Set parameters
-from exp.SQGate_deterministic_benchmarking import SQGate_deterministic_benchmarking
-my_exp = SQGate_deterministic_benchmarking(config, qmm)
-my_exp.initializer = initializer(200000,mode='wait')
-my_exp.ro_elements = ['q3_ro']
-my_exp.xy_elements = ["q3_xy"]
+from exp.SQDB import SQ_deterministic_benchmarking
+my_exp = SQ_deterministic_benchmarking(config, qmm)
+my_exp.initializer = initializer(120000,mode='wait')
+my_exp.ro_elements = ['q4_ro']
+my_exp.xy_elements = ["q4_xy"]
 
-my_exp.sequence_repeat = 500     # are variables if process = 'repeat'
+my_exp.sequence_repeat = 300     # are variables if process = 'repeat'
 
-my_exp.gate = 1
+my_exp.gate = 3
     # 1 = X X
     # 2 = X -X
     # 3 = Y Y
     # 4 = Y -Y
-dataset = my_exp.run( 500 )
+    # 11 = Y/2 * 4 
+dataset = my_exp.run( 1000 )
+
 
 #Save data
 save_data = True

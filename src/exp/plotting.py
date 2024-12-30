@@ -6,7 +6,7 @@ import numpy as np
 from matplotlib.figure import Figure
 from abc import ABC, abstractmethod
 
-from xarray import Dataset, DataArray
+from xarray import Dataset, DataArray, open_dataset
 class RawDataPainter(ABC):
 
     def __init__( self ):
@@ -45,16 +45,16 @@ class RawDataPainter(ABC):
                 self.best_inf = value.fun
 
         if "repetition" in dataset.coords:
-            self.rep = dataset.coords["repetition"].values
-            for ro_name, data in dataset.data_vars.items():
-                data = data.transpose("mixer","repetition","time")
-                self.plot_data = data
-                self.title = ro_name
-                self._data_parser()
-                fig = self._plot_method()
+            self.rep = dataset[0].coords["repetition"].values
+            for ro_name, datas in dataset[0].data_vars.items():
+                    data = datas.transpose("mixer","repetition","x")
+                    self.plot_data = data
+                    self.title = ro_name
+                    self._data_parser()
+                    fig = self._plot_method()
 
-                file_name = f"{fig_name}_{ro_name}"
-                self.output_fig.append((file_name,fig))
+                    file_name = f"{fig_name}_{ro_name}"
+                    self.output_fig.append((file_name,fig))
 
         else:
             for ro_name, data in dataset.data_vars.items():
@@ -70,7 +70,29 @@ class RawDataPainter(ABC):
         if show: plt.show()
         return self.output_fig
 
+    def plot_rep(self, dataset:dict, fig_name:str, show:bool=True, **kwargs):
+        
+        self.output_fig = []
+        
+        if "repetition" in list(dataset.values())[0].coords:
+            self.rep = list(dataset.values())[0].coords["repetition"].values
+            for ro_name in list(dataset.values())[0].data_vars.keys():
+                self.plot_data = {}
+                self.title = ro_name
+                for exp_name, datas in dataset.items():
+                    print(exp_name)
+                    data = datas.data_vars[ro_name]
+                    data = data.transpose("mixer","repetition","x")
+                    self.plot_data[exp_name] = data
+                self._data_parser()
+                fig = self._plot_method()
 
+                file_name = f"{fig_name}_{ro_name}"
+                self.output_fig.append((file_name,fig))
+                
+        if show: plt.show()
+        return self.output_fig
+    
 class PainterPowerDepRes( RawDataPainter ):
 
     def _data_parser( self ):
@@ -337,7 +359,7 @@ class PainterT1Single( RawDataPainter ):
         from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting
     
         dataarray = self.plot_data
-        self.time = (dataarray.coords["time"].values)/1000
+        self.time = (dataarray.coords["x"].values)/1000
         idata = dataarray.values[0]
         qdata = dataarray.values[1]
         self.fit_result_i = qubit_relaxation_fitting(self.time, idata)
@@ -362,7 +384,7 @@ class PainterT1Single( RawDataPainter ):
         ax[1].set_title(f"{title} T1 Q data")
         ax[1].set_xlabel("Wait time (us)")
         ax[1].set_ylabel(f"voltage (mV)")
-        ax[1].plot( time, np.real(s21),"o", label="data",markersize=1)
+        ax[1].plot( time, np.imag(s21),"o", label="data",markersize=1)
         if fit_result_q is not None:
             ax[1].plot( time, fit_result_q.best_fit, label="fit")
             print(fit_result_q.params['tau'].value)
@@ -474,16 +496,19 @@ class PainterT1Spectrum( RawDataPainter ):
         
 
 class PainterT2Ramsey( RawDataPainter ):
+    
+    def __init__(self):
+        self.T1 = 20
         
     def _data_parser( self ):
-        from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting
+        from qcat.analysis.qubit.ramsey import qubit_ramsey_fitting
     
         dataarray = self.plot_data
-        self.time = (dataarray.coords["time"].values)/1000
+        self.time = (dataarray.coords["time"].values)/1000 # us
         idata = dataarray.values[0]
         qdata = dataarray.values[1]
-        self.fit_result_i = qubit_relaxation_fitting(self.time, idata)
-        self.fit_result_q = qubit_relaxation_fitting(self.time, qdata)
+        self.fit_result_i = qubit_ramsey_fitting(self.time, self.T1, idata)
+        self.fit_result_q = qubit_ramsey_fitting(self.time, self.T1, qdata)
         self.zdata = idata +1j*qdata
 
     def _plot_method( self ):
@@ -500,15 +525,21 @@ class PainterT2Ramsey( RawDataPainter ):
         ax[0].plot( time, np.real(s21),"o", label="data",markersize=1)
         if fit_result_i is not None:
             ax[0].plot( time, fit_result_i.best_fit, label="fit")
-            print(fit_result_i.params['tau'].value)
+            T_phi = fit_result_i.params['t_phi'].value
+            print(f"T_phi = {T_phi}")
+            print(f"T2 = {self.T1*T_phi/(2*self.T1+T_phi)}")
+            print(f"detune = {fit_result_i.params['detune'].value}")
 
         ax[1].set_title(f"{title} T2 Ramsey Q data")
         ax[1].set_xlabel("Wait time (us)")
         ax[1].set_ylabel(f"voltage (mV)")
-        ax[1].plot( time, np.real(s21),"o", label="data",markersize=1)
+        ax[1].plot( time, np.imag(s21),"o", label="data",markersize=1)
         if fit_result_q is not None:
             ax[1].plot( time, fit_result_q.best_fit, label="fit")
-            print(fit_result_q.params['tau'].value)
+            T_phi = fit_result_q.params['t_phi'].value
+            print(f"T_phi = {T_phi}")
+            print(f"T2 = {self.T1*T_phi/(2*self.T1+T_phi)}")
+            print(f"detune = {fit_result_i.params['detune'].value}")
 
         plt.tight_layout()
         
@@ -707,6 +738,71 @@ class Painter1QRB( RawDataPainter ):
         
         return fig
 
+class Painter1QRBRepeatWithT1( RawDataPainter ):
+    def __init__(self):
+        self.state_discrimination = False
+
+    def _data_parser( self ):
+        self.plotting_datas = {}
+        for exp_name, plot_data in self.plot_data.items():
+            match exp_name:
+                case '1QRB':
+                    self.plotting_datas[exp_name] = {}
+                    dataarray = plot_data
+                    self.plotting_datas[exp_name]['x'] = dataarray.coords["x"].values
+                    self.plotting_datas[exp_name]['val'] = dataarray.values[0]
+                    self.plotting_datas[exp_name]['r_g'] = []
+                    self.plotting_datas[exp_name]['r_g_std'] = []
+                    for i in range(self.rep.shape[-1]):
+                        stdevs, pars = ana_SQRB( self.plotting_datas[exp_name]['x'], self.plotting_datas[exp_name]['val'][i], self.state_discrimination)
+                        one_minus_p = 1 - pars[1]
+                        r_c = one_minus_p * (1 - 1 / 2**1)
+                        self.plotting_datas[exp_name]['r_g'].append(r_c / 1.875)  # 1.875 is the average number of gates in clifford operation
+                        r_c_std = stdevs[1] * (1 - 1 / 2**1)
+                        self.plotting_datas[exp_name]['r_g_std'].append(r_c_std / 1.875)
+                        
+                case "T1":
+                    from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting
+                    self.plotting_datas[exp_name] = {}
+                    dataarray = plot_data
+                    self.plotting_datas[exp_name]['time'] = (dataarray.coords["x"].values)/1000
+                    self.plotting_datas[exp_name]['acc_gamma1'] = []
+                    for i in range(self.rep.shape[-1]):
+                        fit_result = qubit_relaxation_fitting(self.plotting_datas[exp_name]['time'], dataarray.values[0][i])
+                        self.plotting_datas[exp_name]['acc_gamma1'].append(1/fit_result.params["tau"].value)
+                    self.plotting_datas[exp_name]['idata'] = dataarray.values[0]
+
+
+    def _plot_method( self ):
+        fig, ax1 = plt.subplots()
+        for exp_name, datas in self.plotting_datas.items():
+            match exp_name:
+                case '1QRB':
+                    rep = self.rep
+                    title = self.title
+                    ax1.set_title(f"{title} 1QRB with Gamma 1")
+                    ax1.set_xlabel("Repeation times")
+                    ax1.set_ylabel("Infidelity")
+                    ax1.errorbar(rep, self.plotting_datas[exp_name]['r_g'], yerr=self.plotting_datas[exp_name]['r_g_std'], marker=".")
+                    ax1.plot(rep, self.plotting_datas[exp_name]['r_g'],"o", label="data",markersize=1,linestyle="--", linewidth=2)
+                    ax1.tick_params(axis='y', labelcolor='blue')
+                    
+                case 'T1':
+                    acc_gamma1 = self.plotting_datas[exp_name]['acc_gamma1']
+                    rep = self.rep
+                    time = self.plotting_datas[exp_name]['time']
+                    title = self.title
+                    total_time = np.sum(time)
+                    print(rep*total_time*20*1e-6/3600)
+                    ax2 = ax1.twinx()
+                    ax2.set_ylabel("Gamma1")
+                    ax2.plot(rep,acc_gamma1,color='orange')
+                    ax2.tick_params(axis='y', labelcolor='orange')
+                    
+
+        plt.tight_layout()
+        
+        return fig
 
 class Painter1QRBInterleaved( RawDataPainter ):
 
@@ -844,7 +940,7 @@ class Painter1QRBInfidelity( RawDataPainter ):
         
         return fig
 
-class Painter1QRBGateOptimization( RawDataPainter ):
+class Painter1QRBOptimization( RawDataPainter ):
 
     def __init__(self):
         self.interleaved_gate_index = 0
@@ -881,35 +977,35 @@ class Painter1QRBGateOptimization( RawDataPainter ):
         
         return fig
 
-class Painter1QRBInfidelityShiftOneParam( RawDataPainter ):
+class Painter1QRBShiftOneParam( RawDataPainter ):
 
     def __init__(self):
-        self.interleaved_gate_index = 0
+        self.param_name = 'amp'
         
     def _data_parser( self ):
         
         dataarray = self.plot_data
-        self.amp = dataarray.coords["amp"].values
+        self.param = dataarray.coords[self.param_name].values
         self.inf = dataarray.values[0]
         self.err = dataarray.values[1]
 
     def _plot_method( self ):
-        amp = self.amp
+        param = self.param
         inf = self.inf
         err = self.err
         title = self.title
 
         fig, ax = plt.subplots()
         # ax.errorbar(x, val, yerr=err, marker=".")
-        ax.set_title(f"{title} 1QRB gate {get_interleaved_gate(self.interleaved_gate_index)} optimization")
-        ax.set_xlabel("Pulse Amplitude")
+        ax.set_title(f"{title} 1QRB gate shift {self.param_name}")
+        ax.set_xlabel(f"{self.param_name}")
         ax.set_ylabel("Sequence Fidelity")
-        ax.errorbar(amp, inf, yerr=err, marker=".")
-        ax.plot(amp, inf,"o", label="data",markersize=1,linestyle="--", linewidth=2)
+        ax.errorbar(param, inf, yerr=err, marker=".")
+        ax.plot(param, inf,"o", label="data",markersize=1,linestyle="--", linewidth=2)
         ax.text(0.96, 
                 0.05, 
                 f"smallest specific gate infidelity = {np.format_float_scientific(inf[np.argmin(inf)], precision=4)}+-{err[np.argmin(inf)]:.4}\n"
-                f"amp = {amp[np.argmin(inf)]}",
+                f"{self.param_name} = {param[np.argmin(inf)]}",
                 fontsize=9, 
                 color="black",
                 ha='right', 
@@ -956,13 +1052,13 @@ class Painter1QDB( RawDataPainter ):
         self.gate = 1
 
     def _data_parser( self ):
-        from qcat.analysis.qubit.SQDB_fit import SQDB_fitting
+        from qcat.analysis.qubit.gate_amp import gate_amp_fitting
         dataarray = self.plot_data
         self.x = dataarray.coords["repeat_time"].values
         idata = dataarray.values[0]
         qdata = dataarray.values[1]
-        self.fit_result_i = SQDB_fitting(self.x, idata)
-        self.fit_result_q = SQDB_fitting(self.x, qdata)
+        self.fit_result_i = gate_amp_fitting(self.x, idata)
+        self.fit_result_q = gate_amp_fitting(self.x, qdata)
         self.zdata = idata +1j*qdata
 
     def _plot_method( self ):
@@ -991,6 +1087,33 @@ class Painter1QDB( RawDataPainter ):
             case 4:
                 return 'Y -Y'
 
+class PainterSQDBAll( RawDataPainter ):
+
+    def _data_parser( self ):
+        from qcat.analysis.qubit.SQDB_fit import SQDB_fitting
+        dataarray = self.plot_data
+        self.x = dataarray.coords["repeat_time"].values
+        self.seq = dataarray.coords["sequence"].values
+        self.idata = []
+        self.fit_result = []
+        for data in dataarray.values[0]:
+            self.idata.append(data)
+            self.fit_result.append(SQDB_fitting(self.x, data))
+
+    def _plot_method( self ):
+        fig, ax = plt.subplots()
+        for i in range(len(self.seq)):
+            ax.plot(self.x, self.idata[i], label=self.seq[i])
+            if self.fit_result[i] is not None:
+                ax.plot( self.x, self.fit_result[i].best_fit, label="fit")
+            # match self.gate:
+            #     case 3:
+            #         print(f"period = {self.fit_result_i.params['period'].value}")
+            #         print(f"amp diff = {1+1/(self.fit_result_i.params['period'].value)}")
+        fig.legend()
+        plt.tight_layout()
+
+        return fig
 
 #S2 finished
 def plot_and_save_dispersive_limit(dataset, folder_save_dir, my_exp, save_data = True):
@@ -1374,3 +1497,33 @@ def plot_and_save_cz_chavron(dataset, save_dir = 0, save_data = True ):
         save_name = save_name = f"cz_chavron_{ro_name}"
         # if save_data: save_fig( save_dir, save_name ) 
     plt.show()
+    
+    
+
+
+#Plotting
+#Needed value
+
+if __name__ == '__main__':
+    # dataset = {}
+    # dataset["1QRB"] = open_dataset(r"D:\HW\Quela\QM\QM_data\5Q4C_20241016_2_AS1608\5Q4C_20241016_2_AS1608\20241210_094344_T1_with_1QRB_repeat\T1_with_1QRB_repeat_1QRB.nc")
+    # dataset['T1'] = open_dataset(r"D:\HW\Quela\QM\QM_data\5Q4C_20241016_2_AS1608\5Q4C_20241016_2_AS1608\20241210_094344_T1_with_1QRB_repeat\T1_with_1QRB_repeat_T1.nc")
+    # folder_label = "1QRB_with_T1_repeat"
+    # state_discrimination = True
+    # # param_name = 'draga'
+    # # interleaved_gate_index = 0
+
+
+    # # Painting method
+    # painter = Painter1QRBRepeatWithT1()
+    # painter.state_discrimination = state_discrimination
+    # # painter.param_name = param_name
+    # # painter.interleaved_gate_index = interleaved_gate_index
+    # figs = painter.plot_rep(dataset,folder_label)
+    
+    dataset = open_dataset(r"D:\HW\Quela\QM\QM_data\5Q4C_20241016_2_AS1608\5Q4C_20241016_2_AS1608\20241211_185323_1QDB_all\1QDB_all.nc")
+    folder_label = "SQDB_All"
+
+    # Painting method
+    painter = PainterSQDBAll()
+    figs = painter.plot(dataset,folder_label)
