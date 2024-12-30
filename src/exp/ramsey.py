@@ -30,7 +30,7 @@ class Ramsey( QMMeasurement ):
         self.virtual_detune = 0
         self.max_time = 5
         self.time_resolution = 10
-        self.n_avg = 100
+        # self.n_avg = 100
         self.initializer = None
         self.simulate = False
 
@@ -50,7 +50,7 @@ class Ramsey( QMMeasurement ):
             n_st = declare_stream()
             cc = declare(int)  # QUA variable for the idle time, unit in clock cycle
             phi = declare(fixed)  # Phase to apply the virtual Z-rotation
-            with for_(n, 0, n < self.n_avg, n + 1):
+            with for_(n, 0, n < self.shot_num, n + 1):
                 with for_( *from_array(cc, cc_qua) ):
                     
                         # Init

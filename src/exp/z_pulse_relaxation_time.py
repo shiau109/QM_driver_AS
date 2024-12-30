@@ -22,17 +22,18 @@ from exp.QMMeasurement import QMMeasurement
 class z_pulse_relaxation_time( QMMeasurement ):
     def __init__( self, config, qmm: QuantumMachinesManager):
         super().__init__( config, qmm )
-        self.max_time = 5
-        self.time_resolution = 10
-        self.flux_range = [1,4]
-        self.flux_resolution = 0.2
-        self.q_name = None
-        self.z_name = None
-        self.ro_element = None
+        self.max_time = 20
+        self.time_resolution = 0.2
+        self.flux_range = [-0.3,0.3]
+        self.flux_resolution = 0.006
+        self.q_name = ["q3_xy"]
+        self.z_name = ["q8_z"]
+        self.ro_elements = ["q3_ro", "q4_ro"]
         self.n_avg = 100
         self.initializer = None
         self.simulate = False
-
+        self.ref_z_offset = {"q8_z": gc.get_offset("q8_z", config)}
+        
     def _get_qua_program( self ):
         """
         parameters: \n
@@ -54,11 +55,10 @@ class z_pulse_relaxation_time( QMMeasurement ):
         self.evo_time = cc_delay_qua*4
         evo_time_len = cc_delay_qua.shape[-1]
         
-        self.ref_z_offset = {}
         # QUA program
         with program() as t1:
 
-            iqdata_stream = multiRO_declare( self.ro_element )
+            iqdata_stream = multiRO_declare( self.ro_elements )
             t = declare(int)  
             dc = declare(fixed)  
             n = declare(int)
@@ -68,14 +68,14 @@ class z_pulse_relaxation_time( QMMeasurement ):
                     with for_(*from_array(t, cc_delay_qua)):
                         # initializaion
                         if self.initializer is None:
-                            wait(1*u.us,self.ro_element)
+                            wait(1*u.us,self.ro_elements)
                         else:
                             try:
                                 self.initializer[0](*self.initializer[1])
                             except:
-                                wait(1*u.us,self.ro_element)
+                                wait(1*u.us,self.ro_elements)
 
-                        # Operation   
+                        # Operation
                         for q in self.q_name:
                             play("x180", q)
                         wait(25)    
@@ -88,14 +88,14 @@ class z_pulse_relaxation_time( QMMeasurement ):
                         wait(25)                         
                         # align()
                         # Readout
-                        multiRO_measurement( iqdata_stream,  resonators=self.ro_element, weights="rotated_")
+                        multiRO_measurement( iqdata_stream,  resonators=self.ro_elements, weights="rotated_")
                     
                 # Save the averaging iteration to get the progress bar
                 save(n, n_st)
 
             with stream_processing():
                 n_st.save("iteration")
-                multiRO_pre_save(iqdata_stream, self.ro_element, (fluxes_len, evo_time_len) )
+                multiRO_pre_save(iqdata_stream, self.ro_elements, (fluxes_len, evo_time_len) )
 
         return t1
 
@@ -110,7 +110,7 @@ class z_pulse_relaxation_time( QMMeasurement ):
     
     def _data_formation( self ):
         output_data = {}
-        for r_idx, r_name in enumerate(self.ro_element):
+        for r_idx, r_name in enumerate(self.ro_elements):
             output_data[r_name] = ( ["mixer","z_voltage","time"],
                                 np.array([self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]]) )
         dataset = xr.Dataset(

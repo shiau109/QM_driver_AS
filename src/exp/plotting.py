@@ -5,6 +5,8 @@ from exp.rofreq_sweep_flux_dep import plot_flux_dep_resonator
 import numpy as np
 from matplotlib.figure import Figure
 from abc import ABC, abstractmethod
+from qualang_tools.plot.fitting import Fit
+
 
 from xarray import Dataset, DataArray
 class RawDataPainter(ABC):
@@ -92,7 +94,7 @@ class PainterPowerDepRes( RawDataPainter ):
         #     pcm = ax.pcolormesh(freqs, np.log10(amp_ratio), np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
         # else:
         # vmax_magnitude = np.max(np.abs(s21))
-        pcm = ax[0].pcolormesh(freqs, amp_ratio, np.log(np.abs(s21)), cmap='RdBu')#, vmax=0.5e-5)
+        pcm = ax[0].pcolormesh(freqs, amp_ratio, np.abs(s21), cmap='RdBu')#, vmax=0.5e-5)
         ax[0].set_title(f"{title} Magnitude")
         ax[0].set_xlabel("Additional IF freq (MHz)")
         ax[0].set_ylabel("Amplitude Ratio")
@@ -174,9 +176,13 @@ class PainterFluxDepQubit( RawDataPainter ):
         ax[0].axvline(x=self.xy_LO, color='r', linestyle='--', label='LO')
         ax[0].axhline(y=self.z_offset, color='black', linestyle='--', label='idle z')
         ax[0].set_title(f"{title} I value")
-        ax[0].set_xlabel("Additional IF freq (MHz)")
-        ax[0].set_ylabel("Flux")
-        plt.colorbar(pcm, label='Value')
+        ax[0].set_xlabel("qubit frequency (MHz)")
+        ax[0].set_ylabel("voltage (V)")
+        cbar = plt.colorbar(pcm, label='Value')
+        from matplotlib.ticker import ScalarFormatter
+        formatter = ScalarFormatter(useMathText=False)
+        formatter.set_powerlimits((-2, 2))  # 设置何时使用科学记号（如 10^-2 到 10^2 范围外）
+        cbar.ax.yaxis.set_major_formatter(formatter)
         ax[0].legend()
 
         pcm = ax[1].pcolormesh(abs_freq, abs_flux, np.imag(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
@@ -358,14 +364,15 @@ class PainterT1Single( RawDataPainter ):
         ax[0].plot( time, np.real(s21),"o", label="data",markersize=1)
         if fit_result_i is not None:
             ax[0].plot( time, fit_result_i.best_fit, label="fit")
-            print(fit_result_i.params['tau'].value)
+            tau_value = fit_result_i.params['tau'].value
+            ax[0].text(0.05, 0.9, f"T1: {tau_value:.2f} us", transform=ax[0].transAxes, fontsize=10, verticalalignment='top')
         ax[1].set_title(f"{title} T1 Q data")
         ax[1].set_xlabel("Wait time (us)")
         ax[1].set_ylabel(f"voltage (mV)")
         ax[1].plot( time, np.real(s21),"o", label="data",markersize=1)
         if fit_result_q is not None:
             ax[1].plot( time, fit_result_q.best_fit, label="fit")
-            print(fit_result_q.params['tau'].value)
+
 
         plt.tight_layout()
 
@@ -382,6 +389,7 @@ class PainterT1Repeat( RawDataPainter ):
         for i in range(self.rep.shape[-1]):
             fit_result = qubit_relaxation_fitting(self.time, dataarray.values[0][i])
             self.acc_T1.append(fit_result.params["tau"].value)
+            self.acc_T1_dict[self.title] = self.acc_T1_dict.get(self.title, []) + [fit_result.params["tau"].value]
         self.idata = dataarray.values[0]
 
         self.mean_t1 = np.mean(self.acc_T1)
@@ -405,9 +413,9 @@ class PainterT1Repeat( RawDataPainter ):
         ax[0].set_xlabel("Wait time (us)")
         # ax[0].set_ylabel(f"Rep")
         ax[0].set_ylabel(f"hour")
-        ax[0].pcolormesh( time, rep, idata, cmap='RdBu')
+        ax[0].pcolormesh( time, rep*29666.030540704727/5000/3600, idata, cmap='RdBu')
         if acc_T1 is not None:
-            ax[0].plot(acc_T1,rep)
+            ax[0].plot(acc_T1,rep*29666.030540704727/5000/3600)
 
         ax[1].set_title(f"{title} Histogram")
         ax[1].set_xlabel("T1 time")
@@ -442,6 +450,46 @@ class PainterT1Repeat( RawDataPainter ):
         plt.tight_layout()
 
         return fig
+    
+    def plot( self, dataset:Dataset, fig_name:str, show:bool=True ):
+
+        self.output_fig = []
+        self.acc_T1_dict = {}
+        if "repetition" in dataset.coords:
+            self.rep = dataset.coords["repetition"].values
+            for ro_name, data in dataset.data_vars.items():
+                data = data.transpose("mixer","repetition","time")
+                self.plot_data = data
+                self.title = ro_name
+                self._data_parser()
+                fig = self._plot_method()
+
+                file_name = f"{fig_name}_{ro_name}"
+                self.output_fig.append((file_name,fig))
+
+        else:
+            for ro_name, data in dataset.data_vars.items():
+                data.attrs = dataset.attrs
+                self.plot_data = data
+                self.title = ro_name
+                self._data_parser()
+                fig = self._plot_method()
+
+                file_name = f"{fig_name}_{ro_name}"
+                self.output_fig.append((file_name,fig))
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.set_xlabel("hour\nfrom 12/03 00:30")
+        ax.set_ylabel("T1 time")
+
+        for key, acc_T1_values in self.acc_T1_dict.items():
+            ax.plot(self.rep*29666.030540704727/5000/3600, acc_T1_values, marker="o", label=key)  # Plot each key's T1 values as a line
+
+        ax.legend()  # Add legend with key names
+        file_name = f"{fig_name}_all"
+        self.output_fig.append((file_name,fig))
+
+        if show: plt.show()
+        return self.output_fig
 
 class PainterT2Ramsey( RawDataPainter ):
         
@@ -452,8 +500,13 @@ class PainterT2Ramsey( RawDataPainter ):
         self.time = (dataarray.coords["time"].values)/1000
         idata = dataarray.values[0]
         qdata = dataarray.values[1]
+        # fit = Fit()
+        # self.fit_result_i = fit.ramsey(self.time, idata, plot=False)
+        # self.fit_result_q = fit.ramsey(self.time, qdata, plot=False)
         self.fit_result_i = qubit_relaxation_fitting(self.time, idata)
+
         self.fit_result_q = qubit_relaxation_fitting(self.time, qdata)
+
         self.zdata = idata +1j*qdata
 
     def _plot_method( self ):
@@ -470,13 +523,16 @@ class PainterT2Ramsey( RawDataPainter ):
         ax[0].plot( time, np.real(s21),"o", label="data",markersize=1)
         if fit_result_i is not None:
             ax[0].plot( time, fit_result_i.best_fit, label="fit")
-
+            tau_value = fit_result_i.params['tau'].value
+            ax[0].text(0.05, 0.9, f"T1: {tau_value:.2g} us", transform=ax[0].transAxes, fontsize=10, verticalalignment='top')
         ax[1].set_title(f"{title} T2 Ramsey Q data")
         ax[1].set_xlabel("Wait time (us)")
         ax[1].set_ylabel(f"voltage (mV)")
         ax[1].plot( time, np.real(s21),"o", label="data",markersize=1)
         if fit_result_q is not None:
             ax[1].plot( time, fit_result_q.best_fit, label="fit")
+            tau_value = fit_result_q.params['tau'].value
+            # ax[0].text(0.05, 0.9, f"T1: {tau_value:.2g} us", transform=ax[0].transAxes, fontsize=10, verticalalignment='top')
 
         plt.tight_layout()
         
@@ -509,6 +565,8 @@ class PainterT2SpinEcho( RawDataPainter ):
         ax[0].plot( time, np.real(s21),"o", label="data",markersize=1)
         if fit_result_i is not None:
             ax[0].plot( time, fit_result_i.best_fit, label="fit")
+            tau_value = fit_result_i.params['tau'].value
+            ax[0].text(0.05, 0.9, f"T2: {tau_value:.2f} us", transform=ax[0].transAxes, fontsize=10, verticalalignment='top')
 
         ax[1].set_title(f"{title} spin echo Q data")
         ax[1].set_xlabel("Wait time (us)")
@@ -557,11 +615,20 @@ class PainterT2Repeat( RawDataPainter ):
         ax[0].pcolormesh( time, rep, idata, cmap='RdBu')
         if acc_T2 is not None:
             ax[0].plot(acc_T2,rep)
-
+        # Calculate mean and standard deviation
+        mean_T1 = np.mean(acc_T2)
+        std_T1 = np.std(acc_T2)
+        
+        # Plot mean and standard deviation on the histogram
+        ax[1].axvline(mean_T1, color='red', linestyle='--', label=f'Mean: {mean_T1:.2f}')
+        ax[1].axvline(mean_T1 - std_T1, color='green', linestyle='--', label=f'-1 Std Dev: {mean_T1 - std_T1:.2f}')
+        ax[1].axvline(mean_T1 + std_T1, color='green', linestyle='--', label=f'+1 Std Dev: {mean_T1 + std_T1:.2f}')
         ax[1].set_title(f"{title} Histogram")
         ax[1].set_xlabel("T2 time")
         ax[1].set_ylabel(f"Number")
         ax[1].hist(acc_T2, custom_bins, density=False, alpha=0.7, label='Histogram')
+        # Display mean and std as text
+ 
         ax[1].text(0.04, 
                    0.96, 
                    f"T1 = {np.format_float_scientific(self.mean_t2, precision=3)}+-{self.err_t2:.2}\n",
@@ -572,6 +639,7 @@ class PainterT2Repeat( RawDataPainter ):
                    transform=ax[1].transAxes,
                    bbox=dict(facecolor='white', alpha=0.5))
 
+        ax[1].legend()
         plt.tight_layout()
         
         return fig
@@ -579,6 +647,101 @@ class PainterT2Repeat( RawDataPainter ):
 def power_law(power, a, p, b):
     return a * (p**power) + b
 
+class PainterFluxCrosstalkRepeat( RawDataPainter ):
+
+    def _data_parser( self ):
+        from analysis.zline_crosstalk_analysis import analysis_crosstalk_value_fft, analysis_crosstalk_value_fitting, analysis_crosstalk_ellipse
+        dataarray = self.plot_data
+        print(dataarray)
+        self.crosstalk = []
+        for i in range(self.rep.shape[-1]):
+            rep_data = dataarray.sel(repetition=i)
+            if self.dataset.attrs["measure_method"] == "long_drive":
+                slope, intercept, x_vals, y_vals = analysis_crosstalk_value_fitting(rep_data)
+                try:
+                    self.crosstalk.append(-1*slope)
+                except:
+                    print("no slope")
+            else:
+                crosstalk, freq_axes, mag = analysis_crosstalk_value_fft( rep_data )
+                try:
+                    self.crosstalk.append(crosstalk)
+                except:
+                    print("no crosstalk")
+
+        mean_crosstalk = np.mean(self.crosstalk)
+        bin_width = mean_crosstalk *0.05
+        start_value = mean_crosstalk*0.5
+        end_value = mean_crosstalk*1.5
+        self.custom_bins = np.sort([start_value + i * bin_width for i in range(int((end_value - start_value) / bin_width) + 1)])
+
+    def _plot_method( self ):
+        crosstalk = self.crosstalk
+        rep = self.rep
+        title = self.title
+        custom_bins = self.custom_bins
+        fig, ax = plt.subplots(1)
+        ax.set_title(f"Flux Crosstalk rep")
+        ax.set_xlabel("Wait time (us)")
+        ax.set_ylabel(f"Rep")
+        # ax[0].set_ylabel(f"hour")
+        print(custom_bins)
+        ax.hist(crosstalk, bins="auto", density=False, alpha=0.7, label='Histogram')
+        print(crosstalk)
+
+
+        # Calculate mean and standard deviation
+        mean_crosstalk = np.mean(crosstalk)
+        std_crosstalk = np.std(crosstalk)
+        
+        # Plot mean and standard deviation on the histogram
+        ax.axvline(mean_crosstalk, color='red', linestyle='--', label=f'Mean: {mean_crosstalk:.5g}')
+        ax.axvline(mean_crosstalk - std_crosstalk, color='green', linestyle='--', label=f'-1 Std Dev: {mean_crosstalk - std_crosstalk:.5g}')
+        ax.axvline(mean_crosstalk + std_crosstalk, color='green', linestyle='--', label=f'+1 Std Dev: {mean_crosstalk + std_crosstalk:.5g}')
+        
+        # Display mean and std as text
+        ax.text(mean_crosstalk, ax.get_ylim()[1] * 0.8, f"Mean: {mean_crosstalk:.5g}\nStd Dev: {std_crosstalk:.5g}",
+                color="black", ha="center", bbox=dict(facecolor="white", alpha=0.6))
+
+        ax.legend()
+
+        plt.tight_layout()
+
+        return fig
+    
+    def plot( self, dataset:Dataset, fig_name:str, show:bool=True ):
+
+        self.output_fig = []
+
+        if "repetition" in dataset.coords:
+            self.rep = dataset.coords["repetition"].values
+            self.dataset = dataset
+            for ro_name, data in dataset.data_vars.items():
+                # data = data.transpose("mixer","repetition","time")
+                self.plot_data = data
+                self.title = ro_name
+                try:
+                    self._data_parser()
+                    fig = self._plot_method()
+
+                    file_name = f"{fig_name}_{ro_name}"
+                    self.output_fig.append((file_name,fig))
+                except:
+                    print("就畫不出來啊")
+
+        else:
+            for ro_name, data in dataset.data_vars.items():
+                data.attrs = dataset.attrs
+                self.plot_data = data
+                self.title = ro_name
+                self._data_parser()
+                fig = self._plot_method()
+
+                file_name = f"{fig_name}_{ro_name}"
+                self.output_fig.append((file_name,fig))
+
+        if show: plt.show()
+        return self.output_fig
 class Painter1QRB( RawDataPainter ):
     def __init__(self):
         self.state_discrimination = False
@@ -1409,6 +1572,7 @@ def plot_and_save_readout_fidelity(dataset, folder_save_dir = 0, save_data = Tru
     from qualang_tools.analysis import two_state_discriminator
     transposed_data = dataset.transpose("mixer", "state", "index")
 
+
     figs = []
     for ro_name, data in transposed_data.data_vars.items(): # elapsed_time = np.round(end_time-start_time, 1)
         new_data = np.moveaxis(data.values*1000,1,0)
@@ -1452,3 +1616,11 @@ def plot_and_save_cz_chavron(dataset, save_dir = 0, save_data = True ):
         save_name = save_name = f"cz_chavron_{ro_name}"
         # if save_data: save_fig( save_dir, save_name ) 
     plt.show()
+
+
+
+# import xarray as xr
+# painter = PainterFluxDepQubit()
+# dataset = xr.open_dataset(r"C:\Users\admin\SynologyDrive\09 Data\Fridge Data\Qubit\20241209_DR1_5Q4C+AS1604\raw_data\20241212_090525_Flux_dep_Qubit\Flux_dep_Qubit.nc")
+# print(dataset)
+# figs = painter.plot(dataset,"aptapt")

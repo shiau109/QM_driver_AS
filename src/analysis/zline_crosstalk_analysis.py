@@ -98,7 +98,7 @@ def analysis_crosstalk_value_fft(dataset):
     data with shape (N,M)
     """
     z1 = dataset.coords["crosstalk_z"].values
-    z2 = dataset.coords["detector_z"].values
+    z2 = dataset.coords["detector_z"].values[:]
     data = dataset[0, :, :]
     offset = np.mean(data)
     data -= offset
@@ -131,8 +131,8 @@ def analysis_crosstalk_value_fitting(dataset):
     z1 = dataset.coords["crosstalk_z"].values[:]
     z2 = dataset.coords["detector_z"].values[:]
     data = dataset[0, :, :].values.T
-    offset = np.mean(data)
-    data -= offset
+    # offset = np.mean(data)
+    # data -= offset
 
     
 
