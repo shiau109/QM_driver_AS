@@ -50,6 +50,7 @@ import time
 ###################################
 
 import xarray as xr
+from ab.QM_config_dynamic import initializer
 from exp.QMMeasurement import QMMeasurement
 
 class randomized_banchmarking_interleaved_sq(QMMeasurement):
@@ -59,11 +60,12 @@ class randomized_banchmarking_interleaved_sq(QMMeasurement):
         self.ro_elements = ["q0_ro"]
         self.gate_length = 40
         self.max_circuit_depth = 200
+        self.depth_scale = "lin"
         self.base_clifford = 2
-        self.initializer = None
+        self.initializer = initializer(120000,mode='wait')
         self.n_avg = 1
         self.state_discrimination = False
-        self.interleaved_gate_index = 2
+        self.interleaved_gate_index = 0
         self.seed = None
         self.threshold = 0
         self.x = np.array([])
@@ -72,10 +74,17 @@ class randomized_banchmarking_interleaved_sq(QMMeasurement):
 
         gate_num = 1
         gate_step = 0
-        while gate_num <= self.max_circuit_depth:
-            self.x = np.append(self.x, [gate_num])
-            gate_step = gate_step + 1
-            gate_num = self.base_clifford * gate_num
+        match self.depth_scale:
+            case "lin":
+                while gate_num <= self.max_circuit_depth:
+                    self.x = np.append(self.x, [gate_num])
+                    gate_step = gate_step + 1
+                    gate_num = self.base_clifford + gate_num
+            case 'exp':
+                while gate_num <= self.max_circuit_depth:
+                    self.x = np.append(self.x, [gate_num])
+                    gate_step = gate_step + 1
+                    gate_num = self.base_clifford * gate_num
         ###################
         # The QUA program #
         ###################
@@ -100,9 +109,9 @@ class randomized_banchmarking_interleaved_sq(QMMeasurement):
             with for_(m, 0, m < self.shot_num, m + 1):  # QUA for_ loop over the random sequences
                 sequence_list, inv_gate_list = self._generate_sequence()  # Generate the random sequence of length max_circuit_depth
 
-                assign(depth_target, 2)  # Initialize the current depth to 0
+                assign(depth_target, 2)  # Initialize the current depth to 2
 
-                with for_(depth, 1, depth <= 2 * self.max_circuit_depth, depth + 1):  # Loop over the depths
+                with for_(depth, 2, depth <= 2 * self.max_circuit_depth, depth + 1):  # Loop over the depths
                     # Replacing the last gate in the sequence with the sequence's inverse gate
                     # The original gate is saved in 'saved_gate' and is being restored at the end
                     assign(saved_gate, sequence_list[depth])
@@ -111,15 +120,11 @@ class randomized_banchmarking_interleaved_sq(QMMeasurement):
                     with if_((depth == depth_target)):
                         with for_(n, 0, n < self.n_avg, n + 1):
                             # Initialize
-                            if self.initializer is None:
-                                # wait(thermalization_time * u.ns)
-                                wait(100 * u.us)
-                            else:
-                                try:
-                                    self.initializer[0](*self.initializer[1])
-                                except:
-                                    print("Initializer didn't work!")
-                                    wait(100*u.us)
+                            try:
+                                self.initializer[0](*self.initializer[1])
+                            except:
+                                print("Initializer didn't work!")
+                                wait(100*u.us)
 
                             # Operation
                             # The strict_timing ensures that the sequence will be played without gaps
@@ -139,7 +144,11 @@ class randomized_banchmarking_interleaved_sq(QMMeasurement):
                                     save(state[idx_res], state_st[idx_res])
 
                         # Go to the next depth
-                        assign(depth_target, self.base_clifford * depth_target)
+                        match self.depth_scale:
+                            case "lin":
+                                assign(depth_target, 2 * self.base_clifford + depth_target)
+                            case "exp":
+                                assign(depth_target, 2 * self.base_clifford * depth_target)
                     # Reset the last gate of the sequence back to the original Clifford gate
                     # (that was replaced by the recovery gate at the beginning)
                     assign(sequence_list[depth], saved_gate)
@@ -229,7 +238,11 @@ class randomized_banchmarking_interleaved_sq(QMMeasurement):
         rand = Random(seed=self.seed)
 
         assign(current_state, 0)
-        with for_(i, 0, i < 2 * self.max_circuit_depth, i + 2):
+        assign(sequence[i], 0)
+        assign(inv_gate[i], inv_list[current_state])
+        assign(sequence[i + 1], 0)
+        assign(inv_gate[i + 1], inv_list[current_state])
+        with for_(i, 2, i <= 2 * self.max_circuit_depth, i + 2):
             assign(step, rand.rand_int(24))
             assign(current_state, cayley[current_state * 24 + step])
             assign(sequence[i], step)

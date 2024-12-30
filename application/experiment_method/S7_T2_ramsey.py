@@ -15,13 +15,13 @@ from exp.ramsey import Ramsey
 #Set parameters
 my_exp = Ramsey(config, qmm)
 from ab.QM_config_dynamic import initializer
-my_exp.initializer = initializer(50000,mode='wait')
-my_exp.ro_elements = ["q3_ro"]
-my_exp.xy_elements = ["q3_xy"]
-my_exp.virtual_detune = 0
-my_exp.max_time = 60
-my_exp.time_resolution = 0.2
-dataset = my_exp.run(400)
+my_exp.initializer = initializer(150000,mode='wait')
+my_exp.ro_elements = ["q4_ro"]
+my_exp.xy_elements = ["q4_xy"]
+my_exp.virtual_detune = 1.7
+my_exp.max_time = 4
+my_exp.time_resolution = 0.004
+dataset = my_exp.run(200)
 
 #Save data
 save_data = 1
@@ -36,6 +36,7 @@ if save_data:
 # Plot
 from exp.plotting import PainterT2Ramsey
 painter = PainterT2Ramsey()
+painter.T1 = 15.4
 figs = painter.plot(dataset,folder_label)
 if save_data: dp.save_figs( figs )
 # time = (dataset.coords["time"].values)/1000
