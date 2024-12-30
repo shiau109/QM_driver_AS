@@ -69,7 +69,8 @@ class FluxCrosstalk( QMMeasurement ):
         self.initializer = None
 
         self.expect_crosstalk = 0.5
-        self.detector_bias = -0.
+        self.detector_bias = 0.
+        self.detector_detune = 0.
         self.z_modify_range = 0.4
         self.z_resolution = 0.016
         self.z_time = 0.16
@@ -81,7 +82,8 @@ class FluxCrosstalk( QMMeasurement ):
 
     def _get_qua_program( self ):
         self.crosstalk_z_qua = self._lin_z_array( )
-        self.detector_z_qua = self.expect_crosstalk * self.crosstalk_z_qua + self.detector_bias
+        self.detector_z_qua = self.expect_crosstalk * np.arange( -self.z_modify_range, self.z_modify_range, self.z_resolution ) + self.detector_bias
+        self.detector_detune_qua = self.detector_detune * u.MHz
         self.z_time_cc = self.z_time*u.us//4
         self.pi_length = self._get_pi_length( )
         self.pi_amp_ratio = self.pi_length/(self.z_time*u.us)
@@ -162,11 +164,12 @@ class FluxCrosstalk( QMMeasurement ):
                                         wait(1 * u.us, self.ro_elements) 
 
                                 # Opration
+                                update_frequency( f"{self.detector_qubit}_xy", gc.get_IF(f"{self.detector_qubit}_xy", self.config)+self.detector_detune_qua)
                                 play("const"*amp(z_crosstalk/self.config["waveforms"][f"{self.crosstalk_qubit}_z_const_wf"]["sample"]), f"{self.crosstalk_qubit}_z", self.z_time_cc+10)         #const 預設0.5
                                 play("const"*amp(z_detector/self.config["waveforms"][f"{self.detector_qubit}_z_const_wf"]["sample"]), f"{self.detector_qubit}_z", self.z_time_cc+10)
                                 wait(5)
-                                play( "x180"*amp(self.pi_amp_ratio), f"{self.detector_qubit}_xy", duration=self.z_time_cc )
-                                # play("const"*amp( 0.2 ), f"{self.detector_qubit}_xy", duration=self.z_time_cc)
+                                # play( "x180"*amp(self.pi_amp_ratio), f"{self.detector_qubit}_xy", duration=self.z_time_cc )
+                                play("const"*amp( 0.3 ), f"{self.detector_qubit}_xy", duration=self.z_time_cc)
                                 # wait(17-5, f"{self.crosstalk_qubit}_z")    #不加這個wait的話x180會比z慢17cc，到底為啥???
                                 # wait(17-5, f"{self.detector_qubit}_z")    #不加這個wait的話x180會比z慢17cc，到底為啥???
 
@@ -266,6 +269,7 @@ class FluxCrosstalk( QMMeasurement ):
                                         wait(1 * u.us, self.ro_elements) 
 
                                 # Opration
+                                update_frequency( f"{self.detector_qubit}_xy", gc.get_IF(f"{self.detector_qubit}_xy", self.config)+self.detector_detune_qua)
                                 play( "x180"*amp(self.pi_amp_ratio), f"{self.detector_qubit}_xy", duration=self.z_time_cc )
                                 wait(22-5)  #不加這個wait的話x180會比z慢22cc，到底為啥???
                                 set_dc_offset( f"{self.crosstalk_qubit}_z", "single", get_offset(f"{self.crosstalk_qubit}_z",self.config)+z_crosstalk )
@@ -323,7 +327,7 @@ class FluxCrosstalk( QMMeasurement ):
                                 play("const"*amp( 0.2 ), f"{self.detector_qubit}_xy", duration=self.z_time_cc)
                                 for i, ro in enumerate(self.ro_elements):
                                     # wait(4000, self.ro_elements)
-                                    wait( int(self.z_time_qua-gc.get_ro_length(ro,self.config)//4), ro )
+                                    wait( int(self.z_time_cc-gc.get_ro_length(ro,self.config)//4), ro )
 
                                 # wait(self.z_time_cc+15)
 
@@ -365,6 +369,7 @@ class FluxCrosstalk( QMMeasurement ):
         dataset.attrs["expect_crosstalk"] = self.expect_crosstalk
         dataset.attrs["z_time"] = self.z_time
         dataset.attrs["detector_bias"] = self.detector_bias
+        dataset.attrs["detector_detune"] = self.detector_detune
         dataset.attrs["z_modify_range"] = self.z_modify_range
         dataset.attrs["z_resolution"] = self.z_resolution
         dataset.attrs["measure_method"] = self.measure_method

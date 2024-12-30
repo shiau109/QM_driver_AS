@@ -16,7 +16,7 @@ save_dir = link_config["path"]["output_root"]
 
 import matplotlib.pyplot as plt
 
-from visualization.zline_crosstalk_plot import plot_crosstalk_3Dscalar, plot_analysis
+from visualization.zline_crosstalk_plot import plot_crosstalk_3Dscalar, plot_analysis, plot_multi_crosstalk_3Dscalar, plot_multi_crosstalk_3Dscalar_with_fit
 
 
 
@@ -25,58 +25,78 @@ import xarray as xr
 # Set parameters
 from exp.zline_crosstalk import FluxCrosstalk
 my_exp = FluxCrosstalk(config, qmm)
-my_exp.detector_qubit = "q0"
+my_exp.detector_qubit = "q7"
 my_exp.detector_is_coupler = False
-my_exp.crosstalk_qubit = "q1"
-my_exp.ro_elements = ["q0_ro", "q1_ro"]
+my_exp.crosstalk_qubit = "q2"
+my_exp.ro_elements = ["q7_ro", "q8_ro"]
 
-my_exp.expect_crosstalk = 0.05
-my_exp.detector_bias = 0.
-my_exp.z_modify_range = 0.2
-my_exp.z_resolution = 0.004
-my_exp.z_time = 5
+my_exp.expect_crosstalk = 0.1
+my_exp.detector_bias = 0    #coupler:-0.05, qubit:-0.1
+my_exp.detector_detune = 0  #q7:-77, q4:-68, q3:-110    #MHz
+my_exp.z_modify_range = 0.4
+my_exp.z_resolution = 0.016
+my_exp.z_time = 0.1
+
 
 my_exp.measure_method = "long_drive"   #long_drive, ramsey
 my_exp.z_method = "pulse"     #offset, pulse
 
-my_exp.initializer = initializer(2000000,mode='wait')
-dataset = my_exp.run( 100 )
+my_exp.initializer = initializer(200000,mode='wait')
 
+datasets = []
+for crosstalk_qubit in ["q3", "q4", "q8"]:
+    my_exp.crosstalk_qubit = crosstalk_qubit
+    dataset = my_exp.run( 1000 )
 
-save_data = True
-folder_label = f"Zline_crosstalk_{my_exp.z_time}" #your data and plots with be saved under a new folder with this name
-file_name = f"detector_{my_exp.detector_qubit}_crosstalk_{my_exp.crosstalk_qubit}_{my_exp.measure_method}_{my_exp.z_method}_expectcrosstalk_{my_exp.expect_crosstalk}_{my_exp.z_time}mius"
-if save_data: 
+    datasets.append(dataset)
+    save_data = True
+    folder_label = f"detector_{my_exp.detector_qubit}_bias{my_exp.detector_bias}V_crosstalk_{my_exp.crosstalk_qubit}_{my_exp.measure_method}_{my_exp.z_method}_expectcrosstalk_{my_exp.expect_crosstalk}_{my_exp.z_time}mius"
+    if save_data: 
+        from exp.save_data import DataPackager
+        save_dir = link_config["path"]["output_root"]
+        dp = DataPackager( save_dir, folder_label )
+        dp.save_config(config)
+        dp.save_nc(dataset,"data")
+
+    # Plot
+    analysis_figures = plot_analysis(dataset)
+    raw_figures = plot_crosstalk_3Dscalar(dataset)
     from exp.save_data import DataPackager
-    save_dir = link_config["path"]["output_root"]
-    dp = DataPackager( save_dir, folder_label )
-    dp.save_config(config)
-    dp.save_nc(dataset,"Zline_crosstalk_1")
 
-# Plot
-analysis_figures = plot_analysis(dataset)
-raw_figures = plot_crosstalk_3Dscalar(dataset)
-from exp.save_data import DataPackager
+    dp.save_figs(raw_figures)
+    dp.save_figs(analysis_figures)
+    # plt.show()
 
-dp.save_figs(raw_figures)
-dp.save_figs(analysis_figures)
-plt.show()
-# # 保存每个图像并显示
-# for fig, ax, q in raw_figures:
-#     plt.figure(fig.number)  # 设置当前图形对象
-#     if save_data:
-#         save_fig( save_dir, f"{q}_{file_name}_raw")
+    # #Repetition
 
-# for fig, ax, q in analysis_figures:
-#     plt.figure(fig.number)  # 设置当前图形对象
-#     if save_data:
-#         save_fig( save_dir, f"{q}_{file_name}_analysis")
+    # from exp.repetition_measurement import RepetitionMeasurement
+    # re_exp = RepetitionMeasurement()
+    # re_exp.exp_list = [my_exp]
+    # re_exp.exp_name = ["FluxCrosstalk"]
+    # my_exp.shot_num = 500
 
+    # dataset = re_exp.run(100)
 
-# for fig, ax, q in raw_figures:
-#     plt.figure(fig.number)  # 设置当前图形对象
-#     plt.show()  # 显示图像
-# for fig, ax, q in analysis_figures:
-#     plt.figure(fig.number)  # 设置当前图形对象
-#     plt.show()  # 显示图像
+    # dataset = dataset['FluxCrosstalk']
 
+    # #Save data
+    # save_data = 1
+    # if save_data: 
+    #     from exp.save_data import DataPackager
+    #     save_dir = link_config["path"]["output_root"]
+    #     dp = DataPackager( save_dir, folder_label )
+    #     dp.save_config(config)
+    #     dp.save_nc(dataset,f"1x{re_exp.repetition}")
+
+    # # To plot the result of multiple measurements (2D graph and histogram), use the following block of code
+    # # ================================================================================================#
+    # from exp.plotting import PainterFluxCrosstalkRepeat
+    # painter = PainterFluxCrosstalkRepeat()
+    # # import xarray as xr
+    # # dataset = xr.open_dataset(r"C:\Users\admin\SynologyDrive\09 Data\Fridge Data\Qubit\20241111_DR4_5Q4C+AS1604\save_data\S6_T1rep\20241114_070103_T1_rep\time = 21672.980446100235.nc")
+    # figs = painter.plot(dataset,f"Zline_crosstalk_1x{re_exp.repetition}", False)
+    # if save_data: dp.save_figs( figs )
+save_dir = link_config["path"]["output_root"]
+dp = DataPackager( save_dir, f"detector_{my_exp.detector_qubit}_bias{my_exp.detector_bias}V_{my_exp.measure_method}_{my_exp.z_method}_expectcrosstalk_{my_exp.expect_crosstalk}_{my_exp.z_time}mius" )
+figs = plot_multi_crosstalk_3Dscalar_with_fit(datasets)
+dp.save_figs( figs )
