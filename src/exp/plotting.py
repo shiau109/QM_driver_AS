@@ -1296,6 +1296,7 @@ def plot_and_save_rabi(dataset, freqs, y, name, folder_save_dir = 0, save_data =
 
 #S6 
 def plot_and_save_T1_spectrum(dataset, time, flux, folder_save_dir = 0, save_data = True ):
+    figs = []
     for ro_name, data in dataset.data_vars.items():
         fig_0, ax_0 = plt.subplots()
         ax_0.plot(time, data.values[0][0])
@@ -1307,10 +1308,12 @@ def plot_and_save_T1_spectrum(dataset, time, flux, folder_save_dir = 0, save_dat
         pcm = ax.pcolormesh( time/1000, flux, data.values[0], cmap='RdBu')# , vmin=z_min, vmax=z_max)
         plt.colorbar(pcm, label='Value')
         save_name = f"T1_spectrum_{ro_name}"
-        # if save_data: save_fig( folder_save_dir, save_name ) 
+        figs.append((save_name,fig))
+        plt.close()
+    
+    return figs
 
-    plt.show()
-
+    
 #S6 finished
 def plot_and_save_t1_singleRun(dataset, time, folder_save_dir = 0, save_data = True ):
     from qcat.visualization.qubit_relaxation import plot_qubit_relaxation
@@ -1529,6 +1532,7 @@ def plot_and_save_xy_amp(dataset, folder_save_dir = 0, save_data = True ):
 def plot_and_save_readout_freq(dataset, my_exp, folder_save_dir = 0, save_data = True ):
     from exp.readout_optimization import plot_freq_signal
     dfs = dataset.coords["frequency"].values
+    figs = []
     for ro_name, data in dataset.data_vars.items():
 
         data = data.values
@@ -1540,42 +1544,46 @@ def plot_and_save_readout_freq(dataset, my_exp, folder_save_dir = 0, save_data =
         plot_freq_signal( dfs, data, ro_name, ax )
         fig.suptitle(f"{ro_name} RO freq")
         save_name = save_name = f"ro_freq_{ro_name}"
-        # if save_data: save_fig(folder_save_dir, save_name)
+        figs.append((save_name,fig))
 
-    plt.show()
+        plt.close()
+    return figs
 
 #CR2
 def plot_and_save_readout_amp(dataset, folder_save_dir = 0, save_data = True ):
     from exp.readout_optimization import plot_amp_signal, plot_amp_signal_phase
     transposed_data = dataset.transpose("mixer", "state", "amplitude_ratio")
     amps = transposed_data.coords["amplitude_ratio"].values
+    figs = []
     for ro_name, data in transposed_data.data_vars.items():  
         fig = plt.figure()
         ax = fig.subplots(1,2,sharex=True)
         plot_amp_signal( amps, data, ro_name, ax[0] )
         plot_amp_signal_phase( amps, data, ro_name, ax[1] )
         fig.suptitle(f"{ro_name} RO amplitude")
-        save_name = save_name = f"ro_amp_{ro_name}"
-        # if save_data: save_fig(folder_save_dir, save_name)
-    plt.show()
+        save_name = f"ro_amp_{ro_name}"
+        figs.append((save_name,fig))
+        plt.close()
+    return figs
 
 #CR3
-def plot_and_save_readout_fidelity(dataset, folder_save_dir = 0, save_data = True ):
+def plot_and_save_readout_fidelity(dataset, folder_save_dir = 0, save_data = True )->list:
     from analysis.state_distribution import train_model, create_img
     from qualang_tools.analysis import two_state_discriminator
     transposed_data = dataset.transpose("mixer", "state", "index")
-    figures = []
+
+
+    figs = []
     for ro_name, data in transposed_data.data_vars.items(): # elapsed_time = np.round(end_time-start_time, 1)
         new_data = np.moveaxis(data.values*1000,1,0)
         gmm_model = train_model(new_data)
-        fig = plt.figure(constrained_layout=True)
-        figures.append((ro_name, fig))
-        create_img(new_data, gmm_model)
+        # fig = plt.figure(constrained_layout=False)
+        fig = create_img(new_data, gmm_model)
         two_state_discriminator(data[0][0], data[1][0], data[0][1], data[1][1], True, True)
-        save_name = save_name = f"ro_fidelity_{ro_name}"
-        # if save_data: save_fig(folder_save_dir, save_name)
-    plt.show()
-    return figures
+        save_name = f"ro_fidelity_{ro_name}"
+        figs.append((save_name,fig))
+        plt.close()
+    return figs
 
 def plot_and_save_readout_mapping(dataset, folder_save_dir = 0, save_data = True ):
     freq = dataset.coords["frequency"].values
