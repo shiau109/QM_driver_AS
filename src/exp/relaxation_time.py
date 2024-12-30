@@ -92,11 +92,11 @@ class exp_relaxation_time( QMMeasurement):
     def _data_formation( self ):
         output_data = {}
         for r_idx, r_name in enumerate(self.ro_elements):
-            output_data[r_name] = ( ["mixer","x"],
+            output_data[r_name] = ( ["mixer","time"],
                                 np.array([self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]]) )
         dataset = xr.Dataset(
             output_data,
-            coords={ "mixer":np.array(["I","Q"]), "x": self.evo_time }
+            coords={ "mixer":np.array(["I","Q"]), "time": self.evo_time }
         )
         return dataset
 

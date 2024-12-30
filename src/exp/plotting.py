@@ -359,7 +359,7 @@ class PainterT1Single( RawDataPainter ):
         from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting
     
         dataarray = self.plot_data
-        self.time = (dataarray.coords["x"].values)/1000
+        self.time = (dataarray.coords["time"].values)/1000
         idata = dataarray.values[0]
         qdata = dataarray.values[1]
         self.fit_result_i = qubit_relaxation_fitting(self.time, idata)
@@ -765,7 +765,7 @@ class Painter1QRBRepeatWithT1( RawDataPainter ):
                     from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting
                     self.plotting_datas[exp_name] = {}
                     dataarray = plot_data
-                    self.plotting_datas[exp_name]['time'] = (dataarray.coords["x"].values)/1000
+                    self.plotting_datas[exp_name]['time'] = (dataarray.coords["time"].values)/1000
                     self.plotting_datas[exp_name]['acc_gamma1'] = []
                     for i in range(self.rep.shape[-1]):
                         fit_result = qubit_relaxation_fitting(self.plotting_datas[exp_name]['time'], dataarray.values[0][i])
@@ -1016,7 +1016,6 @@ class Painter1QRBShiftOneParam( RawDataPainter ):
         
         return fig
         
-
 class PainterXYCali( RawDataPainter ):
     def __init__(self):
         self.process = 'amp'
@@ -1090,7 +1089,7 @@ class Painter1QDB( RawDataPainter ):
 class PainterSQDBAll( RawDataPainter ):
 
     def _data_parser( self ):
-        from qcat.analysis.qubit.SQDB_fit import SQDB_fitting
+        from qcat.analysis.qubit.gate_amp import gate_amp_fitting
         dataarray = self.plot_data
         self.x = dataarray.coords["repeat_time"].values
         self.seq = dataarray.coords["sequence"].values
@@ -1098,7 +1097,7 @@ class PainterSQDBAll( RawDataPainter ):
         self.fit_result = []
         for data in dataarray.values[0]:
             self.idata.append(data)
-            self.fit_result.append(SQDB_fitting(self.x, data))
+            self.fit_result.append(gate_amp_fitting(self.x, data))
 
     def _plot_method( self ):
         fig, ax = plt.subplots()
