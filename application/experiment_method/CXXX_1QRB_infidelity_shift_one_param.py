@@ -57,13 +57,14 @@ def get_interleaved_gate(index):
 # Program-specific variables #
 ##############################
 gate_length = 40
-xy_elements = ["q3_xy"]
-ro_elements = ["q3_ro"]
-target_q = 'q3'
+xy_elements = ["q4_xy"]
+ro_elements = ["q4_ro"]
+target_q = 'q4'
 
-n_avg = 100  # Number of averaging loops for each random sequence
-max_circuit_depth = 1024  # Maximum circuit depth
-base_clifford = 2  #  Play each sequence with a depth step equals to 'delta_clifford - Must be > 1
+n_avg = 200  # Number of averaging loops for each random sequence
+max_circuit_depth = 100  # Maximum circuit depth
+base_clifford = 3
+depth_scale = 'lin' # 'lin', 'exp'
 assert base_clifford > 1, 'base must > 1'
 seed = 345324  # Pseudo-random number generator seed
 interleaved_gate_index = 1
@@ -75,12 +76,12 @@ interleaved_gate_index = 1
 ## 13 = -x90
 ## 14 = y90
 ## 15 = -y90
-shot_num = 100
+shot_num = 50
 # Flag to enable state discrimination if the readout has been calibrated (rotated blobs and threshold)
 state_discrimination = True
-threshold = 4.791e-05
+threshold = -1.723e-03
 
-amp_center = 0.04623571429
+amp_center = 0.07
 amp_shift = 0.01
 amp_resolution = 0.001
 
@@ -110,6 +111,7 @@ def infidelity_func(amp):
     my_exp.ro_elements = ro_elements
     my_exp.n_avg = n_avg
     my_exp.max_circuit_depth = max_circuit_depth 
+    my_exp.depth_scale = depth_scale
     my_exp.base_clifford = base_clifford
     assert my_exp.base_clifford > 1, 'base must > 1'
     my_exp.seed = seed 
@@ -124,6 +126,7 @@ def infidelity_func(amp):
     my_exp.ro_elements = ro_elements
     my_exp.n_avg = n_avg
     my_exp.max_circuit_depth = max_circuit_depth 
+    my_exp.depth_scale = depth_scale
     my_exp.base_clifford = base_clifford
     assert my_exp.base_clifford > 1, 'base must > 1'
     my_exp.seed = seed 
