@@ -362,7 +362,7 @@ class PainterT1Single( RawDataPainter ):
         ax[1].set_title(f"{title} T1 Q data")
         ax[1].set_xlabel("Wait time (us)")
         ax[1].set_ylabel(f"voltage (mV)")
-        ax[1].plot( time, np.real(s21),"o", label="data",markersize=1)
+        ax[1].plot( time, np.imag(s21),"o", label="data",markersize=1)
         if fit_result_q is not None:
             ax[1].plot( time, fit_result_q.best_fit, label="fit")
             print(fit_result_q.params['tau'].value)
@@ -604,10 +604,12 @@ class Painter1QRB( RawDataPainter ):
         r_g_std = r_c_std / 1.875
 
         fig, ax = plt.subplots()
+        print(pars)
         ax.errorbar(x, val, yerr=err, marker=".")
         ax.set_title(f"{title} Single qubit RB")
         ax.set_xlabel("Number of Clifford gates")
         ax.set_ylabel("Sequence Fidelity")
+        ax.set_xscale('log')
         if self.state_discrimination == True:
             ax.plot( x, power_law(x, *pars, 0.5),"o", label="data",markersize=1,linestyle="--", linewidth=2)
         else:
@@ -635,7 +637,7 @@ class Painter1QRB( RawDataPainter ):
             def fit_func(power, a, p, b):
                 return power_law(power, a, p, b)
         else:
-            p0=[-0.0001, 0.0001, 0.0001]
+            p0=[y[0]-y[-1], 1e-3, y[-1]]
             def fit_func(power, a, p, b):
                 return power_law(power, a, p, b)
         pars, cov = curve_fit(
@@ -1387,27 +1389,45 @@ def plot_and_save_readout_freq(dataset, my_exp, folder_save_dir = 0, save_data =
     return figs
 
 #CR2
-def plot_and_save_readout_amp(dataset, folder_save_dir = 0, save_data = True ):
-    from exp.readout_optimization import plot_amp_signal, plot_amp_signal_phase
-    transposed_data = dataset.transpose("mixer", "state", "amplitude_ratio")
-    amps = transposed_data.coords["amplitude_ratio"].values
-    figs = []
-    for ro_name, data in transposed_data.data_vars.items():  
+class PainterROPower( RawDataPainter ):
+
+    def _data_parser( self ):
+
+        transposed_data = self.plot_data.transpose("mixer", "state", "amplitude_ratio")
+
+        dataarray = transposed_data
+        self.state = dataarray.coords["state"].values
+        self.r_amp = dataarray.coords["amplitude_ratio"].values
+
+        idata = dataarray.values[0]
+        qdata = dataarray.values[1]
+        self.zdata = transposed_data
+
+    def _plot_method( self ):
+        from exp.readout_optimization import plot_amp_signal, plot_amp_signal_phase
+
+        zdata = self.zdata
+        r_amp = self.r_amp
+        title = self.title
+
         fig = plt.figure()
         ax = fig.subplots(1,2,sharex=True)
-        plot_amp_signal( amps, data, ro_name, ax[0] )
-        plot_amp_signal_phase( amps, data, ro_name, ax[1] )
-        fig.suptitle(f"{ro_name} RO amplitude")
-        save_name = f"ro_amp_{ro_name}"
-        figs.append((save_name,fig))
+        # for i in range(2):
+        plot_amp_signal( r_amp, zdata, title, ax[0] )
+        plot_amp_signal_phase( r_amp, zdata, title, ax[1] )
+        fig.suptitle(f"{title} RO amplitude")
+        save_name = f"ro_amp_{title}"
         plt.close()
-    return figs
+        return fig
+    
+
+
 
 #CR3
 def plot_and_save_readout_fidelity(dataset, folder_save_dir = 0, save_data = True )->list:
     from analysis.state_distribution import train_model, create_img
     from qualang_tools.analysis import two_state_discriminator
-    transposed_data = dataset.transpose("mixer", "state", "index")
+    transposed_data = dataset.transpose("mixer", "prepare_state", "shot")
 
     figs = []
     for ro_name, data in transposed_data.data_vars.items(): # elapsed_time = np.round(end_time-start_time, 1)
