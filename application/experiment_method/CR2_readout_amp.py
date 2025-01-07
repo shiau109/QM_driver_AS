@@ -11,30 +11,28 @@ config = config_obj.get_config()
 qmm, _ = spec.buildup_qmm()
 
 from ab.QM_config_dynamic import initializer
-init_macro = initializer(200000,mode='wait')
 
 save_dir = link_config["path"]["output_root"]
 
 import matplotlib.pyplot as plt
 
-# Set parameters
-ro_elements = [ "q7_ro", "q8_ro"]
-operate_qubit = ['q8_xy']
 
-save_data = True
-save_name = f"ro_amp_{operate_qubit[0]}"
-folder_label = "ro_amp_1"
-
-n_avg = 400
-amp_range = (0.1, 1.8)
-amp_resolution = 0.01
 
 
 # Start measurement
 from exp.readout_optimization import *
-dataset = power_dep_signal( amp_range, amp_resolution, operate_qubit, ro_elements, n_avg, config, qmm, initializer=init_macro)
+my_exp = ROAmp(config, qmm)
+my_exp.ro_elements = ["q1_ro","q2_ro"]
+my_exp.xy_elements = ['q1_xy','q2_xy']
+my_exp.amp_mod_range = (0.1, 1.8)
+my_exp.amp_resolution = 0.05
+my_exp.initializer = initializer(100000,mode='wait')
 
-# Data Saving 
+dataset = my_exp.run(1000)
+
+# Data Saving
+save_data = True
+folder_label = "ro_amp"
 if save_data: 
     from exp.save_data import DataPackager
     save_dir = link_config["path"]["output_root"]
@@ -42,7 +40,9 @@ if save_data:
     dp.save_config(config)
     dp.save_nc(dataset,folder_label)
     
-from exp.plotting import plot_and_save_readout_amp
-plot_and_save_readout_amp(dataset, folder_label, save_data)
-
+save_figure = 1
+from exp.plotting import PainterROPower
+painter = PainterROPower()
+figs = painter.plot(dataset,folder_label)
+if save_figure: dp.save_figs( figs )
 

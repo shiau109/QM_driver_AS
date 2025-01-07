@@ -1531,35 +1531,46 @@ def plot_and_save_xy_amp(dataset, folder_save_dir = 0, save_data = True ):
     plt.show()
 
 #Cr1
-def plot_and_save_readout_freq(dataset, my_exp, folder_save_dir = 0, save_data = True ):
-    from exp.readout_optimization import plot_freq_signal
-    dfs = dataset.coords["frequency"].values
-    figs = []
-    for ro_name, data in dataset.data_vars.items():
+class PainterROFreq( RawDataPainter ):
 
-        data = data.values
-        if my_exp.preprocess == "shot":
-            data = np.average(data, axis=1)
-        print(data.shape)
+    def _data_parser( self ):
+
+        transposed_data = self.plot_data.transpose("mixer", "prepare_state", "frequency")
+
+        dataarray = transposed_data
+        self.prepare_state = dataarray.coords["prepare_state"].values
+        self.frequency = dataarray.coords["frequency"].values
+
+        idata = dataarray.values[0]
+        qdata = dataarray.values[1]
+        self.zdata = transposed_data
+
+    def _plot_method( self ):
+
+        zdata = self.zdata
+        frequency = self.frequency
+        title = self.title
+
         fig = plt.figure()
-        ax = fig.subplots(3,1)
-        plot_freq_signal( dfs, data, ro_name, ax )
-        fig.suptitle(f"{ro_name} RO freq")
-        save_name = save_name = f"ro_freq_{ro_name}"
-        figs.append((save_name,fig))
+        ax = fig.subplots(3,1,sharex=True)
+        from exp.readout_optimization import plot_freq_signal
 
+        plot_freq_signal( frequency, zdata, title, ax )
+
+        fig.suptitle(f"{title} RO freq")
+        save_name = f"ro_freq_{title}"
         plt.close()
-    return figs
+        return fig
 
 #CR2
 class PainterROPower( RawDataPainter ):
 
     def _data_parser( self ):
 
-        transposed_data = self.plot_data.transpose("mixer", "state", "amplitude_ratio")
+        transposed_data = self.plot_data.transpose("mixer", "prepare_state", "amplitude_ratio")
 
         dataarray = transposed_data
-        self.state = dataarray.coords["state"].values
+        self.prepare_state = dataarray.coords["prepare_state"].values
         self.r_amp = dataarray.coords["amplitude_ratio"].values
 
         idata = dataarray.values[0]
