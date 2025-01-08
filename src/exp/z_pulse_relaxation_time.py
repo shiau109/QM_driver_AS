@@ -22,18 +22,19 @@ from exp.QMMeasurement import QMMeasurement
 class z_pulse_relaxation_time( QMMeasurement ):
     def __init__( self, config, qmm: QuantumMachinesManager):
         super().__init__( config, qmm )
-        self.max_time = 40
-        self.time_resolution = 0.4
-        self.flux_range = [-0.2,0.2]
-        self.flux_resolution = 0.0008
-        self.q_name = ["q0_xy"]
-        self.z_name = None
-        self.ro_elements = ["q0_ro"]
-        self.ref_z_offset = {}
+
+        self.max_time = 20
+        self.time_resolution = 0.2
+        self.flux_range = [-0.3,0.3]
+        self.flux_resolution = 0.006
+        self.q_name = ["q3_xy"]
+        self.z_name = ["q8_z"]
+        self.ro_elements = ["q3_ro", "q4_ro"]
+        self.n_avg = 100
         self.initializer = None
         self.simulate = False
+        self.ref_z_offset = {"q8_z": gc.get_offset("q8_z", config)}
         
-
     def _get_qua_program( self ):
         """
         parameters: \n
@@ -75,7 +76,7 @@ class z_pulse_relaxation_time( QMMeasurement ):
                             except:
                                 wait(1*u.us,self.ro_elements)
 
-                        # Operation   
+                        # Operation
                         for q in self.q_name:
                             play("x180", q)
                         wait(25)    

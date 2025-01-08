@@ -221,5 +221,6 @@ def update_Readout(config:Configuration,target_q:str='all',roInfo:dict={}, wirin
         config.waveforms[wf_name].sample = roInfo[q]['readout_amp']
 
         config.octaves["octave1"].RF_outputs[1].LO_frequency=roInfo[q]['resonator_LO']
+        config.octaves["octave1"].RF_inputs[1].LO_frequency=roInfo[q]['resonator_LO']
 
     print('RO dynamic config secessfully updated!')

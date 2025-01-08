@@ -18,7 +18,7 @@ import time
 
 from exp.QMMeasurement import QMMeasurement
 import exp.config_par as gc
-
+import numpy as np
 class ROAmp( QMMeasurement ):
     """
     Parameters:\n
