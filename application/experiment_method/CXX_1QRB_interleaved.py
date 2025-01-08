@@ -15,30 +15,29 @@ import matplotlib.pyplot as plt
 from exp.randomized_banchmarking_interleaved_sq import randomized_banchmarking_interleaved_sq
 
 my_exp = randomized_banchmarking_interleaved_sq(config, qmm)
-my_exp.initializer = initializer(100000,mode='wait')
+my_exp.initializer = initializer(120000,mode='wait')
 
 # pi_len = the_specs.get_spec_forConfig('xy')['q1']['pi_len']
 
 ##############################
 # Program-specific variables #
 ##############################
-my_exp.xy_elements = ["q3_xy"]
-my_exp.ro_elements = ["q3_ro"]
+my_exp.xy_elements = ["q4_xy"]
+my_exp.ro_elements = ["q4_ro"]
 # threshold = the_specs.get_spec_forConfig('ro')[xy_element]['ge_threshold']
 
 my_exp.gate_length = 40
-my_exp.n_avg = 40  # Number of averaging loops for each random sequence
-my_exp.max_circuit_depth = 512  # Maximum circuit depth
-my_exp.base_clifford = 2  #  Play each sequence with a depth step equals to 'delta_clifford - Must be >= 2
+my_exp.n_avg = 200  # Number of averaging loops for each random sequence
+my_exp.max_circuit_depth = 100  # Maximum circuit depth
+my_exp.depth_scale = 'lin' # 'lin', 'exp'
+my_exp.base_clifford = 3  #  Play each sequence with a depth step equals to 'delta_clifford - Must be >= 2
 assert my_exp.base_clifford > 1, 'base must > 1'
 my_exp.seed = 345324  # Pseudo-random number generator seed
-my_exp.interleaved_gate_index = 2
-my_exp.state_discrimination = False
-my_exp.threshold = 5.151e-05
+my_exp.interleaved_gate_index = 0
+my_exp.state_discrimination = True
+my_exp.threshold = -1.505e-05
 
-# Flag to enable state discrimination if the readout has been calibrated (rotated blobs and threshold)
-# state_discrimination = [1e-3]
-dataset = my_exp.run(40)
+dataset = my_exp.run(50)
 
 save_data = 1
 folder_label = "1QRB_interleaved" #your data and plots will be saved under a new folder with this name
