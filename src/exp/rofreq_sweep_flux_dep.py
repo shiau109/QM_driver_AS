@@ -14,6 +14,7 @@ warnings.filterwarnings("ignore")
 import xarray as xr
 import time
 import exp.config_par as gc
+import numpy as np
 
 def freq_sweep_flux_dep( ro_element:list, z_element:list, config:dict, qm_machine:QuantumMachinesManager, n_avg:int=100, flux_settle_time:int=1000, freq_range:tuple=(-3,3), flux_range:float=(-0.3,0.3), flux_resolution:float=0.015, freq_resolution:float=0.05, initializer:tuple=None )->xr.Dataset:
     """

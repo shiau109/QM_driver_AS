@@ -12,6 +12,7 @@ import warnings
 warnings.filterwarnings("ignore")
 from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
+import numpy as np
 import xarray as xr
 import time
 from exp.QMMeasurement import QMMeasurement

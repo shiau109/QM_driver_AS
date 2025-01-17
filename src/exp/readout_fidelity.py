@@ -30,6 +30,7 @@ from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 
 from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
+import numpy as np
 import xarray as xr
 import time
 def readout_fidelity( q_name:list, ro_element, shot_num, config, qmm:QuantumMachinesManager, initializer=None):
