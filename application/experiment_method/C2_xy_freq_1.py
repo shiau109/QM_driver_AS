@@ -1,3 +1,4 @@
+
 # Import necessary file
 from pathlib import Path
 link_path = Path(__file__).resolve().parent.parent/"config_api"/"config_link.toml"
@@ -9,29 +10,29 @@ config_obj, spec = import_config( link_path )
 config = config_obj.get_config()
 qmm, _ = spec.buildup_qmm()
 
-from ab.QM_config_dynamic import initializer
 from exp.ramsey import Ramsey
+
 
 #Set parameters
 my_exp = Ramsey(config, qmm)
 from ab.QM_config_dynamic import initializer
 my_exp.initializer = initializer(50000,mode='wait')
-my_exp.ro_elements = ["q2_ro"]
-my_exp.xy_elements = ["q2_xy"]
-my_exp.virtual_detune = 1
+my_exp.ro_elements = ["q1_ro"]
+my_exp.xy_elements = ["q1_xy"]
 my_exp.max_time = 8
-my_exp.time_resolution = 0.08
+my_exp.time_resolution = 0.080
+my_exp.freq_calibration = True
 dataset = my_exp.run(400)
 
 #Save data
 save_data = 1
 if save_data: 
     from exp.save_data import DataPackager
-    folder_label = "ramseyT2_stat" #your data and plots will be saved under a new folder with this name
+    folder_label = "calibration_Ramsey" #your data and plots will be saved under a new folder with this name
     save_dir = link_config["path"]["output_root"]
     dp = DataPackager( save_dir, folder_label )
     dp.save_config(config)
-    dp.save_nc(dataset,"ramseyT2_stat")
+    dp.save_nc(dataset,"calibration_Ramsey")
 
 save_plot = 1
 if save_plot:

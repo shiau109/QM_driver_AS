@@ -14,13 +14,12 @@ from exp.single_spin_echo import SpinEcho
 # Set parameters
 my_exp = SpinEcho( config, qmm )
 from ab.QM_config_dynamic import initializer
-my_exp.initializer = initializer(300000,mode='wait')
-my_exp.ro_elements = ["q1_ro"]
-my_exp.xy_elements = ["q1_xy"]
-my_exp.time_range = ( 40, 1000 )
-my_exp.time_resolution = 20
-dataset = my_exp.run(10)
-
+my_exp.initializer = initializer(100000,mode='wait')
+my_exp.ro_elements = ["q2_ro"]
+my_exp.xy_elements = ["q2_xy"]
+my_exp.time_range = ( 40, 40000 )
+my_exp.time_resolution = 400
+dataset = my_exp.run(400)
 
 #Save data
 save_data = 1
@@ -37,30 +36,7 @@ from exp.plotting import PainterT2SpinEcho
 painter = PainterT2SpinEcho()
 figs = painter.plot(dataset,folder_label)
 if save_data: dp.save_figs( figs )
-# Plot
 
 
-# plot_and_save_t2_spinEcho(dataset, folder_save_dir, save_data = True )
 
-from exp.repetition_measurement import RepetitionMeasurement
-re_exp = RepetitionMeasurement()
-re_exp.exp_list = [my_exp]
-re_exp.exp_name = ["spin_echo"]
-my_exp.shot_num = 40
-dataset = re_exp.run(2)
 
-save_data = 1
-if save_data: 
-    from exp.save_data import DataPackager
-    folder_label = "SpinEchoT2_rep" #your data and plots will be saved under a new folder with this name
-    save_dir = link_config["path"]["output_root"]
-    dp = DataPackager( save_dir, folder_label )
-    dp.save_config(config)
-    dp.save_nc(dataset,"SpinEchoT2_rep")
-
-#To plot the result of multiple measurements (2D graph and histogram), use the following block of code
-#================================================================================================#
-from exp.plotting import PainterT2Repeat
-painter = PainterT2Repeat()
-figs = painter.plot(dataset,folder_label)
-if save_data: dp.save_figs( figs )

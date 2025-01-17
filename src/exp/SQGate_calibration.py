@@ -16,7 +16,7 @@ from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 warnings.filterwarnings("ignore")
 from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
-
+import numpy as np
 import xarray as xr
 ###################
 # The QUA program #
@@ -352,30 +352,3 @@ def StarkShift_scout(program, ro_element:list, config:dict, qmm:QuantumMachinesM
         qm.close()
     return output_data
 
-
-if __name__ == '__main__':
-    qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-    n_avg = 4000
-
-    # Scan the DRAG coefficient pre-factor
-
-    drag_coef = drag_coef_q2
-    # Check that the DRAG coefficient is not 0
-    assert drag_coef != 0, "The DRAG coefficient 'drag_coef' must be different from 0 in the config."
-    ro_element = ["rr2"]
-    q_name =  "q2_xy"
-    sequence_repeat = 3
-    amp_modify_range = 0.25/float(sequence_repeat)
-    output_data = DRAG_calibration_Yale( drag_coef, q_name, ro_element, config, qmm, n_avg=n_avg)
-    # output_data =  amp_calibration( amp_modify_range, q_name, ro_element, config, qmm, n_avg=n_avg, sequence_repeat=sequence_repeat, simulate=False)
-
-    #   Data Saving   # 
-    save_data = False
-    if save_data:
-        from save_data import save_npz
-        import sys
-        save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
-        save_npz(save_dir, save_progam_name, output_data)
-    
-    # # Plot
-    plt.show()

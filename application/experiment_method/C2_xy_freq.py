@@ -16,31 +16,18 @@ from ab.QM_config_dynamic import initializer
 
 import matplotlib.pyplot as plt
 
-# Set parameters
-init_macro = initializer(200000,mode='wait')
-
-ro_elements = ["q4_ro"]
-q_name =  ["q4_xy"]
-save_data = True
-save_dir = link_config["path"]["output_root"]
-save_name = f"{q_name[0]}_XYfreqCali"
-
-n_avg = 1000  # Number of averages
-virtual_detune = 5 # Unit in MHz
-
 # Start measurement
 from exp.ramsey_freq_calibration import RamseyFreqCalibration
 my_exp = RamseyFreqCalibration(config, qmm)
-my_exp.ro_elements = ["q3_ro", "q4_ro"]
-my_exp.xy_elements = ['q3_xy']
-my_exp.virtial_detune_freq = 1
+my_exp.ro_elements = ["q2_ro"]
+my_exp.xy_elements = ['q2_xy']
+my_exp.virtial_detune_freq = 8
 
 my_exp.point_per_period = 20
 my_exp.max_period = 6
-my_exp.initializer=initializer(10000,mode='wait')
+my_exp.initializer=initializer(50000,mode='wait')
 
-dataset = my_exp.run( 2000 )
-# dataset = ramsey_freq_calibration( virtual_detune, q_name, ro_elements, config, qmm, n_avg=n_avg, simulate=False, initializer=init_macro)
+dataset = my_exp.run( 400 )
 
 from exp.ramsey_freq_calibration import plot_ana_result
 
@@ -48,9 +35,9 @@ from exp.ramsey_freq_calibration import plot_ana_result
 
 # for ro_element, data in output_data.items():
 #     plot_ana_result(evo_time,data[0],virtual_detune)
-plot_data = dataset["q3_ro"].values[0]
+plot_data = dataset["q2_ro"].values[0]
 evo_time = dataset.coords["time"].values
-plot_ana_result(evo_time,plot_data,virtual_detune)
+plot_ana_result(evo_time,plot_data,my_exp.virtial_detune_freq)
     
 # if save_data: save_fig(save_dir, save_name)
 plt.show()

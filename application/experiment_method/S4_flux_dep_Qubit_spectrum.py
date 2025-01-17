@@ -14,28 +14,32 @@ from ab.QM_config_dynamic import initializer
 # Start meausrement
 from exp.xyfreq_sweep_flux_dep import XYFreqFlux
 my_exp = XYFreqFlux(config, qmm)
-my_exp.ro_elements = ["q4_ro"]
-my_exp.xy_elements = ['q4_xy']
-my_exp.z_elements = ['q4_z']
-my_exp.initializer=initializer(1000,mode='wait')
-my_exp.xy_driving_time = 0.04
-my_exp.xy_amp_mod = 0.04
-my_exp.z_amp_ratio_range = (-0.5,1.5)
-my_exp.z_amp_ratio_resolution = 0.04
-my_exp.freq_range = (-300,50)
+my_exp.ro_elements = ["q1_ro","q2_ro"] #
+my_exp.xy_elements = ["q2_xy"]
+my_exp.z_elements = ["q6_z"]
+my_exp.initializer = initializer(50000,mode='wait')
+my_exp.xy_driving_time = 1# 0.1 #
+my_exp.xy_amp_mod = 0.01# 0.02 #
+# my_exp.z_amp_ratio_range = (-0.0127*5+1 -0.1, -0.0127*5+1 +0.1
+my_exp.z_amp_ratio_range = (-0.1, 0.3)
+my_exp.z_amp_ratio_resolution = 0.01
+my_exp.freq_range = (-50,+ 50)
 my_exp.freq_resolution = 1
 my_exp.sweep_type = "z_pulse"
-dataset = my_exp.run( 200 )
 
-#Save data
-save_data = 1
+my_exp.parametric_drive = 0     # whether to apply parametric drive
+my_exp.drive_element = "q1_z"   # which qubit to apply parametric drive
+
+dataset = my_exp.run( 400 )
+import xarray as xr
+# dataset = xr.open_dataset(r"d:\Data\Qubit\5Q4C0430\20241121_DR3_5Q4C_0430#7_q2q3\TPS\20250112_125925_S4_flux_dep_Qubit_spectrum\S4_flux_dep_Qubit_spectrum.nc")
 folder_label = "S4_flux_dep_Qubit_spectrum" #your data and plots will be saved under a new folder with this name
-if save_data: 
-    from exp.save_data import DataPackager
-    save_dir = link_config["path"]["output_root"]
-    dp = DataPackager( save_dir, folder_label )
-    dp.save_config(config)
-    dp.save_nc(dataset,folder_label)
+from exp.save_data import DataPackager
+save_dir = link_config["path"]["output_root"]
+dp = DataPackager( save_dir, folder_label )
+#Save data
+dp.save_config(config)
+dp.save_nc(dataset,folder_label)
 
 # Plot
 save_figure = 1
