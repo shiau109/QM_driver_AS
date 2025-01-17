@@ -18,18 +18,18 @@ import matplotlib.pyplot as plt
 
 from exp.readout_optimization import ROFreq
 my_exp = ROFreq(config, qmm)
-my_exp.initializer = initializer(300000,mode='wait')
-my_exp.ro_elements = ["q7_ro", "q8_ro"]
-my_exp.xy_elements = ['q8_xy']
-my_exp.freq_range = (-1, 1)
-my_exp.freq_resolution = 0.01
-my_exp.preprocess = "shot"
+my_exp.initializer = initializer(100000,mode='wait')
+my_exp.ro_elements = ["q1_ro","q2_ro"]
+my_exp.xy_elements = ['q1_xy','q2_xy']
+my_exp.freq_range = (-5, 5)
+my_exp.freq_resolution = 0.1
+my_exp.preprocess = "ave"
 save_data = True
 save_dir = link_config["path"]["output_root"]
 save_name = f"ro_amp_{my_exp.xy_elements[0]}"
 folder_label = "readout_freq_1"
 # Start measurement
-dataset = my_exp.run(200)
+dataset = my_exp.run(400)
 
 # Data Saving 
 if save_data: 
@@ -45,5 +45,9 @@ if my_exp.preprocess == "shot":
 
 else:
     dataset = dataset.transpose("mixer","prepare_state","frequency")
-from exp.plotting import plot_and_save_readout_freq
-plot_and_save_readout_freq(dataset, my_exp, folder_label, save_data)
+
+save_figure = 1
+from exp.plotting import PainterROFreq
+painter = PainterROFreq()
+figs = painter.plot(dataset,folder_label)
+if save_figure: dp.save_figs( figs )

@@ -2,6 +2,7 @@ from qm.qua import *
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qualang_tools.loops import from_array
 import exp.config_par as gc
+import numpy as np
 
 from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 
@@ -15,7 +16,7 @@ from exp.QMMeasurement import QMMeasurement
 
 import xarray as xr
 
-class SQGate_deterministic_benchmarking( QMMeasurement ):
+class SQ_deterministic_benchmarking( QMMeasurement ):
 
     def __init__( self, config, qmm: QuantumMachinesManager ):
         super().__init__( config, qmm )
@@ -25,11 +26,12 @@ class SQGate_deterministic_benchmarking( QMMeasurement ):
         self.sequence_repeat = 500
 
         self.initializer = None
-        self.gate = 1
+        self.gate = 3
         # 1 = X X
         # 2 = X -X
         # 3 = Y Y
         # 4 = Y -Y
+        # 11 = Y/2 *4
 
     def _get_qua_program(self):
 
@@ -40,7 +42,6 @@ class SQGate_deterministic_benchmarking( QMMeasurement ):
             rep = declare(int)  # QUA variable for the measured 'repeat' quadrature
             iqdata_stream = multiRO_declare( self.ro_elements )
             n_st = declare_stream()  # Stream for the averaging iteration 'n'
-
             with for_(n, 0, n < self.shot_num, n + 1):
                 with for_(rep, 1, rep <= self.sequence_repeat, rep + 1):
                     # Init

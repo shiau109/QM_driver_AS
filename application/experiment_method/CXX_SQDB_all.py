@@ -9,34 +9,36 @@ config_obj, spec = import_config( link_path )
 config = config_obj.get_config()
 qmm, _ = spec.buildup_qmm()
 
-
-from exp.single_spin_echo import SpinEcho
-# Set parameters
-my_exp = SpinEcho( config, qmm )
 from ab.QM_config_dynamic import initializer
+
+# Set parameters
+from exp.SQDB_all import SQ_deterministic_benchmarking_all
+my_exp = SQ_deterministic_benchmarking_all(config, qmm)
 my_exp.initializer = initializer(100000,mode='wait')
-my_exp.ro_elements = ["q2_ro"]
-my_exp.xy_elements = ["q2_xy"]
-my_exp.time_range = ( 40, 40000 )
-my_exp.time_resolution = 400
-dataset = my_exp.run(400)
+my_exp.ro_elements = ['q4_ro']
+my_exp.xy_elements = ["q4_xy"]
+
+my_exp.sequence_repeat = 100     # are variables if process = 'repeat
+my_exp.gate_time = 40
+my_exp.threshold = -1.706e-03
+dataset = my_exp.run( 500 )
+
+# Analyze by Myrron's program
+
 
 #Save data
-save_data = 1
+save_data = True
+folder_label = "1QDB_all"
 if save_data: 
     from exp.save_data import DataPackager
-    folder_label = "SpinEchoT2_stat" #your data and plots will be saved under a new folder with this name
     save_dir = link_config["path"]["output_root"]
     dp = DataPackager( save_dir, folder_label )
     dp.save_config(config)
-    dp.save_nc(dataset,"SpinEchoT2_stat")
+    dp.save_nc(dataset,folder_label)
 
 # Plot
-from exp.plotting import PainterT2SpinEcho
-painter = PainterT2SpinEcho()
+save_figure = 1
+from exp.plotting import PainterSQDBAll
+painter = PainterSQDBAll()
 figs = painter.plot(dataset,folder_label)
-if save_data: dp.save_figs( figs )
-
-
-
-
+if save_figure: dp.save_figs( figs )

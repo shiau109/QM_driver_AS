@@ -22,6 +22,7 @@ from exp.QMMeasurement import QMMeasurement
 class z_pulse_relaxation_time( QMMeasurement ):
     def __init__( self, config, qmm: QuantumMachinesManager):
         super().__init__( config, qmm )
+
         self.max_time = 20
         self.time_resolution = 0.2
         self.flux_range = [-0.3,0.3]
@@ -63,7 +64,7 @@ class z_pulse_relaxation_time( QMMeasurement ):
             dc = declare(fixed)  
             n = declare(int)
             n_st = declare_stream()
-            with for_(n, 0, n < self.n_avg, n + 1):
+            with for_(n, 0, n < self.shot_num, n + 1):
                 with for_(*from_array(dc, self.fluxes)):
                     with for_(*from_array(t, cc_delay_qua)):
                         # initializaion

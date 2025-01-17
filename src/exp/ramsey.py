@@ -16,6 +16,8 @@ import numpy as np
 import xarray as xr
 import time
 from exp.QMMeasurement import QMMeasurement
+import numpy as np
+
 
 class Ramsey( QMMeasurement ):
     def __init__( self, config, qmm: QuantumMachinesManager):
@@ -34,17 +36,17 @@ class Ramsey( QMMeasurement ):
         # self.n_avg = 100
         self.initializer = None
         self.simulate = False
-
+        self.freq_calibration = False
     def _get_qua_program( self ):
-        v_detune_qua = self.virtual_detune *u.MHz
-        print(self.virtual_detune)
+
         cc_resolution = (self.time_resolution/4.) *u.us
         cc_max_qua = (self.max_time/4.) *u.us
         cc_qua = np.arange( 4, cc_max_qua, cc_resolution)
-        print(cc_qua)
 
         self.evo_time = cc_qua*4
         time_len = len(cc_qua)
+        if self.freq_calibration: self.virtual_detune = 0
+        
         with program() as ramsey:
             iqdata_stream = multiRO_declare( self.ro_elements )
             n = declare(int)
@@ -70,10 +72,12 @@ class Ramsey( QMMeasurement ):
                         # False_value = v_detune_qua*4*cc
 
                         for xy in self.xy_elements:
-                            play("x90", xy)  # 1st x90 gate
+                            if self.freq_calibration: play("y90", xy)  # 2st x90 gate
+                            else: play("x90", xy)  # 1st x90 gate
                             wait(cc, xy)
                             frame_rotation_2pi(phi, xy)  # Virtual Z-rotation
-                            play("x90", xy)  # 2st x90 gate
+                            if self.freq_calibration: play("x90", xy)  # 2st x90 gate
+                            else: play("x90", xy)  # 2st x90 gate
 
                         # Align after playing the qubit pulses.
                         align()

@@ -12,7 +12,7 @@ from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
 import time
 from exp.QMMeasurement import QMMeasurement
-
+import numpy as np
 class SpinEcho( QMMeasurement ):
     def __init__( self, config, qmm: QuantumMachinesManager):
         super().__init__( config, qmm )

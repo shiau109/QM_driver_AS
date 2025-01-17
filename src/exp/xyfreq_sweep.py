@@ -12,7 +12,7 @@ warnings.filterwarnings("ignore")
 import exp.config_par as gc
 from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
-
+import numpy as np
 import xarray as xr
 import numpy as np
 import time
@@ -160,7 +160,7 @@ class XYFreq( QMMeasurement ):
         for xy in self.xy_elements:
             self.ref_xy_IF.append(gc.get_IF(xy, self.config))
             self.ref_xy_LO.append(gc.get_LO(xy, self.config))
-
+        
         self.z_offset = []
 
 

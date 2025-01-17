@@ -7,7 +7,7 @@ found at each step thanks to a preloaded lookup table (Cayley table), that will 
 
 If the readout has been calibrated and is good enough, then state discrimination can be applied to only return the state
 of the qubit. Otherwise, the 'I' and 'Q' quadratures are returned.
-Each sequence is played n_avg times for averaging. A second averaging is performed by playing different random sequences.
+Each sequence is played shot_num times for averaging. A second averaging is performed by playing different random sequences.
 
 The data is then post-processed to extract the single-qubit gate fidelity and error per gate
 .
@@ -28,6 +28,7 @@ import warnings
 warnings.filterwarnings("ignore")
 from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
+import exp.config_par as gc
 
 from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 
@@ -51,18 +52,19 @@ class randomized_banchmarking_sq(QMMeasurement):
         super().__init__( config, qmm )
         self.xy_elements = ["q0_xy"]
         self.ro_elements = ["q0_ro"]
+        self.z_elements = ["q0_z"]
         self.gate_length = 40
         self.max_circuit_depth = 200
         self.depth_scale = "lin"
         self.base_clifford = 2 # >= 2
         self.initializer = initializer(120000,mode='wait')
-        self.n_avg = 1
         self.state_discrimination = False
         self.seed = None
         self.threshold = 0
-
+        self.random_sequence_num = 50
+        self.z_const_ratio = 0.1
     def _get_qua_program(self):
-
+        self._attribute_config()
         gate_num = 1
         gate_step = 0
         self.x = np.array([])
@@ -76,7 +78,7 @@ class randomized_banchmarking_sq(QMMeasurement):
                 while gate_num <= self.max_circuit_depth:
                     self.x = np.append(self.x, [gate_num])
                     gate_step = gate_step + 1
-                    gate_num = self.base_clifford * gate_num
+                    gate_num = int(self.base_clifford * gate_num)
         ###################
         # The QUA program #
         ###################
@@ -87,16 +89,15 @@ class randomized_banchmarking_sq(QMMeasurement):
             saved_gate = declare(int)
             m = declare(int)  # QUA variable for the loop over random sequences
             n = declare(int)  # QUA variable for the averaging loop
-            a = declare(fixed)  # QUA variable for the DRAG coefficient pre-factor
             iqdata_stream = multiRO_declare( self.ro_elements )
-            state = [declare(bool) for _ in range(len(self.ro_elements))]  # QUA variable for state discrimination
             # The relevant streams
             m_st = declare_stream()
             
             if self.state_discrimination:
+                state = [declare(bool) for _ in range(len(self.ro_elements))]  # QUA variable for state discrimination
                 state_st = [declare_stream() for _ in range(len(self.ro_elements))]
 
-            with for_(m, 0, m < self.shot_num, m + 1):  # QUA for_ loop over the random sequences
+            with for_(m, 0, m < self.random_sequence_num, m + 1):  # QUA for_ loop over the random sequences
                 sequence_list, inv_gate_list = self._generate_sequence()  # Generate the random sequence of length max_circuit_depth
 
                 assign(depth_target, 1)  # Initialize the current depth to 1
@@ -108,30 +109,10 @@ class randomized_banchmarking_sq(QMMeasurement):
                     assign(sequence_list[depth], inv_gate_list[depth - 1])
                     # Only played the depth corresponding to target_depth
                     with if_((depth == depth_target)):
-                        with for_(n, 0, n < self.n_avg, n + 1):
-                            # Initialize
-                            try:
-                                self.initializer[0](*self.initializer[1])
-                            except:
-                                print("Initializer didn't work!")
-                                wait(100*u.us)
+                        with for_(n, 0, n < self.shot_num, n + 1):
 
-                            # Operation
-                            # The strict_timing ensures that the sequence will be played without gaps
-                            with strict_timing_():
-                                # Play the random sequence of desired depth
-                                for xy in self.xy_elements:
-                                    self._play_sequence(sequence_list, depth, xy)
-                            # Align the two elements to measure after playing the circuit.
-                            align()
-
-                            # Make sure you updated the ge_threshold and angle if you want to use state discrimination
-                            multiRO_measurement(iqdata_stream, self.ro_elements, weights="rotated_")
-                            # Make sure you updated the ge_threshold
-                            if self.state_discrimination:
-                                for idx_res, res in enumerate(self.ro_elements):
-                                    assign(state[idx_res], iqdata_stream[0][idx_res] > self.threshold)
-                                    save(state[idx_res], state_st[idx_res])
+                            if self.state_discrimination: self._one_sequence(sequence_list, depth, iqdata_stream, state, state_st)
+                            else: self._one_sequence(sequence_list, depth, iqdata_stream)
 
                         # Go to the next depth
                         match self.depth_scale:
@@ -155,30 +136,63 @@ class randomized_banchmarking_sq(QMMeasurement):
                 for idx_res, res in enumerate(self.ro_elements):
                     if self.state_discrimination:
                         # saves a 2D array of depth and random pulse sequences in order to get error bars along the random sequences
-                        state_st[idx_res].boolean_to_int().buffer(self.n_avg).map(FUNCTIONS.average()).buffer(
+                        state_st[idx_res].boolean_to_int().buffer(self.shot_num).map(FUNCTIONS.average()).buffer(
                             gate_step
                         ).buffer(self.shot_num).save(f"{res}_state")
                         # returns a 1D array of averaged random pulse sequences vs depth_inl of circuit for live plotting
-                        state_st[idx_res].boolean_to_int().buffer(self.n_avg).map(FUNCTIONS.average()).buffer(
+                        state_st[idx_res].boolean_to_int().buffer(self.shot_num).map(FUNCTIONS.average()).buffer(
                             gate_step
                         ).average().save(f"{res}_state_avg")
                     else:
                         # multiRO_pre_save(iqdata_stream, self.ro_elements, (gate_step,2) )
-                        I_st[idx_res].buffer(self.n_avg).map(FUNCTIONS.average()).buffer(gate_step).buffer(
-                            self.shot_num
-                        ).save(f"{res}_I")
-                        Q_st[idx_res].buffer(self.n_avg).map(FUNCTIONS.average()).buffer(gate_step).buffer(
-                            self.shot_num
-                        ).save(f"{res}_Q")
-                        I_st[idx_res].buffer(self.n_avg).map(FUNCTIONS.average()).buffer(gate_step).average().save(
+                        I_st[idx_res].buffer(self.shot_num).map(FUNCTIONS.average()).buffer(gate_step).buffer(self.random_sequence_num).save(f"{res}_I")
+                        Q_st[idx_res].buffer(self.shot_num).map(FUNCTIONS.average()).buffer(gate_step).buffer(self.random_sequence_num).save(f"{res}_Q")
+                        I_st[idx_res].buffer(self.shot_num).map(FUNCTIONS.average()).buffer(gate_step).average().save(
                             f"{res}_I_avg"
                         )
-                        Q_st[idx_res].buffer(self.n_avg).map(FUNCTIONS.average()).buffer(gate_step).average().save(
+                        Q_st[idx_res].buffer(self.shot_num).map(FUNCTIONS.average()).buffer(gate_step).average().save(
                             f"{res}_Q_avg"
                         )
 
         return rb
-    
+    def _one_sequence( self, sequence_list, depth, iqdata_stream, state=None, state_st=None ):
+        # Initialize
+        try:
+            self.initializer[0](*self.initializer[1])
+        except:
+            print("Initializer didn't work!")
+            wait(100*u.us)
+
+        # Operation
+        for i, z in enumerate(self.z_elements):
+            set_dc_offset( z, "single", self.z_offset[i] +self.z_const_ratio*self.z_const_amp[i])
+        set_dc_offset( "q1_z", "single", gc.get_offset("q1_z", self.config ) +self.z_const_ratio*self.z_const_amp[i]*0.0355)
+        set_dc_offset( "q2_z", "single", gc.get_offset("q2_z", self.config ) +self.z_const_ratio*self.z_const_amp[i]*-0.050)
+        # The strict_timing ensures that the sequence will be played without gaps
+        with strict_timing_():
+            # Play the random sequence of desired depth
+            # for z in self.z_elements:
+                # self._play_z(sequence_list, depth, z)
+            for xy in self.xy_elements:
+                self._play_sequence(sequence_list, depth, xy)
+
+        # Align the two elements to measure after playing the circuit.
+        align()
+        for i, z in enumerate(self.z_elements):
+            wait(4)
+            set_dc_offset( z, "single", self.z_offset[i])
+        set_dc_offset( "q1_z", "single", gc.get_offset("q1_z", self.config ))
+        set_dc_offset( "q2_z", "single", gc.get_offset("q1_z", self.config ))
+
+        # Make sure you updated the ge_threshold and angle if you want to use state discrimination
+        multiRO_measurement(iqdata_stream, self.ro_elements, weights="rotated_")
+        # set_dc_offset( z, "single", 0)
+        # Make sure you updated the ge_threshold
+        if self.state_discrimination:
+            for idx_res, res in enumerate(self.ro_elements):
+                assign(state[idx_res], iqdata_stream[0][idx_res] > self.threshold)
+                save(state[idx_res], state_st[idx_res])
+                
     def _get_fetch_data_list( self ):
         ro_ch_name = []
         for r_name in self.ro_elements:
@@ -310,3 +324,139 @@ class randomized_banchmarking_sq(QMMeasurement):
                     play("-x90", xy)
                     play("y90", xy)
                     play("-x90", xy)
+
+    def _play_z(self, sequence_list, depth, z):
+        i = declare(int)
+        total_num = declare(int)
+        assign(total_num, 0)
+        cc_gate_time = self.gate_length // 4
+        print(cc_gate_time)
+        with for_(i, 0, i <= depth, i + 1):
+            with switch_(sequence_list[i], unsafe=True):
+                with case_(0):
+                    # wait(self.gate_length // 4, xy)
+                    # play("const"*amp(self.z_amp_ratio), z, cc_gate_time)
+                    assign(total_num, total_num+1)
+                with case_(1):
+                    # play("x180", xy)
+                    # play("const"*amp(self.z_amp_ratio), z, cc_gate_time)
+                    assign(total_num, total_num+1)
+                with case_(2):
+                    # play("y180", xy)
+                    # play("const"*amp(self.z_amp_ratio), z, cc_gate_time)
+                    assign(total_num, total_num+1)
+                with case_(3):
+                    # play("y180", xy)
+                    # play("x180", xy)
+                    # play("const"*amp(self.z_amp_ratio), z, cc_gate_time*2)
+                    assign(total_num, total_num+2)
+                with case_(4):
+                    # play("x90", xy)
+                    # play("y90", xy)
+                    # play("const"*amp(self.z_amp_ratio), z, cc_gate_time*2)
+                    assign(total_num, total_num+2)
+                with case_(5):
+                    # play("x90", xy)
+                    # play("-y90", xy)
+                    # play("const"*amp(self.z_amp_ratio), z, cc_gate_time*2)
+                    assign(total_num, total_num+2)
+                with case_(6):
+                    # play("-x90", xy)
+                    # play("y90", xy)
+                    # play("const"*amp(self.z_amp_ratio), z, cc_gate_time*2)
+                    assign(total_num, total_num+2)
+                with case_(7):
+                    # play("-x90", xy)
+                    # play("-y90", xy)
+                    # play("const"*amp(self.z_amp_ratio), z, cc_gate_time*2)
+                    assign(total_num, total_num+2)
+                with case_(8):
+                    # play("y90", xy)
+                    # play("x90", xy)
+                    # play("const"*amp(self.z_amp_ratio), z, cc_gate_time*2)
+                    assign(total_num, total_num+2)
+                with case_(9):
+                    # play("y90", xy)
+                    # play("-x90", xy)
+                    # play("const"*amp(self.z_amp_ratio), z, cc_gate_time*2)
+                    assign(total_num, total_num+2)
+                with case_(10):
+                    # play("-y90", xy)
+                    # play("x90", xy)
+                    # play("const"*amp(self.z_amp_ratio), z, cc_gate_time*2)
+                    assign(total_num, total_num+2)
+                with case_(11):
+                    # play("-y90", xy)
+                    # play("-x90", xy)
+                    # play("const"*amp(self.z_amp_ratio), z, cc_gate_time*2)
+                    assign(total_num, total_num+2)
+                with case_(12):
+                    # play("x90", xy)
+                    # play("const"*amp(self.z_amp_ratio), z, cc_gate_time)
+                    assign(total_num, total_num+1)
+                with case_(13):
+                    # play("-x90", xy)
+                    # play("const"*amp(self.z_amp_ratio), z, cc_gate_time)
+                    assign(total_num, total_num+1)
+                with case_(14):
+                    # play("y90", xy)
+                    # play("const"*amp(self.z_amp_ratio), z, cc_gate_time)
+                    assign(total_num, total_num+1)
+                with case_(15):
+                    # play("-y90", xy)
+                    # play("const"*amp(self.z_amp_ratio), z, cc_gate_time)
+                    assign(total_num, total_num+1)
+                with case_(16):
+                    # play("-x90", xy)
+                    # play("y90", xy)
+                    # play("x90", xy)
+                    # play("const"*amp(self.z_amp_ratio), z, cc_gate_time*3)
+                    assign(total_num, total_num+3)
+                with case_(17):
+                    # play("-x90", xy)
+                    # play("-y90", xy)
+                    # play("x90", xy)
+                    # play("const"*amp(self.z_amp_ratio), z, cc_gate_time*3)
+                    assign(total_num, total_num+3)
+                with case_(18):
+                    # play("x180", xy)
+                    # play("y90", xy)
+                    # play("const"*amp(self.z_amp_ratio), z, cc_gate_time*2)
+                    assign(total_num, total_num+2)
+                with case_(19):
+                    # play("x180", xy)
+                    # play("-y90", xy)
+                    # play("const"*amp(self.z_amp_ratio), z, cc_gate_time*2)
+                    assign(total_num, total_num+2)
+                with case_(20):
+                    # play("y180", xy)
+                    # play("x90", xy)
+                    # play("const"*amp(self.z_amp_ratio), z, cc_gate_time*2)
+                    assign(total_num, total_num+2)
+                with case_(21):
+                    # play("y180", xy)
+                    # play("-x90", xy)
+                    # play("const"*amp(self.z_amp_ratio), z, cc_gate_time*2)
+                    assign(total_num, total_num+2)
+                with case_(22):
+                    # play("x90", xy)
+                    # play("y90", xy)
+                    # play("x90", xy)
+                    # play("const"*amp(self.z_amp_ratio), z, cc_gate_time*3)
+                    assign(total_num, total_num+3)
+                with case_(23):
+                    # play("-x90", xy)
+                    # play("y90", xy)
+                    # play("-x90", xy)
+                    # play("const"*amp(self.z_amp_ratio), z, cc_gate_time*3)
+                    assign(total_num, total_num+3)
+
+        play("const"*amp(self.z_amp_ratio), z, cc_gate_time*total_num)
+
+    def _attribute_config( self ):
+
+        self.z_offset = []
+        self.z_const_amp = []
+        for z in self.z_elements:
+            self.z_offset.append( gc.get_offset(z, self.config ))
+            self.z_const_amp.append(gc.get_const_wf(z, self.config ))
