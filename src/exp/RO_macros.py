@@ -96,6 +96,7 @@ def multiRO_pre_save( iqdata_stream, resonators:list, buffer_shape:tuple, suffix
     match stream_preprocess:
         case "ave":
             for idx_res, res in enumerate(resonators):
+                I_st:list[_dsl._ResultSource]
                 if(buffer_shape == None):
                     I_st[idx_res].average().save(f"{res}_I{suffix}")
                     Q_st[idx_res].average().save(f"{res}_Q{suffix}")
@@ -115,20 +116,6 @@ def multiRO_pre_save( iqdata_stream, resonators:list, buffer_shape:tuple, suffix
                 I_st[idx_res].buffer(*buffer_shape).average().save(f"{res}_I{suffix}")
                 Q_st[idx_res].buffer(*buffer_shape).average().save(f"{res}_Q{suffix}") 
                 
-def multiRO_pre_save_singleShot( iqdata_stream, resonators:list, buffer_shape:tuple, suffix:str='' ):
-    """
-    Save RO pulse signal on FPGA
-    """
-    (I, I_st, Q, Q_st) = iqdata_stream
-    if type(resonators) is not list:
-        resonators = [resonators]
-        
-    ro_channel_num = len(resonators)
-    for idx_res, res in enumerate(resonators):
-        I_st[idx_res].buffer(*buffer_shape).save_all(f"{res}_I{suffix}")
-        Q_st[idx_res].buffer(*buffer_shape).save_all(f"{res}_Q{suffix}")  
-
-
 
 def state_tomo_singleRO_declare( resonators:list ):
     """

@@ -14,24 +14,24 @@ class DataPackager():
 
         self._create_folder()
 
+
+    def _check_path( self, path ):
+        is_exist = os.path.exists( path )
+        if os.path.exists( path ):
+            print(f"Warning: '{path}' already exists.")
+
+        return is_exist
+
     def _create_folder( self ):
         # Combine fixed part with user input
         folder_name = self.package_name
         save_dir = self.output_path
         full_path = self.package_root
 
-        if os.path.exists( full_path ):
-            print(f"Warning: The directory '{full_path}' already exists, creating separate folder")
-            count = 0
-            while os.path.exists(full_path):
-                new_folder_name = f"{folder_name}_{count}"
-                full_path = os.path.join(save_dir, new_folder_name)
-                count+=1
-            self.package_root = full_path
-        
-        # Create the directory
-        os.makedirs(full_path, exist_ok=True)
-        print(f"Directory '{full_path}' created successfully.")
+        if not self._check_path(self.package_root):
+            # Create the directory
+            os.makedirs(full_path, exist_ok=True)
+            print(f"Directory '{full_path}' created successfully.")
         return full_path
 
     def save_npz( self, file_name, data:dict, time_label:str|None=None, time_format:str="%Y%m%d_%H%M%S" ):

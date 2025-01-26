@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from qualang_tools.results import fetching_tool, progress_counter
 from qualang_tools.analysis import two_state_discriminator
 # from exp.macros import qua_declaration, multiplexed_readout, reset_qubit
-from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save_singleShot
+from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 import numpy as np
 from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
@@ -15,7 +15,6 @@ import xarray as xr
 import time
 import numpy as np
 from exp.QMMeasurement import QMMeasurement
-from qualang_tools.loops import from_array
 import exp.config_par as gc
 
 class ROFidelity( QMMeasurement ):
@@ -84,7 +83,7 @@ class ROFidelity( QMMeasurement ):
             with stream_processing():
                 n_st.save("iteration")
                 # Save all streamed points for plotting the IQ blobs
-                multiRO_pre_save_singleShot( iqdata_stream, self.ro_elements, ( self.shot_num, 2 ) )
+                multiRO_pre_save( iqdata_stream, self.ro_elements, ( self.shot_num, 2 ), stream_preprocess="shot" )
 
         return iq_blobs
     
