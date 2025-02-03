@@ -21,7 +21,8 @@ class QMMeasurement( ABC ):
         self.common_axis = None
 
         self.__preprocess = "ave"
-        self.__output_coords = ["q_idx","mixer"]
+        self.__qua_coords = None
+        self.__output_coords = None
 
         self.__ro_elements = []
 
@@ -47,11 +48,7 @@ class QMMeasurement( ABC ):
         In 'average' mode, there must be a coord call "mixer"\n
         In 'shot' mode, there must be coords call "mixer", "index".\n
         """
-        return self.__output_coords
-    @output_coords.setter
-    def output_coords( self, val:list[str] ):
-        coords_name = ["q_idx"]
-         
+        output_coords = ["q_idx"] 
         match self.preprocess:
             case "average":
                 coords_name.extend["mixer"]
@@ -64,6 +61,11 @@ class QMMeasurement( ABC ):
         for coord_name in coords_name: 
             if coord_name not in val:
                 raise ValueError(f"Must be a coord called {coord_name}.") 
+
+        self.__output_coords +=self.__output_coords
+        return self.__output_coords
+
+        
 
     @property
     def ro_elements( self ):
@@ -98,6 +100,7 @@ class QMMeasurement( ABC ):
         coords = { 
             "mixer":np.array(["I","Q"]), 
             }
+        
         match self.preprocess:
             case "shot":
                 dims_order = ["mixer","shot","prepare_state"]
