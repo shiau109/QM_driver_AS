@@ -51,14 +51,15 @@ class QMMeasurement( ABC ):
         output_coords = ["q_idx"] 
         match self.preprocess:
             case "average":
-                coords_name.extend["mixer"]
+                output_coords.extend["mixer"]
             case "shot":
-                coords_name.extend["mixer","index"]
+                output_coords.extend["mixer","index"]
             case "state":
-                coords_name.extend["index"]
+                output_coords.extend["index"]
             case _:
                 raise ValueError("self.preprocess has a wrong value.") 
-        for coord_name in coords_name: 
+            
+        for coord_name in output_coords: 
             if coord_name not in val:
                 raise ValueError(f"Must be a coord called {coord_name}.") 
 
