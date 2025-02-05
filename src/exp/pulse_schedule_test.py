@@ -15,8 +15,11 @@ from exp.cryoscope import Cryoscope
 from exp.exp_temp import ExpTemp
 from exp.zline_crosstalk import FluxCrosstalk
 
-
-my_exp = FluxCrosstalk(config, qmm)
+from exp.randomized_banchmarking_sq_z import randomized_banchmarking_sq
+my_exp = randomized_banchmarking_sq(config, qmm)
 my_exp.initializer = initializer(2000,mode='wait')
+my_exp.z_elements = ["q6_z"]
+
+# my_exp.gate_length = 16
 # my_exp.sweep_type = "overlap"
-my_exp.pulse_schedule_simulation(["con1", "con2"],20000)
+my_exp.pulse_schedule_simulation(["con1"],20000)

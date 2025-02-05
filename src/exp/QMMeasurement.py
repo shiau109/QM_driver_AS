@@ -3,12 +3,13 @@ from qm import SimulationConfig
 from qualang_tools.results import progress_counter, fetching_tool
 from qualang_tools.loops import from_array
 from qm.qua import *
-from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 from abc import ABC, abstractmethod
 import matplotlib.pyplot as plt
 import time
 from datetime import datetime
 from xarray import Dataset
+import numpy as np
+
 
 class QMMeasurement( ABC ):
 
@@ -17,18 +18,99 @@ class QMMeasurement( ABC ):
         self.config = config
         self.qmm = qmm
         self.fetch_mode = "live"
+        self.common_axis = None
+
+        self.__preprocess = "ave"
+        self.__output_coords = ["q_idx","mixer"]
+
+        self.__ro_elements = []
+
+
+    @property
+    def preprocess( self ):
+        """
+        only 'average', 'shot' can be set.\n
+        if discriminator is not None, self.__preprocess will be set to 'state' mode
+        """
+        return self.__preprocess
+    @preprocess.setter
+    def preprocess( self, val:str ):
+        if val in ["average","shot"]:
+            self.__preprocess = val
+        else:
+            self.__preprocess = "ave"
+
+    @property
+    def output_coords( self ):
+        """
+        For all mode, there must be a coord call "q_idx"\n
+        In 'average' mode, there must be a coord call "mixer"\n
+        In 'shot' mode, there must be coords call "mixer", "index".\n
+        """
+        return self.__output_coords
+    @output_coords.setter
+    def output_coords( self, val:list[str] ):
+        coords_name = ["q_idx"]
+         
+        match self.preprocess:
+            case "average":
+                coords_name.extend["mixer"]
+            case "shot":
+                coords_name.extend["mixer","index"]
+            case "state":
+                coords_name.extend["index"]
+            case _:
+                raise ValueError("self.preprocess has a wrong value.") 
+        for coord_name in coords_name: 
+            if coord_name not in val:
+                raise ValueError(f"Must be a coord called {coord_name}.") 
+
+    @property
+    def ro_elements( self ):
+        """
+        Should be list of str
+        Please make sure the names are register in config.
+        """
+        return self.__ro_elements
+    @ro_elements.setter
+    def ro_elements( self, val:list[str] ):
+        if not isinstance(val, list): new_val = [val]
+        else: new_val = val
+
+        if all(isinstance(item, str) for item in val):
+            self.__ro_elements = new_val
+        else:
+            raise TypeError("ro_elements should be a list of str")
+        
 
     @abstractmethod
     def _get_qua_program( self ):
         pass
 
-    @abstractmethod    
     def _get_fetch_data_list( self ):
-        pass
+        ro_ch_name = []
+        for r_name in self.ro_elements:
+            ro_ch_name.append(f"{r_name}_I")
+            ro_ch_name.append(f"{r_name}_Q")
 
-    @abstractmethod    
+
     def _data_formation( self )->Dataset:
-        pass
+        coords = { 
+            "mixer":np.array(["I","Q"]), 
+            }
+        match self.preprocess:
+            case "shot":
+                dims_order = ["mixer","shot","prepare_state"]
+                coords["shot"] = np.arange(self.shot_num)
+            case _:
+                dims_order = ["mixer","prepare_state"]
+
+        output_data = {}
+        for r_idx, r_name in enumerate(self.ro_elements):
+            data_array = np.array([ self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]])
+            output_data[r_name] = ( dims_order, np.squeeze(data_array))
+
+        dataset = xr.Dataset(output_data, coords=coords)
 
     def run( self, shot_num:int=None, save_path:str=None ):
 
