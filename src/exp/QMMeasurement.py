@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 import matplotlib.pyplot as plt
 import time
 from datetime import datetime
-from xarray import Dataset
+from xarray import DataArray
 import numpy as np
 
 
@@ -21,9 +21,9 @@ class QMMeasurement( ABC ):
         self.common_axis = None
 
         self.__preprocess = "ave"
-        self.__qua_coords = None
+        self.__qua_dim = None
+        self.__output_dim = None
         self.__output_coords = None
-
         self.__ro_elements = []
 
 
@@ -42,31 +42,62 @@ class QMMeasurement( ABC ):
             self.__preprocess = "ave"
 
     @property
+    def qua_dim( self )->list[str]:
+        """
+        Please write in the name of each for loop ( from outer loop to inner loop ) 
+        """
+        return self.__qua_dim
+    
+    @qua_dim.setter
+    def qua_dim( self, val:list[str] ):
+
+        qua_dim = val
+        output_dim = ["q_idx"]
+        self.__output_coords = {
+            "q_idx" : self.ro_elements
+        }
+
+        qua_dim.remove("index")
+
+        match self.preprocess:
+            case "average":
+                output_dim += ["mixer"]
+                self.__output_coords["mixer"] = np.array(["I","Q"])
+            
+            case "shot":
+                output_dim += ["mixer","index"]
+                self.__output_coords["mixer"] = np.array(["I","Q"])
+                self.__output_coords["index"] = np.arange(self.shot_num)
+                
+            case "state":
+                output_dim += ["index"]
+                self.__output_coords["index"] = np.arange(self.shot_num)
+                
+            case _:
+                raise ValueError("self.preprocess has a wrong value.") 
+            
+        self.__output_dim = output_dim + qua_dim
+
+
+    @property
+    def output_dim( self ):
+        """
+        For all mode, there must be a coord call "q_idx"\n
+        In 'average' mode, there must be a coord call "mixer"\n
+        In 'shot' mode, there must be coords call "mixer", "index".\n
+        """
+        
+        return self.__output_dim
+    
+    @property
     def output_coords( self ):
         """
         For all mode, there must be a coord call "q_idx"\n
         In 'average' mode, there must be a coord call "mixer"\n
         In 'shot' mode, there must be coords call "mixer", "index".\n
         """
-        output_coords = ["q_idx"] 
-        match self.preprocess:
-            case "average":
-                output_coords.extend["mixer"]
-            case "shot":
-                output_coords.extend["mixer","index"]
-            case "state":
-                output_coords.extend["index"]
-            case _:
-                raise ValueError("self.preprocess has a wrong value.") 
-            
-        for coord_name in output_coords: 
-            if coord_name not in val:
-                raise ValueError(f"Must be a coord called {coord_name}.") 
-
-        self.__output_coords +=self.__output_coords
-        return self.__output_coords
-
         
+        return self.__output_coords        
 
     @property
     def ro_elements( self ):
@@ -91,31 +122,48 @@ class QMMeasurement( ABC ):
         pass
 
     def _get_fetch_data_list( self ):
-        ro_ch_name = []
-        for r_name in self.ro_elements:
-            ro_ch_name.append(f"{r_name}_I")
-            ro_ch_name.append(f"{r_name}_Q")
-
-
-    def _data_formation( self )->Dataset:
-        coords = { 
-            "mixer":np.array(["I","Q"]), 
-            }
         
+        ro_ch_name = []
+
         match self.preprocess:
+            case "average":
+                for r_name in self.ro_elements:
+                    ro_ch_name.append(f"{r_name}_I")
+                    ro_ch_name.append(f"{r_name}_Q")
             case "shot":
-                dims_order = ["mixer","shot","prepare_state"]
-                coords["shot"] = np.arange(self.shot_num)
-            case _:
-                dims_order = ["mixer","prepare_state"]
+                for r_name in self.ro_elements:
+                    ro_ch_name.append(f"{r_name}_I")
+                    ro_ch_name.append(f"{r_name}_Q")
+            case "state":
+                for r_name in self.ro_elements:
+                    ro_ch_name.append(f"{r_name}_state")
+        return ro_ch_name
 
-        output_data = {}
-        for r_idx, r_name in enumerate(self.ro_elements):
-            data_array = np.array([ self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]])
-            output_data[r_name] = ( dims_order, np.squeeze(data_array))
+    def _data_formation( self )->DataArray:
 
-        dataset = xr.Dataset(output_data, coords=coords)
+        output_data = []
+        match self.preprocess:
+            case "average":
+                for r_idx, r_name in enumerate(self.ro_elements):
+                    data_array = np.array([ self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]])
+                    output_data.append( np.squeeze(data_array))
+                    raw_dataArray = DataArray(output_data, dims=["mixer"]+[x for x in self.qua_dim if x != "index"], coords=self.output_coords)
+            case "shot":
+                for r_idx, r_name in enumerate(self.ro_elements):
+                    data_array = np.array([ self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]])
+                    output_data.append( np.squeeze(data_array))
+                    raw_dataArray = DataArray(output_data, dims=["mixer"]+self.qua_dim, coords=self.output_coords)
 
+            case "state":
+                for r_idx, r_name in enumerate(self.ro_elements):
+                    data_array = np.array([ self.fetch_data[r_idx]])
+                    output_data.append( np.squeeze(data_array))
+                    raw_dataArray = DataArray(output_data, dims=self.qua_dim, coords=self.output_coords)
+
+        output_data = raw_dataArray.transpose(self.output_dim)
+
+        
+        return output_data
     def run( self, shot_num:int=None, save_path:str=None ):
 
         if shot_num is not None:

@@ -139,50 +139,6 @@ def state_tomo_singleRO_declare( resonators:list ):
 
     return I, I_st, Q, Q_st
 
-def state_tomo_measurement( iqdata_stream, process, q_name, resonators, thermalization_time=200, sequential=False, amp_modify=1.0, weights=""):
-    """
-        Only for 1Q 
-    """
-    (I, I_st, Q, Q_st) = iqdata_stream
-    if type(resonators) is not list:
-        resonators = [resonators]
-
-    if type(q_name) is list:
-        q_name = q_name[0]    
-    ro_channel_num = len(resonators)
-    basis = declare(int)
-    
-
-    with for_each_(basis, [0, 1, 2]):
-        wait(thermalization_time * u.us)
-
-        process()
-        align()
-        with switch_(basis, unsafe=True):
-            with case_(0):
-                pass
-            with case_(1):
-                play("y90", q_name)
-            with case_(2):
-                play("-x90", q_name)
-        # Measure resonator state after the sequence
-        align()
-        for idx, res in enumerate(resonators):
-            measure(
-                "readout" * amp(amp_modify),
-                f"{res}",
-                None,
-                dual_demod.full(weights + "cos", "out1", weights + "sin", "out2", I[idx]),
-                dual_demod.full(weights + "minus_sin", "out1", weights + "cos", "out2", Q[idx]),
-            )
-
-            if sequential and idx < ro_channel_num -1:
-                align(f"{res}", f"{resonators[idx+1]}")
-
-            save(I[idx], I_st[idx])
-            save(Q[idx], Q_st[idx])
-
-
 
 def tomo_pre_save_singleShot( iqdata_stream, q_name:list, resonators:list, suffix:str='' ):
     """
