@@ -9,7 +9,8 @@ config_obj, spec = import_config( link_path )
 from qspec.update import update_controlFreq, update_controlWaveform
 
 import numpy as np
-
+q_freq = 3.313  +0.025e-3
+LO = 3.363
 xy_infos = {
 
 # e.g.
@@ -22,58 +23,37 @@ xy_infos = {
 # },
 
     "q0":{   # unfinish
-        "q_freq": 3.05,     # GHz
-        "LO": 3.0,          # GHz
-        "pi_amp": 0.15,
-        "pi_len": 40,
+        "q_freq": q_freq,     # 3.398  -0.116e-3+0.017e-3   02;3.297
+        "LO": LO,          # GHz
+        "pi_amp": 0.1*0.1*0.909,
+        "pi_len": 2000,
         "90_corr": 1
     },
     "q1":{   
-        "q_freq": 4.049,    # GHz
-        "LO": 4.2,          # GHz
-        "pi_amp": 0.15*0.58,
-        "pi_len": 40,
+        "q_freq": q_freq,    # 
+        "LO": LO,          # GHz
+        "pi_amp": 0.1,
+        "pi_len": 2000,
         "90_corr": 1
     },
     "q2":{   # unfinish, maybe low T1
-        "q_freq": 4.79, # GHz
-        "LO": 4.7, # GHz
-        "pi_amp": 0.5,
-        "pi_len": 1000,
-        "90_corr": 1,
+        "q_freq": q_freq, # 3.15357-0.084e-3    02:3.051
+        "LO": LO, # GHz
+        "pi_amp": 0.1*0.1*1.13*0.9*1.002*1.061*0.999,
+        "pi_len": 2000,
+        "90_corr": 0.833*0.937*1.162*1.094*1.009,
         # "wf": "sin",
     },
-    "q3":{   
-        "q_freq": 3.627, # GHz
-        "LO": 3.7, # GHz
-        "pi_amp": 0.5,
-        "pi_len": 40,
-        "90_corr": 1
-    },
-    "q3":{
-        "q_freq": 4.69966,#4.6665+2.349e-3-1.621e-3+0.332e-3-1.126e-3-0.764e-3-2.067e-3-0.547e-3+0.074e-3,#4.6689-2.897e-3+0.415e-3+2.402e-3-1.236e-3,#4.546, # GHz
-        "LO": 4.85, # GHz
-        "pi_amp": 0.1114941471,
-        "pi_len": 40,
-        "90_corr": 1.01578436269,
-        'drag_coef': 0.3,
-        "anharmonicity": -200,
-        "AC_stark_detuning" : 0,
-        "wf": {
-            'dragg':{
-                'sfactor' : 4,
-            }
-        }
-    },
-    "q5":{   # unfinish, maybe low T1
-        "q_freq": 4.45, # GHz
-        "LO": 4.4, # GHz
-        "pi_amp": 0.5,
-        "pi_len": 40,
-        "90_corr": 1
+    "q3":{   # unfinish, maybe low T1
+        "q_freq": q_freq, # 3.313
+        "LO": LO, # GHz
+        "pi_amp": 0.1*0.149*0.5*0.979,
+        "pi_len": 2000,
+        "90_corr": 0.983*1.026*0.989,
+        # "wf": "sin",
     },
 }    
-updating_qubit = ["q0","q3"]
+updating_qubit = ["q0","q1", "q2","q3"]
 
 # name, q_freq(GHz), LO(GHz), amp, len, half
 # update_info = [['q1', 4.526-0.005, 4.60, 0.2*0.9*1.05*1.01, 40, 1.03 ]]

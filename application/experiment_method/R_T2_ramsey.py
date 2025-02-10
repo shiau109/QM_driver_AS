@@ -15,21 +15,22 @@ from exp.ramsey import Ramsey
 #Set parameters
 my_exp = Ramsey(config, qmm)
 from ab.QM_config_dynamic import initializer
-my_exp.initializer = initializer(100000,mode='wait')
-my_exp.ro_elements = ["q2_ro"]
-my_exp.xy_elements = ["q2_xy"]
-my_exp.virtual_detune = 1
-my_exp.max_time = 20
-my_exp.time_resolution = 0.020
-my_exp.shot_num = 400
+my_exp.initializer = initializer(2000000,mode='wait')
+my_exp.ro_elements = ["q0_ro", "q2_ro", "q3_ro"]
+my_exp.xy_elements = ["q3_xy"]
+my_exp.virtual_detune = 0.1
+my_exp.max_time = 500
+my_exp.time_resolution = 5
+my_exp.shot_num = 500
 
 #Repetition T2
 from exp.repetition_measurement import RepetitionMeasurement
 re_exp = RepetitionMeasurement()
 re_exp.exp_list = [my_exp]
 re_exp.exp_name = ["T2"]
-my_exp.shot_num = 400
-dataset = re_exp.run(100)
+my_exp.shot_num = 500
+dataset = re_exp.run(50)
+dataset = dataset["T2"]
 
 save_data = 1
 if save_data: 
@@ -38,11 +39,11 @@ if save_data:
     save_dir = link_config["path"]["output_root"]
     dp = DataPackager(save_dir, folder_label )
     dp.save_config(config)
-    dp.save_nc(dataset[re_exp.exp_name[0]],"ramseyT2_rep")
+    dp.save_nc(dataset,"ramseyT2_rep")
 
 #To plot the result of multiple measurements (2D graph and histogram), use the following block of code
 #================================================================================================#
-# from exp.plotting import PainterT2Repeat
-# painter = PainterT2Repeat()
-# figs = painter.plot(dataset[re_exp.exp_name[0]],folder_label)
-# if save_data: dp.save_figs( figs )
+from exp.plotting import PainterT2Repeat
+painter = PainterT2Repeat()
+figs = painter.plot(dataset,folder_label)
+if save_data: dp.save_figs( figs )

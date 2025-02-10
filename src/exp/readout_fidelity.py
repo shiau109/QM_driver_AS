@@ -11,6 +11,7 @@ from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 import numpy as np
 from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)
+import numpy as np
 import xarray as xr
 import time
 import numpy as np

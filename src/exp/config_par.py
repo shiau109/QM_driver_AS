@@ -27,3 +27,8 @@ def get_ro_length( element, config ):
 
     pulse_name = config["elements"][element]["operations"]["readout"]
     return config["pulses"][pulse_name]["length"]
+
+def get_pi_length( element, config ):
+
+    pulse_name = config["elements"][element]["operations"]["x180"]
+    return config["pulses"][pulse_name]["length"]

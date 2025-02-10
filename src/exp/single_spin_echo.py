@@ -6,6 +6,7 @@ import exp.config_par as gc
 import warnings
 from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 import xarray as xr
+import numpy as np
 warnings.filterwarnings("ignore")
 from qualang_tools.units import unit
 u = unit(coerce_to_integer=True)

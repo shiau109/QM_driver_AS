@@ -454,20 +454,20 @@ def plot_multi_crosstalk_3Dscalar(datasets):
 
     return figures
 
-import xarray as xr
-dataset1 = xr.open_dataset(r"C:\Users\admin\SynologyDrive\09 Data\Fridge Data\Qubit\20241107_DR3_5Q4C_0430#7\20241207data\pretty_crosstalk\20241209_013805_detector_q3_bias-0.1V_crosstalk_q8_long_drive_pulse_expectcrosstalk_0.1_0.1mius\data.nc")
-dataset2 = xr.open_dataset(r"C:\Users\admin\SynologyDrive\09 Data\Fridge Data\Qubit\20241107_DR3_5Q4C_0430#7\20241207data\pretty_crosstalk\20241209_013910_detector_q3_bias-0.1V_crosstalk_q4_long_drive_pulse_expectcrosstalk_0.1_0.1mius\data.nc")
-dataset3 = xr.open_dataset(r"C:\Users\admin\SynologyDrive\09 Data\Fridge Data\Qubit\20241107_DR3_5Q4C_0430#7\20241207data\pretty_crosstalk\20241209_014015_detector_q3_bias-0.1V_crosstalk_q7_long_drive_pulse_expectcrosstalk_0.1_0.1mius\data.nc")
+# import xarray as xr
+# dataset1 = xr.open_dataset(r"C:\Users\admin\SynologyDrive\09 Data\Fridge Data\Qubit\20241107_DR3_5Q4C_0430#7\20241207data\pretty_crosstalk\20241209_013805_detector_q3_bias-0.1V_crosstalk_q8_long_drive_pulse_expectcrosstalk_0.1_0.1mius\data.nc")
+# dataset2 = xr.open_dataset(r"C:\Users\admin\SynologyDrive\09 Data\Fridge Data\Qubit\20241107_DR3_5Q4C_0430#7\20241207data\pretty_crosstalk\20241209_013910_detector_q3_bias-0.1V_crosstalk_q4_long_drive_pulse_expectcrosstalk_0.1_0.1mius\data.nc")
+# dataset3 = xr.open_dataset(r"C:\Users\admin\SynologyDrive\09 Data\Fridge Data\Qubit\20241107_DR3_5Q4C_0430#7\20241207data\pretty_crosstalk\20241209_014015_detector_q3_bias-0.1V_crosstalk_q7_long_drive_pulse_expectcrosstalk_0.1_0.1mius\data.nc")
 
-datasets = []
-datasets.append(dataset1)
-datasets.append(dataset2)
-datasets.append(dataset3)
+# datasets = []
+# datasets.append(dataset1)
+# datasets.append(dataset2)
+# datasets.append(dataset3)
 
 
 
-figures = plot_multi_crosstalk_3Dscalar_with_fit(datasets)
-plt.show()
+# figures = plot_multi_crosstalk_3Dscalar_with_fit(datasets)
+# plt.show()
 
 
 
@@ -546,3 +546,54 @@ plt.show()
 #     crosstalk=(freq_plus - freq_minus)/(detector_z[1] - detector_z[0])
     
 #     return crosstalk
+
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
+
+def plot_array(array):
+    # 建立自訂顏色映射
+    colors = [(0, 0, 1), (1, 1, 1), (1, 0, 0)]  # 藍 -> 白 -> 紅
+    cmap = LinearSegmentedColormap.from_list("custom_colormap", colors, N=256)
+
+    # 建立圖形
+    fig, ax = plt.subplots()
+
+    # 將值為 1 的格子設為黃色
+    mask = (array == 1)
+    cmap_array = array.copy()
+    cmap_array[mask] = np.nan  # 將值為1的格子設為 NaN
+
+    # 繪製主要的熱圖
+    cax = ax.matshow(cmap_array, cmap=cmap, vmin=-np.max(np.abs(cmap_array)), vmax=np.max(np.abs(cmap_array)))
+
+    # 加上黃色區塊
+    for i in range(array.shape[0]):
+        for j in range(array.shape[1]):
+            if mask[i, j]:
+                ax.add_patch(plt.Rectangle((j - 0.5, i - 0.5), 1, 1, color='yellow'))
+            # 在格子中添加百分比數值，並設定較大的字體大小
+            percentage = array[i, j] * 100
+            ax.text(j, i, f"{percentage:.1f}%", ha='center', va='center', color='black', fontsize=12)
+            
+    # 加入色彩條
+    cbar = fig.colorbar(cax, ax=ax)
+    cbar.set_label("Value")
+
+    # 顯示網格線
+    ax.set_xticks(np.arange(-0.5, array.shape[1], 1), minor=True)
+    ax.set_yticks(np.arange(-0.5, array.shape[0], 1), minor=True)
+    ax.grid(which="minor", color="black", linestyle="-", linewidth=0.5)
+    ax.tick_params(which="minor", bottom=False, left=False)
+
+    plt.show()
+
+# 測試範例
+array = np.array([
+    [1, 0.070, 0.026, 0.016,],
+    [-0.061, 1, 0.056, 0.023,],
+    [-0.024, -0.057, 1, 0.045,],
+    [-0.012, -0.009, -0.052, 1,],
+])
+
+plot_array(array)
