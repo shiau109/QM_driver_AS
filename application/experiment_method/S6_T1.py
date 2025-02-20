@@ -15,12 +15,12 @@ from exp.relaxation_time import exp_relaxation_time
 
 #Set parameters
 my_exp = exp_relaxation_time(config, qmm)
-my_exp.initializer = initializer(100000,mode='wait')
-my_exp.ro_elements = ["q2_ro"]
-my_exp.xy_elements = ["q2_xy"]
-my_exp.max_time = 40
-my_exp.time_resolution = 0.4
-dataset = my_exp.run(400)
+my_exp.initializer = initializer(10000,mode='wait')
+my_exp.ro_elements = ["q1_ro"]
+my_exp.xy_elements = ["q1_xy"]
+my_exp.max_time = 5
+my_exp.time_resolution = 0.05
+dataset = my_exp.run(10000)
 
 #Save data
 save_data = 1
@@ -34,8 +34,17 @@ if save_data:
     dp.save_nc(dataset,"T1")
 
 # Plot
-from exp.plotting import PainterT1Single
-painter = PainterT1Single()
-figs = painter.plot(dataset,folder_label)
-if save_data: dp.save_figs( figs )
+# from exp.plotting import PainterT1Single
+# painter = PainterT1Single()
+# figs = painter.plot(dataset,folder_label)
+# if save_data: dp.save_figs( figs )
+from qcat.analysis.qubit.relaxation import  RelaxationAnalysis
+import matplotlib.pyplot as plt
+
+for ro_name, data in dataset.data_vars.items():
+    data.attrs = dataset.attrs
+    data.name = ro_name
+    my_ana = RelaxationAnalysis(data.sel(mixer="I"))
+    my_ana._start_analysis()
+    plt.show()
 

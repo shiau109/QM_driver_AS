@@ -55,11 +55,11 @@ def plot_analysis( data ):
         - N is the detector z point.
     """
     if data.attrs["measure_method"] == "long_drive":
-        figures = plot_crosstalk_fitting( data )
+        figures, crosstalk = plot_crosstalk_fitting( data )
     else:
-        figures = plot_crosstalk_FFT( data )
+        figures, crosstalk = plot_crosstalk_FFT( data )
 
-    return figures
+    return figures, crosstalk
 
 def plot_crosstalk_fitting(dataset):
     """
@@ -120,8 +120,10 @@ def plot_crosstalk_fitting(dataset):
 
         # 添加到 figures 列表
         figures.append((q, fig))
-
-    return figures
+    try:
+        return figures, -slope
+    except:
+        return figures, None
 from matplotlib.ticker import ScalarFormatter
 
 def plot_multi_crosstalk_3Dscalar_with_fit(datasets):
@@ -246,7 +248,7 @@ def plot_crosstalk_FFT(dataset):
         
         figures.append((q, fig))
 
-    return figures
+    return figures, crosstalk
 
 def _plot_rawdata( dataset, slope, ax=None ):
     """
@@ -475,12 +477,13 @@ def plot_multi_crosstalk_3Dscalar(datasets):
 
 
 # # Load the NetCDF file
-# file_path = r"C:\Users\admin\SynologyDrive\09 Data\Fridge Data\Qubit\20240920_DRKe_5Q4C\save_data\get_crosstalk\after\20240927_183531_q2q0_long_drive_pulse_expectcrosstalk_0.2_0.1mius\Zline_crosstalk_1.nc"
+file_path = r"C:\Users\admin\SynologyDrive\02 Data\Fridge Data\Qubit\20250206_DR4_20Q19C_OS241213_4+scallingQ\save_data\q9\20250208_143910_detector_q0_bias0.076V_crosstalk_q3_long_drive_pulse_expectcrosstalk_0.1_0.1mius\data.nc"
 
-# dataset = xr.open_dataset(file_path)
+dataset = xr.open_dataset(file_path)
 # # print(dataset)
 # # analysis_figures = plot_heatmap_with_ellipse(dataset)
-# analysis_figures = plot_analysis(dataset)
+analysis_figures = plot_analysis(dataset)
+plt.show()
 # raw_figures = plot_crosstalk_3Dscalar(dataset)
 
 # for q, fig in raw_figures:
@@ -551,49 +554,49 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 
-def plot_array(array):
-    # 建立自訂顏色映射
-    colors = [(0, 0, 1), (1, 1, 1), (1, 0, 0)]  # 藍 -> 白 -> 紅
-    cmap = LinearSegmentedColormap.from_list("custom_colormap", colors, N=256)
+# def plot_array(array):
+#     # 建立自訂顏色映射
+#     colors = [(0, 0, 1), (1, 1, 1), (1, 0, 0)]  # 藍 -> 白 -> 紅
+#     cmap = LinearSegmentedColormap.from_list("custom_colormap", colors, N=256)
 
-    # 建立圖形
-    fig, ax = plt.subplots()
+#     # 建立圖形
+#     fig, ax = plt.subplots()
 
-    # 將值為 1 的格子設為黃色
-    mask = (array == 1)
-    cmap_array = array.copy()
-    cmap_array[mask] = np.nan  # 將值為1的格子設為 NaN
+#     # 將值為 1 的格子設為黃色
+#     mask = (array == 1)
+#     cmap_array = array.copy()
+#     cmap_array[mask] = np.nan  # 將值為1的格子設為 NaN
 
-    # 繪製主要的熱圖
-    cax = ax.matshow(cmap_array, cmap=cmap, vmin=-np.max(np.abs(cmap_array)), vmax=np.max(np.abs(cmap_array)))
+#     # 繪製主要的熱圖
+#     cax = ax.matshow(cmap_array, cmap=cmap, vmin=-np.max(np.abs(cmap_array)), vmax=np.max(np.abs(cmap_array)))
 
-    # 加上黃色區塊
-    for i in range(array.shape[0]):
-        for j in range(array.shape[1]):
-            if mask[i, j]:
-                ax.add_patch(plt.Rectangle((j - 0.5, i - 0.5), 1, 1, color='yellow'))
-            # 在格子中添加百分比數值，並設定較大的字體大小
-            percentage = array[i, j] * 100
-            ax.text(j, i, f"{percentage:.1f}%", ha='center', va='center', color='black', fontsize=12)
+#     # 加上黃色區塊
+#     for i in range(array.shape[0]):
+#         for j in range(array.shape[1]):
+#             if mask[i, j]:
+#                 ax.add_patch(plt.Rectangle((j - 0.5, i - 0.5), 1, 1, color='yellow'))
+#             # 在格子中添加百分比數值，並設定較大的字體大小
+#             percentage = array[i, j] * 100
+#             ax.text(j, i, f"{percentage:.1f}%", ha='center', va='center', color='black', fontsize=12)
             
-    # 加入色彩條
-    cbar = fig.colorbar(cax, ax=ax)
-    cbar.set_label("Value")
+#     # 加入色彩條
+#     cbar = fig.colorbar(cax, ax=ax)
+#     cbar.set_label("Value")
 
-    # 顯示網格線
-    ax.set_xticks(np.arange(-0.5, array.shape[1], 1), minor=True)
-    ax.set_yticks(np.arange(-0.5, array.shape[0], 1), minor=True)
-    ax.grid(which="minor", color="black", linestyle="-", linewidth=0.5)
-    ax.tick_params(which="minor", bottom=False, left=False)
+#     # 顯示網格線
+#     ax.set_xticks(np.arange(-0.5, array.shape[1], 1), minor=True)
+#     ax.set_yticks(np.arange(-0.5, array.shape[0], 1), minor=True)
+#     ax.grid(which="minor", color="black", linestyle="-", linewidth=0.5)
+#     ax.tick_params(which="minor", bottom=False, left=False)
 
-    plt.show()
+#     plt.show()
 
-# 測試範例
-array = np.array([
-    [1, 0.070, 0.026, 0.016,],
-    [-0.061, 1, 0.056, 0.023,],
-    [-0.024, -0.057, 1, 0.045,],
-    [-0.012, -0.009, -0.052, 1,],
-])
+# # 測試範例
+# array = np.array([
+#     [1, 0.070, 0.026, 0.016,],
+#     [-0.061, 1, 0.056, 0.023,],
+#     [-0.024, -0.057, 1, 0.045,],
+#     [-0.012, -0.009, -0.052, 1,],
+# ])
 
-plot_array(array)
+# plot_array(array)

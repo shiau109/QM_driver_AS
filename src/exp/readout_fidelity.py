@@ -24,7 +24,7 @@ class ROFidelity( QMMeasurement ):
 
     Output:\n
     Dataset:\n
-    coords: "mixer","frequency","prepare_state"
+    coords: "mixer","frequency","prepared_state"
 
     """
     def __init__( self, config, qmm: QuantumMachinesManager ):
@@ -100,14 +100,14 @@ class ROFidelity( QMMeasurement ):
 
         coords = { 
             "mixer":np.array(["I","Q"]), 
-            "prepare_state": np.array([0,1]),
+            "prepared_state": np.array([0,1]),
             }
         match self.preprocess:
             case "shot":
-                dims_order = ["mixer","shot","prepare_state"]
-                coords["shot"] = np.arange(self.shot_num)
+                dims_order = ["mixer","index","prepared_state"]
+                coords["index"] = np.arange(self.shot_num)
             case _:
-                dims_order = ["mixer","prepare_state"]
+                dims_order = ["mixer","prepared_state"]
 
         output_data = {}
         for r_idx, r_name in enumerate(self.ro_elements):
