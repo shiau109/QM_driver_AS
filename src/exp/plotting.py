@@ -404,15 +404,20 @@ class PainterT1Single( RawDataPainter ):
 class PainterT1Repeat( RawDataPainter ):
         
     def _data_parser( self ):
-        from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting
-        
+        from qcat.analysis.qubit.relaxation import  RelaxationAnalysis
+
+        self.plot_data.attrs = self.dataset_attrs
+        self.plot_data.name = self.title
+
         dataarray = self.plot_data
         self.time = (dataarray.coords["time"].values)/1000
         self.acc_T1 = []
         for i in range(self.rep.shape[-1]):
-            fit_result = qubit_relaxation_fitting(self.time, dataarray.values[0][i])
-            self.acc_T1.append(fit_result.params["tau"].value)
-            self.acc_T1_dict[self.title] = self.acc_T1_dict.get(self.title, []) + [fit_result.params["tau"].value]
+            my_ana = RelaxationAnalysis(self.plot_data[0][i])
+            my_ana._start_analysis()
+            T1 = my_ana._export_result()
+            self.acc_T1.append(T1)
+            self.acc_T1_dict[self.title] = self.acc_T1_dict.get(self.title, []) + [T1]
         self.idata = dataarray.values[0]
 
         self.mean_t1 = np.mean(self.acc_T1)
@@ -435,10 +440,10 @@ class PainterT1Repeat( RawDataPainter ):
         ax[0].set_title(f"Time dependent T1")
         ax[0].set_xlabel("Wait time (us)")
         # ax[0].set_ylabel(f"Rep")
-        ax[0].set_ylabel(f"hour")
-        ax[0].pcolormesh( time, rep*29666.030540704727/5000/3600, idata, cmap='RdBu')
+        ax[0].set_ylabel(f"rep")
+        ax[0].pcolormesh( time, rep, idata, cmap='RdBu')
         if acc_T1 is not None:
-            ax[0].plot(acc_T1,rep*29666.030540704727/5000/3600)
+            ax[0].plot(acc_T1,rep)
 
         ax[1].set_title(f"{title} Histogram")
         ax[1].set_xlabel("T1 time")
@@ -478,6 +483,7 @@ class PainterT1Repeat( RawDataPainter ):
 
         self.output_fig = []
         self.acc_T1_dict = {}
+        self.dataset_attrs = dataset.attrs
         if "repetition" in dataset.coords:
             self.rep = dataset.coords["repetition"].values
             for ro_name, data in dataset.data_vars.items():
@@ -645,7 +651,7 @@ class PainterT2SpinEcho( RawDataPainter ):
 class PainterT2Repeat( RawDataPainter ):
         
     def _data_parser(self):
-        from qcat.analysis.common_fitting.fit_damped_oscillation import FitDampedOscillation
+        from qcat.analysis.function_fitting.fit_damped_oscillation import FitDampedOscillation
         from xarray import DataArray
         from numpy import mean, std
 
