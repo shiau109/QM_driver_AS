@@ -10,7 +10,9 @@ from exp.RO_macros import multiRO_declare, multiRO_measurement, multiRO_pre_save
 
 warnings.filterwarnings("ignore")
 import exp.config_par as gc
-import xarray as xr
+
+from xarray import DataArray
+
 from exp.QMMeasurement import QMMeasurement
 
 import numpy as np
@@ -37,6 +39,9 @@ class ROFreqSweep( QMMeasurement ):
         
         self.freq_range = ( -100, 100 )
         self.resolution = 1.
+        self.qua_dim = ["index","frequency"]
+
+        self.preprocess = "average"
 
     
 
@@ -50,7 +55,7 @@ class ROFreqSweep( QMMeasurement ):
             f = declare(int)  # QUA variable for the readout frequency --> Hz int 32 up to 2^32
             iqdata_stream = multiRO_declare( self.ro_elements )
             n = declare(int)
-            n_st = declare_stream()
+            outermost_st = declare_stream()
 
             with for_(n, 0, n < self.shot_num, n + 1):  # QUA for_ loop for averaging
                 with for_(*from_array(f, self.frequencies_qua)):  # QUA for_ loop for sweeping the frequency
@@ -69,33 +74,29 @@ class ROFreqSweep( QMMeasurement ):
                     # Readout
                     multiRO_measurement( iqdata_stream, self.ro_elements, weights="rotated_") 
                 # Save the averaging iteration to get the progress bar
-                save(n, n_st)
+                save(n, outermost_st)
 
             with stream_processing():
                 # Cast the data into a 1D vector, average the 1D vectors together and store the results on the OPX processor
                 multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.frequencies_qua),))
-                n_st.save("iteration")
+                outermost_st.save("outermost_i")
 
         return resonator_spec
 
-    def _get_fetch_data_list( self ):
-        return [f"{self.ro_elements[0]}_I", f"{self.ro_elements[0]}_Q", "iteration"]
 
-    def _data_formation( self ):
+    def _data_formation( self )->DataArray:
+
+        self.qua_dim=["index","frequency"]
+        self.output_data = super()._data_formation()
 
         frequencies_mhz = self.frequencies_qua/1e6 #  Unit in MHz
-        output_data = np.array([self.fetch_data[0],self.fetch_data[1]])
-        dataset = xr.Dataset(
-            {
-                self.ro_elements[0]: (["mixer","frequency"], output_data),
-            },
-            coords={"frequency": frequencies_mhz, "mixer":np.array(["I","Q"]) }
-        )
-        self._attribute_config()
-        dataset.attrs["ro_LO"] = self.ref_ro_LO
-        dataset.attrs["ro_IF"] = self.ref_ro_IF
+        self.output_data["frequency"] = frequencies_mhz
 
-        return dataset
+        self._attribute_config()
+        self.output_data.attrs["ro_LO"] = self.ref_ro_LO
+        self.output_data.attrs["ro_IF"] = self.ref_ro_IF
+
+        return self.output_data
 
     def _lin_freq_array( self ):
         return np.arange( self.freq_range[0]*u.MHz, self.freq_range[1]*u.MHz, self.resolution* u.MHz )

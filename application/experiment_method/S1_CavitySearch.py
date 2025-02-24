@@ -23,13 +23,13 @@ my_exp = ROFreqSweep(config, qmm)
 my_exp.freq_range = (-400, 400)
 my_exp.resolution = 0.1
 my_exp.initializer = initializer(2000,mode='wait')
-dataset = my_exp.run( 100 )
+dataarray = my_exp.run( 10 )
 # Plot
 import numpy as np
-idata = dataset["q0_ro"].sel(mixer='I').values
-qdata = dataset["q0_ro"].sel(mixer='Q').values
+idata = dataarray.sel(mixer='I').values
+qdata = dataarray.sel(mixer='Q').values
 zdata = idata+1j*qdata
-plt.plot(dataset.coords["frequency"].values,np.abs(zdata))
+plt.plot(dataarray.coords["frequency"].values,np.abs(zdata))
 plt.show()    
  
 

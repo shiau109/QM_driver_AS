@@ -9,6 +9,7 @@ import time
 from datetime import datetime
 from xarray import DataArray
 import numpy as np
+import copy
 
 
 class QMMeasurement( ABC ):
@@ -20,7 +21,7 @@ class QMMeasurement( ABC ):
         self.fetch_mode = "live"
         self.common_axis = None
 
-        self.__preprocess = "ave"
+        self.__preprocess = "average"
         self.__qua_dim = None
         self.__output_dim = None
         self.__output_coords = None
@@ -50,14 +51,15 @@ class QMMeasurement( ABC ):
     
     @qua_dim.setter
     def qua_dim( self, val:list[str] ):
-
-        qua_dim = val
+        
+        self.__qua_dim = copy.deepcopy(val) 
         output_dim = ["q_idx"]
         self.__output_coords = {
             "q_idx" : self.ro_elements
         }
-
-        qua_dim.remove("index")
+        
+        new_qua_dim = val
+        new_qua_dim.remove("index")
 
         match self.preprocess:
             case "average":
@@ -76,7 +78,7 @@ class QMMeasurement( ABC ):
             case _:
                 raise ValueError("self.preprocess has a wrong value.") 
             
-        self.__output_dim = output_dim + qua_dim
+        self.__output_dim = output_dim + new_qua_dim
 
 
     @property
@@ -137,35 +139,39 @@ class QMMeasurement( ABC ):
             case "state":
                 for r_name in self.ro_elements:
                     ro_ch_name.append(f"{r_name}_state")
-        return ro_ch_name
+        return ro_ch_name+["outermost_i"]
 
     def _data_formation( self )->DataArray:
 
         output_data = []
+        dims = ["q_idx"]
         match self.preprocess:
             case "average":
                 for r_idx, r_name in enumerate(self.ro_elements):
                     data_array = np.array([ self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]])
                     output_data.append( np.squeeze(data_array))
-                    raw_dataArray = DataArray(output_data, dims=["mixer"]+[x for x in self.qua_dim if x != "index"], coords=self.output_coords)
+                    print(["mixer"]+[x for x in self.qua_dim if x != "index"])
+                    print(self.output_coords)
+                    raw_dataArray = DataArray(output_data, dims=dims+["mixer"]+[x for x in self.qua_dim if x != "index"], coords=self.output_coords)
             case "shot":
                 for r_idx, r_name in enumerate(self.ro_elements):
                     data_array = np.array([ self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]])
                     output_data.append( np.squeeze(data_array))
-                    raw_dataArray = DataArray(output_data, dims=["mixer"]+self.qua_dim, coords=self.output_coords)
+                    raw_dataArray = DataArray(output_data, dims=dims+["mixer"]+self.qua_dim, coords=self.output_coords)
 
             case "state":
                 for r_idx, r_name in enumerate(self.ro_elements):
                     data_array = np.array([ self.fetch_data[r_idx]])
                     output_data.append( np.squeeze(data_array))
-                    raw_dataArray = DataArray(output_data, dims=self.qua_dim, coords=self.output_coords)
+                    raw_dataArray = DataArray(output_data, dims=dims+self.qua_dim, coords=self.output_coords)
 
-        output_data = raw_dataArray.transpose(self.output_dim)
+        self.output_data = raw_dataArray.transpose(self.output_dim)
 
-        
         return output_data
+    
     def run( self, shot_num:int=None, save_path:str=None ):
-
+        if self.qua_dim is None:
+            raise ValueError("self.qua_dim is not set in this experiment, please set name of loop dimensions")    
         if shot_num is not None:
             print(f"New setting {shot_num} shots")
             self.shot_num = shot_num
@@ -175,7 +181,6 @@ class QMMeasurement( ABC ):
         measurement_start_time = datetime.now()
 
         job = self._qm.execute(qua_program)
-
         match self.fetch_mode:
             case 'live':
                 self._results = fetching_tool(job, data_list=self._get_fetch_data_list(), mode="live")
