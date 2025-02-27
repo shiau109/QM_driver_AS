@@ -150,24 +150,21 @@ class QMMeasurement( ABC ):
                 for r_idx, r_name in enumerate(self.ro_elements):
                     data_array = np.array([ self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]])
                     output_data.append( np.squeeze(data_array))
-                    print(["mixer"]+[x for x in self.qua_dim if x != "index"])
-                    print(self.output_coords)
-                    raw_dataArray = DataArray(output_data, dims=dims+["mixer"]+[x for x in self.qua_dim if x != "index"], coords=self.output_coords)
+                raw_dataArray = DataArray(output_data, dims=dims+["mixer"]+[x for x in self.qua_dim if x != "index"], coords=self.output_coords)
             case "shot":
                 for r_idx, r_name in enumerate(self.ro_elements):
                     data_array = np.array([ self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]])
                     output_data.append( np.squeeze(data_array))
-                    raw_dataArray = DataArray(output_data, dims=dims+["mixer"]+self.qua_dim, coords=self.output_coords)
+                raw_dataArray = DataArray(output_data, dims=dims+["mixer"]+self.qua_dim, coords=self.output_coords)
 
             case "state":
                 for r_idx, r_name in enumerate(self.ro_elements):
                     data_array = np.array([ self.fetch_data[r_idx]])
                     output_data.append( np.squeeze(data_array))
-                    raw_dataArray = DataArray(output_data, dims=dims+self.qua_dim, coords=self.output_coords)
+                raw_dataArray = DataArray(output_data, dims=dims+self.qua_dim, coords=self.output_coords)
 
-        self.output_data = raw_dataArray.transpose(self.output_dim)
 
-        return output_data
+        return raw_dataArray
     
     def run( self, shot_num:int=None, save_path:str=None ):
         if self.qua_dim is None:
@@ -201,8 +198,11 @@ class QMMeasurement( ABC ):
         self._qm.close()
 
         self.output_data = self._data_formation()
+        # print(self.output_data)
+        # print(self.output_dim)
         self.output_data.attrs["start_time"] = str(measurement_start_time.strftime("%Y%m%d_%H%M%S"))
         self.output_data.attrs["end_time"] = str(measurement_end_time.strftime("%Y%m%d_%H%M%S"))
+        # self.output_data = self.output_data.transpose(*self.output_dim)
 
         if save_path is not None:
             self.output_data.to_netcdf(save_path)
