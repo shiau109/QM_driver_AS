@@ -14,11 +14,11 @@ from exp.single_spin_echo import SpinEcho
 # Set parameters
 my_exp = SpinEcho( config, qmm )
 from ab.QM_config_dynamic import initializer
-my_exp.initializer = initializer(100000,mode='wait')
-my_exp.ro_elements = ["q2_ro"]
-my_exp.xy_elements = ["q2_xy"]
-my_exp.time_range = ( 40, 40000 )
-my_exp.time_resolution = 400
+my_exp.initializer = initializer(500000,mode='wait')
+my_exp.ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", ]
+my_exp.xy_elements = ['q0_xy']
+my_exp.time_range = ( 40, 300000 )
+my_exp.time_resolution = 3000
 dataset = my_exp.run(400)
 
 #Save data
@@ -31,11 +31,16 @@ if save_data:
     dp.save_config(config)
     dp.save_nc(dataset,"SpinEchoT2_stat")
 
-# Plot
-from exp.plotting import PainterT2SpinEcho
-painter = PainterT2SpinEcho()
-figs = painter.plot(dataset,folder_label)
-if save_data: dp.save_figs( figs )
+from qcat.analysis.qubit.relaxation import  RelaxationAnalysis
+import matplotlib.pyplot as plt
+
+for ro_name, data in dataset.data_vars.items():
+    data.attrs = dataset.attrs
+    data.name = ro_name
+    my_ana = RelaxationAnalysis(data.sel(mixer="I"))
+    my_ana._start_analysis()
+    my_ana._plot_results()
+    plt.show()
 
 
 

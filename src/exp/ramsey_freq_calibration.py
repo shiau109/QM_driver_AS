@@ -18,6 +18,7 @@ u = unit(coerce_to_integer=True)
 
 import exp.config_par as gc
 import xarray as xr
+import numpy as np
 from exp.QMMeasurement import QMMeasurement
 
 class RamseyFreqCalibration( QMMeasurement ):
