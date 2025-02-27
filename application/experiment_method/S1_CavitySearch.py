@@ -26,6 +26,7 @@ my_exp.initializer = initializer(2000,mode='wait')
 dataarray = my_exp.run( 10 )
 # Plot
 import numpy as np
+dataarray = dataarray.sel(q_idx='q0_ro')
 idata = dataarray.sel(mixer='I').values
 qdata = dataarray.sel(mixer='Q').values
 zdata = idata+1j*qdata

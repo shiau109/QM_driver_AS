@@ -11,6 +11,8 @@ u = unit(coerce_to_integer=True)
 
 import xarray as xr
 import exp.config_par as gc
+from xarray import DataArray
+
 from exp.QMMeasurement import QMMeasurement
 
 import numpy as np
@@ -44,13 +46,17 @@ class ROFreqSweepPowerDep( QMMeasurement ):
         self.freq_range = ( -10, 10 )
         self.freq_resolution = 1
 
+        self.qua_dim = ["index","amp_ratio","frequency"]
+
+        self.preprocess = "average"
+
         
 
     def _get_qua_program( self ):
         
         self.amp_ratio = self._get_amp_ratio_array()
         print(self.amp_ratio)
-        self.freqs_qua = self._lin_freq_array()
+        self.frequencies_qua = self._lin_freq_array()
         self._attribute_config()
         
 
@@ -58,7 +64,7 @@ class ROFreqSweepPowerDep( QMMeasurement ):
         
             iqdata_stream = multiRO_declare( self.ro_elements )
             n = declare(int)
-            n_st = declare_stream()
+            outermost_st = declare_stream()
             df = declare(int)
             a = declare(fixed)
 
@@ -66,7 +72,7 @@ class ROFreqSweepPowerDep( QMMeasurement ):
                 # with for_(*qua_logspace(a, -1, 0, 2)):
                 with for_(*from_array(a, self.amp_ratio)):
                     
-                    with for_(*from_array(df, self.freqs_qua)):
+                    with for_(*from_array(df, self.frequencies_qua)):
                         # Initialization
                         if self.initializer is None:
                             wait(1*u.us, self.ro_elements)
@@ -84,51 +90,30 @@ class ROFreqSweepPowerDep( QMMeasurement ):
                         # Readout
                         multiRO_measurement( iqdata_stream, self.ro_elements, amp_modify=a, weights='rotated_' )
 
-                save(n, n_st)
+                save(n, outermost_st)
 
             with stream_processing():
-                n_st.save("iteration")
-                # Cast the data into a 2D matrix, average the 2D matrices together and store the results on the OPX processor
-                # NOTE that the buffering goes from the most inner loop (left) to the most outer one (right)
-                multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.amp_ratio), len(self.freqs_qua)))
-
+                # Cast the data into a 1D vector, average the 1D vectors together and store the results on the OPX processor
+                multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.amp_ratio), len(self.frequencies_qua),), stream_preprocess=self.preprocess)
+                outermost_st.save("outermost_i")
 
 
         return multi_res_spec_vs_amp
     
-    def _get_fetch_data_list( self ):
-        ro_ch_name = []
-        for r_name in self.ro_elements:
-            ro_ch_name.append(f"{r_name}_I")
-            ro_ch_name.append(f"{r_name}_Q")
+    def _data_formation( self )->DataArray:
 
-        data_list = ro_ch_name + ["iteration"]   
-        return data_list
-    
-    def _data_formation( self ):
+        self.qua_dim = ["index","amp_ratio","frequency"]
+        self.output_data = super()._data_formation()
 
-        output_data = {}
+        self.output_data["amp_ratio"] = self.amp_ratio
 
-        for r_idx, r_name in enumerate(self.ro_elements):
-            output_data[r_name] = ( ["mixer","amp_ratio","frequency"],
-                                np.array([ self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]]) )
+        frequencies_mhz = self.frequencies_qua/1e6 #  Unit in MHz
+        self.output_data["frequency"] = frequencies_mhz
 
-        freqs_mhz = self.freqs_qua/1e6
+        self.output_data.attrs["ro_LO"] = self.ref_ro_LO
+        self.output_data.attrs["ro_IF"] = self.ref_ro_IF
 
-        match self.amp_scale:
-            case "lin": output_amp_ratio = self.amp_ratio
-            case "log": output_amp_ratio = self.amp_ratio
-            case _: output_amp_ratio = self.amp_ratio
-
-        dataset = xr.Dataset(
-            output_data,
-            coords={ "mixer":np.array(["I","Q"]), "frequency": freqs_mhz, "amp_ratio": output_amp_ratio }
-        )
-
-        dataset.attrs["ro_LO"] = self.ref_ro_LO
-        dataset.attrs["ro_IF"] = self.ref_ro_IF
-
-        return dataset
+        return self.output_data
 
     def _lin_freq_array( self ):
 
@@ -160,27 +145,3 @@ class ROFreqSweepPowerDep( QMMeasurement ):
         for r in self.ro_elements:
             self.ref_ro_IF.append(gc.get_IF(r, self.config))
             self.ref_ro_LO.append(gc.get_LO(r, self.config))
-    
-
-def plot_power_dep_resonator( freqs, amp_ratio, data, ax=None, yscale="lin" ):
-    """
-    data shape ( 2, N, M )
-    2 is I,Q
-    N is freq
-    M is RO amp
-    """
-    idata = data[0]
-    qdata = data[1]
-    zdata = idata +1j*qdata
-    s21 = zdata/amp_ratio[:,None]
-
-    if ax==None:
-        fig, ax = plt.subplots()
-        ax.set_title('pcolormesh')
-        fig.show()
-    if yscale == "log":
-        pcm = ax.pcolormesh(freqs, amp_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
-    else:
-        pcm = ax.pcolormesh(freqs, amp_ratio, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
-    plt.colorbar(pcm, label='Value')
-

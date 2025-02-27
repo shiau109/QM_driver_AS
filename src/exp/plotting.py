@@ -1,6 +1,6 @@
 
 import matplotlib.pyplot as plt
-from exp.rofreq_sweep_power_dep import plot_power_dep_resonator
+# from exp.rofreq_sweep_power_dep import plot_power_dep_resonator
 from exp.rofreq_sweep_flux_dep import plot_flux_dep_resonator
 import numpy as np
 from matplotlib.figure import Figure
@@ -23,7 +23,7 @@ class RawDataPainter(ABC):
     def _data_parser( self ):
         pass
 
-    def plot( self, dataset:Dataset, fig_name:str, show:bool=True, **kwargs ):
+    def plot( self, dataarray:DataArray, fig_name:str, show:bool=True, **kwargs ):
 
         self.output_fig = []
 
@@ -46,9 +46,10 @@ class RawDataPainter(ABC):
                 self.best_para = value.x
                 self.best_inf = value.fun
 
-        if "repetition" in dataset.coords:
-            self.rep = dataset[0].coords["repetition"].values
-            for ro_name, datas in dataset[0].data_vars.items():
+        if "repetition" in dataarray.coords:
+            self.rep = dataarray.sel(mixer='I').coords["repetition"].values
+            for ro_name in dataarray.coords["q_idx"].values:
+                    datas = dataarray.sel(q_idx=ro_name)
                     data = datas.transpose("mixer","repetition","x")
                     self.plot_data = data
                     self.title = ro_name
@@ -59,8 +60,9 @@ class RawDataPainter(ABC):
                     self.output_fig.append((file_name,fig))
 
         else:
-            for ro_name, data in dataset.data_vars.items():
-                data.attrs = dataset.attrs
+            for ro_name in dataarray.coords["q_idx"].values:
+                data = dataarray.sel(q_idx=ro_name)
+                data.attrs = dataarray.attrs
                 self.plot_data = data
                 self.title = ro_name
                 self._data_parser()
