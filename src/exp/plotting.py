@@ -365,13 +365,22 @@ class PainterRabi( RawDataPainter ):
 class PainterT1Single( RawDataPainter ):
         
     def _data_parser( self ):
-        from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting
-    
+        # Initialize the fitting class
+        from qcat.analysis.function_fitting.fit_exp_decay import FitExponentialDecay
+        fit_exp_decay = FitExponentialDecay(self.plot_data.rename({"time": "x"}))
+
+        # Generate initial parameter guesses
+        guess_params = fit_exp_decay.guess()
+
+        # Perform the fitting process
+        fit_result = fit_exp_decay.fit()
+        self.fit_result = fit_result
+
         dataarray = self.plot_data
         self.time = (dataarray.coords["time"].values)/1000
         idata = dataarray.values[0]
         qdata = dataarray.values[1]
-        self.fit_result_i = qubit_relaxation_fitting(self.time, idata)
+        self.fit_result_i = self.fit_result(self.time, idata)
         self.fit_result_q = qubit_relaxation_fitting(self.time, qdata)
         self.zdata = idata +1j*qdata
 

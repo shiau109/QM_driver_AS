@@ -29,6 +29,10 @@ class XYAmpCalibraion( QMMeasurement ):
         self.amp_modify_resolution = None
         self.initializer = None
 
+        self.qua_dim = ["index","sequence", "amplitude_ratio"]
+
+        self.preprocess = "average"
+
     def _get_qua_program(self):
 
         if self.amp_modify_range is None:
@@ -43,7 +47,7 @@ class XYAmpCalibraion( QMMeasurement ):
             a = declare(fixed)  # QUA variable for the DRAG coefficient pre-factor
             r_idx = declare(int)  # QUA variable for the measured 'I' quadrature
             iqdata_stream = multiRO_declare( self.ro_elements )
-            n_st = declare_stream()  # Stream for the averaging iteration 'n'
+            outermost_st = declare_stream()  # Stream for the averaging iteration 'n'
             
             with for_(n, 0, n < self.shot_num, n + 1):
                 with for_each_(r_idx, [0, 1]):
@@ -76,36 +80,24 @@ class XYAmpCalibraion( QMMeasurement ):
                             # Readout
                         multiRO_measurement(iqdata_stream, self.ro_elements, weights="rotated_")         
                     
-                save(n, n_st)
+                save(n, outermost_st)
             with stream_processing():
                 # Cast the data into a 1D vector, average the 1D vectors together and store the results on the OPX processor
-                multiRO_pre_save(iqdata_stream, self.ro_elements, (2, amp_len))
-                n_st.save("iteration")
+                multiRO_pre_save(iqdata_stream, self.ro_elements, (2, amp_len), stream_preprocess=self.preprocess)
+                outermost_st.save("outermost_i")
 
         return qua_prog
     
-    def _get_fetch_data_list( self ):
-
-        ro_ch_name = []
-        for r_name in self.ro_elements:
-            ro_ch_name.append(f"{r_name}_I")
-            ro_ch_name.append(f"{r_name}_Q")
-        data_list = ro_ch_name + ["iteration"]
-        return data_list
-    
     def _data_formation( self ):
+        self.qua_dim = ["index","sequence", "amplitude_ratio"]
+        self.output_data = super()._data_formation()
+
+        self.output_data["sequence"] = ["x180","x90"]
+
         param_val = self.amp_ratios
+        self.output_data["amplitude_ratio"] = param_val
 
-        output_data = {}
-        for r_idx, r_name in enumerate(self.ro_elements):
-            output_data[r_name] = ( ["mixer", "sequence", "amplitude_ratio"],
-                                np.array([self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]]))
-        dataset = xr.Dataset(
-            output_data,
-            coords={"mixer":np.array(["I","Q"]), "sequence":["x180","x90"], "amplitude_ratio": param_val}
-        )
-
-        return dataset
+        return self.output_data
             
     def _lin_amp_ratio_array( self ):
         amp_r1_qua = self.amp_modify_range[0]

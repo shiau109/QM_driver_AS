@@ -19,10 +19,10 @@ from exp.readout_fidelity import ROFidelity
 
 my_exp = ROFidelity(config, qmm)
 my_exp.initializer = initializer(200000,mode='wait')
-my_exp.ro_elements = ["q0_ro"]
-my_exp.xy_elements = ['q0_xy']
+my_exp.ro_elements = ["q2_ro"]
+my_exp.xy_elements = ['q2_xy']
 
-dataarray = my_exp.run(1000)
+dataarray = my_exp.run(10000)
 
 
 save_data = True

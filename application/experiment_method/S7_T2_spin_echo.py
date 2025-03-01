@@ -19,7 +19,7 @@ my_exp.ro_elements = ["q2_ro"]
 my_exp.xy_elements = ["q2_xy"]
 my_exp.time_range = ( 40, 40000 )
 my_exp.time_resolution = 400
-dataset = my_exp.run(400)
+dataarray = my_exp.run(400)
 
 #Save data
 save_data = 1
@@ -29,14 +29,23 @@ if save_data:
     save_dir = link_config["path"]["output_root"]
     dp = DataPackager( save_dir, folder_label )
     dp.save_config(config)
-    dp.save_nc(dataset,"SpinEchoT2_stat")
+    dp.save_nc(dataarray,"SpinEchoT2_stat")
 
 # Plot
-from exp.plotting import PainterT2SpinEcho
-painter = PainterT2SpinEcho()
-figs = painter.plot(dataset,folder_label)
-if save_data: dp.save_figs( figs )
+# from exp.plotting import PainterT2SpinEcho
+# painter = PainterT2SpinEcho()
+# figs = painter.plot(dataset,folder_label)
+# if save_data: dp.save_figs( figs )
 
+from qcat.analysis.qubit.relaxation import  RelaxationAnalysis
+import matplotlib.pyplot as plt
+figs = []
+for ro_name in dataarray.coords["q_idx"].values:
+    data = dataarray.sel(q_idx=ro_name)
+    data.attrs = dataarray.attrs
+    data.name = ro_name
+    my_ana = RelaxationAnalysis(data.sel(mixer="I"))
+    my_ana._start_analysis()
+    figs.append((data.name,my_ana.fig))
 
-
-
+dp.save_figs( figs )

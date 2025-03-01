@@ -16,11 +16,11 @@ from exp.relaxation_time import exp_relaxation_time
 #Set parameters
 my_exp = exp_relaxation_time(config, qmm)
 my_exp.initializer = initializer(100000,mode='wait')
-my_exp.ro_elements = ["q2_ro"]
-my_exp.xy_elements = ["q2_xy"]
+my_exp.ro_elements = ["q0_ro"]
+my_exp.xy_elements = ["q0_xy"]
 my_exp.max_time = 40
 my_exp.time_resolution = 0.4
-dataset = my_exp.run(400)
+dataarray = my_exp.run(400)
 
 #Save data
 save_data = 1
@@ -31,11 +31,23 @@ if save_data:
     save_dir = link_config["path"]["output_root"]
     dp = DataPackager( save_dir, folder_label )
     dp.save_config(config)
-    dp.save_nc(dataset,"T1")
+    dp.save_nc(dataarray,"T1")
 
 # Plot
-from exp.plotting import PainterT1Single
-painter = PainterT1Single()
-figs = painter.plot(dataset,folder_label)
-if save_data: dp.save_figs( figs )
+# from exp.plotting import PainterT1Single
+# painter = PainterT1Single()
+# figs = painter.plot(dataset,folder_label)
+# if save_data: dp.save_figs( figs )
 
+from qcat.analysis.qubit.relaxation import  RelaxationAnalysis
+import matplotlib.pyplot as plt
+figs = []
+for ro_name in dataarray.coords["q_idx"].values:
+    data = dataarray.sel(q_idx=ro_name)
+    data.attrs = dataarray.attrs
+    data.name = ro_name
+    my_ana = RelaxationAnalysis(data.sel(mixer="I"))
+    my_ana._start_analysis()
+    figs.append((data.name,my_ana.fig))
+
+dp.save_figs( figs )
