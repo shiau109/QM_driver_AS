@@ -21,14 +21,14 @@ from exp.plotting import plot_and_save_rabi
 my_exp = RabiTime(config, qmm)
 my_exp.initializer = initializer(20000,mode='wait')
 
-my_exp.ro_elements = ["q5_ro"]
-my_exp.xy_elements = ['q5_xy']
+my_exp.ro_elements = ["q0_ro"]
+my_exp.xy_elements = ['q0_xy']
 
 my_exp.amp_range = (0, 2) 
 my_exp.amp_resolution = 0.05
 
-my_exp.freq_range = (-3,3)
-my_exp.freq_resolution = 1
+my_exp.freq_range = (-10,10)
+my_exp.freq_resolution = 0.5
 
 
 my_exp.process = "power"

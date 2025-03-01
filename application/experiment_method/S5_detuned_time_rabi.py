@@ -21,8 +21,8 @@ from exp.plotting import plot_and_save_rabi
 my_exp = RabiTime(config, qmm)
 my_exp.initializer = initializer(20000,mode='wait')
 
-my_exp.ro_elements = ["q3_ro"]
-my_exp.xy_elements = ['q3_xy']
+my_exp.ro_elements = ["q1_ro", "q3_ro"]
+my_exp.xy_elements = ['q1_xy']
 
 my_exp.freq_range = (-20,20)
 my_exp.freq_resolution = 2

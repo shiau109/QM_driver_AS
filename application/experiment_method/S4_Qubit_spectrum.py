@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 # Start meausrement
 from exp.xyfreq_sweep import XYFreq
 my_exp = XYFreq(config, qmm)
-my_exp.ro_elements = ["q3_ro"]
+my_exp.ro_elements = ["q2_ro", "q3_ro"]
 my_exp.xy_elements = ['q3_xy']
 my_exp.initializer=initializer(10000,mode='wait')
 my_exp.xy_driving_time = 20

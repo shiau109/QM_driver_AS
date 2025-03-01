@@ -19,10 +19,10 @@ from exp.readout_fidelity import ROFidelity
 
 my_exp = ROFidelity(config, qmm)
 my_exp.initializer = initializer(200000,mode='wait')
-my_exp.ro_elements = ["q0_ro","q1_ro"]
-my_exp.xy_elements = ['q0_xy','q1_xy']
+my_exp.ro_elements = ["q0_ro"]
+my_exp.xy_elements = ['q0_xy']
 
-dataset = my_exp.run(1000)
+dataarray = my_exp.run(1000)
 
 
 save_data = True
@@ -37,11 +37,18 @@ if save_data:
     save_dir = link_config["path"]["output_root"]
     dp = DataPackager( save_dir, folder_label )
     dp.save_config(config)
-    dp.save_nc(dataset,folder_label)
+    dp.save_nc(dataarray,folder_label)
 
-from exp.plotting import plot_and_save_readout_fidelity
-figs = plot_and_save_readout_fidelity(dataset, folder_label, save_data)
-dp.save_figs( figs )
+from qcat.visualization.readout_fidelity import plot_readout_fidelity
+from qcat.analysis.state_discrimination.readout_fidelity import GMMROFidelity
+for ro_name in dataarray.coords["q_idx"].values:
+    datas = dataarray.sel(q_idx=ro_name).drop_vars("q_idx")
+    my_ana = GMMROFidelity()
+    my_ana._import_data(datas)
+    print(my_ana.raw_data)
+    my_ana._start_analysis()
+
+    plot_readout_fidelity(datas, my_ana, my_ana.export_G1DROFidelity())
 
 
 
