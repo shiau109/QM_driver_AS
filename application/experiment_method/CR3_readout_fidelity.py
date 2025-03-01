@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 from exp.readout_fidelity import ROFidelity
 
 my_exp = ROFidelity(config, qmm)
-my_exp.initializer = initializer(200000,mode='wait')
+my_exp.initializer = initializer(2000000,mode='wait')
 my_exp.ro_elements = ["q1_ro"]
 my_exp.xy_elements = ['q1_xy']
 
@@ -42,13 +42,16 @@ if save_data:
 
 from qcat.visualization.readout_fidelity import plot_readout_fidelity
 from qcat.analysis.state_discrimination.readout_fidelity import GMMROFidelity
+figs = []
 for var_name, data in dataset.data_vars.items():
     print(var_name)
     my_ana = GMMROFidelity()
     my_ana._import_data(data)
     my_ana._start_analysis()
 
-    plot_readout_fidelity(data, my_ana, my_ana.export_G1DROFidelity())
+    figs.append((var_name, plot_readout_fidelity(data, my_ana, my_ana.export_G1DROFidelity())))
+
+dp.save_figs( figs )
 
 
 
