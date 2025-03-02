@@ -51,7 +51,6 @@ class XYFreqFlux( QMMeasurement ):
         self.z_elements = ["q0_z"]
         self.xy_elements = ["q4_xy"]
         
-        self.preprocess = "ave"
         self.initializer = None
         
         self.sweep_type = "z_pulse" #z_pulse or overlap
@@ -65,6 +64,10 @@ class XYFreqFlux( QMMeasurement ):
 
         self.parametric_drive = 0
         self.drive_element = "q1_z"
+
+        self.qua_dim = ["index","flux","frequency"]
+
+        self.preprocess = "average"
         
 
     def _get_qua_program( self ):
@@ -80,7 +83,7 @@ class XYFreqFlux( QMMeasurement ):
 
             iqdata_stream = multiRO_declare( self.ro_elements )
             n = declare(int)  
-            n_st = declare_stream()
+            outermost_st = declare_stream()
             df = declare(int)  
             r_z_amp = declare(fixed)  
 
@@ -113,59 +116,36 @@ class XYFreqFlux( QMMeasurement ):
                         multiRO_measurement( iqdata_stream, self.ro_elements, weights='rotated_'  )
 
                     # assign(index, index + 1)
-                save(n, n_st)
+                save(n, outermost_st)
             with stream_processing():
-                n_st.save("iteration")
-                multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.qua_z_amp_ratio_array), len(self.qua_freqs)))
+                outermost_st.save("outermost_i")
+                multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.qua_z_amp_ratio_array), len(self.qua_freqs)), stream_preprocess=self.preprocess)
 
         return qua_prog
-        
-
-        
-    
-    def _get_fetch_data_list( self ):
-        ro_ch_name = []
-        for r_name in self.ro_elements:
-            ro_ch_name.append(f"{r_name}_I")
-            ro_ch_name.append(f"{r_name}_Q")
-
-        data_list = ro_ch_name + ["iteration"]   
-        return data_list
     
     def _data_formation( self ):
-        freqs_mhz = self.qua_freqs/1e6
+        self.qua_dim = ["index","flux","frequency"]
+        self.output_data = super()._data_formation()
+
         amp_ratio = self.qua_z_amp_ratio_array
-        coords = { 
-            "mixer":np.array(["I","Q"]),
-            "amp_ratio":amp_ratio,
-            "frequency": freqs_mhz,
-            #"prepare_state": np.array([0,1])
-            }
-        match self.preprocess:
-            case "shot":
-                dims_order = ["mixer","shot","amp_ratio","frequency"]
-                coords["shot"] = np.arange(self.shot_num)
-            case _:
-                dims_order = ["mixer","amp_ratio","frequency"]
+        self.output_data["flux"] = amp_ratio*self.z_amp[0]
 
-        output_data = {}
-        for r_idx, r_name in enumerate(self.ro_elements):
-            data_array = np.array([ self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]])
-            output_data[r_name] = ( dims_order, np.squeeze(data_array))
+        freqs_mhz = self.qua_freqs/1e6
+        self.output_data["frequency"] = freqs_mhz
+        
 
-        dataset = xr.Dataset( output_data, coords=coords )
 
         # dataset = dataset.transpose("mixer", "prepare_state", "frequency", "amp_ratio")
 
         self._attribute_config()
-        dataset.attrs["ro_LO"] = self.ref_ro_LO
-        dataset.attrs["ro_IF"] = self.ref_ro_IF
-        dataset.attrs["xy_LO"] = self.ref_xy_LO
-        dataset.attrs["xy_IF"] = self.ref_xy_IF
-        dataset.attrs["z_offset"] = self.z_offset
+        self.output_data.attrs["ro_LO"] = self.ref_ro_LO
+        self.output_data.attrs["ro_IF"] = self.ref_ro_IF
+        self.output_data.attrs["xy_LO"] = self.ref_xy_LO
+        self.output_data.attrs["xy_IF"] = self.ref_xy_IF
+        self.output_data.attrs["z_offset"] = self.z_offset
 
-        dataset.attrs["z_amp_const"] = self.z_amp
-        return dataset
+        self.output_data.attrs["z_amp_const"] = self.z_amp
+        return self.output_data
 
     def _attribute_config( self ):
         self.ref_ro_IF = []
