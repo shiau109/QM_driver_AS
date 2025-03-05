@@ -163,6 +163,8 @@ class QMMeasurement( ABC ):
                     output_data.append( np.squeeze(data_array))
                 raw_dataArray = DataArray(output_data, dims=dims+self.qua_dim, coords=self.output_coords)
 
+        raw_dataArray.attrs["method"] = self.preprocess
+        raw_dataArray.attrs["system"] = "QM"
 
         return raw_dataArray
     

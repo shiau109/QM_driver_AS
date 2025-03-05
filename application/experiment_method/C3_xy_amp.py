@@ -18,8 +18,9 @@ from ab.QM_config_dynamic import initializer
 my_exp.initializer = initializer(100000,mode='wait')
 my_exp.ro_elements = ["q1_ro"]
 my_exp.xy_elements = ["q1_xy"]
-my_exp.sequence_repeat = 30
-dataset = my_exp.run(400)
+my_exp.sequence_repeat = 1
+my_exp.range_modifier = 1
+dataarray = my_exp.run(400)
 # import xarray as xr
 # dataset = xr.open_dataset(r"d:\Data\Qubit\5Q4C0430\20241121_DR3_5Q4C_0430#7_q2q3\20250111_194355_xy_amp\xy_amp.nc")
 
@@ -36,7 +37,7 @@ save_data = 1
 folder_label = "xy_amp" #your data and plots will be saved under a new folder with this name
 if save_data: 
     dp.save_config(config)
-    dp.save_nc(dataset,folder_label)
+    dp.save_nc(dataarray,folder_label)
 
 # Plot
 save_plot = 1
@@ -44,14 +45,14 @@ if save_plot:
     from data_parser.qcat_temp import QMM_dataset
     from qcat.analysis.qubit.calibration_xyamp import CalibrationXYAmp
     figs = []
-    for sq_data in QMM_dataset(dataset):
-
-        # change format
-        sq_data = sq_data.sel(mixer="I").rename({"amplitude_ratio": "amplitude"})
+    for ro_name in dataarray.coords["q_idx"].values:
+        data = dataarray.sel(q_idx=ro_name)
+        data.attrs = dataarray.attrs
+        data.name = ro_name
         # Analysis
-        my_ana = CalibrationXYAmp( sq_data )
+        my_ana = CalibrationXYAmp( data.sel(mixer="I") )
         my_ana._start_analysis()
 
         # Plot
-        figs.append((sq_data.name,my_ana.fig))
+        figs.append((data.name,my_ana.fig))
     dp.save_figs( figs )

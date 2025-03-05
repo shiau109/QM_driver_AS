@@ -38,6 +38,8 @@ class ROFidelity( QMMeasurement ):
         self.amp_mod_range = (0.5, 1.5)
         self.amp_resolution = 0.1
 
+        self.qua_dim = ["index","prepare_state"]
+
         self.preprocess = "shot"
 
     def _get_qua_program( self ):
@@ -52,7 +54,7 @@ class ROFidelity( QMMeasurement ):
             iqdata_stream = multiRO_declare( self.ro_elements )
 
             n = declare(int)
-            n_st = declare_stream()
+            outermost_st = declare_stream()
             p_idx = declare(int)
             with for_(n, 0, n < self.shot_num, n + 1):
 
@@ -78,52 +80,30 @@ class ROFidelity( QMMeasurement ):
                     align()
                     # Readout
                     multiRO_measurement(iqdata_stream, self.ro_elements, weights="rotated_")  
-                save(n, n_st)
+                save(n, outermost_st)
 
             with stream_processing():
-                n_st.save("iteration")
-                # Save all streamed points for plotting the IQ blobs
-                multiRO_pre_save( iqdata_stream, self.ro_elements, ( self.shot_num, 2 ), stream_preprocess="shot" )
+                # Cast the data into a 1D vector, average the 1D vectors together and store the results on the OPX processor
+                multiRO_pre_save( iqdata_stream, self.ro_elements, (2,), stream_preprocess=self.preprocess)
+                outermost_st.save("outermost_i")
 
         return iq_blobs
     
-    def _get_fetch_data_list( self ):
-        ro_ch_name = []
-        for r in self.ro_elements:
-            ro_ch_name.append(f"{r}_I")
-            ro_ch_name.append(f"{r}_Q")
-        data_list = ro_ch_name + ["iteration"]   
-        return data_list
-    
     def _data_formation( self ):
+        self.qua_dim = ["index","prepare_state"]
+        self.output_data = super()._data_formation()
 
-        coords = { 
-            "mixer":np.array(["I","Q"]), 
-            "prepare_state": np.array([0,1]),
-            }
-        match self.preprocess:
-            case "shot":
-                dims_order = ["mixer","shot","prepare_state"]
-                coords["shot"] = np.arange(self.shot_num)
-            case _:
-                dims_order = ["mixer","prepare_state"]
-
-        output_data = {}
-        for r_idx, r_name in enumerate(self.ro_elements):
-            data_array = np.array([ self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]])
-            output_data[r_name] = ( dims_order, np.squeeze(data_array))
-
-        dataset = xr.Dataset(output_data, coords=coords)
+        self.output_data["prepare_state"] = [0, 1]
 
         self._attribute_config()
-        dataset.attrs["ro_LO"] = self.ref_ro_LO
-        dataset.attrs["ro_IF"] = self.ref_ro_IF
-        dataset.attrs["xy_LO"] = self.ref_xy_LO
-        dataset.attrs["xy_IF"] = self.ref_xy_IF
-        dataset.attrs["xy_elements"] = self.xy_elements
+        self.output_data.attrs["ro_LO"] = self.ref_ro_LO
+        self.output_data.attrs["ro_IF"] = self.ref_ro_IF
+        self.output_data.attrs["xy_LO"] = self.ref_xy_LO
+        self.output_data.attrs["xy_IF"] = self.ref_xy_IF
+        self.output_data.attrs["xy_elements"] = self.xy_elements
 
 
-        return dataset
+        return self.output_data
 
     def _attribute_config( self ):
         self.ref_ro_IF = []

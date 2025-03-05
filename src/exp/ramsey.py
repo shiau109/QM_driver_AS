@@ -36,6 +36,11 @@ class Ramsey( QMMeasurement ):
         self.initializer = None
         self.simulate = False
         self.freq_calibration = False
+
+        self.qua_dim = ["index","time"]
+
+        self.preprocess = "average"
+
     def _get_qua_program( self ):
 
         cc_resolution = (self.time_resolution/4.) *u.us
@@ -49,7 +54,7 @@ class Ramsey( QMMeasurement ):
         with program() as ramsey:
             iqdata_stream = multiRO_declare( self.ro_elements )
             n = declare(int)
-            n_st = declare_stream()
+            outermost_st = declare_stream()
             cc = declare(int)  # QUA variable for the idle time, unit in clock cycle
             phi = declare(fixed)  # Phase to apply the virtual Z-rotation
             with for_(n, 0, n < self.shot_num, n + 1):
@@ -85,100 +90,17 @@ class Ramsey( QMMeasurement ):
                     
 
                 # Save the averaging iteration to get the progress bar
-                save(n, n_st)
+                save(n, outermost_st)
 
             with stream_processing():
-                n_st.save("iteration")
-                multiRO_pre_save(iqdata_stream, self.ro_elements, (time_len,) )
+                # Cast the data into a 1D vector, average the 1D vectors together and store the results on the OPX processor
+                multiRO_pre_save( iqdata_stream, self.ro_elements, (time_len, ), stream_preprocess=self.preprocess)
+                outermost_st.save("outermost_i")
         return ramsey
     
-    def _get_fetch_data_list( self ):
-        ro_ch_name = []
-        for r_name in self.ro_elements:
-            ro_ch_name.append(f"{r_name}_I")
-            ro_ch_name.append(f"{r_name}_Q")
-
-        data_list = ro_ch_name + ["iteration"]   
-        return data_list
-    
     def _data_formation( self ):
-        output_data = {}
+        self.qua_dim = ["index","time"]
+        self.output_data = super()._data_formation()
 
-        for r_idx, r_name in enumerate(self.ro_elements):
-            output_data[r_name] = ( ["mixer","time"],
-                                np.array([self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]]) )
-        dataset = xr.Dataset(
-            output_data,
-            coords={ "mixer":np.array(["I","Q"]), "time": self.evo_time }
-        )
-
-        return dataset
-       
-def T2_fitting(signal):
-    try:
-        fit = Fit()
-        decay_fit = fit.ramsey(4 * idle_times, signal, plot=False)
-        qubit_T2 = np.round(np.abs(decay_fit["T2"][0]) / 4) * 4
-    except Exception as e:     
-        print(f"An error occurred: {e}")  
-        qubit_T2 = 0
-    return qubit_T2
-
-def multi_T2_exp( repeat, time_max,time_resolution,ro_element,xy_elements,n_avg,config,qmm,virtual_detune=0,initializer=None ):
-
-    raw_data = {}
-    repetition = np.arange(repeat)
-    for r in ro_element:
-        raw_data[r] = []
-
-    for i in range(repeat):
-        print(f"{i}th T2")
-        dataset = exp_ramsey( time_max,time_resolution,ro_element,xy_elements,n_avg,config,qmm,virtual_detune=virtual_detune,initializer=initializer )
-        time = dataset.coords["time"].values
-        for ro_name, data in dataset.data_vars.items():
-            raw_data[ro_name].append(data)
-
-    output_data = {}
-    for r in ro_element:
-        output_data[r] = (["repetition","mixer","time"], np.array(raw_data[r]))
-
-    dataset = xr.Dataset(
-        output_data,
-        coords={ "mixer":np.array(["I","Q"]), "time": time, "repetition": repetition }
-    )    
-    dataset = dataset.transpose("mixer","repetition","time")
-
-    return dataset
-
-def plot_ramsey_oscillation( x, y, ax=None ):
-    """
-    y in shape (2,N)
-    2 is postive and negative
-    N is evo_time_point
-    """
-    if ax == None:
-        fig, ax = plt.subplots()
-    ax.plot(x, y, "-",label="T2")
-    ax.set_xlabel("Free Evolution Times [ns]")
-    ax.legend()
-    if ax == None:
-        return fig
-
-def plot_multiT2( data, rep, time ):
-    """
-    data shape ( 2, N, M )
-    2 is I,Q
-    N is rep
-    M is time
-    """
-    idata = data[0]
-    qdata = data[1]
-    zdata = idata +1j*qdata
-
-    fig, ax = plt.subplots(2)
-    ax[0].set_title('I signal')
-    ax[0].pcolormesh( time, rep, idata, cmap='RdBu')# , vmin=z_min, vmax=z_max)
-    ax[1].set_title('Q signal')
-    ax[1].pcolormesh( time, rep, qdata, cmap='RdBu')# , vmin=z_min, vmax=z_max)
-    return fig
-
+        self.output_data["time"] = self.evo_time
+        return self.output_data

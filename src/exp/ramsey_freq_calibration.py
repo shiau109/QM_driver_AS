@@ -18,6 +18,7 @@ u = unit(coerce_to_integer=True)
 
 import exp.config_par as gc
 import xarray as xr
+import numpy as np
 from exp.QMMeasurement import QMMeasurement
 
 class RamseyFreqCalibration( QMMeasurement ):
@@ -39,7 +40,6 @@ class RamseyFreqCalibration( QMMeasurement ):
         self.z_elements = ["q0_z"]
         self.xy_elements = ["q0_xy"]
         
-        self.preprocess = "ave"
         self.initializer = None
         
         # self.sweep_type = "z_pulse"
@@ -50,18 +50,18 @@ class RamseyFreqCalibration( QMMeasurement ):
         self.point_per_period = 1
         self.max_period = 1
         
+        self.qua_dim = ["index", "frequency", "time"]
+
+        self.preprocess = "average"
 
     def _get_qua_program( self ):
-        
-
         self.qua_cc_evo = self._lin_time_array()
-        print(self.qua_cc_evo)
         self._attribute_config()
 
         with program() as ramsey:
             iqdata_stream = multiRO_declare( self.ro_elements )
             n = declare(int)
-            n_st = declare_stream()
+            outermost_st = declare_stream()
             t = declare(int)  # QUA variable for the idle time
             phi = declare(fixed)  # Phase to apply the virtual Z-rotation
             phi_idx = declare(bool,)
@@ -105,56 +105,31 @@ class RamseyFreqCalibration( QMMeasurement ):
                     
 
                 # Save the averaging iteration to get the progress bar
-                save(n, n_st)
+                save(n, outermost_st)
 
             with stream_processing():
-                n_st.save("iteration")
-                multiRO_pre_save(iqdata_stream, self.ro_elements, (2,len(self.qua_cc_evo)) )
-        
-        return ramsey
-        
-    
-    def _get_fetch_data_list( self ):
-        ro_ch_name = []
-        for r_name in self.ro_elements:
-            ro_ch_name.append(f"{r_name}_I")
-            ro_ch_name.append(f"{r_name}_Q")
+                multiRO_pre_save(iqdata_stream, self.ro_elements, (2,len(self.qua_cc_evo)), stream_preprocess=self.preprocess )
+                outermost_st.save("outermost_i")
 
-        data_list = ro_ch_name + ["iteration"]   
-        return data_list
+        return ramsey
     
     def _data_formation( self ):
+        self.qua_dim = ["index", "frequency", "time"]
+        self.output_data = super()._data_formation()
+        
+        self.output_data["frequency"] = np.array([self.virtial_detune_freq,-self.virtial_detune_freq])
+
         time_ns = self.qua_cc_evo*4
-
-        coords = { 
-            "mixer":np.array(["I","Q"]), 
-            "frequency": np.array([self.virtial_detune_freq,-self.virtial_detune_freq]), 
-            "time": time_ns
-            }
-        match self.preprocess:
-            case "shot":
-                dims_order = ["mixer","frequency","time"]
-                coords["shot"] = np.arange(self.shot_num)
-            case _:
-                dims_order = ["mixer","frequency","time"]
-
-        output_data = {}
-        for r_idx, r_name in enumerate(self.ro_elements):
-            data_array = np.array([ self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]])
-            output_data[r_name] = ( dims_order, np.squeeze(data_array))
-
-        dataset = xr.Dataset( output_data, coords=coords )
-
-        # dataset = dataset.transpose("mixer", "prepare_state", "frequency", "amp_ratio")
+        self.output_data["time"] = time_ns
 
         self._attribute_config()
-        dataset.attrs["ro_LO"] = self.ref_ro_LO
-        dataset.attrs["ro_IF"] = self.ref_ro_IF
-        dataset.attrs["xy_LO"] = self.ref_xy_LO
-        dataset.attrs["xy_IF"] = self.ref_xy_IF
-        dataset.attrs["z_offset"] = self.z_offset
+        self.output_data.attrs["ro_LO"] = self.ref_ro_LO
+        self.output_data.attrs["ro_IF"] = self.ref_ro_IF
+        self.output_data.attrs["xy_LO"] = self.ref_xy_LO
+        self.output_data.attrs["xy_IF"] = self.ref_xy_IF
+        self.output_data.attrs["z_offset"] = self.z_offset
 
-        return dataset
+        return self.output_data
 
     def _attribute_config( self ):
         self.ref_ro_IF = []
@@ -234,24 +209,24 @@ def plot_ana_result( evo_time, data, detuning, ax=None ):
     plt.tight_layout()
     return (freq_pos-freq_neg)/2
 
-if __name__ == '__main__':
-    qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
-    n_avg = 1000  # Number of averages
+# if __name__ == '__main__':
+#     qmm = QuantumMachinesManager(host=qop_ip, port=qop_port, cluster_name=cluster_name, octave=octave_config)
+#     n_avg = 1000  # Number of averages
 
 
-    ro_element = ["rr1"]
-    q_name =  ["q1_xy"]
-    virtual_detune = 1 # Unit in MHz
-    output_data, evo_time = Ramsey_freq_calibration( virtual_detune, q_name, ro_element, config, qmm, n_avg=n_avg, simulate=False)
-    #   Data Saving   # 
-    save_data = False
-    if save_data:
-        from save_data import save_npz
-        import sys
-        save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
-        save_npz(save_dir, save_progam_name, output_data)
+#     ro_element = ["rr1"]
+#     q_name =  ["q1_xy"]
+#     virtual_detune = 1 # Unit in MHz
+#     output_data, evo_time = Ramsey_freq_calibration( virtual_detune, q_name, ro_element, config, qmm, n_avg=n_avg, simulate=False)
+#     #   Data Saving   # 
+#     save_data = False
+#     if save_data:
+#         from save_data import save_npz
+#         import sys
+#         save_progam_name = sys.argv[0].split('\\')[-1].split('.')[0]  # get the name of current running .py program
+#         save_npz(save_dir, save_progam_name, output_data)
 
-    plot_ana_result(evo_time,output_data[ro_element[0]][0],virtual_detune)
-    # # Plot
-    plt.show()
+#     plot_ana_result(evo_time,output_data[ro_element[0]][0],virtual_detune)
+#     # # Plot
+#     plt.show()
 

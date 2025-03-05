@@ -19,15 +19,15 @@ import matplotlib.pyplot as plt
 # Start measurement
 from exp.ramsey_freq_calibration import RamseyFreqCalibration
 my_exp = RamseyFreqCalibration(config, qmm)
-my_exp.ro_elements = ["q2_ro"]
-my_exp.xy_elements = ['q2_xy']
-my_exp.virtial_detune_freq = 8
+my_exp.ro_elements = ["q1_ro"]
+my_exp.xy_elements = ['q1_xy']
+my_exp.virtial_detune_freq = 10
 
 my_exp.point_per_period = 20
 my_exp.max_period = 6
 my_exp.initializer=initializer(50000,mode='wait')
 
-dataset = my_exp.run( 400 )
+dataarray = my_exp.run( 400 )
 
 from exp.ramsey_freq_calibration import plot_ana_result
 
@@ -35,10 +35,14 @@ from exp.ramsey_freq_calibration import plot_ana_result
 
 # for ro_element, data in output_data.items():
 #     plot_ana_result(evo_time,data[0],virtual_detune)
-plot_data = dataset["q2_ro"].values[0]
-evo_time = dataset.coords["time"].values
-plot_ana_result(evo_time,plot_data,my_exp.virtial_detune_freq)
-    
+for ro_name in dataarray.coords["q_idx"].values:
+    data = dataarray.sel(q_idx=ro_name)
+    plot_data = data.sel(mixer="I")
+    evo_time = dataarray.coords["time"].values
+    try:
+        plot_ana_result(evo_time,plot_data,my_exp.virtial_detune_freq)
+    except:
+        print(f"fitting error in {ro_name}")
 # if save_data: save_fig(save_dir, save_name)
 plt.show()
 

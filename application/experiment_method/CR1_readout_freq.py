@@ -23,7 +23,6 @@ my_exp.ro_elements = ["q1_ro","q2_ro"]
 my_exp.xy_elements = ['q1_xy','q2_xy']
 my_exp.freq_range = (-5, 5)
 my_exp.freq_resolution = 0.1
-my_exp.preprocess = "ave"
 save_data = True
 save_dir = link_config["path"]["output_root"]
 save_name = f"ro_amp_{my_exp.xy_elements[0]}"
@@ -40,11 +39,11 @@ if save_data:
     dp.save_nc(dataset,folder_label)
 # Plot
 from exp.readout_optimization import *
-if my_exp.preprocess == "shot":
-    dataset = dataset.transpose("mixer","shot","prepare_state","frequency")
+# if my_exp.preprocess == "shot":
+#     dataset = dataset.transpose("mixer","shot","prepare_state","frequency")
 
-else:
-    dataset = dataset.transpose("mixer","prepare_state","frequency")
+# else:
+#     dataset = dataset.transpose("mixer","prepare_state","frequency")
 
 save_figure = 1
 from exp.plotting import PainterROFreq
