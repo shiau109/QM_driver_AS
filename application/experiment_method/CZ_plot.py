@@ -64,7 +64,7 @@ def analysis_crosstalk_value_fitting(dataset):
     return x_vals, y_vals, f, A, m, theta
 
 import xarray as xr
-dataset = xr.open_dataset(r"C:\Users\admin\SynologyDrive\02 Data\Fridge Data\Qubit\20241107_DR3_5Q4C_0430#7\20241207data\qb_spectrum\q7_20241208_025231_Flux_dep_Qubit\Flux_dep_Qubit.nc")
+dataset = xr.open_dataset(r"C:\Users\admin\SynologyDrive\11 Papers\coupler_spectrum&flux_crosstalk\raw_figures\CZ\20241004_015740_CZ\q1q0_cz_couplerz.nc")
 print(dataset)
 
 
@@ -76,19 +76,20 @@ figures = []
 for q in data_vars:
     print(f"Processing {q}...")
     dataset_q = dataset[q]
-    quantized_flux = 0.66  #m_q3 = 9.321026490217598, m_q4 = 9.555808516102724, T_q7 = 0.66, T_q8 = 0.69
-    dataset_q = dataset_q.assign_coords(amp_ratio=dataset_q.coords["amp_ratio"].values * dataset.attrs["z_amp_const"]/quantized_flux)
-    dataset_q = dataset_q.assign_coords(frequency=dataset_q.coords["frequency"].values /1000 + dataset.attrs["xy_LO"]*1e-9)
+    quantized_flux = 1  #m_q3 = 9.321026490217598, m_q4 = 9.555808516102724, T_q7 = 0.66, T_q8 = 0.69
+    dataset_q = dataset_q.assign_coords(c_amps=dataset_q.coords["c_amps"].values * 0.2/0.64)
+    dataset_q = dataset_q.assign_coords(amps=dataset_q.coords["amps"].values * 0.2/(2*np.pi/10.246057872281048))
 
-    q = 'c2'
-    x_vals, y_vals, f, A, m, theta = analysis_crosstalk_value_fitting(dataset_q)
+    q = 'q3'
+    c = 'c2'
+    # x_vals, y_vals, f, A, m, theta = analysis_crosstalk_value_fitting(dataset_q)
 
 
 
     # 提取需要的數據
-    z1 = dataset_q.coords["amp_ratio"].values[40:-2]
-    z2 = dataset_q.coords["frequency"].values
-    data = dataset_q[0, 40:-2, :].values.T
+    z1 = dataset_q.coords["amps"].values[:]
+    z2 = dataset_q.coords["c_amps"].values
+    data = dataset_q[0, :, :].values
     # z1 = dataset_q.coords["flux"].values
     # z2 = dataset_q.coords["frequency"].values
     # idata = dataset_q[0, :, :].values
@@ -111,8 +112,8 @@ for q in data_vars:
     # 繪製擬合曲線
     # ax.scatter(x_vals, y_vals, color='black', linestyle='dashed')
     x_fit = np.linspace(min(z1), max(z1), 300)[1:-4]  
-    y_fit = cos_fit(x_fit, f, A, m, theta)
-    ax.plot(x_fit, y_fit, color='black', linestyle='dashed', linewidth=2)
+    # y_fit = cos_fit(x_fit, f, A, m, theta)
+    # ax.plot(x_fit, y_fit, color='black', linestyle='dashed', linewidth=2)
 
     # 設定 X 軸和 Y 軸的刻度數量
     ax.xaxis.set_major_locator(ticker.MaxNLocator(nbins=5))  
@@ -143,8 +144,8 @@ for q in data_vars:
     cbar.ax.yaxis.get_offset_text().set_fontsize(24)
 
     # 設定 X 軸和 Y 軸的標題
-    ax.set_xlabel('quantized flux', fontsize=28)
-    ax.set_ylabel('frequency(GHz)', fontsize=28)
+    ax.set_xlabel(f'Q$_4$ quantized flux', fontsize=28)
+    ax.set_ylabel(f'{c[0].upper()}$_{c[1]}$ quantized flux', fontsize=28)
 
     # 設置標題
     ax.set_title(f'{q[0].upper()}$_{q[1]}$', fontsize=32)

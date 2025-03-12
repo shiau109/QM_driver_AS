@@ -5,8 +5,8 @@ from qualang_tools.plot import Fit
 from matplotlib.ticker import MaxNLocator
 
 
-def cos_fit(x, f, A, m, theta):
-    return f+A*np.cos(m*x+theta)
+def linear_fit(x, a, b):
+    return a*x+b
 
 def analysis_crosstalk_value_fitting(dataset):
     """
@@ -14,8 +14,8 @@ def analysis_crosstalk_value_fitting(dataset):
     z2 is shape (M,), compensation voltage (self)
     data with shape (N,M)
     """
-    z1 = dataset.coords["amp_ratio"].values[:]#26:-18]
-    z2 = dataset.coords["frequency"].values[:]
+    z1 = dataset.coords["crosstalk_z"].values[:]#26:-18]
+    z2 = dataset.coords["detector_z"].values[:]
     data = dataset[0, :, :].values.T
     # z1 = dataset_q.coords["flux"].values
     # z2 = dataset_q.coords["frequency"].values
@@ -44,51 +44,47 @@ def analysis_crosstalk_value_fitting(dataset):
                 pass
     # 估计初始值
 
-    indices_to_remove = [19, -7]
+    indices_to_remove = []
     x_vals = np.delete(x_vals, indices_to_remove)
     y_vals = np.delete(y_vals, indices_to_remove)
     
-    f0 = np.mean(y_vals)  # f 可以设为 y 的均值
-    A0 = (np.max(y_vals) - np.min(y_vals)) / 2  # A 设为 y 值的半幅值
-    m0 = 2 * np.pi / (np.max(x_vals) - np.min(x_vals))  # m 设为 2π/数据范围
-    theta0 = 0  # 假设初始相位为 0
-    try:
-        popt, pcov = curve_fit(cos_fit, x_vals, y_vals, p0=[f0, A0, m0, theta0], maxfev=10000)
-    except:
-        popt = [0, 0, 0, 0]
-    f, A, m, theta = popt
 
-    print(f"f={f}\nA={A}\nm={m}\ntheta={theta}\n")
+    try:
+        popt, pcov = curve_fit(linear_fit, x_vals, y_vals, maxfev=10000)
+    except:
+        popt = [0, 0]
+    a, b = popt
+
 
     # 返回拟合线的参数和数据点以便后续使用
-    return x_vals, y_vals, f, A, m, theta
+    return x_vals, y_vals, a, b
 
 import xarray as xr
-dataset = xr.open_dataset(r"C:\Users\admin\SynologyDrive\02 Data\Fridge Data\Qubit\20241107_DR3_5Q4C_0430#7\20241207data\qb_spectrum\q7_20241208_025231_Flux_dep_Qubit\Flux_dep_Qubit.nc")
+dataset = xr.open_dataset(r"C:\Users\admin\SynologyDrive\02 Data\Fridge Data\Qubit\20241107_DR3_5Q4C_0430#7\20241207data\pretty_crosstalk\20241209_001315_detector_q7_bias-0.05V_crosstalk_q4_long_drive_pulse_expectcrosstalk_0.1_0.1mius\data.nc")
 print(dataset)
-
-
 
 # 獲取所有的 data_vars keys
 data_vars = list(dataset.data_vars.keys())
 figures = []
-
+dataset = dataset.assign_coords(amp_ratio=dataset.coords["crosstalk_z"].values/(2*np.pi/9.555808516102724))
+dataset = dataset.assign_coords(amp_ratio=dataset.coords["detector_z"].values/0.66)
 for q in data_vars:
     print(f"Processing {q}...")
     dataset_q = dataset[q]
     quantized_flux = 0.66  #m_q3 = 9.321026490217598, m_q4 = 9.555808516102724, T_q7 = 0.66, T_q8 = 0.69
-    dataset_q = dataset_q.assign_coords(amp_ratio=dataset_q.coords["amp_ratio"].values * dataset.attrs["z_amp_const"]/quantized_flux)
-    dataset_q = dataset_q.assign_coords(frequency=dataset_q.coords["frequency"].values /1000 + dataset.attrs["xy_LO"]*1e-9)
+
 
     q = 'c2'
-    x_vals, y_vals, f, A, m, theta = analysis_crosstalk_value_fitting(dataset_q)
+    cq = 'q4'
+
+    x_vals, y_vals, a, b = analysis_crosstalk_value_fitting(dataset_q)
 
 
 
     # 提取需要的數據
-    z1 = dataset_q.coords["amp_ratio"].values[40:-2]
-    z2 = dataset_q.coords["frequency"].values
-    data = dataset_q[0, 40:-2, :].values.T
+    z1 = dataset_q.coords["crosstalk_z"].values[:]
+    z2 = dataset_q.coords["detector_z"].values
+    data = dataset_q[0, :, :].values.T
     # z1 = dataset_q.coords["flux"].values
     # z2 = dataset_q.coords["frequency"].values
     # idata = dataset_q[0, :, :].values
@@ -111,7 +107,7 @@ for q in data_vars:
     # 繪製擬合曲線
     # ax.scatter(x_vals, y_vals, color='black', linestyle='dashed')
     x_fit = np.linspace(min(z1), max(z1), 300)[1:-4]  
-    y_fit = cos_fit(x_fit, f, A, m, theta)
+    y_fit = linear_fit(x_fit, a, b)
     ax.plot(x_fit, y_fit, color='black', linestyle='dashed', linewidth=2)
 
     # 設定 X 軸和 Y 軸的刻度數量
@@ -142,9 +138,11 @@ for q in data_vars:
     # 設定 colorbar 指數部分 (x10⁻⁴) 字體大小
     cbar.ax.yaxis.get_offset_text().set_fontsize(24)
 
+    # cq = dataset_q.attrs["crosstalk_qubit"]
+    # dq = dataset_q.attrs["detector_qubit"]
     # 設定 X 軸和 Y 軸的標題
-    ax.set_xlabel('quantized flux', fontsize=28)
-    ax.set_ylabel('frequency(GHz)', fontsize=28)
+    ax.set_xlabel(f'{cq[0].upper()}$_{cq[1]}$ quantized flux', fontsize=28)
+    ax.set_ylabel(f'{q[0].upper()}$_{q[1]}$ quantized flux', fontsize=28)
 
     # 設置標題
     ax.set_title(f'{q[0].upper()}$_{q[1]}$', fontsize=32)
@@ -159,4 +157,3 @@ for q in data_vars:
 
 
 plt.show()
-
