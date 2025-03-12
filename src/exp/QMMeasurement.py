@@ -100,10 +100,10 @@ class QMMeasurement( ABC ):
             }
         match self.preprocess:
             case "shot":
-                dims_order = ["mixer","shot","prepare_state"]
+                dims_order = ["mixer","shot","prepared_state"]
                 coords["shot"] = np.arange(self.shot_num)
             case _:
-                dims_order = ["mixer","prepare_state"]
+                dims_order = ["mixer","prepared_state"]
 
         output_data = {}
         for r_idx, r_name in enumerate(self.ro_elements):
