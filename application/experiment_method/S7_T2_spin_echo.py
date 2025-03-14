@@ -14,9 +14,9 @@ from exp.single_spin_echo import SpinEcho
 # Set parameters
 my_exp = SpinEcho( config, qmm )
 from ab.QM_config_dynamic import initializer
-my_exp.initializer = initializer(500000,mode='wait')
-my_exp.ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro", ]
-my_exp.xy_elements = ['q0_xy']
+my_exp.initializer = initializer(1500000,mode='wait')
+my_exp.ro_elements = ["q0_ro", "q1_ro", "q2_ro", "q3_ro"]
+my_exp.xy_elements = ['q1_xy']
 my_exp.time_range = ( 40, 300000 )
 my_exp.time_resolution = 3000
 dataset = my_exp.run(400)
@@ -34,14 +34,14 @@ if save_data:
 from qcat.analysis.qubit.relaxation import  RelaxationAnalysis
 import matplotlib.pyplot as plt
 
+figs = []
 for ro_name, data in dataset.data_vars.items():
     data.attrs = dataset.attrs
     data.name = ro_name
     my_ana = RelaxationAnalysis(data.sel(mixer="I"))
     my_ana._start_analysis()
-    my_ana._plot_results()
-    plt.show()
+    figs.append((data.name,my_ana.fig))
 
-
+dp.save_figs( figs )
 
 
