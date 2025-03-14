@@ -151,13 +151,14 @@ class PainterFindFluxPeriod( RawDataPainter ):
         flux = self.flux
         title = self.title
         fig, ax = plt.subplots(2)
-        pcm = ax[0].pcolormesh(flux, freqs, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+        flux_grid, freq_grid = np.meshgrid(flux, freqs, indexing='ij')
+        pcm = ax[0].pcolormesh(flux_grid, freq_grid, np.abs(s21), cmap='RdBu')
+
         ax[0].set_title(f"{title} Magnitude")
         ax[0].set_xlabel("Flux")
         ax[0].set_ylabel("Additional IF freq (MHz)")
         plt.colorbar(pcm, label='Value')
-
-        pcm = ax[1].pcolormesh(flux, freqs, np.angle(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+        pcm = ax[1].pcolormesh(flux_grid, freq_grid, np.angle(s21), cmap='RdBu')
         ax[1].set_title(f"{title} Phase")
         ax[1].set_xlabel("Flux")
         ax[1].set_ylabel("Additional IF freq (MHz)")
@@ -172,7 +173,7 @@ class PainterFluxDepQubit( RawDataPainter ):
     def _data_parser( self ):
         dataarray = self.plot_data
         self.freqs = dataarray.coords["frequency"].values
-        self.flux = dataarray.coords["amp_ratio"].values *dataarray.attrs["z_amp_const"]
+        self.flux = dataarray.coords["flux"].values
 
         self.xy_LO = dataarray.attrs["xy_LO"][0]/1e6
         self.xy_IF_idle = dataarray.attrs["xy_IF"][0]/1e6
@@ -365,13 +366,22 @@ class PainterRabi( RawDataPainter ):
 class PainterT1Single( RawDataPainter ):
         
     def _data_parser( self ):
-        from qcat.analysis.qubit.relaxation import qubit_relaxation_fitting
-    
+        # Initialize the fitting class
+        from qcat.analysis.function_fitting.fit_exp_decay import FitExponentialDecay
+        fit_exp_decay = FitExponentialDecay(self.plot_data.rename({"time": "x"}))
+
+        # Generate initial parameter guesses
+        guess_params = fit_exp_decay.guess()
+
+        # Perform the fitting process
+        fit_result = fit_exp_decay.fit()
+        self.fit_result = fit_result
+
         dataarray = self.plot_data
         self.time = (dataarray.coords["time"].values)/1000
         idata = dataarray.values[0]
         qdata = dataarray.values[1]
-        self.fit_result_i = qubit_relaxation_fitting(self.time, idata)
+        self.fit_result_i = self.fit_result(self.time, idata)
         self.fit_result_q = qubit_relaxation_fitting(self.time, qdata)
         self.zdata = idata +1j*qdata
 

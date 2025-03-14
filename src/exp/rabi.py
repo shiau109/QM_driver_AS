@@ -41,6 +41,13 @@ class RabiTime( QMMeasurement ):
 
         self.initializer = None
         self.process = "time"
+        match self.process:
+            case "time":
+                self.qua_dim = ["index","frequency", "time"]
+            case _:
+                self.qua_dim = ["index","frequency", "amplitude"]
+
+        self.preprocess = "average"
 
     def _get_qua_program( self ):
         time_r1_qua = (self.time_range[0]/4) *u.ns
@@ -74,7 +81,7 @@ class RabiTime( QMMeasurement ):
                     iqdata_stream = multiRO_declare(self.ro_elements)
                     t = declare(int)  
                     n = declare(int)
-                    n_st = declare_stream()
+                    outermost_st = declare_stream()
                     df = declare(int)  # QUA variable for the readout frequency
                     with for_(n, 0, n < self.shot_num, n + 1):
                         with for_(*from_array(df, self.qua_freqs)):
@@ -100,17 +107,18 @@ class RabiTime( QMMeasurement ):
                                 # Measurement
                                 multiRO_measurement(iqdata_stream, self.ro_elements, weights="rotated_")
                         # Save iteration
-                        save(n, n_st)
+                        save(n, outermost_st)
 
                     with stream_processing():
-                        multiRO_pre_save(iqdata_stream, self.ro_elements, (freq_len,time_len) )
-                        n_st.save("iteration")
+                        # Cast the data into a 1D vector, average the 1D vectors together and store the results on the OPX processor
+                        multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.qua_freqs),len(self.qua_driving_time)), stream_preprocess=self.preprocess)
+                        outermost_st.save("outermost_i")
             case _:
                 with program() as rabi:
                     iqdata_stream = multiRO_declare(self.ro_elements)
                     ra = declare(fixed)  
                     n = declare(int)
-                    n_st = declare_stream()
+                    outermost_st = declare_stream()
                     df = declare(int)  # QUA variable for the readout frequency
                     with for_(n, 0, n < self.shot_num, n + 1):
                         with for_(*from_array(df, self.qua_freqs)):
@@ -136,96 +144,96 @@ class RabiTime( QMMeasurement ):
                                 # Measurement
                                 multiRO_measurement(iqdata_stream, self.ro_elements, weights="rotated_")
                         # Save iteration
-                        save(n, n_st)
+                        save(n, outermost_st)
 
                     with stream_processing():
-                        n_st.save("iteration")
-                        multiRO_pre_save(iqdata_stream, self.ro_elements, (freq_len,amp_len) )
+                        # Cast the data into a 1D vector, average the 1D vectors together and store the results on the OPX processor
+                        multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.qua_freqs),len(r_amps)), stream_preprocess=self.preprocess)
+                        outermost_st.save("outermost_i")
         return rabi
     
     
-    def plot_freq_dep_time_rabi( data, dfs, time, ax=None ):
-        """
-        data shape ( 2, N, M )
-        2 is I,Q
-        N is freq
-        M is flux
-        """
-        idata = data[0]
-        qdata = data[1]
-        zdata = idata +1j*qdata
-        s21 = zdata
+    # def plot_freq_dep_time_rabi( data, dfs, time, ax=None ):
+    #     """
+    #     data shape ( 2, N, M )
+    #     2 is I,Q
+    #     N is freq
+    #     M is flux
+    #     """
+    #     idata = data[0]
+    #     qdata = data[1]
+    #     zdata = idata +1j*qdata
+    #     s21 = zdata
 
-        if type(ax)==None:
-            fig, ax = plt.subplots()
-            ax.set_title('pcolormesh')
-            fig.show()
-        ax[0].pcolormesh( time, dfs, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
-        ax[1].pcolormesh( time, dfs, np.angle(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    #     if type(ax)==None:
+    #         fig, ax = plt.subplots()
+    #         ax.set_title('pcolormesh')
+    #         fig.show()
+    #     ax[0].pcolormesh( time, dfs, np.abs(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    #     ax[1].pcolormesh( time, dfs, np.angle(s21), cmap='RdBu')# , vmin=z_min, vmax=z_max)
 
 
-    def plot_ana_freq_time_rabi( data, dfs, time, freq_LO, freq_IF, ax=None, iq_rotate = 0 ):
-        """
-        data shape ( 2, N, M )
-        2 is I,Q
-        N is freq
-        M is time
-        """
-        idata = data[0]
-        qdata = data[1]
-        zdata = (idata +1j*qdata)*np.exp(1j*iq_rotate)
-        s21 = zdata
+    # def plot_ana_freq_time_rabi( data, dfs, time, freq_LO, freq_IF, ax=None, iq_rotate = 0 ):
+    #     """
+    #     data shape ( 2, N, M )
+    #     2 is I,Q
+    #     N is freq
+    #     M is time
+    #     """
+    #     idata = data[0]
+    #     qdata = data[1]
+    #     zdata = (idata +1j*qdata)*np.exp(1j*iq_rotate)
+    #     s21 = zdata
 
-        abs_freq = freq_LO+freq_IF+dfs
-        if type(ax)==None:
-            fig, ax = plt.subplots()
-            ax.set_title('pcolormesh')
-            fig.show()
-        ax[0].pcolormesh( time, abs_freq, np.real(zdata), cmap='RdBu')# , vmin=z_min, vmax=z_max)
-        # ax[0].axvline(x=freq_LO+freq_IF, color='b', linestyle='--', label='ref IF')
-        # ax[0].axvline(x=freq_LO, color='r', linestyle='--', label='LO')
-        ax[0].axhline(y=freq_LO+freq_IF, color='black', linestyle='--', label='ref IF')
+    #     abs_freq = freq_LO+freq_IF+dfs
+    #     if type(ax)==None:
+    #         fig, ax = plt.subplots()
+    #         ax.set_title('pcolormesh')
+    #         fig.show()
+    #     ax[0].pcolormesh( time, abs_freq, np.real(zdata), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    #     # ax[0].axvline(x=freq_LO+freq_IF, color='b', linestyle='--', label='ref IF')
+    #     # ax[0].axvline(x=freq_LO, color='r', linestyle='--', label='LO')
+    #     ax[0].axhline(y=freq_LO+freq_IF, color='black', linestyle='--', label='ref IF')
 
-        ax[0].legend()
-        ax[1].pcolormesh( time, abs_freq, np.imag(zdata), cmap='RdBu')# , vmin=z_min, vmax=z_max)
-        ax[1].axhline(y=freq_LO+freq_IF, color='black', linestyle='--', label='ref IF')
+    #     ax[0].legend()
+    #     ax[1].pcolormesh( time, abs_freq, np.imag(zdata), cmap='RdBu')# , vmin=z_min, vmax=z_max)
+    #     ax[1].axhline(y=freq_LO+freq_IF, color='black', linestyle='--', label='ref IF')
 
-        ax[1].legend()
+    #     ax[1].legend()
 
-    def _get_fetch_data_list( self ):
-        ro_ch_name = []
-        for r_name in self.ro_elements:
-            ro_ch_name.append(f"{r_name}_I")
-            ro_ch_name.append(f"{r_name}_Q")
+    # def _get_fetch_data_list( self ):
+    #     ro_ch_name = []
+    #     for r_name in self.ro_elements:
+    #         ro_ch_name.append(f"{r_name}_I")
+    #         ro_ch_name.append(f"{r_name}_Q")
 
-        data_list = ro_ch_name + ["iteration"]   
-        return data_list
+    #     data_list = ro_ch_name + ["iteration"]   
+    #     return data_list
 
     def _data_formation( self ):
         freqs_mhz = self.qua_freqs/1e6
-        driving_time = self.qua_driving_time *4
-        output_data = {}
-        r_amps = np.arange(self.amp_range[0], self.amp_range[1], self.amp_resolution)
         match self.process:
             case "time":
-                for r_idx, r_name in enumerate(self.ro_elements):
-                    output_data[r_name] = ( ["mixer","frequency","time"],
-                        np.array([self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]]) )
-                dataset = xr.Dataset(
-                    output_data,
-                    coords={ "mixer":np.array(["I","Q"]), "frequency": freqs_mhz, "time": driving_time }
-                )
-                dataset.attrs["ref_xy_IF"] = list(self.ref_xy_IF.values())
-                dataset.attrs["ref_xy_LO"] = list(self.ref_xy_LO.values())
-            case _:
-                for r_idx, r_name in enumerate(self.ro_elements):
-                    output_data[r_name] = ( ["mixer","frequency","amplitude"],
-                                            np.array([self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]]) )
-                dataset = xr.Dataset(
-                    output_data,
-                    coords={ "mixer":np.array(["I","Q"]), "frequency": freqs_mhz, "amplitude": r_amps }
-                )
-                dataset.attrs["ref_xy_IF"] = list(self.ref_xy_IF.values())
-                dataset.attrs["ref_xy_LO"] = list(self.ref_xy_LO.values())
+                self.qua_dim = ["index","frequency", "time"]
+                self.output_data = super()._data_formation()
 
-        return dataset
+                self.output_data["frequency"] = freqs_mhz
+
+                driving_time = self.qua_driving_time *4
+                self.output_data["time"] = driving_time
+
+                self.output_data.attrs["ref_xy_IF"] = list(self.ref_xy_IF.values())
+                self.output_data.attrs["ref_xy_LO"] = list(self.ref_xy_LO.values())
+            case _:
+                self.qua_dim = ["index","frequency", "amplitude"]
+                self.output_data = super()._data_formation()
+
+                self.output_data["frequency"] = freqs_mhz
+
+                r_amps = np.arange(self.amp_range[0], self.amp_range[1], self.amp_resolution)
+                self.output_data["amplitude"] = r_amps
+
+                self.output_data.attrs["ref_xy_IF"] = list(self.ref_xy_IF.values())
+                self.output_data.attrs["ref_xy_LO"] = list(self.ref_xy_LO.values())
+
+        return self.output_data

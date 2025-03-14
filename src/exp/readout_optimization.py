@@ -40,7 +40,9 @@ class ROAmp( QMMeasurement ):
         self.amp_mod_range = (0.5, 1.5)
         self.amp_resolution = 0.1
 
-        self.preprocess = "ave"
+        self.qua_dim = ["index","amplitude_ratio", "prepare_state"]
+
+        self.preprocess = "average"
 
     def _get_qua_program( self ):
         
@@ -53,7 +55,7 @@ class ROAmp( QMMeasurement ):
         
             iqdata_stream = multiRO_declare(self.ro_elements)
             n = declare(int)
-            n_st = declare_stream()
+            outermost_st = declare_stream()
             r_amp = declare(fixed)  # QUA variable for the readout frequency
             p_idx = declare(bool,)
             with for_(n, 0, n < self.shot_num, n + 1):
@@ -79,60 +81,33 @@ class ROAmp( QMMeasurement ):
                         # Measurement
                         multiRO_measurement(iqdata_stream, self.ro_elements, weights="rotated_",amp_modify=r_amp)
                 # Save the averaging iteration to get the progress bar
-                save(n, n_st)
+                save(n, outermost_st)
 
             with stream_processing():
-                n_st.save("iteration")
-                match self.preprocess:
-                    case "shot":
-                        multiRO_pre_save( iqdata_stream, self.ro_elements, (self.shot_num, len(self.qua_amp_ratio_array),2), stream_preprocess="shot")
-                    case _:
-                        multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.qua_amp_ratio_array),2))
+                outermost_st.save("outermost_i")
+                multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.qua_amp_ratio_array),2), stream_preprocess=self.preprocess)
 
 
         return multi_res_spec_vs_amp
     
-    def _get_fetch_data_list( self ):
-        ro_ch_name = []
-        for r_name in self.ro_elements:
-            ro_ch_name.append(f"{r_name}_I")
-            ro_ch_name.append(f"{r_name}_Q")
-
-        data_list = ro_ch_name + ["iteration"]   
-        return data_list
-    
     def _data_formation( self ):
+        self.qua_dim = ["index","amplitude_ratio", "prepare_state"]
+        self.output_data = super()._data_formation()
 
-        freqs_mhz = self.qua_amp_ratio_array
+        amp_ratio = self.qua_amp_ratio_array
+        self.output_data["amplitude_ratio"] = amp_ratio
 
-        coords = { 
-            "mixer":np.array(["I","Q"]), 
-            "amplitude_ratio": freqs_mhz, 
-            "prepare_state": np.array([0,1]),
-            }
-        match self.preprocess:
-            case "shot":
-                dims_order = ["mixer","shot","amplitude_ratio","prepare_state"]
-                coords["shot"] = np.arange(self.shot_num)
-            case _:
-                dims_order = ["mixer","amplitude_ratio","prepare_state"]
-
-        output_data = {}
-        for r_idx, r_name in enumerate(self.ro_elements):
-            data_array = np.array([ self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]])
-            output_data[r_name] = ( dims_order, np.squeeze(data_array))
-
-        dataset = xr.Dataset(output_data, coords=coords)
+        self.output_data["prepare_state"] = np.array([0,1])
 
         self._attribute_config()
-        dataset.attrs["ro_LO"] = self.ref_ro_LO
-        dataset.attrs["ro_IF"] = self.ref_ro_IF
-        dataset.attrs["xy_LO"] = self.ref_xy_LO
-        dataset.attrs["xy_IF"] = self.ref_xy_IF
-        dataset.attrs["xy_elements"] = self.xy_elements
+        self.output_data.attrs["ro_LO"] = self.ref_ro_LO
+        self.output_data.attrs["ro_IF"] = self.ref_ro_IF
+        self.output_data.attrs["xy_LO"] = self.ref_xy_LO
+        self.output_data.attrs["xy_IF"] = self.ref_xy_IF
+        self.output_data.attrs["xy_elements"] = self.xy_elements
 
 
-        return dataset
+        return self.output_data
 
     def _attribute_config( self ):
         self.ref_ro_IF = []
@@ -178,7 +153,9 @@ class ROFreq( QMMeasurement ):
 
         self.amp_mod = 1
 
-        self.preprocess = "ave"
+        self.qua_dim = ["index", "frequency", "prepare_state"]
+
+        self.preprocess = "average"
 
     def _get_qua_program( self ):
         
@@ -191,7 +168,7 @@ class ROFreq( QMMeasurement ):
         
             iqdata_stream = multiRO_declare(self.ro_elements)
             n = declare(int)
-            n_st = declare_stream()
+            outermost_st = declare_stream()
             df = declare(int)  # QUA variable for the readout frequency
             p_idx = declare(bool,)
             with for_(n, 0, n < self.shot_num, n + 1):
@@ -219,61 +196,33 @@ class ROFreq( QMMeasurement ):
                             update_frequency(r, df +self.ref_ro_IF[i])
                         multiRO_measurement(iqdata_stream, self.ro_elements, weights="rotated_",amp_modify=self.amp_mod)
                 # Save the averaging iteration to get the progress bar
-                save(n, n_st)
+                save(n, outermost_st)
 
             with stream_processing():
-                n_st.save("iteration")
-                match self.preprocess:
-                    case "shot":
-                        multiRO_pre_save( iqdata_stream, self.ro_elements, (self.shot_num, len(self.qua_freqs),2), stream_preprocess="shot")
-                    case _:
-                        multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.qua_freqs),2))
-
+                outermost_st.save("outermost_i")
+                multiRO_pre_save( iqdata_stream, self.ro_elements, (len(self.qua_freqs),2), stream_preprocess=self.preprocess)
 
         return multi_res_spec_vs_amp
     
-    def _get_fetch_data_list( self ):
-        ro_ch_name = []
-        for r_name in self.ro_elements:
-            ro_ch_name.append(f"{r_name}_I")
-            ro_ch_name.append(f"{r_name}_Q")
-
-        data_list = ro_ch_name + ["iteration"]   
-        return data_list
-    
     def _data_formation( self ):
+        self.qua_dim = ["index", "frequency", "prepare_state"]
+        self.output_data = super()._data_formation()
 
         freqs_mhz = self.qua_freqs/1e6
+        self.output_data["frequency"] = freqs_mhz
 
-        coords = { 
-            "mixer":np.array(["I","Q"]), 
-            "frequency": freqs_mhz, 
-            "prepare_state": np.array([0,1]),
-            }
-        match self.preprocess:
-            case "shot":
-                dims_order = ["mixer","shot","frequency","prepare_state"]
-                coords["shot"] = np.arange(self.shot_num)
-            case _:
-                dims_order = ["mixer","frequency","prepare_state"]
+        self.output_data["prepare_state"] = np.array([0,1])
 
-        output_data = {}
-        for r_idx, r_name in enumerate(self.ro_elements):
-            data_array = np.array([ self.fetch_data[r_idx*2], self.fetch_data[r_idx*2+1]])
-            output_data[r_name] = ( dims_order, np.squeeze(data_array))
-
-        print(data_array.shape)
-        dataset = xr.Dataset(output_data, coords=coords)
-
+    
         self._attribute_config()
-        dataset.attrs["ro_LO"] = self.ref_ro_LO
-        dataset.attrs["ro_IF"] = self.ref_ro_IF
-        dataset.attrs["xy_LO"] = self.ref_xy_LO
-        dataset.attrs["xy_IF"] = self.ref_xy_IF
-        dataset.attrs["xy_elements"] = self.xy_elements
+        self.output_data.attrs["ro_LO"] = self.ref_ro_LO
+        self.output_data.attrs["ro_IF"] = self.ref_ro_IF
+        self.output_data.attrs["xy_LO"] = self.ref_xy_LO
+        self.output_data.attrs["xy_IF"] = self.ref_xy_IF
+        self.output_data.attrs["xy_elements"] = self.xy_elements
 
 
-        return dataset
+        return self.output_data
 
     def _attribute_config( self ):
         self.ref_ro_IF = []

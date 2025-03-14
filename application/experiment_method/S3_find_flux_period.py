@@ -9,24 +9,21 @@ config_obj, spec = import_config( link_path )
 config = config_obj.get_config()
 qmm, _ = spec.buildup_qmm()
 
+from exp.rofreq_sweep_flux_dep import FluxDepCavity
+
 from ab.QM_config_dynamic import initializer
 import matplotlib.pyplot as plt
-from exp.plotting import plot_and_save_flux_period
+# Start meausrement
+my_exp = FluxDepCavity(config, qmm)
+my_exp.ro_elements = ["q0_ro","q1_ro"] #
+my_exp.z_elements = ["q0_z"]
+my_exp.initializer = initializer(50000,mode='wait')
+my_exp.z_amp_ratio_range = (-2, 2)
+my_exp.z_amp_ratio_resolution = 0.1
+my_exp.freq_range = (-5,+ 5)
+my_exp.freq_resolution = 0.5
 
-# Set parameters
-init_macro = initializer(10000,mode='wait')
-ro_elements = ["q4_ro"]
-z_elements = ['q4_z']
-
-n_avg = 100
-freq_range = (-5,5)
-freq_resolution = 0.1 #0.1
-flux_range = (-0.3,0.3)
-flux_resolution = 0.02 #0.01
-
-from exp.rofreq_sweep_flux_dep import *
-dataset = freq_sweep_flux_dep(ro_elements, z_elements, config, qmm, freq_range=freq_range, freq_resolution=freq_resolution, flux_settle_time=1, flux_range=flux_range, flux_resolution=flux_resolution, n_avg=n_avg, initializer=init_macro)
-# dataset = freq_sweep_flux_dep_stable(ro_elements, z_elements, config, qmm, freq_range=freq_range, freq_resolution=freq_resolution, flux_settle_time=1, flux_range=flux_range, flux_resolution=flux_resolution, n_avg=n_avg, initializer=init_macro)
+dataarray = my_exp.run( 400 )
 
 #Save data
 save_data = 1
@@ -36,12 +33,12 @@ if save_data:
     save_dir = link_config["path"]["output_root"]
     dp = DataPackager( save_dir, folder_label )
     dp.save_config(config)
-    dp.save_nc(dataset,folder_label)
+    dp.save_nc(dataarray,folder_label)
     
 
 # Plot
 save_figure = 1
 from exp.plotting import PainterFindFluxPeriod
 painter = PainterFindFluxPeriod()
-figs = painter.plot(dataset,folder_label)
+figs = painter.plot(dataarray,folder_label)
 if save_figure: dp.save_figs( figs )
